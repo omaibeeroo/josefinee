@@ -125,6 +125,11 @@ export async function lookupOrderAction(orderNumber: string, phoneRaw: string) {
         ...LIMITS.lookup,
         key: `order-lookup-identity:${parsed.data.orderNumber.trim().toUpperCase()}:${parsed.data.phone}`,
       }),
+      enforceRateLimit({
+        limit: 5,
+        windowMs: 15 * 60_000,
+        key: `order-lookup-phone:${parsed.data.phone}`,
+      }),
     ]);
   } catch (error) {
     return { ok: false as const, error: toUserMessage(error) };
@@ -137,7 +142,7 @@ export async function lookupOrderAction(orderNumber: string, phoneRaw: string) {
     if (!order) {
       return { ok: false as const, error: "No order found with these details." };
     }
-    const trackingToken = signOrderToken(order.orderNumber);
+    const trackingToken = signOrderToken(order.orderNumber, 24 * 60 * 60_000);
     return { ok: true as const, orderNumber: order.orderNumber, trackingToken };
   } catch (error) {
     console.error("[track] lookup failed", error);

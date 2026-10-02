@@ -877,6 +877,7 @@ model Review {
   id                 String       @id @default(cuid())
   productId          String
   customerId         String?
+  guestIdentityHash  String?
   orderId            String?
   authorName         String
   rating             Int
@@ -894,6 +895,7 @@ model Review {
   order    Order?    @relation(fields: [orderId], references: [id], onDelete: SetNull)
 
   @@unique([productId, customerId])
+  @@unique([productId, guestIdentityHash])
   @@index([productId, status])
 }
 

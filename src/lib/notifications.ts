@@ -5,6 +5,8 @@ import { formatDA } from "@/lib/money";
 import { formatPhoneDisplay } from "@/lib/phone";
 import type { NotificationChannel } from "@prisma/client";
 
+const PROVIDER_TIMEOUT_MS = 8_000;
+
 /**
  * Notifications are provider-agnostic. Configure a provider through environment
  * variables; if none is configured the event is recorded and logged (console)
@@ -39,6 +41,10 @@ async function consoleSend(channel: NotificationChannel, message: NotificationMe
   console.info(`[notify:${channel.toLowerCase()}] -> ${message.to} :: ${message.subject}`);
 }
 
+function providerSignal(): AbortSignal {
+  return AbortSignal.timeout(PROVIDER_TIMEOUT_MS);
+}
+
 const emailProvider: NotificationProvider = {
   channel: "EMAIL",
   name: process.env.EMAIL_PROVIDER ?? "console",
@@ -57,6 +63,7 @@ const emailProvider: NotificationProvider = {
           subject: message.subject,
           text: message.body,
         }),
+        signal: providerSignal(),
       });
       if (!response.ok) {
         throw new Error(`Email provider failed with ${response.status}`);
@@ -89,6 +96,7 @@ const smsProvider: NotificationProvider = {
             "Content-Type": "application/x-www-form-urlencoded",
           },
           body,
+          signal: providerSignal(),
         },
       );
       if (!response.ok) throw new Error(`SMS provider failed with ${response.status}`);
@@ -120,6 +128,7 @@ const whatsappProvider: NotificationProvider = {
             type: "text",
             text: { body: message.body },
           }),
+          signal: providerSignal(),
         },
       );
       if (!response.ok) throw new Error(`WhatsApp provider failed with ${response.status}`);

@@ -254,6 +254,16 @@ export function useDialogFocus(
     if (!container) return;
     const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const previousOverflow = document.body.style.overflow;
+    const dialogRoot = container.closest<HTMLElement>('[role="dialog"]') ?? container;
+    const parent = dialogRoot.parentElement;
+    const backgroundSiblings = parent
+      ? Array.from(parent.children).filter((element): element is HTMLElement => element !== dialogRoot && element instanceof HTMLElement)
+      : [];
+    const previousBackgroundState = backgroundSiblings.map((element) => ({
+      element,
+      inert: element.inert,
+      ariaHidden: element.getAttribute("aria-hidden"),
+    }));
     const selector =
       'a[href], button:not([disabled]), textarea, input:not([type="hidden"]), select, [tabindex]:not([tabindex="-1"])';
     const focusables = () =>
@@ -261,6 +271,10 @@ export function useDialogFocus(
         (element) => element.offsetParent !== null,
       );
     document.body.style.overflow = "hidden";
+    for (const element of backgroundSiblings) {
+      element.inert = true;
+      element.setAttribute("aria-hidden", "true");
+    }
     const preferredFocus = initialFocusRef?.current;
     (preferredFocus && preferredFocus.offsetParent !== null
       ? preferredFocus
@@ -295,6 +309,11 @@ export function useDialogFocus(
     return () => {
       document.removeEventListener("keydown", onKey);
       document.body.style.overflow = previousOverflow;
+      for (const { element, inert, ariaHidden } of previousBackgroundState) {
+        element.inert = inert;
+        if (ariaHidden === null) element.removeAttribute("aria-hidden");
+        else element.setAttribute("aria-hidden", ariaHidden);
+      }
       previouslyFocused?.focus();
     };
   }, [active, containerRef, initialFocusRef]);

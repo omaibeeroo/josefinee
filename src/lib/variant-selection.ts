@@ -53,3 +53,23 @@ export function isOptionValueAvailable(
 ): boolean {
   return variants.some((variant) => variant.available > 0 && variant.optionValueIds.includes(valueId));
 }
+
+export function isOptionValueAvailableForSelection(
+  options: ReadonlyArray<VariantSelectionOption>,
+  variants: ReadonlyArray<VariantSelectionVariant>,
+  current: Readonly<Record<string, string>>,
+  optionName: string,
+  valueId: string,
+): boolean {
+  return variants.some(
+    (variant) =>
+      variant.available > 0 &&
+      variant.optionValueIds.includes(valueId) &&
+      options.every(
+        (option) =>
+          option.name === optionName ||
+          !current[option.name] ||
+          variant.optionValueIds.includes(current[option.name]!),
+      ),
+  );
+}
