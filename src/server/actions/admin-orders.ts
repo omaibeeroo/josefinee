@@ -46,7 +46,7 @@ export async function listOrders(filters: OrderFilters) {
   const [items, total] = await Promise.all([
     prisma.order.findMany({
       where,
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
       skip: (page - 1) * PAGE_SIZE,
       take: PAGE_SIZE,
       select: {
@@ -280,11 +280,13 @@ export async function exportOrdersCsv(filters: OrderFilters): Promise<string> {
     return `"${safe.replace(/"/g, '""')}"`;
   };
 
+  const fullOrders = await prisma.order.findMany({
+    where: { id: { in: summaries.map((summary) => summary.id) } },
+    include: { items: true, promotion: { select: { name: true } } },
+  });
+  const ordersById = new Map(fullOrders.map((order) => [order.id, order]));
   for (const summary of summaries) {
-    const full = await prisma.order.findUnique({
-      where: { id: summary.id },
-      include: { items: true, promotion: { select: { name: true } } },
-    });
+    const full = ordersById.get(summary.id);
     if (!full) continue;
     const products = full.items
       .map(

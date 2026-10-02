@@ -23,7 +23,7 @@ export function ProductGridSkeleton({ count = 8 }: { count?: number }) {
 
 export function CatalogLoading() {
   return (
-    <div className="container-luxe py-10 md:py-14" aria-label="Loading products">
+    <div className="container-luxe py-10 md:py-14" aria-label="Chargement des produits">
       <div className="mx-auto mb-8 max-w-md text-center">
         <Skeleton className="mx-auto h-3 w-24" />
         <Skeleton className="mx-auto mt-3 h-10 w-64" />
@@ -34,7 +34,7 @@ export function CatalogLoading() {
       </div>
       <ProductGridSkeleton />
       <span className="sr-only" role="status">
-        Loading products…
+        Chargement des produits…
       </span>
     </div>
   );
@@ -42,7 +42,7 @@ export function CatalogLoading() {
 
 export function ProductLoading() {
   return (
-    <div className="container-luxe py-8 md:py-12" aria-label="Loading product">
+    <div className="container-luxe py-8 md:py-12" aria-label="Chargement du produit">
       <Skeleton className="mb-6 h-3 w-56" />
       <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
         <Skeleton className="aspect-[3/4] w-full" />
@@ -57,7 +57,7 @@ export function ProductLoading() {
         </div>
       </div>
       <span className="sr-only" role="status">
-        Loading product…
+        Chargement du produit…
       </span>
     </div>
   );

@@ -229,6 +229,11 @@ export async function createOrder(
         ? 0
         : rate.price;
 
+    // Coupon first-order eligibility and customer creation must observe a
+    // committed order for this phone. PostgreSQL transaction-scoped advisory
+    // locks serialize only competing checkouts for the same normalized phone.
+    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${data.phone}, 0))`;
+
     const sessionCustomerId = session?.customer.id ?? cartCustomerId ?? null;
     const customer = sessionCustomerId
       ? await tx.customer.findUnique({ where: { id: sessionCustomerId } })

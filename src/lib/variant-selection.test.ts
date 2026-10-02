@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { isOptionValueAvailable, resolveVariantSelection } from "./variant-selection";
+import {
+  isOptionValueAvailable,
+  isOptionValueAvailableForSelection,
+  resolveVariantSelection,
+} from "./variant-selection";
 
 const options = [
   { name: "Color", values: [{ id: "black" }, { id: "white" }] },
@@ -28,5 +32,10 @@ describe("resolveVariantSelection", () => {
     expect(result.variantId).toBe("black-m");
     expect(isOptionValueAvailable(variants, "white")).toBe(true);
     expect(isOptionValueAvailable([{ id: "x", available: 0, optionValueIds: ["sold"] }], "sold")).toBe(false);
+  });
+
+  it("only enables values compatible with the other selected dimensions", () => {
+    expect(isOptionValueAvailableForSelection(options, variants, { Color: "white", Size: "" }, "Size", "m")).toBe(false);
+    expect(isOptionValueAvailableForSelection(options, variants, { Color: "black", Size: "" }, "Size", "m")).toBe(true);
   });
 });

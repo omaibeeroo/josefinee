@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "manus/**"]
+  pull_request:
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: nur_store
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d nur_store"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      NODE_ENV: production
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nur_store?schema=public
+      AUTH_SECRET: ci-only-auth-secret-012345678901234567890123456789
+      ORDER_OUTBOX_SECRET: ci-only-outbox-secret-012345678901234567890123456789
+      RETENTION_JOB_SECRET: ci-only-retention-secret-012345678901234567890123456789
+      APP_URL: https://ci.example.invalid/
+      TRUSTED_CLIENT_IP_HEADER: x-real-ip
+      STORAGE_DRIVER: s3
+      STORAGE_BUCKET: ci-bucket
+      STORAGE_ACCESS_KEY: ci-access-key
+      STORAGE_SECRET_KEY: ci-secret-key
+      STORAGE_PUBLIC_HOST: https://cdn.example.invalid
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - run: npx prisma migrate deploy
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test
+      - run: npm audit --omit=dev
+      - run: npm run build
+      - name: Production HTTP smoke tests
+        run: |
+          npm run start -- -p 3000 > /tmp/nur-store.log 2>&1 &
+          server_pid=$!
+          trap 'kill "$server_pid"' EXIT
+          BASE_URL=http://localhost:3000 npm run smoke:production

@@ -87,7 +87,7 @@ export function RecentlyViewed({ productId }: { productId: string }) {
 }
 import { discountPercent, formatPrice } from "@/lib/money";
 import { pixelEvent } from "@/components/pixels";
-import { isOptionValueAvailable, resolveVariantSelection } from "@/lib/variant-selection";
+import { isOptionValueAvailableForSelection, resolveVariantSelection } from "@/lib/variant-selection";
 import { cn } from "@/lib/utils";
 import type { QuickAddData, StoreProduct, StoreProductCard } from "@/server/catalog";
 import { getProductsByIdsAction, getQuickAddAction } from "@/server/actions/cart";
@@ -319,7 +319,7 @@ export function QuickAddModal({
               <div className="flex flex-wrap gap-2" role="group" aria-label={option.name}>
                 {option.values.map((value) => {
                   const isActive = selected[option.name] === value.id;
-                  const available = isOptionValueAvailable(data.variants, value.id);
+                  const available = isOptionValueAvailableForSelection(data.options, data.variants, selected, option.name, value.id);
                   return (
                     <button
                       key={value.id}
@@ -552,7 +552,13 @@ export function VariantPicker({
             </p>
             <div className="flex flex-wrap gap-2" role="group" aria-label={option.name}>
               {option.values.map((value) => {
-              const available = isOptionValueAvailable(product.variants, value.id);
+                const currentSelection = selected
+                  ? Object.fromEntries(product.options.map((entry) => [
+                      entry.name,
+                      selected.optionValueIds.find((id) => entry.values.some((candidate) => candidate.id === id)) ?? "",
+                    ]))
+                  : {};
+                const available = isOptionValueAvailableForSelection(product.options, product.variants, currentSelection, option.name, value.id);
                 const isActive = activeValueId === value.id;
                 return (
                   <button

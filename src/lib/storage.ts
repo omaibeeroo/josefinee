@@ -4,7 +4,7 @@ import { UPLOAD_ALLOWED_MIME, UPLOAD_MAX_BYTES } from "@/lib/constants";
 import { isS3Configured } from "@/config/brand";
 import path from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
-import sharp from "sharp";
+import sharp, { type Metadata, type Sharp } from "sharp";
 
 export type StoredImage = {
   url: string;
@@ -46,8 +46,8 @@ export async function storeImage(file: {
     throw new AppError("INVALID_FILE_TYPE", "Only JPG, PNG, WebP or AVIF images are allowed.");
   }
 
-  let pipeline: sharp.Sharp;
-  let metadata: sharp.Metadata;
+  let pipeline: Sharp;
+  let metadata: Metadata;
   try {
     pipeline = sharp(file.buffer, { failOn: "error" });
     metadata = await pipeline.metadata();

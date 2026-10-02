@@ -1,5 +1,6 @@
 "use server";
 
+import { createHmac } from "node:crypto";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -131,6 +132,9 @@ export async function submitReviewAction(input: {
   }
   const session = await getCustomerSession();
   const ip = await clientIp();
+  const guestIdentityHash = !session?.customer
+    ? createHmac("sha256", process.env.AUTH_SECRET ?? "review-identity-fallback").update(ip).digest("hex")
+    : null;
 
   try {
     await enforceRateLimit({ ...LIMITS.review, key: `review-ip:${ip}` });
@@ -139,13 +143,13 @@ export async function submitReviewAction(input: {
     return { ok: false as const, error: "Too many attempts. Please try again later." };
   }
 
-  // One review per customer per product; guests are limited to one per IP.
+  // One review per customer per product; guests are limited to one per hashed IP.
   const existing = session?.customer
     ? await prisma.review.findUnique({
         where: { productId_customerId: { productId: parsed.data.productId, customerId: session.customer.id } },
       })
     : await prisma.review.findFirst({
-        where: { productId: parsed.data.productId, authorName: parsed.data.authorName },
+        where: { productId: parsed.data.productId, guestIdentityHash },
       });
 
   if (existing) {
@@ -157,6 +161,7 @@ export async function submitReviewAction(input: {
       data: {
         productId: parsed.data.productId,
         customerId: session?.customer.id ?? null,
+        guestIdentityHash,
         authorName: parsed.data.authorName,
         rating: parsed.data.rating,
         title: parsed.data.title,
@@ -166,6 +171,9 @@ export async function submitReviewAction(input: {
     });
     return { ok: true as const, message: "Thank you — your review is awaiting moderation." };
   } catch (error) {
+    if (error instanceof Error && "code" in error && (error as { code?: string }).code === "P2002") {
+      return { ok: false as const, error: "You have already reviewed this product." };
+    }
     console.error("[review] submission failed", error instanceof Error ? error.name : "unknown");
     return { ok: false as const, error: "Something went wrong. Please try again." };
   }

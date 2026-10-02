@@ -41,7 +41,7 @@ export async function listAdminProducts(params: {
   const [items, total] = await Promise.all([
     prisma.product.findMany({
       where,
-      orderBy: { updatedAt: "desc" },
+      orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
       skip: (page - 1) * pageSize,
       take: pageSize,
       select: {

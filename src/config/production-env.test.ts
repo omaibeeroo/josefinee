@@ -6,6 +6,7 @@ const validProductionEnv = {
   DATABASE_URL: "postgresql://app-user:test-only-password@db.example.test:5432/nur_store?schema=public",
   AUTH_SECRET: "unit-test-secret-value-that-is-not-used-outside-tests",
   ORDER_OUTBOX_SECRET: "separate-unit-test-outbox-secret-value",
+  RETENTION_JOB_SECRET: "separate-unit-test-retention-secret-value",
   APP_URL: "https://store.example.test",
   TRUSTED_CLIENT_IP_HEADER: "x-real-ip",
   STORAGE_DRIVER: "s3",
@@ -29,6 +30,7 @@ describe("productionEnvironmentIssues", () => {
     expect(issues).toContain("DATABASE_URL must be a valid PostgreSQL connection URL with a host and database name");
     expect(issues).toContain("AUTH_SECRET must be a unique secret of at least 32 characters");
     expect(issues).toContain("ORDER_OUTBOX_SECRET must be a unique secret of at least 32 characters");
+    expect(issues).toContain("RETENTION_JOB_SECRET must be a unique secret of at least 32 characters");
     expect(issues).toContain("APP_URL must be set to the canonical HTTPS storefront origin");
     expect(issues).toContain("TRUSTED_CLIENT_IP_HEADER must name a header overwritten by the trusted reverse proxy");
     expect(issues).toContain("STORAGE_DRIVER must be s3 in production");

@@ -56,6 +56,13 @@ export function productionEnvironmentIssues(env: Environment = process.env): str
   ) {
     issues.push("ORDER_OUTBOX_SECRET must be a unique secret of at least 32 characters");
   }
+  if (
+    !env.RETENTION_JOB_SECRET ||
+    env.RETENTION_JOB_SECRET.length < 32 ||
+    /replace-with|changeme|example/i.test(env.RETENTION_JOB_SECRET)
+  ) {
+    issues.push("RETENTION_JOB_SECRET must be a unique secret of at least 32 characters");
+  }
   if (!env.APP_URL) {
     issues.push("APP_URL must be set to the canonical HTTPS storefront origin");
   } else {
