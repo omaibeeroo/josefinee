@@ -4,6 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getFilterFacets, getStorefrontProducts } from "@/server/catalog";
+import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
 import { CatalogToolbar, DesktopFilters, ProductGrid } from "@/components/storefront/catalog-ui";
 import { EmptyState } from "@/components/ui";
 import { Pagination } from "@/components/pagination";
@@ -40,6 +41,8 @@ export async function generateMetadata({
   return {
     title: collection.seoTitle || collection.name,
     description: collection.seoDescription || collection.description || undefined,
+    // Filter/sort query strings never canonicalize — one URL per collection.
+    alternates: { canonical: `/collections/${collection.slug}` },
   };
 }
 
@@ -56,6 +59,7 @@ export default async function CollectionPage({
   if (!collection) notFound();
 
   const query = parseCatalogParams(queryParams);
+  await trackEvent({ name: ANALYTICS_EVENTS.VIEW_COLLECTION, props: { slug: collection.slug } });
   const [result, facets] = await Promise.all([
     getStorefrontProducts({
       ...query,

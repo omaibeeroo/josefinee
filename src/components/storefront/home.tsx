@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Headset, PackageCheck, Truck } from "lucide-react";
 import { subscribeNewsletterAction } from "@/server/actions/engagement";
-import { Honeypot, Reveal } from "@/components/ui";
+import { Accordion, Honeypot, Reveal } from "@/components/ui";
 import type { HomepageSettings } from "@/lib/settings";
 import type { StoreProductCard } from "@/server/catalog";
 
@@ -291,6 +291,35 @@ export function Editorial({
           </Link>
         </div>
         </Reveal>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------ FAQ teaser */
+
+export function FaqTeaser({ items }: { items: Array<{ question: string; answer: string }> }) {
+  if (items.length === 0) return null;
+  return (
+    <section className="container-luxe max-w-3xl" aria-label="Common questions">
+      <Reveal>
+      <div className="mb-6 text-center">
+        <p className="eyebrow mb-2">Good to know</p>
+        <h2 className="font-display text-3xl font-medium md:text-4xl">Questions, answered</h2>
+      </div>
+      </Reveal>
+      <Reveal delay={100}>
+      <Accordion
+        items={items.map((item) => ({
+          title: item.question,
+          content: <p className="rich-text">{item.answer}</p>,
+        }))}
+      />
+      </Reveal>
+      <div className="mt-6 text-center">
+        <Link href="/faq" className="text-xs font-medium uppercase tracking-[0.24em] underline underline-offset-8">
+          Read all FAQs
+        </Link>
       </div>
     </section>
   );

@@ -162,6 +162,18 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
               ))}
             </DesktopDropdown>
             <Link
+              href="/collections/new-in"
+              className="py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark"
+            >
+              New in
+            </Link>
+            <Link
+              href="/collections/best-sellers"
+              className="py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark"
+            >
+              Best sellers
+            </Link>
+            <Link
               href="/collections/sale"
               className="py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] text-sale"
             >
@@ -311,8 +323,12 @@ function MobileMenu({
             Shop all
             <ChevronRight size={15} className="text-ink-muted" />
           </Link>
+          <Link href="/collections/new-in" onClick={onClose} className={itemClass} style={stagger(1)}>
+            New in
+            <ChevronRight size={15} className="text-ink-muted" />
+          </Link>
           {categories.map((category, index) => (
-            <div key={category.slug} className="animate-menu-item border-b hairline" style={stagger(index + 1)}>
+            <div key={category.slug} className="animate-menu-item border-b hairline" style={stagger(index + 2)}>
               <div className="flex items-center justify-between">
                 <Link
                   href={`/categories/${category.slug}`}
@@ -355,7 +371,7 @@ function MobileMenu({
               )}
             </div>
           ))}
-          <div className="animate-menu-item border-b hairline" style={stagger(categories.length + 1)}>
+          <div className="animate-menu-item border-b hairline" style={stagger(categories.length + 2)}>
             <div className="flex items-center justify-between">
               <Link href="/collections" onClick={onClose} className="flex-1 py-[1.1rem] text-[0.8125rem] font-medium uppercase tracking-[0.18em]">
                 Collections
@@ -385,7 +401,7 @@ function MobileMenu({
               </div>
             )}
           </div>
-          <Link href="/collections/sale" onClick={onClose} className={itemClass} style={stagger(categories.length + 2)}>
+          <Link href="/collections/sale" onClick={onClose} className={itemClass} style={stagger(categories.length + 3)}>
             <span className="text-sale">Sale</span>
             <ChevronRight size={15} className="text-sale/60" />
           </Link>

@@ -38,6 +38,7 @@ export async function trackEvent(input: {
 export const ANALYTICS_EVENTS = {
   PAGE_VIEW: "page_view",
   PRODUCT_VIEW: "product_view",
+  VIEW_COLLECTION: "view_collection",
   SEARCH: "search",
   ADD_TO_CART: "add_to_cart",
   REMOVE_FROM_CART: "remove_from_cart",

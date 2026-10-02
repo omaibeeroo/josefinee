@@ -10,7 +10,7 @@ import { EmptyState, QuantitySelector } from "@/components/ui";
 import { formatDA } from "@/lib/money";
 import { Trash2 } from "lucide-react";
 
-export function CartLines() {
+export function CartLines({ floor }: { floor: { minHome: number } | null }) {
   const { items, subtotal, refresh } = useCart();
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
@@ -108,7 +108,10 @@ export function CartLines() {
             <span className="text-sm text-ink-soft">Subtotal</span>
             <span className="font-medium">{formatDA(subtotal)}</span>
           </div>
-          <p className="mt-2 text-xs text-ink-muted">Delivery calculated at checkout. Cash on delivery.</p>
+          <p className="mt-2 text-xs text-ink-muted">
+            {floor ? `Delivery from ${formatDA(floor.minHome)} · ` : ""}
+            Exact fee calculated at checkout. Cash on delivery.
+          </p>
           <Link href="/checkout" className="btn btn-primary mt-5 w-full">
             Checkout
           </Link>

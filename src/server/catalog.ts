@@ -89,6 +89,7 @@ export function mapProductCard(product: ProductWithCardRelations): StoreProductC
 }
 
 export type CatalogQuery = {
+  ids?: string[];
   categorySlug?: string;
   categorySlugs?: string[];
   collectionSlug?: string;
@@ -128,6 +129,9 @@ export function buildWhere(query: CatalogQuery): Prisma.ProductWhereInput {
     { OR: [{ publishedAt: null }, { publishedAt: { lte: new Date() } }] },
   ];
 
+  if (query.ids?.length) {
+    and.push({ id: { in: query.ids } });
+  }
   const categorySlugs = query.categorySlugs ?? (query.categorySlug ? [query.categorySlug] : []);
   if (categorySlugs.length > 0) {
     and.push({ category: { slug: { in: categorySlugs }, isActive: true } });
@@ -290,6 +294,93 @@ export async function getProductBySlug(slug: string): Promise<StoreProduct | nul
       optionValueIds: variant.optionValues.map((entry) => entry.optionValueId),
     })),
   };
+}
+
+export type QuickAddData = {
+  id: string;
+  name: string;
+  price: number;
+  compareAtPrice: number | null;
+  image: { url: string; alt: string } | null;
+  options: Array<{
+    name: string;
+    values: Array<{ id: string; value: string; hexColor: string | null }>;
+  }>;
+  variants: Array<{
+    id: string;
+    price: number;
+    compareAtPrice: number | null;
+    available: number;
+    optionLabel: string | null;
+    optionValueIds: string[];
+  }>;
+};
+
+/** Minimal option/variant payload for the quick-add modal (fetched on open). */
+export async function getQuickAddData(productId: string): Promise<QuickAddData | null> {
+  try {
+    const product = await prisma.product.findFirst({
+      where: { id: productId, status: "ACTIVE" },
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        compareAtPrice: true,
+        images: {
+          orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }],
+          take: 1,
+          select: { url: true, alt: true },
+        },
+        options: {
+          orderBy: { position: "asc" },
+          select: {
+            name: true,
+            values: {
+              orderBy: { position: "asc" },
+              select: { id: true, value: true, hexColor: true },
+            },
+          },
+        },
+        variants: {
+          where: { isActive: true },
+          orderBy: { position: "asc" },
+          select: {
+            id: true,
+            price: true,
+            compareAtPrice: true,
+            optionLabel: true,
+            inventory: true,
+            optionValues: { select: { optionValueId: true } },
+          },
+        },
+      },
+    });
+    if (!product) return null;
+    return {
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      compareAtPrice: product.compareAtPrice,
+      image: product.images[0]
+        ? { url: product.images[0].url, alt: product.images[0].alt ?? product.name }
+        : null,
+      options: product.options,
+      variants: product.variants.map((variant) => ({
+        id: variant.id,
+        price: variant.price ?? product.price,
+        compareAtPrice: variant.compareAtPrice ?? product.compareAtPrice,
+        available: Math.max(
+          0,
+          (variant.inventory?.stock ?? 0) - (variant.inventory?.reserved ?? 0),
+        ),
+        optionLabel: variant.optionLabel,
+        optionValueIds: variant.optionValues.map((entry) => entry.optionValueId),
+      })),
+    };
+  } catch (error) {
+    console.error("[catalog] quick-add failed", error);
+    return null;
+  }
 }
 
 export async function getRelatedProducts(productId: string, categoryId: string | null, take = 8) {

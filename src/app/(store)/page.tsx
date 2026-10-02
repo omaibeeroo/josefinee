@@ -9,7 +9,7 @@ import {
 import { prisma } from "@/lib/prisma";
 import {
   CategoryGrid,
-  Editorial,
+  FaqTeaser,
   FeaturedCollection,
   Hero,
   NewsletterSection,
@@ -39,9 +39,10 @@ async function getHomeData() {
   let categoryTiles: Array<{ name: string; slug: string; image: string | null; count: number }> = [];
   let featuredCollection: { name: string; slug: string; description: string | null; image: string | null } | null = null;
   let deliveredCount = 0;
+  let faqs: Array<{ question: string; answer: string }> = [];
 
   try {
-    const [categories, collection, delivered] = await Promise.all([
+    const [categories, collection, delivered, faqItems] = await Promise.all([
       prisma.category.findMany({
         where: { isActive: true, parentId: null },
         orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -58,6 +59,12 @@ async function getHomeData() {
         select: { name: true, slug: true, description: true, image: true },
       }),
       prisma.order.count({ where: { status: "DELIVERED" } }),
+      prisma.faqItem.findMany({
+        where: { isPublished: true },
+        orderBy: [{ sortOrder: "asc" }],
+        select: { question: true, answer: true },
+        take: 5,
+      }),
     ]);
     categoryTiles = categories.map((category) => ({
       name: category.name,
@@ -69,15 +76,16 @@ async function getHomeData() {
     deliveredCount = settings.homepage.socialProofOverride > 0
       ? settings.homepage.socialProofOverride
       : delivered;
+    faqs = faqItems;
   } catch (error) {
     console.error("[home] data failed", error);
   }
 
-  return { settings, featured, newIn, bestSellers, categoryTiles, featuredCollection, deliveredCount };
+  return { settings, featured, newIn, bestSellers, categoryTiles, featuredCollection, deliveredCount, faqs };
 }
 
 export default async function HomePage() {
-  const { settings, featured, newIn, bestSellers, categoryTiles, featuredCollection, deliveredCount } =
+  const { settings, featured, newIn, bestSellers, categoryTiles, featuredCollection, deliveredCount, faqs } =
     await getHomeData();
 
   return (
@@ -99,41 +107,15 @@ export default async function HomePage() {
       )}
 
       <div className="section-space pt-0">
-        <CategoryGrid categories={categoryTiles} />
-      </div>
-
-      <div className="section-space pt-0">
         <ProductCarousel
-          eyebrow="The edit"
+          eyebrow="Handpicked"
           title="Choose your jewellery"
           products={featured}
           viewAllHref="/shop"
         />
       </div>
 
-      <div className="section-space bg-cream/50">
-        <Editorial
-          image={featuredCollection?.image ?? null}
-          eyebrow="The NÛR edit"
-          title="Fresh pieces, made for repeat wear"
-          text="Small-batch arrivals in considered tones and textures — pieces that stay in rotation long after the first wear."
-          href="/collections/new-in"
-          cta="Shop new in"
-        />
-      </div>
-
-      <div className="section-space">
-        <ProductCarousel
-          eyebrow="Just landed"
-          title="New in"
-          products={newIn}
-          viewAllHref="/collections/new-in"
-        />
-      </div>
-
-      {settings.homepage.showSocialProof && <SocialProof deliveredCount={deliveredCount} />}
-
-      <div className="section-space">
+      <div className="section-space pt-0">
         <ProductCarousel
           eyebrow="Loved by customers"
           title="Our best sellers"
@@ -143,7 +125,26 @@ export default async function HomePage() {
       </div>
 
       <div className="section-space pt-0">
+        <ProductCarousel
+          eyebrow="Just landed"
+          title="New in"
+          products={newIn}
+          viewAllHref="/collections/new-in"
+        />
+      </div>
+
+      <div className="section-space pt-0">
+        <CategoryGrid categories={categoryTiles} />
+      </div>
+
+      {settings.homepage.showSocialProof && <SocialProof deliveredCount={deliveredCount} />}
+
+      <div className="section-space">
         <Pillars items={settings.homepage.pillars} />
+      </div>
+
+      <div className="section-space pt-0">
+        <FaqTeaser items={faqs} />
       </div>
 
       <div className="section-space pt-0">

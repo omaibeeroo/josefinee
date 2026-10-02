@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getFilterFacets, getStorefrontProducts } from "@/server/catalog";
+import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
 import { CatalogToolbar, DesktopFilters, ProductGrid } from "@/components/storefront/catalog-ui";
 import { EmptyState } from "@/components/ui";
 import { Pagination } from "@/components/pagination";
@@ -42,6 +43,7 @@ export async function generateMetadata({
   return {
     title: category.seoTitle || category.name,
     description: category.seoDescription || category.description || undefined,
+    alternates: { canonical: `/categories/${category.slug}` },
   };
 }
 
@@ -58,6 +60,7 @@ export default async function CategoryPage({
   if (!category) notFound();
 
   const query = parseCatalogParams(queryParams);
+  await trackEvent({ name: ANALYTICS_EVENTS.VIEW_COLLECTION, props: { slug: `category:${category.slug}` } });
   const [result, facets] = await Promise.all([
     getStorefrontProducts({
       ...query,

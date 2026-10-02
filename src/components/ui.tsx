@@ -175,6 +175,39 @@ export function QuantitySelector({
   );
 }
 
+/* ------------------------------------------------------------ Focus trap */
+
+function useFocusTrap(active: boolean, containerRef: React.RefObject<HTMLElement | null>) {
+  useEffect(() => {
+    if (!active) return;
+    const container = containerRef.current;
+    if (!container) return;
+    const selector =
+      'a[href], button:not([disabled]), textarea, input:not([type="hidden"]), select, [tabindex]:not([tabindex="-1"])';
+    const focusables = () =>
+      Array.from(container.querySelectorAll<HTMLElement>(selector)).filter(
+        (element) => element.offsetParent !== null,
+      );
+    focusables()[0]?.focus();
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key !== "Tab") return;
+      const items = focusables();
+      if (items.length === 0) return;
+      const first = items[0]!;
+      const last = items[items.length - 1]!;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [active, containerRef]);
+}
+
 /* -------------------------------------------------------------------- Modal */
 
 export function Modal({
@@ -203,12 +236,15 @@ export function Modal({
     };
   }, [open, onClose]);
 
+  const panelRef = useRef<HTMLDivElement>(null);
+  useFocusTrap(open, panelRef);
+
   if (!open) return null;
   const headingId = labelledBy ?? `modal-${title.replace(/\s+/g, "-").toLowerCase()}`;
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-labelledby={headingId}>
       <button aria-label="Close" onClick={onClose} className="absolute inset-0 bg-ink/50" />
-      <div className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto bg-ivory p-6 shadow-card animate-slide-up sm:p-8">
+      <div ref={panelRef} className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto bg-ivory p-6 shadow-card animate-slide-up sm:p-8">
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 id={headingId} className="font-display text-2xl">
             {title}
@@ -251,12 +287,15 @@ export function Drawer({
     };
   }, [open, onClose]);
 
+  const panelRef = useRef<HTMLElement>(null);
+  useFocusTrap(open, panelRef);
+
   if (!open) return null;
   const headingId = labelledBy ?? `drawer-${title.replace(/\s+/g, "-").toLowerCase()}`;
   return (
     <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-labelledby={headingId}>
       <button aria-label="Close" onClick={onClose} className="absolute inset-0 bg-ink/50 animate-fade-in" />
-      <aside className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-ivory shadow-drawer animate-slide-in-right">
+      <aside ref={panelRef} className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-ivory shadow-drawer animate-slide-in-right">
         <div className="flex items-center justify-between border-b hairline px-5 py-4">
           <h2 id={headingId} className="text-xs font-medium uppercase tracking-[0.2em]">
             {title}

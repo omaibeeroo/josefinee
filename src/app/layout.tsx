@@ -24,6 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
   const name = settings.general.name || BRAND_CONFIG.name;
   const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+  const ogImage = settings.seo.defaultOgImage || undefined;
   return {
     metadataBase: new URL(appUrl),
     title: {
@@ -35,6 +36,13 @@ export async function generateMetadata(): Promise<Metadata> {
       siteName: name,
       type: "website",
       locale: "fr_DZ",
+      images: ogImage ? [{ url: ogImage }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${name} — ${settings.seo.titleSuffix}`,
+      description: settings.seo.defaultDescription,
+      images: ogImage ? [ogImage] : undefined,
     },
     icons: settings.general.faviconUrl ? { icon: settings.general.faviconUrl } : undefined,
   };
