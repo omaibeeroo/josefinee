@@ -50,7 +50,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
   const ops: Section = { title: "Operations", items: [] };
   if (has("delivery:read")) ops.items.push({ href: "/admin/delivery", label: "Delivery" });
   if (has("messages:read")) ops.items.push({ href: "/admin/messages", label: "Messages" });
-  if (has("dashboard:read")) ops.items.push({ href: "/admin/newsletter", label: "Newsletter" });
+  if (has("newsletter:read")) ops.items.push({ href: "/admin/newsletter", label: "Newsletter" });
   if (has("content:write")) ops.items.push({ href: "/admin/content", label: "Content" });
   if (ops.items.length > 0) sections.push(ops);
 

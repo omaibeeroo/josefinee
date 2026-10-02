@@ -123,6 +123,7 @@ export const ROLE_PERMISSIONS: Record<RoleNameValue, PermissionCode[]> = {
     P.REVIEWS_MODERATE,
     P.MESSAGES_READ,
     P.MESSAGES_WRITE,
+    P.NEWSLETTER_READ,
     P.CONTENT_WRITE,
   ],
   ANALYST: [
