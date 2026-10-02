@@ -88,6 +88,8 @@ In production, configure a scheduler to `POST /api/internal/order-outbox` at lea
 
 Also schedule `POST /api/internal/retention` daily with `Authorization: Bearer $RETENTION_JOB_SECRET`. It expires technical sessions, abandons stale carts, removes expired idempotency/rate-limit records, and applies the configured analytics/notification/outbox retention windows. Orders and audit logs are never deleted by this job.
 
+After a staging or production deployment, run `BASE_URL=https://your-store.example RETENTION_JOB_SECRET=... npm run smoke:production` to verify storefront readiness, a known product route, missing-product `404` behavior, and retention endpoint authorization.
+
 ## Architecture
 
 ```

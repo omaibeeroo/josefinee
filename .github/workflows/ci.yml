@@ -53,11 +53,4 @@ jobs:
           npm run start -- -p 3000 > /tmp/nur-store.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
-          for attempt in $(seq 1 30); do
-            curl --fail --silent http://localhost:3000/ >/dev/null && break
-            sleep 1
-          done
-          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:3000/products/luna-pearl-necklace)" = "200"
-          test "$(curl --silent --output /dev/null --write-out '%{http_code}' http://localhost:3000/products/ci-missing-product-slug)" = "404"
-          test "$(curl --silent --output /dev/null --write-out '%{http_code}' --request POST http://localhost:3000/api/internal/retention)" = "401"
-          test "$(curl --silent --output /dev/null --write-out '%{http_code}' --request POST --header "Authorization: Bearer $RETENTION_JOB_SECRET" http://localhost:3000/api/internal/retention)" = "200"
+          BASE_URL=http://localhost:3000 npm run smoke:production
