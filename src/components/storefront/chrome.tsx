@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect, useState, type FormEvent, type ReactNode } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { ChevronDown, ChevronRight, Heart, Menu, PackageSearch, Search, ShoppingBag, User, X } from "lucide-react";
 import { useCart } from "@/components/storefront/cart-ui";
 import { subscribeNewsletterAction } from "@/server/actions/engagement";
-import { Honeypot } from "@/components/ui";
+import { Honeypot, useDialogFocus } from "@/components/ui";
 import { openCookieSettings } from "@/components/cookie-consent";
 import { cn } from "@/lib/utils";
 
@@ -32,7 +32,7 @@ export type ChromeProps = {
 
 function BrandMark({ brandName, logoUrl, onClick }: { brandName: string; logoUrl: string; onClick?: () => void }) {
   return (
-    <Link href="/" onClick={onClick} className="inline-flex items-center gap-2" aria-label={`${brandName} home`}>
+    <Link href="/" onClick={onClick} className="inline-flex items-center gap-2" aria-label={`Accueil ${brandName}`}>
       {logoUrl ? (
         <Image src={logoUrl} alt={brandName} width={120} height={36} className="h-9 w-auto" />
       ) : (
@@ -117,9 +117,9 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         {/* Desktop */}
         <div className="container-luxe hidden items-center justify-between gap-6 lg:grid lg:grid-cols-[1fr_auto_1fr]">
           <BrandMark brandName={brandName} logoUrl={props.logoUrl} />
-          <nav aria-label="Primary" className="flex items-center gap-7">
+          <nav aria-label="Navigation principale" className="flex items-center gap-7">
             <Link className="py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark" href="/shop">
-              Shop all
+              Boutique
             </Link>
             {jewelry && (
               <DesktopDropdown label={jewelry.name} href={`/categories/${jewelry.slug}`}>
@@ -128,7 +128,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
                     {child.name}
                   </DropdownLink>
                 ))}
-                <DropdownLink href="/collections/jewelry">View all jewelry</DropdownLink>
+                <DropdownLink href="/collections/jewelry">Tous les bijoux</DropdownLink>
               </DesktopDropdown>
             )}
             {bags && (
@@ -165,35 +165,35 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
               href="/collections/new-in"
               className="py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark"
             >
-              New in
+              Nouveautés
             </Link>
             <Link
               href="/collections/best-sellers"
               className="py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark"
             >
-              Best sellers
+              Meilleures ventes
             </Link>
             <Link
               href="/collections/sale"
               className="py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] text-sale"
             >
-              Sale
+              Promotions
             </Link>
           </nav>
           <div className="flex items-center justify-end gap-1">
-            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className="p-2.5 hover:text-gold-dark">
+            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Rechercher" className="p-2.5 hover:text-gold-dark">
               <Search size={19} strokeWidth={1.75} />
             </button>
-            <Link href="/account" aria-label="Account" className="p-2.5 hover:text-gold-dark">
+            <Link href="/account" aria-label="Mon compte" className="p-2.5 hover:text-gold-dark">
               <User size={19} strokeWidth={1.75} />
             </Link>
-            <Link href="/wishlist" aria-label="Wishlist" className="p-2.5 hover:text-gold-dark">
+            <Link href="/wishlist" aria-label="Liste d’envies" className="p-2.5 hover:text-gold-dark">
               <Heart size={19} strokeWidth={1.75} />
             </Link>
             <button
               type="button"
               onClick={() => setOpen(true)}
-              aria-label={`Open bag, ${count} items`}
+              aria-label={`Ouvrir le panier, ${count} article${count > 1 ? "s" : ""}`}
               className="relative p-2.5 hover:text-gold-dark"
             >
               <ShoppingBag size={19} strokeWidth={1.75} />
@@ -211,7 +211,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
-            aria-label="Open menu"
+            aria-label="Ouvrir le menu"
             className="p-3"
           >
             <Menu size={22} strokeWidth={1.75} />
@@ -220,13 +220,13 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             <BrandMark brandName={brandName} logoUrl={props.logoUrl} />
           </div>
           <div className="flex items-center">
-            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Search" className="p-2.5">
+            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Rechercher" className="p-2.5">
               <Search size={20} strokeWidth={1.75} />
             </button>
             <button
               type="button"
               onClick={() => setOpen(true)}
-              aria-label={`Open bag, ${count} items`}
+              aria-label={`Ouvrir le panier, ${count} article${count > 1 ? "s" : ""}`}
               className="relative p-2.5"
             >
               <ShoppingBag size={20} strokeWidth={1.75} />
@@ -278,19 +278,8 @@ function MobileMenu({
 }) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const [expandedCollections, setExpandedCollections] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [open, onClose]);
+  const panelRef = useRef<HTMLElement>(null);
+  useDialogFocus(open, panelRef, onClose);
 
   if (!open) return null;
 
@@ -300,31 +289,31 @@ function MobileMenu({
 
   return (
     <div className="fixed inset-0 z-[60] lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-      <button aria-label="Close menu" onClick={onClose} className="absolute inset-0 animate-fade-in bg-ink/55 backdrop-blur-[2px]" />
-      <aside className="absolute left-0 top-0 flex h-full w-[86%] max-w-sm animate-slide-in-left flex-col bg-ivory shadow-drawer">
+      <button aria-label="Fermer le menu" onClick={onClose} className="absolute inset-0 animate-fade-in bg-ink/55 backdrop-blur-[2px]" />
+      <aside ref={panelRef} tabIndex={-1} className="absolute left-0 top-0 flex h-full w-[86%] max-w-sm animate-slide-in-left flex-col bg-ivory shadow-drawer">
         <div className="flex items-center justify-between border-b hairline px-6 pb-5 pt-6">
           <div>
             <p className="font-display text-[1.35rem] leading-none tracking-[0.3em]">{brandName}</p>
             <p className="mt-1.5 text-[0.625rem] uppercase tracking-[0.28em] text-ink-muted">
-              Cash on delivery · 58 wilayas
+              Paiement à la livraison · 58 wilayas
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close menu"
+            aria-label="Fermer le menu"
             className="flex h-10 w-10 items-center justify-center rounded-full border hairline"
           >
             <X size={18} />
           </button>
         </div>
-        <nav aria-label="Mobile" className="flex-1 overflow-y-auto px-6 pb-4">
+        <nav aria-label="Navigation mobile" className="flex-1 overflow-y-auto px-6 pb-4">
           <Link href="/shop" onClick={onClose} className={itemClass} style={stagger(0)}>
-            Shop all
+            Boutique
             <ChevronRight size={15} className="text-ink-muted" />
           </Link>
           <Link href="/collections/new-in" onClick={onClose} className={itemClass} style={stagger(1)}>
-            New in
+            Nouveautés
             <ChevronRight size={15} className="text-ink-muted" />
           </Link>
           {categories.map((category, index) => (
@@ -341,7 +330,7 @@ function MobileMenu({
                   <button
                     type="button"
                     aria-expanded={expanded === category.slug}
-                    aria-label={`Expand ${category.name}`}
+                    aria-label={`Afficher ${category.name}`}
                     onClick={() => setExpanded(expanded === category.slug ? null : category.slug)}
                     className="flex h-10 w-10 items-center justify-center"
                   >
@@ -379,7 +368,7 @@ function MobileMenu({
               <button
                 type="button"
                 aria-expanded={expandedCollections}
-                aria-label="Expand collections"
+                aria-label="Afficher les collections"
                 onClick={() => setExpandedCollections(!expandedCollections)}
                 className="flex h-10 w-10 items-center justify-center"
               >
@@ -402,15 +391,15 @@ function MobileMenu({
             )}
           </div>
           <Link href="/collections/sale" onClick={onClose} className={itemClass} style={stagger(categories.length + 3)}>
-            <span className="text-sale">Sale</span>
+            <span className="text-sale">Promotions</span>
             <ChevronRight size={15} className="text-sale/60" />
           </Link>
 
-          <p className="mb-1 mt-6 text-[0.625rem] uppercase tracking-[0.28em] text-ink-muted">Your space</p>
+          <p className="mb-1 mt-6 text-[0.625rem] uppercase tracking-[0.28em] text-ink-muted">Mon espace</p>
           {[
-            { href: "/account", label: "Account", Icon: User },
-            { href: "/wishlist", label: "Wishlist", Icon: Heart },
-            { href: "/track", label: "Track order", Icon: PackageSearch },
+            { href: "/account", label: "Mon compte", Icon: User },
+            { href: "/wishlist", label: "Liste d’envies", Icon: Heart },
+            { href: "/track", label: "Suivre ma commande", Icon: PackageSearch },
           ].map((entry) => (
             <Link
               key={entry.href}
@@ -424,7 +413,7 @@ function MobileMenu({
           ))}
         </nav>
         <div className="border-t hairline bg-cream/60 px-6 py-4">
-          <p className="text-[0.625rem] uppercase tracking-[0.24em] text-ink-muted">Need help?</p>
+          <p className="text-[0.625rem] uppercase tracking-[0.24em] text-ink-muted">Besoin d’aide ?</p>
           <p className="mt-1 text-sm font-medium">{supportPhone}</p>
         </div>
       </aside>
@@ -445,19 +434,9 @@ function SearchOverlay({
 }) {
   const router = useRouter();
   const [query, setQuery] = useState("");
-
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [open, onClose]);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  useDialogFocus(open, panelRef, onClose, searchInputRef);
 
   if (!open) return null;
 
@@ -470,35 +449,35 @@ function SearchOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Search">
-      <button aria-label="Close search" onClick={onClose} className="absolute inset-0 bg-ink/50" />
-      <div className="absolute inset-x-0 top-0 bg-ivory px-4 py-6 shadow-card animate-slide-up md:px-8 md:py-10">
+    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Recherche">
+      <button aria-label="Fermer la recherche" onClick={onClose} className="absolute inset-0 bg-ink/50" />
+      <div ref={panelRef} tabIndex={-1} className="absolute inset-x-0 top-0 bg-ivory px-4 py-6 shadow-card animate-slide-up md:px-8 md:py-10">
         <div className="mx-auto max-w-2xl">
           <div className="mb-5 flex items-center justify-between">
-            <p className="eyebrow">Search the store</p>
-            <button type="button" onClick={onClose} aria-label="Close search" className="p-1">
+            <p className="eyebrow">Rechercher dans la boutique</p>
+            <button type="button" onClick={onClose} aria-label="Fermer la recherche" className="p-1">
               <X size={22} />
             </button>
           </div>
           <form onSubmit={submit} role="search">
             <div className="flex gap-2">
               <input
-                autoFocus
+                ref={searchInputRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Necklace, tote, gold hoops…"
-                aria-label="Search products"
+                placeholder="Collier, sac, boucles d’oreilles…"
+                aria-label="Rechercher des produits"
                 className="field"
               />
               <button type="submit" className="btn btn-primary shrink-0">
                 <Search size={16} />
-                <span className="hidden sm:inline">Search</span>
+                <span className="hidden sm:inline">Rechercher</span>
               </button>
             </div>
           </form>
           {popularSearches.length > 0 && (
             <div className="mt-5">
-              <p className="mb-2 text-xs uppercase tracking-[0.16em] text-ink-muted">Popular</p>
+              <p className="mb-2 text-xs uppercase tracking-[0.16em] text-ink-muted">Recherches populaires</p>
               <div className="flex flex-wrap gap-2">
                 {popularSearches.map((term) => (
                   <Link
@@ -530,17 +509,22 @@ function NewsletterMini() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     setPending(true);
-    const result = await subscribeNewsletterAction(email, "footer", website);
-    setState({ ok: result.ok, message: result.ok ? result.message : result.error });
-    if (result.ok) setEmail("");
-    setPending(false);
+    try {
+      const result = await subscribeNewsletterAction(email, "footer", website);
+      setState({ ok: result.ok, message: result.ok ? result.message : result.error });
+      if (result.ok) setEmail("");
+    } catch {
+      setState({ ok: false, message: "Une erreur est survenue. Veuillez réessayer." });
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
     <form onSubmit={submit} className="relative mt-4">
       <Honeypot value={website} onChange={setWebsite} />
       <label htmlFor="footer-newsletter" className="field-label !text-ivory/70">
-        Newsletter
+          Newsletter
       </label>
       <div className="flex gap-2">
         <input
@@ -549,11 +533,11 @@ function NewsletterMini() {
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          placeholder="Your email"
+          placeholder="Votre adresse e-mail"
           className="field !border-white/20 !bg-transparent !text-ivory placeholder:text-ivory/40"
         />
         <button type="submit" disabled={pending} className="btn btn-gold shrink-0">
-          Join
+          S’inscrire
         </button>
       </div>
       {state && (
@@ -595,10 +579,10 @@ function SiteFooter(props: ChromeProps) {
             )}
           </div>
         </div>
-        <nav aria-label="Shop">
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">Shop</p>
+        <nav aria-label="Boutique">
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">Boutique</p>
           <ul className="space-y-2.5 text-[0.9375rem]">
-            <li><Link href="/shop" className="text-ivory/85 hover:text-ivory">Shop all</Link></li>
+            <li><Link href="/shop" className="text-ivory/85 hover:text-ivory">Voir la boutique</Link></li>
             {props.categories.slice(0, 4).map((category) => (
               <li key={category.slug}>
                 <Link href={`/categories/${category.slug}`} className="text-ivory/85 hover:text-ivory">
@@ -606,21 +590,21 @@ function SiteFooter(props: ChromeProps) {
                 </Link>
               </li>
             ))}
-            <li><Link href="/collections/new-in" className="text-ivory/85 hover:text-ivory">New in</Link></li>
+            <li><Link href="/collections/new-in" className="text-ivory/85 hover:text-ivory">Nouveautés</Link></li>
           </ul>
         </nav>
-        <nav aria-label="Customer care">
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">Customer care</p>
+        <nav aria-label="Service client">
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">Service client</p>
           <ul className="space-y-2.5 text-[0.9375rem]">
             <li><Link href="/contact" className="text-ivory/85 hover:text-ivory">Contact</Link></li>
-            <li><Link href="/pages/shipping" className="text-ivory/85 hover:text-ivory">Delivery</Link></li>
-            <li><Link href="/track" className="text-ivory/85 hover:text-ivory">Track order</Link></li>
-            <li><Link href="/faq" className="text-ivory/85 hover:text-ivory">FAQ</Link></li>
-            <li><Link href="/pages/returns" className="text-ivory/85 hover:text-ivory">Returns</Link></li>
+            <li><Link href="/pages/shipping" className="text-ivory/85 hover:text-ivory">Livraison</Link></li>
+            <li><Link href="/track" className="text-ivory/85 hover:text-ivory">Suivre une commande</Link></li>
+            <li><Link href="/faq" className="text-ivory/85 hover:text-ivory">Questions fréquentes</Link></li>
+            <li><Link href="/pages/returns" className="text-ivory/85 hover:text-ivory">Retours</Link></li>
           </ul>
         </nav>
         <div>
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">Stay in touch</p>
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">Restons en contact</p>
           <p className="text-sm text-ivory/70">
             {props.supportEmail}
             <br />
@@ -631,11 +615,11 @@ function SiteFooter(props: ChromeProps) {
       </div>
       <div className="border-t border-white/10">
         <div className="container-luxe flex flex-col items-center justify-between gap-3 py-5 text-xs text-ivory/60 md:flex-row">
-          <p>© {year} {props.brandName}. All rights reserved.</p>
-          <p className="uppercase tracking-[0.16em]">Cash on delivery · 58 wilayas</p>
+          <p>© {year} {props.brandName}. Tous droits réservés.</p>
+          <p className="uppercase tracking-[0.16em]">Paiement à la livraison · 58 wilayas</p>
           <div className="flex gap-4">
-            <Link href="/pages/privacy-policy" className="hover:text-ivory">Privacy</Link>
-            <Link href="/pages/terms" className="hover:text-ivory">Terms</Link>
+            <Link href="/pages/privacy-policy" className="hover:text-ivory">Confidentialité</Link>
+            <Link href="/pages/terms" className="hover:text-ivory">Conditions</Link>
             <button type="button" onClick={openCookieSettings} className="hover:text-ivory">
               Cookies
             </button>

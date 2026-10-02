@@ -1,4 +1,4 @@
-import { requirePermission } from "@/lib/auth/rbac";
+import { can, requirePermission } from "@/lib/auth/rbac";
 import { listSubscribersAdmin } from "@/server/actions/admin-ops";
 import { PageHeader } from "@/components/admin/ui";
 import { SubscriberActions } from "./subscriber-actions";
@@ -6,7 +6,7 @@ import { SubscriberActions } from "./subscriber-actions";
 export const dynamic = "force-dynamic";
 
 export default async function AdminNewsletterPage() {
-  await requirePermission("dashboard:read");
+  const user = await requirePermission("newsletter:read");
   const subscribers = await listSubscribersAdmin();
   const active = subscribers.filter((entry) => !entry.unsubscribedAt);
 
@@ -15,11 +15,11 @@ export default async function AdminNewsletterPage() {
       <PageHeader
         title="Newsletter"
         description={`${active.length} active subscribers. Consent timestamps are stored for every signup.`}
-        action={
+        action={can(user, "newsletter:export") ? (
           <a href="/api/admin/newsletter/export" className="btn btn-ghost min-h-10 px-4 text-xs">
             Export CSV
           </a>
-        }
+        ) : undefined}
       />
       <div className="overflow-x-auto border hairline bg-white">
         <table className="w-full min-w-[640px] text-left text-sm">

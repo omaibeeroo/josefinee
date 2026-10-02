@@ -83,10 +83,11 @@ export function RecentlyViewed({ productId }: { productId: string }) {
   }, [productId]);
 
   if (!products) return null;
-  return <ProductCarousel title="Recently viewed" products={products} />;
+  return <ProductCarousel title="Consultés récemment" products={products} />;
 }
 import { discountPercent, formatPrice } from "@/lib/money";
 import { pixelEvent } from "@/components/pixels";
+import { isOptionValueAvailable, resolveVariantSelection } from "@/lib/variant-selection";
 import { cn } from "@/lib/utils";
 import type { QuickAddData, StoreProduct, StoreProductCard } from "@/server/catalog";
 import { getProductsByIdsAction, getQuickAddAction } from "@/server/actions/cart";
@@ -143,7 +144,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
     const result = await add(product.defaultVariantId, 1);
     setPending(false);
     if (result.ok) {
-      pixelEvent("AddToCart", { content_ids: [product.id], value: product.price / 100, currency: "DZD" });
+      pixelEvent("AddToCart", { content_ids: [product.id], value: product.price, currency: "DZD" });
     }
   }
 
@@ -162,12 +163,12 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
         </Link>
         <div className="absolute left-2 top-2 flex flex-col items-start gap-1.5">
           {soldOut ? (
-            <Badge tone="muted">Sold out</Badge>
+            <Badge tone="muted">Épuisé</Badge>
           ) : (
             <>
               {percent && <Badge tone="sale">-{percent}%</Badge>}
-              {product.isNew && <Badge tone="gold">New</Badge>}
-              {product.isBestseller && !product.isNew && <Badge tone="ink">Bestseller</Badge>}
+              {product.isNew && <Badge tone="gold">Nouveau</Badge>}
+              {product.isBestseller && !product.isNew && <Badge tone="ink">Meilleure vente</Badge>}
             </>
           )}
         </div>
@@ -177,16 +178,16 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
             type="button"
             disabled={pending}
             onClick={() => (product.hasVariants ? setQuickOpen(true) : void quickAdd())}
-            className="absolute inset-x-0 bottom-0 hidden translate-y-2 bg-ink/90 py-3 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-ivory opacity-0 transition-all duration-200 hover:bg-ink group-hover:translate-y-0 group-hover:opacity-100 md:block"
+            className="absolute inset-x-0 bottom-0 hidden translate-y-2 bg-ink/90 py-3 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-ivory opacity-0 transition-all duration-200 hover:bg-ink group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 md:block"
           >
-            {pending ? "Adding…" : product.hasVariants ? "Choose options" : "Quick add"}
+            {pending ? "Ajout…" : product.hasVariants ? "Choisir les options" : "Ajouter au panier"}
           </button>
         )}
         {!soldOut && (
           <button
             type="button"
             disabled={pending}
-            aria-label={product.hasVariants ? `Choose options for ${product.name}` : `Add ${product.name} to bag`}
+            aria-label={product.hasVariants ? `Choisir les options pour ${product.name}` : `Ajouter ${product.name} au panier`}
             onClick={() => (product.hasVariants ? setQuickOpen(true) : void quickAdd())}
             className="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-ivory shadow-card md:hidden"
           >
@@ -264,6 +265,10 @@ export function QuickAddModal({
   const activeVariant = data ? (matched ?? (data.options.length === 0 ? data.variants[0] ?? null : null)) : null;
   const maxQuantity = Math.min(10, activeVariant?.available ?? 0);
 
+  useEffect(() => {
+    setQuantity((current) => Math.min(current, Math.max(1, maxQuantity)));
+  }, [maxQuantity]);
+
   async function submit() {
     const variantId = product.hasVariants ? activeVariant?.id : product.defaultVariantId;
     if (!variantId) {
@@ -311,22 +316,21 @@ export function QuickAddModal({
               <p className="mb-1.5 text-xs font-medium uppercase tracking-[0.14em] text-ink-soft">
                 {option.name}
               </p>
-              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={option.name}>
+              <div className="flex flex-wrap gap-2" role="group" aria-label={option.name}>
                 {option.values.map((value) => {
                   const isActive = selected[option.name] === value.id;
-                  const available = data.variants.some(
-                    (variant) => variant.optionValueIds.includes(value.id) && variant.available > 0,
-                  );
+                  const available = isOptionValueAvailable(data.variants, value.id);
                   return (
                     <button
                       key={value.id}
                       type="button"
-                      role="radio"
-                      aria-checked={isActive}
+                      aria-pressed={isActive}
                       disabled={!available}
                       onClick={() => {
                         setError(null);
-                        setSelected((previous) => ({ ...previous, [option.name]: value.id }));
+                        setSelected((previous) =>
+                          resolveVariantSelection(data.options, data.variants, previous, option.name, value.id).selection,
+                        );
                       }}
                       className={cn(
                         "flex min-h-10 items-center gap-2 border px-4 text-sm transition-colors",
@@ -412,13 +416,13 @@ export function ProductCarousel({
         <div className="flex items-center gap-2">
           {viewAllHref && (
             <Link href={viewAllHref} className="mr-2 hidden text-xs font-medium uppercase tracking-[0.18em] underline underline-offset-4 sm:inline">
-              View all
+              Voir tout
             </Link>
           )}
-          <button type="button" aria-label="Scroll left" onClick={() => scrollBy(-1)} className="flex h-10 w-10 items-center justify-center border hairline bg-white">
+          <button type="button" aria-label="Faire défiler vers la gauche" onClick={() => scrollBy(-1)} className="flex h-10 w-10 items-center justify-center border hairline bg-white">
             <ChevronLeft size={18} />
           </button>
-          <button type="button" aria-label="Scroll right" onClick={() => scrollBy(1)} className="flex h-10 w-10 items-center justify-center border hairline bg-white">
+          <button type="button" aria-label="Faire défiler vers la droite" onClick={() => scrollBy(1)} className="flex h-10 w-10 items-center justify-center border hairline bg-white">
             <ChevronRight size={18} />
           </button>
         </div>
@@ -546,24 +550,28 @@ export function VariantPicker({
                 </span>
               )}
             </p>
-            <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={option.name}>
+            <div className="flex flex-wrap gap-2" role="group" aria-label={option.name}>
               {option.values.map((value) => {
-                const available = product.variants.some(
-                  (variant) => variant.optionValueIds.includes(value.id) && variant.available > 0,
-                );
+              const available = isOptionValueAvailable(product.variants, value.id);
                 const isActive = activeValueId === value.id;
                 return (
                   <button
                     key={value.id}
                     type="button"
-                    role="radio"
-                    aria-checked={isActive}
+                    aria-pressed={isActive}
                     disabled={!available}
                     onClick={() => {
-                      const match = product.variants.find((variant) =>
-                        variant.optionValueIds.includes(value.id),
+                      const result = resolveVariantSelection(
+                        product.options,
+                        product.variants,
+                        selected ? Object.fromEntries(product.options.map((entry) => [
+                          entry.name,
+                          selected.optionValueIds.find((id) => entry.values.some((candidate) => candidate.id === id)) ?? "",
+                        ])) : {},
+                        option.name,
+                        value.id,
                       );
-                      if (match) onChange(match.id);
+                      if (result.variantId) onChange(result.variantId);
                     }}
                     className={cn(
                       "flex min-h-10 items-center gap-2 border px-4 text-sm transition-colors",
@@ -605,6 +613,10 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
   );
   const maxQuantity = Math.min(10, selected?.available ?? 0);
 
+  useEffect(() => {
+    setQuantity((current) => Math.min(current, Math.max(1, maxQuantity)));
+  }, [maxQuantity]);
+
   async function submit(buyNow: boolean) {
     if (!selected || selected.available <= 0) {
       setError("This option is out of stock.");
@@ -620,7 +632,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
     }
     pixelEvent("AddToCart", {
       content_ids: [product.id],
-      value: ((selected.price * quantity) / 100) * 1,
+      value: selected.price * quantity,
       currency: "DZD",
     });
     if (buyNow) {
@@ -631,6 +643,13 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
   return (
     <div className="mt-6">
       <VariantPicker product={product} selectedVariantId={variantId} onChange={setVariantId} />
+      <div className="mt-4">
+        <Price
+          price={selected?.price ?? product.price}
+          compareAt={selected?.compareAtPrice ?? product.compareAtPrice}
+          large
+        />
+      </div>
       {selected?.available !== undefined && selected.available <= 3 && selected.available > 0 && (
         <p className="mt-3 text-sm font-medium text-sale" role="status">
           Only {selected.available} left in stock

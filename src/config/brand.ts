@@ -59,12 +59,27 @@ export const isAnalyticsConfigured = (): boolean =>
       process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID,
   );
 
-/**
- * Public application URL. Falls back to Vercel's automatic URL on preview
- * and production deployments, so shareable links work with zero config.
- */
+/** Public canonical application origin; production must configure APP_URL explicitly. */
 export function appUrl(): string {
-  if (process.env.APP_URL) return process.env.APP_URL;
+  if (process.env.APP_URL) {
+    const url = new URL(process.env.APP_URL);
+    if (url.pathname !== "/" || url.search || url.hash || url.username || url.password) {
+      throw new Error("APP_URL must be an origin without credentials, path, query, or fragment.");
+    }
+    if (
+      process.env.NODE_ENV === "production" &&
+      (url.protocol !== "https:" || ["localhost", "127.0.0.1", "::1"].includes(url.hostname))
+    ) {
+      throw new Error("APP_URL must be a public HTTPS origin in production.");
+    }
+    if (url.protocol !== "https:" && url.protocol !== "http:") {
+      throw new Error("APP_URL must use HTTP or HTTPS.");
+    }
+    return url.origin;
+  }
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("APP_URL must be set to the canonical HTTPS origin in production.");
+  }
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
   return "http://localhost:3000";
 }

@@ -684,7 +684,7 @@ model Order {
   promotionId       String?
   promotionDiscount Int     @default(0)
 
-  riskLevel  RiskLevel @default(LOW)
+  riskLevel RiskLevel @default(LOW)
   riskScore Int       @default(0)
   riskFlags String[]  @default([])
 
@@ -702,15 +702,16 @@ model Order {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  customer     Customer?             @relation(fields: [customerId], references: [id], onDelete: SetNull)
-  wilaya       Wilaya                @relation(fields: [wilayaId], references: [id])
-  commune      Commune               @relation(fields: [communeId], references: [id])
-  coupon       Coupon?               @relation(fields: [couponId], references: [id], onDelete: SetNull)
-  promotion    Promotion?            @relation(fields: [promotionId], references: [id], onDelete: SetNull)
+  customer      Customer?            @relation(fields: [customerId], references: [id], onDelete: SetNull)
+  wilaya        Wilaya               @relation(fields: [wilayaId], references: [id])
+  commune       Commune              @relation(fields: [communeId], references: [id])
+  coupon        Coupon?              @relation(fields: [couponId], references: [id], onDelete: SetNull)
+  promotion     Promotion?           @relation(fields: [promotionId], references: [id], onDelete: SetNull)
   redemption    CouponRedemption?
   items         OrderItem[]
   statusHistory OrderStatusHistory[]
   notifications Notification[]
+  outboxEvents  OrderOutboxEvent[]
   reviews       Review[]
 
   @@index([status])
@@ -971,6 +972,25 @@ model Notification {
   @@index([createdAt])
 }
 
+model OrderOutboxEvent {
+  id          String    @id @default(cuid())
+  orderId     String
+  kind        String
+  status      String    @default("PENDING")
+  attempts    Int       @default(0)
+  availableAt DateTime  @default(now())
+  lockedAt    DateTime?
+  lastError   String?
+  createdAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@unique([orderId, kind])
+  @@index([status, availableAt])
+  @@index([lockedAt])
+}
+
 model AuditLog {
   id          String         @id @default(cuid())
   actorUserId String?
@@ -1085,4 +1105,13 @@ model AnalyticsEvent {
 
   @@index([name])
   @@index([createdAt])
+}
+
+model RateLimitBucket {
+  key       String   @id
+  count     Int      @default(0)
+  resetAt   DateTime
+  updatedAt DateTime @updatedAt
+
+  @@index([resetAt])
 }

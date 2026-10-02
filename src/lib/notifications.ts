@@ -160,13 +160,33 @@ type DispatchOptions = {
   channels?: NotificationChannel[];
 };
 
-async function dispatch(options: DispatchOptions): Promise<void> {
+export type NotificationDispatchResult = {
+  sent: NotificationChannel[];
+  failed: NotificationChannel[];
+};
+
+async function dispatch(options: DispatchOptions): Promise<NotificationDispatchResult> {
   const enabled: NotificationChannel[] = options.channels ?? ["EMAIL"];
+  const result: NotificationDispatchResult = { sent: [], failed: [] };
   for (const provider of providers) {
     if (!enabled.includes(provider.channel)) continue;
     const recipient =
       provider.channel === "EMAIL" ? (options.email ?? "") : options.phone.replace(/^0/, "+213");
     if (!recipient) continue;
+
+    const alreadySent = await prisma.notification.findFirst({
+      where: {
+        orderId: options.orderId,
+        channel: provider.channel,
+        template: options.template,
+        status: "SENT",
+      },
+      select: { id: true },
+    });
+    if (alreadySent) {
+      result.sent.push(provider.channel);
+      continue;
+    }
 
     try {
       await provider.send({ to: recipient, subject: options.subject, body: options.body });
@@ -181,7 +201,9 @@ async function dispatch(options: DispatchOptions): Promise<void> {
           sentAt: new Date(),
         },
       });
+      result.sent.push(provider.channel);
     } catch (error) {
+      result.failed.push(provider.channel);
       // Notification failures must never roll back an order.
       await prisma.notification
         .create({
@@ -196,9 +218,15 @@ async function dispatch(options: DispatchOptions): Promise<void> {
           },
         })
         .catch(() => undefined);
-      console.error("[notify] delivery failed", options.template, error);
+      console.error(
+        "[notify] delivery failed",
+        options.template,
+        provider.channel,
+        error instanceof Error ? error.name : "unknown",
+      );
     }
   }
+  return result;
 }
 
 export async function sendOrderReceived(data: {
@@ -208,9 +236,9 @@ export async function sendOrderReceived(data: {
   orderNumber: string;
   firstName: string;
   total: number;
-}): Promise<void> {
+}): Promise<NotificationDispatchResult> {
   const tpl = templates({ orderNumber: data.orderNumber, firstName: data.firstName, total: data.total });
-  await dispatch({
+  return dispatch({
     orderId: data.orderId,
     phone: data.phone,
     email: data.email,

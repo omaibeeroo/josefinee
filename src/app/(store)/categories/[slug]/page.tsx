@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { cache } from "react";
+import { after } from "next/server";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
@@ -11,9 +13,8 @@ import { parseCatalogParams, withPage } from "../../catalog-helpers";
 
 export const dynamic = "force-dynamic";
 
-async function getCategory(slug: string) {
-  return prisma.category
-    .findFirst({
+const getCategory = cache((slug: string) =>
+  prisma.category.findFirst({
       where: { slug, isActive: true },
       select: {
         id: true,
@@ -28,9 +29,8 @@ async function getCategory(slug: string) {
           select: { name: true, slug: true },
         },
       },
-    })
-    .catch(() => null);
-}
+    }),
+);
 
 export async function generateMetadata({
   params,
@@ -39,11 +39,15 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const category = await getCategory(slug);
-  if (!category) return { title: "Category" };
+  if (!category) notFound();
+  const title = category.seoTitle || category.name;
+  const description = category.seoDescription || category.description || undefined;
   return {
-    title: category.seoTitle || category.name,
-    description: category.seoDescription || category.description || undefined,
+    title,
+    description,
     alternates: { canonical: `/categories/${category.slug}` },
+    openGraph: { title, description, type: "website" },
+    twitter: { card: "summary", title, description },
   };
 }
 
@@ -60,7 +64,7 @@ export default async function CategoryPage({
   if (!category) notFound();
 
   const query = parseCatalogParams(queryParams);
-  await trackEvent({ name: ANALYTICS_EVENTS.VIEW_COLLECTION, props: { slug: `category:${category.slug}` } });
+  after(() => trackEvent({ name: ANALYTICS_EVENTS.VIEW_COLLECTION, props: { slug: `category:${category.slug}` } }));
   const [result, facets] = await Promise.all([
     getStorefrontProducts({
       ...query,
@@ -72,7 +76,7 @@ export default async function CategoryPage({
   return (
     <div className="container-luxe py-10 md:py-14">
       <div className="mb-6 text-center">
-        <p className="eyebrow mb-2">Category</p>
+        <p className="eyebrow mb-2">Catégorie</p>
         <h1 className="font-display text-4xl font-medium md:text-5xl">{category.name}</h1>
         {category.description && (
           <p className="mx-auto mt-3 max-w-xl text-ink-soft">{category.description}</p>
@@ -100,11 +104,11 @@ export default async function CategoryPage({
         <div className="min-w-0 flex-1">
           {result.items.length === 0 ? (
             <EmptyState
-              title="Nothing here yet"
-              message="New pieces are on their way — check back soon."
+              title="Aucun article pour le moment"
+              message="De nouvelles pièces arrivent bientôt. Revenez nous voir."
               action={
                 <Link href="/shop" className="btn btn-outline">
-                  Shop all
+                  Voir la boutique
                 </Link>
               }
             />

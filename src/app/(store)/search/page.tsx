@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { after } from "next/server";
 import Link from "next/link";
 import { getFilterFacets, getStorefrontProducts } from "@/server/catalog";
 import { recordSearch } from "@/server/navigation";
@@ -27,8 +28,12 @@ export default async function SearchPage({
   const term = (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? "";
 
   if (term) {
-    await recordSearch(term);
-    await trackEvent({ name: ANALYTICS_EVENTS.SEARCH, props: { term: term.slice(0, 80) } });
+    after(async () => {
+      await Promise.allSettled([
+        recordSearch(term),
+        trackEvent({ name: ANALYTICS_EVENTS.SEARCH, props: { term: term.slice(0, 80) } }),
+      ]);
+    });
   }
 
   const query = parseCatalogParams(params);

@@ -133,18 +133,15 @@ describe("server-side checkout pricing", () => {
     ).rejects.toMatchObject({ code: "COUPON_NOT_STARTED" });
   });
 
-  it("falls back to active home delivery when the requested method is unavailable", async () => {
-    deliveryFindFirst
-      .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ price: 700, etaMinDays: 2, etaMaxDays: 4 });
+  it("rejects an unavailable requested delivery method instead of charging a fallback", async () => {
+    deliveryFindFirst.mockResolvedValueOnce(null);
 
-    await expect(resolveDeliveryRate("w1", "STOPDESK" as never)).resolves.toEqual({
-      price: 700,
-      etaMinDays: 2,
-      etaMaxDays: 4,
+    await expect(resolveDeliveryRate("w1", "STOPDESK" as never)).rejects.toMatchObject({
+      code: "DELIVERY_UNAVAILABLE",
     });
-    expect(deliveryFindFirst).toHaveBeenNthCalledWith(2, {
-      where: { wilayaId: "w1", method: "HOME", isActive: true },
+    expect(deliveryFindFirst).toHaveBeenCalledTimes(1);
+    expect(deliveryFindFirst).toHaveBeenCalledWith({
+      where: { wilayaId: "w1", method: "STOPDESK", isActive: true },
     });
   });
 

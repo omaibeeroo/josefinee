@@ -2,6 +2,8 @@
 
 import { useEffect } from "react";
 import Script from "next/script";
+import { usePathname } from "next/navigation";
+import { serializeForInlineJsonScript, validatedPixelId } from "@/lib/script-data";
 
 export function consentGiven(): boolean {
   // Default-off: marketing pixels load only after an explicit opt-in
@@ -38,41 +40,51 @@ export function Pixels({
   gaId,
   metaPixelId,
   tiktokPixelId,
+  nonce,
 }: {
   gaId: string;
   metaPixelId: string;
   tiktokPixelId: string;
+  nonce?: string;
 }) {
+  const pathname = usePathname();
+  const tokenizedRoute = pathname.startsWith("/order/") || pathname.startsWith("/newsletter/unsubscribe/");
+  const safeGaId = validatedPixelId("ga", gaId);
+  const safeMetaPixelId = validatedPixelId("meta", metaPixelId);
+  const safeTiktokPixelId = validatedPixelId("tiktok", tiktokPixelId);
+
   useEffect(() => {
     const onConsent = () => window.location.reload();
     window.addEventListener("nur-consent", onConsent);
     return () => window.removeEventListener("nur-consent", onConsent);
   }, []);
 
-  if (!consentGiven()) return null;
+  if (!consentGiven() || tokenizedRoute) return null;
 
   return (
     <>
-      {gaId && (
+      {safeGaId && (
         <>
           <Script
-            src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+            src={`https://www.googletagmanager.com/gtag/js?id=${encodeURIComponent(safeGaId)}`}
             strategy="afterInteractive"
+            nonce={nonce}
           />
-          <Script id="ga-init" strategy="afterInteractive">
-            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)};window.gtag=gtag;gtag('js',new Date());gtag('config','${gaId}');`}
+          <Script id="ga-init" strategy="afterInteractive" nonce={nonce}>
+            {`window.dataLayer=window.dataLayer||[];function gtag(){dataLayer.push(arguments)};window.gtag=gtag;gtag('js',new Date());gtag('config',${serializeForInlineJsonScript(safeGaId)});`}
           </Script>
         </>
       )}
-      {metaPixelId && (
-        <Script id="meta-pixel" strategy="afterInteractive">
-          {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init','${metaPixelId}');fbq('track','PageView');`}
+      {safeMetaPixelId && (
+        <Script id="meta-pixel" strategy="afterInteractive" nonce={nonce}>
+          {`!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');fbq('init',${serializeForInlineJsonScript(safeMetaPixelId)});fbq('track','PageView');`}
         </Script>
       )}
-      {tiktokPixelId && (
+      {safeTiktokPixelId && (
         <Script
-          src={`https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=${tiktokPixelId}&lib=ttq`}
+          src={`https://analytics.tiktok.com/i18n/pixel/events.js?sdkid=${encodeURIComponent(safeTiktokPixelId)}&lib=ttq`}
           strategy="afterInteractive"
+          nonce={nonce}
         />
       )}
     </>
@@ -81,9 +93,11 @@ export function Pixels({
 
 /** Declarative conversion event, e.g. `<PixelEvent name="ViewContent" params={...} />`. */
 export function PixelEvent({ name, params }: { name: string; params?: Record<string, unknown> }) {
+  const pathname = usePathname();
   useEffect(() => {
+    if (pathname.startsWith("/order/") || pathname.startsWith("/newsletter/unsubscribe/")) return;
     pixelEvent(name, params);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [name]);
+  }, [name, pathname]);
   return null;
 }

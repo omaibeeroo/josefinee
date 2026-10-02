@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { extractClientIp } from "@/lib/request-ip";
 import { generateToken, hashToken } from "./tokens";
 
 export const ADMIN_COOKIE = "nur_admin_session";
@@ -23,9 +24,8 @@ function cookieOptions(expiresAt: Date) {
 
 async function requestContext(): Promise<{ ip: string | null; userAgent: string | null }> {
   const headerList = await headers();
-  const forwarded = headerList.get("x-forwarded-for");
   return {
-    ip: forwarded ? (forwarded.split(",")[0]?.trim() ?? null) : headerList.get("x-real-ip"),
+    ip: extractClientIp(headerList),
     userAgent: headerList.get("user-agent"),
   };
 }

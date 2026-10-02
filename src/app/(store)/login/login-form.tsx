@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { loginAction, mergeWishlistAction } from "@/server/actions/engagement";
 import { clearGuestWishlist, readGuestWishlist } from "@/components/storefront/product";
 import { Button, Field, Input } from "@/components/ui";
+import { safeInternalPath } from "@/lib/safe-navigation";
 
 export function LoginForm() {
   const router = useRouter();
@@ -30,7 +31,7 @@ export function LoginForm() {
       await mergeWishlistAction(guestIds).catch(() => undefined);
       clearGuestWishlist();
     }
-    router.push(searchParams.get("next") ?? "/account");
+    router.push(safeInternalPath(searchParams.get("next")));
     router.refresh();
   }
 

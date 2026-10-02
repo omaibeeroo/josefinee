@@ -27,6 +27,10 @@ import { z } from "zod";
 const MAX_FAILED = 5;
 const LOCKOUT_MS = 15 * 60_000;
 
+function redirectIfPasswordChangeRequired(mustChangePassword: boolean): void {
+  if (mustChangePassword) redirect("/admin/first-login");
+}
+
 export async function adminLoginAction(input: { email: string; password: string; totp?: string }) {
   const parsed = adminLoginSchema.safeParse(input);
   if (!parsed.success) {
@@ -175,6 +179,7 @@ export async function adminFirstLoginAction(input: { current: string; next: stri
 export async function adminChangePasswordAction(input: { current: string; next: string }) {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
+  redirectIfPasswordChangeRequired(session.user.mustChangePassword);
   const parsed = firstLoginSchema.safeParse(input);
   if (!parsed.success || !isStrongPassword(parsed.data.next)) {
     return {
@@ -205,6 +210,7 @@ const stepUpSchema = z.object({ currentPassword: z.string().min(1).max(200) });
 export async function start2faSetupAction(input: { currentPassword: string }) {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
+  redirectIfPasswordChangeRequired(session.user.mustChangePassword);
   const parsed = stepUpSchema.safeParse(input);
   if (
     !parsed.success ||
@@ -236,6 +242,7 @@ export async function start2faSetupAction(input: { currentPassword: string }) {
 export async function confirm2faSetupAction(token: string) {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
+  redirectIfPasswordChangeRequired(session.user.mustChangePassword);
   if (!session.user.twoFactorSecret) return { ok: false as const, error: "Start setup first." };
 
   let secret: string;
@@ -265,6 +272,7 @@ export async function confirm2faSetupAction(token: string) {
 export async function disable2faAction(input: { currentPassword: string; token: string }) {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
+  redirectIfPasswordChangeRequired(session.user.mustChangePassword);
   const parsed = z
     .object({ currentPassword: z.string().min(1).max(200), token: z.string().regex(/^\d{6}$/) })
     .safeParse(input);

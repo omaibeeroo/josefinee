@@ -190,14 +190,14 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
 /* ------------------------------------------------------------ Trust bar */
 
 const TRUST_ITEMS = [
-  { icon: Truck, title: "Express delivery", text: "To all 58 wilayas" },
-  { icon: PackageCheck, title: "Cash on delivery", text: "Pay when you receive" },
-  { icon: Headset, title: "Careful packaging", text: "Checked & wrapped by hand" },
+  { icon: Truck, title: "Livraison rapide", text: "Dans les 58 wilayas" },
+  { icon: PackageCheck, title: "Paiement à la livraison", text: "Réglez à la réception" },
+  { icon: Headset, title: "Emballage soigné", text: "Vérifié et préparé à la main" },
 ];
 
 export function TrustBar() {
   return (
-    <section className="border-y hairline bg-white" aria-label="Why shop with us">
+    <section className="border-y hairline bg-white" aria-label="Pourquoi choisir notre boutique">
       <div className="container-luxe grid grid-cols-1 gap-6 py-8 sm:grid-cols-3">
         {TRUST_ITEMS.map((item) => (
           <div key={item.title} className="flex items-center gap-4">
@@ -218,12 +218,12 @@ export function TrustBar() {
 export function SocialProof({ deliveredCount }: { deliveredCount: number }) {
   if (deliveredCount <= 0) return null;
   return (
-    <section className="bg-ink text-ivory" aria-label="Customer trust">
+    <section className="bg-ink text-ivory" aria-label="La confiance de nos clientes">
       <div className="container-luxe flex flex-col items-center gap-2 py-10 text-center md:py-14">
         <p className="font-display text-5xl font-medium md:text-6xl">
           +{deliveredCount.toLocaleString("fr-FR")}
         </p>
-        <p className="text-xs uppercase tracking-[0.24em] text-ivory/70">Happy customers served</p>
+        <p className="text-xs uppercase tracking-[0.24em] text-ivory/70">Commandes livrées avec succès</p>
       </div>
     </section>
   );

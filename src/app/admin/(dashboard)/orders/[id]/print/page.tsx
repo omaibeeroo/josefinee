@@ -4,6 +4,7 @@ import { getAdminOrder } from "@/server/actions/admin-orders";
 import { getSettings } from "@/lib/settings";
 import { formatDA } from "@/lib/money";
 import { formatPhoneDisplay } from "@/lib/phone";
+import { headers } from "next/headers";
 
 export const dynamic = "force-dynamic";
 
@@ -12,7 +13,8 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const order = await getAdminOrder(id).catch(() => null);
   if (!order) notFound();
-  const settings = await getSettings();
+  const [settings, requestHeaders] = await Promise.all([getSettings(), headers()]);
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
 
   return (
     <div className="mx-auto max-w-2xl bg-white p-8 text-sm text-black">
@@ -83,7 +85,7 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
 
       <p className="mt-8 border-t border-black/20 pt-2 text-xs">☐ Packed &nbsp;&nbsp; ☐ Checked &nbsp;&nbsp; Signature: __________</p>
 
-      <script dangerouslySetInnerHTML={{ __html: "window.addEventListener('load', () => window.print());" }} />
+      <script nonce={nonce} dangerouslySetInnerHTML={{ __html: "window.addEventListener('load', () => window.print());" }} />
     </div>
   );
 }

@@ -63,10 +63,52 @@ const cardInclude = Prisma.validator<Prisma.ProductInclude>()({
 
 type ProductWithCardRelations = Prisma.ProductGetPayload<{ include: typeof cardInclude }>;
 
-export function mapProductCard(product: ProductWithCardRelations): StoreProductCard {
+/** Null publication dates are legacy immediate-publication records. */
+export function storefrontProductWhere(now = new Date()): Prisma.ProductWhereInput {
+  return {
+    status: "ACTIVE",
+    OR: [{ publishedAt: null }, { publishedAt: { lte: now } }],
+  };
+}
+
+type CardAvailability = { productId: string; inStock: boolean; defaultVariantId: string | null };
+
+async function getCardAvailability(productIds: string[]): Promise<Map<string, CardAvailability>> {
+  if (productIds.length === 0) return new Map();
+  const rows = await prisma.$queryRaw<CardAvailability[]>(Prisma.sql`
+    SELECT v."productId" AS "productId",
+      BOOL_OR(COALESCE(i."stock", 0) > COALESCE(i."reserved", 0)) AS "inStock",
+      (ARRAY_AGG(v."id" ORDER BY
+        (COALESCE(i."stock", 0) > COALESCE(i."reserved", 0)) DESC,
+        v."position" ASC, v."id" ASC))[1] AS "defaultVariantId"
+    FROM "ProductVariant" v
+    LEFT JOIN "Inventory" i ON i."variantId" = v."id"
+    WHERE v."isActive" = TRUE AND v."productId" IN (${Prisma.join(productIds)})
+    GROUP BY v."productId"
+  `);
+  return new Map(rows.map((row) => [row.productId, row]));
+}
+
+async function getAvailableProductIds(): Promise<string[]> {
+  const rows = await prisma.$queryRaw<Array<{ productId: string }>>(Prisma.sql`
+    SELECT DISTINCT v."productId" AS "productId"
+    FROM "ProductVariant" v
+    INNER JOIN "Inventory" i ON i."variantId" = v."id"
+    WHERE v."isActive" = TRUE AND i."stock" > i."reserved"
+  `);
+  return rows.map((row) => row.productId);
+}
+
+async function mapProductCards(products: ProductWithCardRelations[]): Promise<StoreProductCard[]> {
+  const availability = await getCardAvailability(products.map((product) => product.id));
+  return products.map((product) => mapProductCard(product, availability.get(product.id)));
+}
+
+export function mapProductCard(
+  product: ProductWithCardRelations,
+  availability?: CardAvailability,
+): StoreProductCard {
   const variant = product.variants[0];
-  const stock = variant?.inventory?.stock ?? 0;
-  const reserved = variant?.inventory?.reserved ?? 0;
   return {
     id: product.id,
     slug: product.slug,
@@ -80,9 +122,9 @@ export function mapProductCard(product: ProductWithCardRelations): StoreProductC
     ratingCount: product.ratingCount,
     soldCount: product.soldCount,
     images: product.images.map((image) => ({ url: image.url, alt: image.alt ?? product.name })),
-    inStock: stock - reserved > 0,
+    inStock: availability?.inStock ?? false,
     hasVariants: product.options.length > 0,
-    defaultVariantId: variant?.id ?? null,
+    defaultVariantId: availability?.defaultVariantId ?? variant?.id ?? null,
     options: [],
     category: product.category,
   };
@@ -110,24 +152,21 @@ export type CatalogQuery = {
 function orderByFor(sort: ProductSort | undefined): Prisma.ProductOrderByWithRelationInput[] {
   switch (sort) {
     case "newest":
-      return [{ publishedAt: "desc" }, { createdAt: "desc" }];
+      return [{ publishedAt: "desc" }, { createdAt: "desc" }, { id: "asc" }];
     case "price-asc":
-      return [{ price: "asc" }];
+      return [{ price: "asc" }, { id: "asc" }];
     case "price-desc":
-      return [{ price: "desc" }];
+      return [{ price: "desc" }, { id: "asc" }];
     case "best-selling":
-      return [{ soldCount: "desc" }];
+      return [{ soldCount: "desc" }, { id: "asc" }];
     case "featured":
     default:
-      return [{ isFeatured: "desc" }, { sortOrder: "asc" }, { createdAt: "desc" }];
+      return [{ isFeatured: "desc" }, { sortOrder: "asc" }, { createdAt: "desc" }, { id: "asc" }];
   }
 }
 
 export function buildWhere(query: CatalogQuery): Prisma.ProductWhereInput {
-  const and: Prisma.ProductWhereInput[] = [
-    { status: "ACTIVE" },
-    { OR: [{ publishedAt: null }, { publishedAt: { lte: new Date() } }] },
-  ];
+  const and: Prisma.ProductWhereInput[] = [storefrontProductWhere()];
 
   if (query.ids?.length) {
     and.push({ id: { in: query.ids } });
@@ -155,9 +194,6 @@ export function buildWhere(query: CatalogQuery): Prisma.ProductWhereInput {
   if (query.sizes?.length) and.push({ size: { in: query.sizes } });
   if (query.type === "NEW_IN") and.push({ isNew: true });
   if (query.type === "BEST_SELLERS") and.push({ isBestseller: true });
-  if (query.inStock) {
-    and.push({ variants: { some: { isActive: true, inventory: { stock: { gt: 0 } } } } });
-  }
   if (query.search) {
     const term = query.search.trim();
     if (term.length > 0) {
@@ -184,9 +220,12 @@ export async function getStorefrontProducts(query: CatalogQuery): Promise<{
 }> {
   const page = Math.max(1, query.page ?? 1);
   const pageSize = Math.min(48, query.pageSize ?? PAGE_SIZE);
-  const where = buildWhere(query);
+  let where = buildWhere(query);
 
   try {
+    if (query.inStock) {
+      where = { AND: [where, { id: { in: await getAvailableProductIds() } }] };
+    }
     const [rows, total] = await Promise.all([
       prisma.product.findMany({
         where,
@@ -199,7 +238,7 @@ export async function getStorefrontProducts(query: CatalogQuery): Promise<{
     ]);
 
     return {
-      items: rows.map(mapProductCard),
+      items: await mapProductCards(rows),
       total,
       page,
       pageSize,
@@ -212,9 +251,8 @@ export async function getStorefrontProducts(query: CatalogQuery): Promise<{
 }
 
 export async function getProductBySlug(slug: string): Promise<StoreProduct | null> {
-  const product = await prisma.product
-    .findFirst({
-      where: { slug, status: "ACTIVE" },
+  const product = await prisma.product.findFirst({
+      where: { slug, ...storefrontProductWhere() },
       include: {
         images: { orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }] },
         category: { select: { name: true, slug: true } },
@@ -229,10 +267,6 @@ export async function getProductBySlug(slug: string): Promise<StoreProduct | nul
         },
         collectionLinks: { include: { collection: { select: { name: true, slug: true } } } },
       },
-    })
-    .catch((error) => {
-      console.error("[catalog] product lookup failed", error);
-      return null;
     });
 
   if (!product) return null;
@@ -253,7 +287,10 @@ export async function getProductBySlug(slug: string): Promise<StoreProduct | nul
     images: product.images.map((image) => ({ url: image.url, alt: image.alt ?? product.name })),
     inStock: variantList.some((variant) => (variant.inventory?.stock ?? 0) - (variant.inventory?.reserved ?? 0) > 0),
     hasVariants: product.options.length > 0,
-    defaultVariantId: variantList[0]?.id ?? null,
+    defaultVariantId:
+      variantList.find(
+        (entry) => (entry.inventory?.stock ?? 0) - (entry.inventory?.reserved ?? 0) > 0,
+      )?.id ?? variantList[0]?.id ?? null,
     options: product.options.map((option) => ({
       name: option.name,
       values: option.values.map((value) => ({
@@ -320,7 +357,7 @@ export type QuickAddData = {
 export async function getQuickAddData(productId: string): Promise<QuickAddData | null> {
   try {
     const product = await prisma.product.findFirst({
-      where: { id: productId, status: "ACTIVE" },
+      where: { id: productId, ...storefrontProductWhere() },
       select: {
         id: true,
         name: true,
@@ -386,26 +423,26 @@ export async function getQuickAddData(productId: string): Promise<QuickAddData |
 export async function getRelatedProducts(productId: string, categoryId: string | null, take = 8) {
   const rows = await prisma.product.findMany({
     where: {
-      status: "ACTIVE",
+      ...storefrontProductWhere(),
       id: { not: productId },
       ...(categoryId ? { categoryId } : {}),
     },
     include: cardInclude,
-    orderBy: [{ isBestseller: "desc" }, { createdAt: "desc" }],
+    orderBy: [{ isBestseller: "desc" }, { createdAt: "desc" }, { id: "asc" }],
     take,
   });
-  return rows.map(mapProductCard);
+  return mapProductCards(rows);
 }
 
 export async function getFeaturedProducts(take = 10) {
   try {
     const rows = await prisma.product.findMany({
-      where: { status: "ACTIVE", OR: [{ isFeatured: true }, { isBestseller: true }] },
+      where: { AND: [storefrontProductWhere(), { OR: [{ isFeatured: true }, { isBestseller: true }] }] },
       include: cardInclude,
-      orderBy: [{ isFeatured: "desc" }, { sortOrder: "asc" }, { createdAt: "desc" }],
+      orderBy: [{ isFeatured: "desc" }, { sortOrder: "asc" }, { createdAt: "desc" }, { id: "asc" }],
       take,
     });
-    return rows.map(mapProductCard);
+    return await mapProductCards(rows);
   } catch (error) {
     console.error("[catalog] featured failed", error);
     return [];
@@ -415,12 +452,12 @@ export async function getFeaturedProducts(take = 10) {
 export async function getNewInProducts(take = 10) {
   try {
     const rows = await prisma.product.findMany({
-      where: { status: "ACTIVE", isNew: true },
+      where: { AND: [storefrontProductWhere(), { isNew: true }] },
       include: cardInclude,
-      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
+      orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }, { id: "asc" }],
       take,
     });
-    return rows.map(mapProductCard);
+    return await mapProductCards(rows);
   } catch (error) {
     console.error("[catalog] new-in failed", error);
     return [];
@@ -430,12 +467,12 @@ export async function getNewInProducts(take = 10) {
 export async function getBestSellers(take = 10) {
   try {
     const rows = await prisma.product.findMany({
-      where: { status: "ACTIVE" },
+      where: storefrontProductWhere(),
       include: cardInclude,
-      orderBy: [{ soldCount: "desc" }, { isBestseller: "desc" }],
+      orderBy: [{ soldCount: "desc" }, { isBestseller: "desc" }, { id: "asc" }],
       take,
     });
-    return rows.map(mapProductCard);
+    return await mapProductCards(rows);
   } catch (error) {
     console.error("[catalog] best sellers failed", error);
     return [];
@@ -446,17 +483,17 @@ export async function getFilterFacets() {
   try {
     const [colors, sizes, priceRange] = await Promise.all([
       prisma.product.findMany({
-        where: { status: "ACTIVE", color: { not: null } },
+        where: { AND: [storefrontProductWhere(), { color: { not: null } }] },
         select: { color: true },
         distinct: ["color"],
       }),
       prisma.product.findMany({
-        where: { status: "ACTIVE", size: { not: null } },
+        where: { AND: [storefrontProductWhere(), { size: { not: null } }] },
         select: { size: true },
         distinct: ["size"],
       }),
       prisma.product.aggregate({
-        where: { status: "ACTIVE" },
+        where: storefrontProductWhere(),
         _min: { price: true },
         _max: { price: true },
       }),

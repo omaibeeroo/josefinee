@@ -26,31 +26,20 @@ export type DeliveryOption = {
 };
 
 export async function getActiveWilayas(): Promise<WilayaOption[]> {
-  try {
-    const rows = await prisma.wilaya.findMany({
-      where: { isActive: true },
-      orderBy: { code: "asc" },
-      select: { id: true, code: true, name: true, nameAr: true, stopdeskAvailable: true },
-    });
-    return rows;
-  } catch (error) {
-    console.error("[delivery] wilayas failed", error);
-    return [];
-  }
+  return prisma.wilaya.findMany({
+    where: { isActive: true },
+    orderBy: { code: "asc" },
+    select: { id: true, code: true, name: true, nameAr: true, stopdeskAvailable: true },
+  });
 }
 
 export async function getCommunes(wilayaId: string): Promise<CommuneOption[]> {
   if (!wilayaId) return [];
-  try {
-    return await prisma.commune.findMany({
-      where: { wilayaId, isActive: true },
-      orderBy: { name: "asc" },
-      select: { id: true, name: true },
-    });
-  } catch (error) {
-    console.error("[delivery] communes failed", error);
-    return [];
-  }
+  return prisma.commune.findMany({
+    where: { wilayaId, isActive: true },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true },
+  });
 }
 
 export async function getDeliveryOptions(wilayaId: string): Promise<DeliveryOption[]> {
@@ -92,22 +81,11 @@ export async function resolveDeliveryRate(
     where: { wilayaId, method, isActive: true },
   });
   if (!rate) {
-    // Fall back to home delivery for this wilaya if the chosen method is unavailable.
-    const fallback = await db.deliveryRate.findFirst({
-      where: { wilayaId, method: "HOME", isActive: true },
-    });
-    if (!fallback) {
-      throw new AppError(
-        "DELIVERY_UNAVAILABLE",
-        "Delivery is not available for the selected region. Please contact support.",
-        409,
-      );
-    }
-    return {
-      price: fallback.price,
-      etaMinDays: fallback.etaMinDays,
-      etaMaxDays: fallback.etaMaxDays,
-    };
+    throw new AppError(
+      "DELIVERY_UNAVAILABLE",
+      "The selected delivery method is no longer available for this region. Please choose another option.",
+      409,
+    );
   }
   return { price: rate.price, etaMinDays: rate.etaMinDays, etaMaxDays: rate.etaMaxDays };
 }

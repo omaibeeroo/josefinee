@@ -15,8 +15,9 @@ import { cn } from "@/lib/utils";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Order confirmed",
+  title: "Commande confirmée",
   robots: { index: false, follow: false },
+  referrer: "no-referrer",
 };
 
 export default async function ConfirmationPage({
@@ -38,7 +39,7 @@ export default async function ConfirmationPage({
   const whatsappNumber = settings.social.whatsapp.replace(/\D/g, "");
   const whatsappHref = whatsappNumber
     ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-        `Hello, I have a question about my order ${order.orderNumber}.`,
+        `Bonjour, j’ai une question au sujet de ma commande ${order.orderNumber}.`,
       )}`
     : null;
 
@@ -157,19 +158,19 @@ export default async function ConfirmationPage({
 
       <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
         <Link href="/shop" className="btn btn-primary">
-          Continue shopping
+          Continuer mes achats
         </Link>
         {whatsappHref ? (
           <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="btn btn-gold">
-            WhatsApp us about this order
+            Nous contacter sur WhatsApp à propos de cette commande
           </a>
         ) : (
           <Link href="/contact" className="btn btn-ghost">
-            Contact support
+          Contacter le service client
           </Link>
         )}
         <Link href={`/order/${order.orderNumber}?t=${encodeURIComponent(t ?? "")}`} className="btn btn-ghost">
-          Refresh status
+          Actualiser le statut
         </Link>
       </div>
     </div>
