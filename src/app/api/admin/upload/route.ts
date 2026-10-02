@@ -4,6 +4,7 @@ import { assertSameOrigin } from "@/lib/csrf";
 import { enforceRateLimit, LIMITS } from "@/lib/rate-limit";
 import { storeImage } from "@/lib/storage";
 import { toUserMessage, isAppError } from "@/lib/errors";
+import { recordAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 
@@ -30,12 +31,21 @@ export async function POST(request: Request) {
     if (!(file instanceof File)) {
       return Response.json({ ok: false, error: "No file provided." }, { status: 400 });
     }
+    if (file.size > 8 * 1024 * 1024) {
+      return Response.json({ ok: false, error: "Image is too large." }, { status: 413 });
+    }
 
     const buffer = Buffer.from(await file.arrayBuffer());
     const stored = await storeImage({
       buffer,
       filename: file.name,
       declaredMime: file.type,
+    });
+    await recordAudit({
+      actorUserId: session.user.id,
+      action: "PRODUCT_IMAGE_UPLOADED",
+      resource: "ProductImage",
+      metadata: { filename: file.name, size: file.size },
     });
 
     return Response.json({ ok: true, ...stored });

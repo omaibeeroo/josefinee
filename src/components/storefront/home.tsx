@@ -37,7 +37,7 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
               className="object-cover"
             />
           </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-ink/60 via-ink/10 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/15 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 pb-10 md:pb-16">
             <div className="container-luxe text-ivory">
               <p className="eyebrow !text-ivory/80">{hero.eyebrow}</p>
@@ -142,12 +142,15 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
   return (
     <section className="container-luxe" aria-label="Shop by category">
       <Reveal>
-      <div className="mb-6 text-center md:mb-8">
-        <p className="eyebrow mb-2">Curated for you</p>
-        <h2 className="font-display text-3xl font-medium md:text-4xl">Shop by category</h2>
+      <div className="mb-6 flex items-end justify-between gap-6 md:mb-8">
+        <div>
+          <p className="eyebrow mb-2">Curated for you</p>
+          <h2 className="font-display text-3xl font-medium md:text-4xl">Shop by category</h2>
+        </div>
+        <span className="hidden text-xs uppercase tracking-[0.18em] text-ink-muted sm:block">The NÛR wardrobe</span>
       </div>
       </Reveal>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-5 lg:grid-cols-6">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
         {categories.slice(0, 6).map((category, index) => (
           <Reveal key={category.slug} delay={Math.min(index, 5) * 70}>
           <Link
@@ -313,7 +316,7 @@ export function NewsletterSection() {
   return (
     <section className="container-luxe" aria-label="Newsletter">
       <Reveal>
-      <div className="bg-cream px-6 py-12 text-center md:py-16">
+      <div className="border-y hairline bg-cream/60 px-6 py-14 text-center md:py-20">
         <p className="eyebrow">Stay in the loop</p>
         <h2 className="mx-auto mt-2 max-w-xl font-display text-3xl font-medium md:text-4xl">
           New pieces, private sales & styling notes

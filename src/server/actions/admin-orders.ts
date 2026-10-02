@@ -9,6 +9,7 @@ import { incrementStock } from "@/server/inventory";
 import { sendOrderStatusUpdate, sendShippingNotification } from "@/lib/notifications";
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 import type { OrderStatus, Prisma } from "@prisma/client";
+import { z } from "zod";
 
 const PAGE_SIZE = 20;
 
@@ -77,7 +78,9 @@ export async function getAdminOrder(id: string) {
       items: true,
       wilaya: { select: { name: true, code: true } },
       commune: { select: { name: true } },
-      customer: { select: { id: true, firstName: true, lastName: true, email: true, riskLevel: true } },
+      customer: {
+        select: { id: true, firstName: true, lastName: true, email: true, riskLevel: true },
+      },
       coupon: { select: { code: true } },
       promotion: { select: { name: true } },
       statusHistory: {
@@ -98,6 +101,27 @@ export async function changeOrderStatusAction(
   notify = true,
 ) {
   const actor = await requirePermission("orders:write");
+  const parsedInput = z
+    .object({
+      orderId: z.string().min(1),
+      status: z.enum([
+        "PENDING",
+        "CONFIRMED",
+        "PROCESSING",
+        "PACKED",
+        "SHIPPED",
+        "OUT_FOR_DELIVERY",
+        "DELIVERED",
+        "CANCELLED",
+        "RETURNED",
+        "FAILED_DELIVERY",
+      ]),
+      note: z.string().max(500).optional(),
+      notify: z.boolean(),
+    })
+    .safeParse({ orderId, status, note, notify });
+  if (!parsedInput.success) return { ok: false as const, error: "Invalid order status update." };
+  note = parsedInput.data.note;
 
   const order = await prisma.order.findUnique({
     where: { id: orderId },
@@ -116,8 +140,8 @@ export async function changeOrderStatusAction(
   const now = new Date();
   try {
     await prisma.$transaction(async (tx) => {
-      await tx.order.update({
-        where: { id: orderId },
+      const transitioned = await tx.order.updateMany({
+        where: { id: orderId, status: order.status },
         data: {
           status,
           confirmedAt: status === "CONFIRMED" ? now : undefined,
@@ -125,6 +149,7 @@ export async function changeOrderStatusAction(
           cancelledAt: status === "CANCELLED" ? now : undefined,
         },
       });
+      if (transitioned.count !== 1) throw new Error("The order was changed by another request.");
       await tx.orderStatusHistory.create({
         data: {
           orderId,
@@ -201,14 +226,22 @@ export async function changeOrderStatusAction(
 
 export async function updateAdminNotesAction(orderId: string, notes: string) {
   const actor = await requirePermission("orders:write");
-  await prisma.order.update({ where: { id: orderId }, data: { adminNotes: notes.slice(0, 4000) || null } });
-  await recordAudit({ actorUserId: actor.id, action: "ORDER_NOTES_UPDATED", resource: "Order", resourceId: orderId });
+  await prisma.order.update({
+    where: { id: orderId },
+    data: { adminNotes: notes.slice(0, 4000) || null },
+  });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "ORDER_NOTES_UPDATED",
+    resource: "Order",
+    resourceId: orderId,
+  });
   revalidatePath(`/admin/orders/${orderId}`);
   return { ok: true as const };
 }
 
 export async function exportOrdersCsv(filters: OrderFilters): Promise<string> {
-  await requirePermission("orders:export");
+  const actor = await requirePermission("orders:export");
 
   // Page through every matching order — exports are complete, not truncated.
   const summaries: Awaited<ReturnType<typeof listOrders>>["items"] = [];
@@ -241,7 +274,11 @@ export async function exportOrdersCsv(filters: OrderFilters): Promise<string> {
     "Risk",
   ];
   const lines = [header.join(",")];
-  const escape = (value: string | number) => `"${String(value).replace(/"/g, '""')}"`;
+  const escape = (value: string | number) => {
+    const text = String(value);
+    const safe = /^\s*[=+\-@]/.test(text) ? `'${text}` : text;
+    return `"${safe.replace(/"/g, '""')}"`;
+  };
 
   for (const summary of summaries) {
     const full = await prisma.order.findUnique({
@@ -249,7 +286,12 @@ export async function exportOrdersCsv(filters: OrderFilters): Promise<string> {
       include: { items: true, promotion: { select: { name: true } } },
     });
     if (!full) continue;
-    const products = full.items.map((item) => `${item.productName}${item.variantLabel ? ` (${item.variantLabel})` : ""} x${item.quantity}`).join(" | ");
+    const products = full.items
+      .map(
+        (item) =>
+          `${item.productName}${item.variantLabel ? ` (${item.variantLabel})` : ""} x${item.quantity}`,
+      )
+      .join(" | ");
     const quantity = full.items.reduce((sum, item) => sum + item.quantity, 0);
     lines.push(
       [
@@ -273,5 +315,11 @@ export async function exportOrdersCsv(filters: OrderFilters): Promise<string> {
       ].join(","),
     );
   }
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "ORDERS_EXPORTED",
+    resource: "Order",
+    metadata: { count: summaries.length, filters },
+  });
   return lines.join("\n");
 }

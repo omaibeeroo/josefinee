@@ -4,7 +4,7 @@ import { AppError } from "@/lib/errors";
 import { checkoutSchema, type CheckoutInput } from "@/lib/validation/checkout";
 import { getCartForCheckout, getCartCustomerId } from "@/server/cart";
 import { resolveDeliveryRate } from "@/server/delivery";
-import { validateCoupon, isFirstOrder } from "@/server/coupons";
+import { validateCoupon, isFirstOrder, consumeCoupon } from "@/server/coupons";
 import { resolveBestPromotion } from "@/server/promotions";
 import { decrementStock } from "@/server/inventory";
 import { assessOrderRisk } from "@/server/risk";
@@ -56,7 +56,6 @@ export async function createOrder(
   const data = parsed.data;
   const idempotencyKey = `checkout:${data.idempotencyKey}`;
 
-  // 1. Idempotency: a completed request with the same key returns the same result.
   const prior = await prisma.idempotencyKey.findUnique({ where: { key: idempotencyKey } });
   if (prior?.response && typeof prior.response === "object") {
     const response = prior.response as unknown as CreateOrderResult;
@@ -68,179 +67,6 @@ export async function createOrder(
     throw new AppError("COD_DISABLED", "Cash on delivery is temporarily unavailable.", 503);
   }
 
-  // 2. Cart comes from the server-side bag — the client never submits prices.
-  const { cartId, lines } = await getCartForCheckout();
-  if (lines.length === 0) {
-    throw new AppError("CART_EMPTY", "Your bag is empty.", 400);
-  }
-
-  // 3. Wilaya + commune validation (commune must belong to the wilaya).
-  const wilaya = await prisma.wilaya.findUnique({ where: { id: data.wilayaId } });
-  if (!wilaya || !wilaya.isActive) {
-    throw new AppError("INVALID_WILAYA", "Please select your wilaya.", 400);
-  }
-  const commune = await prisma.commune.findFirst({
-    where: { id: data.communeId, wilayaId: wilaya.id, isActive: true },
-  });
-  if (!commune) {
-    throw new AppError("INVALID_COMMUNE", "Please select a valid commune for this wilaya.", 400);
-  }
-
-  // 4. Fresh product data — prices/inventory always come from the database.
-  const variantIds = lines.map((line) => line.variantId);
-  const variants = await prisma.productVariant.findMany({
-    where: { id: { in: variantIds }, isActive: true },
-    include: {
-      product: {
-        select: {
-          id: true,
-          name: true,
-          sku: true,
-          status: true,
-          price: true,
-          collectionLinks: { select: { collectionId: true } },
-        },
-      },
-      inventory: true,
-    },
-  });
-  const variantById = new Map(variants.map((variant) => [variant.id, variant]));
-
-  const freshLines = lines.map((line) => {
-    const variant = variantById.get(line.variantId);
-    if (!variant || variant.product.status !== "ACTIVE") {
-      throw new AppError(
-        "PRODUCT_UNAVAILABLE",
-        `"${line.productName}" is no longer available.`,
-        409,
-      );
-    }
-    const available = (variant.inventory?.stock ?? 0) - (variant.inventory?.reserved ?? 0);
-    if (available < line.quantity) {
-      throw new AppError(
-        "OUT_OF_STOCK",
-        `"${line.productName}" only has ${available} left in stock.`,
-        409,
-      );
-    }
-    const unitPrice = variant.price ?? variant.product.price;
-    return {
-      variantId: variant.id,
-      productId: variant.product.id,
-      productName: variant.product.name,
-      variantLabel: variant.optionLabel,
-      sku: variant.sku,
-      imageUrl: variant.imageUrl,
-      unitPrice,
-      quantity: Math.min(line.quantity, available),
-      lineTotal: unitPrice * Math.min(line.quantity, available),
-      collectionIds: variant.product.collectionLinks.map((entry) => entry.collectionId),
-    };
-  });
-
-  const subtotal = freshLines.reduce((sum, line) => sum + line.lineTotal, 0);
-
-  // 5. Delivery — priced from the server, never from the client.
-  const rate = await resolveDeliveryRate(wilaya.id, data.deliveryMethod);
-  let shipping = rate.price;
-  const threshold = settings.commerce.freeDeliveryThreshold;
-  if (threshold > 0 && subtotal >= threshold) shipping = 0;
-
-  // 6. Customer identity: logged-in account, existing phone profile, or new.
-  const session = await getCustomerSession();
-  const cartCustomerId = await getCartCustomerId();
-  const sessionCustomerId = session?.customer.id ?? cartCustomerId ?? null;
-  const customer = sessionCustomerId
-    ? await prisma.customer.findUnique({ where: { id: sessionCustomerId } })
-    : await prisma.customer.findUnique({ where: { phone: data.phone } });
-
-  // 7. Automatic promotion — best applicable offer, never stacked.
-  const promotion = await resolveBestPromotion(
-    freshLines.map((line) => ({
-      productId: line.productId,
-      collectionIds: line.collectionIds,
-      unitPrice: line.unitPrice,
-      quantity: line.quantity,
-    })),
-  );
-  const promotionDiscount = promotion?.discount ?? 0;
-  const promotionId = promotion?.promotionId ?? null;
-  const postPromoSubtotal = Math.max(0, subtotal - promotionDiscount);
-
-  // 8. Coupon — fully validated server-side, applied after the promotion.
-  let discount = 0;
-  let couponId: string | null = null;
-  if (data.couponCode) {
-    const first = await isFirstOrder({ phone: data.phone, customerId: customer?.id ?? null });
-    const validation = await validateCoupon({
-      code: data.couponCode,
-      lines: freshLines.map((line) => ({
-        productId: line.productId,
-        unitPrice: line.unitPrice,
-        quantity: line.quantity,
-        collectionIds: line.collectionIds,
-      })),
-      subtotal: postPromoSubtotal,
-      wilayaId: wilaya.id,
-      phone: data.phone,
-      customerId: customer?.id ?? null,
-      isFirstOrder: first,
-    });
-    discount = validation.discount;
-    couponId = validation.couponId;
-  }
-
-  const total = Math.max(0, postPromoSubtotal - discount + shipping);
-
-  // 8. Accidental-duplicate protection (same phone + same total, recent window).
-  if (!data.allowDuplicate) {
-    const recent = await prisma.order.findMany({
-      where: {
-        phone: data.phone,
-        createdAt: { gte: new Date(Date.now() - DUPLICATE_WINDOW_MS) },
-        status: { in: [...OPEN_FOR_DUPLICATE] },
-      },
-      select: { orderNumber: true, total: true },
-    });
-    const match = recent.find((order) => order.total === total);
-    if (match) {
-      throw new AppError(
-        "DUPLICATE_ORDER",
-        "We already received a similar order from this number a moment ago. Tick “order anyway” to place it again.",
-        409,
-        { orderNumber: match.orderNumber },
-      );
-    }
-  }
-
-  // 9. Fraud/risk scoring — flags only, never an auto-rejection.
-  const risk = await assessOrderRisk({
-    phone: data.phone,
-    customerId: customer?.id ?? null,
-    total,
-    itemCount: freshLines.length,
-  });
-
-  // 10. Optional account creation.
-  let passwordHash: string | null = null;
-  if (data.createAccount) {
-    if (!data.email) {
-      throw new AppError("EMAIL_REQUIRED", "An email address is required to create an account.");
-    }
-    if (!data.password || passwordIssues(data.password).length > 0) {
-      throw new AppError("WEAK_PASSWORD", "Choose a stronger password (10+ chars, mixed case, number).");
-    }
-    if (customer?.passwordHash) {
-      throw new AppError(
-        "ACCOUNT_EXISTS",
-        "An account already exists with this phone number. Please sign in instead.",
-        409,
-      );
-    }
-    passwordHash = await hashPassword(data.password);
-  }
-
-  // 11. Atomic order creation.
   const placed = await prisma.$transaction(async (tx) => {
     try {
       await tx.idempotencyKey.create({
@@ -256,6 +82,181 @@ export async function createOrder(
         "Your order is already being processed. Please wait.",
         409,
       );
+    }
+
+    // All authoritative cart, catalog, delivery, promotion and coupon reads use tx.
+    const { cartId, lines } = await getCartForCheckout(tx);
+    if (lines.length === 0) throw new AppError("CART_EMPTY", "Your bag is empty.", 400);
+
+    const wilaya = await tx.wilaya.findUnique({ where: { id: data.wilayaId } });
+    if (!wilaya || !wilaya.isActive) {
+      throw new AppError("INVALID_WILAYA", "Please select your wilaya.", 400);
+    }
+    const commune = await tx.commune.findFirst({
+      where: { id: data.communeId, wilayaId: wilaya.id, isActive: true },
+    });
+    if (!commune) {
+      throw new AppError("INVALID_COMMUNE", "Please select a valid commune for this wilaya.", 400);
+    }
+
+    const variants = await tx.productVariant.findMany({
+      where: { id: { in: lines.map((line) => line.variantId) }, isActive: true },
+      include: {
+        product: {
+          select: {
+            id: true,
+            name: true,
+            sku: true,
+            status: true,
+            price: true,
+            collectionLinks: { select: { collectionId: true } },
+          },
+        },
+        inventory: true,
+      },
+    });
+    const variantById = new Map(variants.map((variant) => [variant.id, variant]));
+    const freshLines = lines.map((line) => {
+      const variant = variantById.get(line.variantId);
+      if (!variant || variant.product.status !== "ACTIVE") {
+        throw new AppError(
+          "PRODUCT_UNAVAILABLE",
+          `"${line.productName}" is no longer available.`,
+          409,
+        );
+      }
+      const available = (variant.inventory?.stock ?? 0) - (variant.inventory?.reserved ?? 0);
+      if (available < line.quantity) {
+        throw new AppError(
+          "OUT_OF_STOCK",
+          `"${line.productName}" only has ${available} left in stock.`,
+          409,
+        );
+      }
+      const unitPrice = variant.price ?? variant.product.price;
+      return {
+        variantId: variant.id,
+        productId: variant.product.id,
+        productName: variant.product.name,
+        variantLabel: variant.optionLabel,
+        sku: variant.sku,
+        imageUrl: variant.imageUrl,
+        unitPrice,
+        quantity: line.quantity,
+        lineTotal: unitPrice * line.quantity,
+        collectionIds: variant.product.collectionLinks.map((entry) => entry.collectionId),
+      };
+    });
+    const subtotal = freshLines.reduce((sum, line) => sum + line.lineTotal, 0);
+
+    const promotion = await resolveBestPromotion(
+      freshLines.map((line) => ({
+        productId: line.productId,
+        collectionIds: line.collectionIds,
+        unitPrice: line.unitPrice,
+        quantity: line.quantity,
+      })),
+      new Date(),
+      tx,
+    );
+    const promotionDiscount = promotion?.discount ?? 0;
+    const promotionId = promotion?.promotionId ?? null;
+    const postPromoSubtotal = Math.max(0, subtotal - promotionDiscount);
+
+    // The free-shipping threshold is evaluated after the promotion, per the pricing rules.
+    const rate = await resolveDeliveryRate(wilaya.id, data.deliveryMethod, tx);
+    const shipping =
+      settings.commerce.freeDeliveryThreshold > 0 &&
+      postPromoSubtotal >= settings.commerce.freeDeliveryThreshold
+        ? 0
+        : rate.price;
+
+    const cartCustomerId = await getCartCustomerId(tx);
+    const session = await getCustomerSession();
+    const sessionCustomerId = session?.customer.id ?? cartCustomerId ?? null;
+    const customer = sessionCustomerId
+      ? await tx.customer.findUnique({ where: { id: sessionCustomerId } })
+      : await tx.customer.findUnique({ where: { phone: data.phone } });
+
+    let discount = 0;
+    let couponId: string | null = null;
+    if (data.couponCode) {
+      const first = await isFirstOrder({
+        phone: data.phone,
+        customerId: customer?.id ?? null,
+        db: tx,
+      });
+      const validation = await validateCoupon({
+        code: data.couponCode,
+        lines: freshLines.map((line) => ({
+          productId: line.productId,
+          unitPrice: line.unitPrice,
+          quantity: line.quantity,
+          collectionIds: line.collectionIds,
+        })),
+        subtotal: postPromoSubtotal,
+        wilayaId: wilaya.id,
+        phone: data.phone,
+        customerId: customer?.id ?? null,
+        isFirstOrder: first,
+        db: tx,
+      });
+      discount = validation.discount;
+      couponId = validation.couponId;
+      await consumeCoupon(tx, {
+        couponId,
+        phone: data.phone,
+        customerId: customer?.id ?? null,
+      });
+    }
+
+    const total = Math.max(0, postPromoSubtotal - discount + shipping);
+    if (!data.allowDuplicate) {
+      const recent = await tx.order.findMany({
+        where: {
+          phone: data.phone,
+          createdAt: { gte: new Date(Date.now() - DUPLICATE_WINDOW_MS) },
+          status: { in: [...OPEN_FOR_DUPLICATE] },
+        },
+        select: { orderNumber: true, total: true },
+      });
+      const match = recent.find((order) => order.total === total);
+      if (match) {
+        throw new AppError(
+          "DUPLICATE_ORDER",
+          "We already received a similar order from this number a moment ago. Tick “order anyway” to place it again.",
+          409,
+          { orderNumber: match.orderNumber },
+        );
+      }
+    }
+
+    const risk = await assessOrderRisk({
+      phone: data.phone,
+      customerId: customer?.id ?? null,
+      total,
+      itemCount: freshLines.length,
+      db: tx,
+    });
+
+    let passwordHash: string | null = null;
+    if (data.createAccount) {
+      if (!data.email)
+        throw new AppError("EMAIL_REQUIRED", "An email address is required to create an account.");
+      if (!data.password || passwordIssues(data.password).length > 0) {
+        throw new AppError(
+          "WEAK_PASSWORD",
+          "Choose a stronger password (10+ chars, mixed case, number).",
+        );
+      }
+      if (customer?.passwordHash) {
+        throw new AppError(
+          "ACCOUNT_EXISTS",
+          "An account already exists with this phone number. Please sign in instead.",
+          409,
+        );
+      }
+      passwordHash = await hashPassword(data.password);
     }
 
     let customerId: string | null = customer?.id ?? null;
@@ -336,7 +337,11 @@ export async function createOrder(
           })),
         },
         statusHistory: {
-          create: { status: "PENDING", note: "Order placed (cash on delivery).", isCustomerVisible: true },
+          create: {
+            status: "PENDING",
+            note: "Order placed (cash on delivery).",
+            isCustomerVisible: true,
+          },
         },
       },
       include: { items: true },
@@ -356,10 +361,6 @@ export async function createOrder(
     }
 
     if (couponId) {
-      await tx.coupon.update({
-        where: { id: couponId },
-        data: { usageCount: { increment: 1 } },
-      });
       await tx.couponRedemption.create({
         data: {
           couponId,
@@ -371,11 +372,13 @@ export async function createOrder(
       });
     }
 
-    await tx.cart.update({
-      where: { id: cartId },
+    const converted = await tx.cart.updateMany({
+      where: { id: cartId, status: "ACTIVE" },
       data: { status: "CONVERTED", customerId },
     });
-
+    if (converted.count !== 1) {
+      throw new AppError("CART_ALREADY_CHECKED_OUT", "Your bag has already been checked out.", 409);
+    }
     await tx.auditLog.create({
       data: {
         actorType: "SYSTEM",
@@ -388,53 +391,68 @@ export async function createOrder(
       },
     });
 
-    return order;
+    return {
+      order,
+      customerId,
+      total,
+      subtotal,
+      discount,
+      promotionDiscount,
+      promotionName: promotion?.name ?? null,
+      shipping,
+      freshLineCount: freshLines.length,
+      wilayaName: wilaya.name,
+      communeName: commune.name,
+    };
   });
 
   const result: CreateOrderResult = {
-    orderId: placed.id,
-    orderNumber: placed.orderNumber,
-    total,
-    subtotal,
-    discount,
-    promotionDiscount,
-    promotionName: promotion?.name ?? null,
-    shipping,
+    orderId: placed.order.id,
+    orderNumber: placed.order.orderNumber,
+    total: placed.total,
+    subtotal: placed.subtotal,
+    discount: placed.discount,
+    promotionDiscount: placed.promotionDiscount,
+    promotionName: placed.promotionName,
+    shipping: placed.shipping,
     firstName: data.firstName,
     phone: data.phone,
-    wilayaName: wilaya.name,
-    communeName: commune.name,
+    wilayaName: placed.wilayaName,
+    communeName: placed.communeName,
     address: data.address,
     deliveryMethod: data.deliveryMethod,
-    trackingToken: signOrderToken(placed.orderNumber),
+    trackingToken: signOrderToken(placed.order.orderNumber),
     isDuplicate: false,
   };
 
-  // 12. Side effects after commit — these never affect consistency.
   await prisma.idempotencyKey
     .update({ where: { key: idempotencyKey }, data: { response: result as never } })
     .catch(() => undefined);
 
   await trackEvent({
     name: ANALYTICS_EVENTS.ORDER_CREATED,
-    props: { orderNumber: placed.orderNumber, total, itemCount: freshLines.length },
+    props: {
+      orderNumber: placed.order.orderNumber,
+      total: placed.total,
+      itemCount: placed.freshLineCount,
+    },
     customerId: placed.customerId,
     ip: context.ip,
     userAgent: context.userAgent,
   });
 
   await sendOrderReceived({
-    orderId: placed.id,
+    orderId: placed.order.id,
     phone: data.phone,
     email: data.email ?? null,
-    orderNumber: placed.orderNumber,
+    orderNumber: placed.order.orderNumber,
     firstName: data.firstName,
-    total,
+    total: placed.total,
   }).catch(() => undefined);
 
   await sendMetaPurchase({
-    orderNumber: placed.orderNumber,
-    total,
+    orderNumber: placed.order.orderNumber,
+    total: placed.total,
     email: data.email ?? null,
     phone: data.phone,
     ip: context.ip,
@@ -445,9 +463,9 @@ export async function createOrder(
     actorType: "SYSTEM",
     action: "ORDER_NOTIFICATION_SENT",
     resource: "Order",
-    resourceId: placed.id,
+    resourceId: placed.order.id,
     ip: context.ip,
-    metadata: { orderNumber: placed.orderNumber },
+    metadata: { orderNumber: placed.order.orderNumber },
   });
 
   return result;
@@ -455,7 +473,17 @@ export async function createOrder(
 
 export type OrderConfirmation = {
   orderNumber: string;
-  status: "PENDING" | "CONFIRMED" | "PROCESSING" | "PACKED" | "SHIPPED" | "OUT_FOR_DELIVERY" | "DELIVERED" | "CANCELLED" | "RETURNED" | "FAILED_DELIVERY";
+  status:
+    | "PENDING"
+    | "CONFIRMED"
+    | "PROCESSING"
+    | "PACKED"
+    | "SHIPPED"
+    | "OUT_FOR_DELIVERY"
+    | "DELIVERED"
+    | "CANCELLED"
+    | "RETURNED"
+    | "FAILED_DELIVERY";
   firstName: string;
   lastName: string;
   phone: string;

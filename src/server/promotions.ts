@@ -1,6 +1,9 @@
 import "server-only";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { promotionDiscountFor } from "@/lib/promo-math";
+
+type DbClient = typeof prisma | Prisma.TransactionClient;
 
 export type PromoLine = {
   productId: string;
@@ -20,8 +23,8 @@ export type ResolvedPromotion = {
  * promotions never stack, which keeps totals predictable and auditable.
  * Evaluated with the server clock; the client can never invent a discount.
  */
-export async function getActivePromotions(now = new Date()) {
-  return prisma.promotion.findMany({
+export async function getActivePromotions(now = new Date(), db: DbClient = prisma) {
+  return db.promotion.findMany({
     where: { isActive: true, startsAt: { lte: now }, endsAt: { gte: now } },
     include: {
       products: { select: { productId: true } },
@@ -34,11 +37,12 @@ export async function getActivePromotions(now = new Date()) {
 export async function resolveBestPromotion(
   lines: PromoLine[],
   now = new Date(),
+  db: DbClient = prisma,
 ): Promise<ResolvedPromotion | null> {
   const subtotal = lines.reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
   if (subtotal <= 0) return null;
 
-  const promotions = await getActivePromotions(now);
+  const promotions = await getActivePromotions(now, db);
   let best: ResolvedPromotion | null = null;
 
   for (const promotion of promotions) {
@@ -71,7 +75,8 @@ export async function getProductPromotion(
 ): Promise<{ name: string; type: "PERCENTAGE" | "FIXED"; value: number } | null> {
   const now = new Date();
   const promotions = await getActivePromotions(now);
-  let best: { name: string; type: "PERCENTAGE" | "FIXED"; value: number; rank: number } | null = null;
+  let best: { name: string; type: "PERCENTAGE" | "FIXED"; value: number; rank: number } | null =
+    null;
 
   for (const promotion of promotions) {
     const productIds = new Set(promotion.products.map((entry) => entry.productId));

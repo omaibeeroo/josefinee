@@ -242,7 +242,7 @@ export function ProductCarousel({
 
   return (
     <section className="container-luxe" aria-label={title}>
-      <div className="mb-6 flex items-end justify-between gap-4 md:mb-8">
+      <div className="mb-6 flex items-end justify-between gap-4 border-b hairline pb-5 md:mb-8">
         <div>
           {eyebrow && <p className="eyebrow mb-2">{eyebrow}</p>}
           <h2 className="font-display text-3xl font-medium md:text-4xl">{title}</h2>

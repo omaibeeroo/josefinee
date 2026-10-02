@@ -7,7 +7,12 @@ import { requirePermission } from "@/lib/auth/rbac";
 import { recordAudit } from "@/lib/audit";
 import { cleanRichText } from "@/lib/sanitize";
 import { flattenZodErrors } from "@/lib/validation/common";
-import { categorySchema, collectionSchema, productSchema, type ProductInput } from "@/lib/validation/product";
+import {
+  categorySchema,
+  collectionSchema,
+  productSchema,
+  type ProductInput,
+} from "@/lib/validation/product";
 import { randomSuffix, slugify } from "@/lib/slug";
 import type { Prisma } from "@prisma/client";
 
@@ -60,7 +65,8 @@ export async function listAdminProducts(params: {
     items: items.map((product) => ({
       ...product,
       stock: product.variants.reduce(
-        (sum, variant) => sum + (variant.inventory?.stock ?? 0) - (variant.inventory?.reserved ?? 0),
+        (sum, variant) =>
+          sum + (variant.inventory?.stock ?? 0) - (variant.inventory?.reserved ?? 0),
         0,
       ),
       variantCount: product.variants.length,
@@ -77,7 +83,10 @@ export async function getProductForEdit(id: string) {
     where: { id },
     include: {
       images: { orderBy: [{ sortOrder: "asc" }] },
-      options: { orderBy: { position: "asc" }, include: { values: { orderBy: { position: "asc" } } } },
+      options: {
+        orderBy: { position: "asc" },
+        include: { values: { orderBy: { position: "asc" } } },
+      },
       variants: {
         orderBy: { position: "asc" },
         include: {
@@ -137,7 +146,11 @@ export async function saveProductAction(input: ProductInput) {
   const actor = await requirePermission("products:write");
   const parsed = productSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: "Please review the product fields.", fields: flattenZodErrors(parsed.error) };
+    return {
+      ok: false as const,
+      error: "Please review the product fields.",
+      fields: flattenZodErrors(parsed.error),
+    };
   }
   const data = parsed.data;
   const slug = await ensureUniqueSlug(data.slug || data.name, data.id);
@@ -291,11 +304,17 @@ export async function saveProductAction(input: ProductInput) {
       }
 
       // --- Variants (upsert; drop only variants with no history) ---
-      const inputVariantIds = new Set(data.variants.map((variant) => variant.id).filter(Boolean) as string[]);
+      const inputVariantIds = new Set(
+        data.variants.map((variant) => variant.id).filter(Boolean) as string[],
+      );
       const existingVariants = await tx.productVariant.findMany({
         where: { productId: product.id },
         include: { _count: { select: { orderItems: true } }, inventory: { select: { id: true } } },
       });
+      const existingVariantIds = new Set(existingVariants.map((variant) => variant.id));
+      const foreignVariant = [...inputVariantIds].find((id) => !existingVariantIds.has(id));
+      if (foreignVariant)
+        throw new AppError("VALIDATION", "Variant does not belong to this product.", 400);
       for (const existing of existingVariants) {
         if (!inputVariantIds.has(existing.id)) {
           const historyCount = existing._count.orderItems;
@@ -305,7 +324,10 @@ export async function saveProductAction(input: ProductInput) {
           if (historyCount === 0 && txns === 0) {
             await tx.productVariant.delete({ where: { id: existing.id } });
           } else {
-            await tx.productVariant.update({ where: { id: existing.id }, data: { isActive: false } });
+            await tx.productVariant.update({
+              where: { id: existing.id },
+              data: { isActive: false },
+            });
           }
         }
       }
@@ -357,7 +379,11 @@ export async function saveProductAction(input: ProductInput) {
         const inventory = await tx.inventory.findUnique({ where: { variantId: savedVariant.id } });
         if (!inventory) {
           const created = await tx.inventory.create({
-            data: { variantId: savedVariant.id, stock: variant.stock, lowStockThreshold: variant.lowStockThreshold },
+            data: {
+              variantId: savedVariant.id,
+              stock: variant.stock,
+              lowStockThreshold: variant.lowStockThreshold,
+            },
           });
           await tx.inventoryTransaction.create({
             data: {
@@ -437,11 +463,19 @@ export async function archiveProductAction(id: string) {
   const actor = await requirePermission("products:delete");
   const orderItems = await prisma.orderItem.count({ where: { productId: id } });
   if (orderItems > 0) {
-    await prisma.product.update({ where: { id }, data: { status: "ARCHIVED", archivedAt: new Date() } });
+    await prisma.product.update({
+      where: { id },
+      data: { status: "ARCHIVED", archivedAt: new Date() },
+    });
   } else {
     await prisma.product.delete({ where: { id } });
   }
-  await recordAudit({ actorUserId: actor.id, action: "PRODUCT_DELETED", resource: "Product", resourceId: id });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "PRODUCT_DELETED",
+    resource: "Product",
+    resourceId: id,
+  });
   revalidatePath("/admin/products");
   return { ok: true as const };
 }
@@ -456,7 +490,13 @@ export async function setProductStatusAction(id: string, status: "DRAFT" | "ACTI
       publishedAt: status === "ACTIVE" ? new Date() : undefined,
     },
   });
-  await recordAudit({ actorUserId: actor.id, action: "PRODUCT_STATUS_CHANGED", resource: "Product", resourceId: id, metadata: { status } });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "PRODUCT_STATUS_CHANGED",
+    resource: "Product",
+    resourceId: id,
+    metadata: { status },
+  });
   revalidatePath("/admin/products");
   return { ok: true as const };
 }
@@ -478,7 +518,11 @@ export async function saveCategoryAction(input: unknown) {
   const actor = await requirePermission("catalog:write");
   const parsed = categorySchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: "Please review the category fields.", fields: flattenZodErrors(parsed.error) };
+    return {
+      ok: false as const,
+      error: "Please review the category fields.",
+      fields: flattenZodErrors(parsed.error),
+    };
   }
   const data = parsed.data;
   const slug = data.slug || slugify(data.name);
@@ -519,7 +563,12 @@ export async function saveCategoryAction(input: unknown) {
         },
       });
 
-  await recordAudit({ actorUserId: actor.id, action: data.id ? "CATEGORY_UPDATED" : "CATEGORY_CREATED", resource: "Category", resourceId: saved.id });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: data.id ? "CATEGORY_UPDATED" : "CATEGORY_CREATED",
+    resource: "Category",
+    resourceId: saved.id,
+  });
   revalidatePath("/admin/categories");
   return { ok: true as const, id: saved.id };
 }
@@ -531,10 +580,18 @@ export async function deleteCategoryAction(id: string) {
     prisma.category.count({ where: { parentId: id } }),
   ]);
   if (products > 0 || children > 0) {
-    return { ok: false as const, error: "This category still has products or subcategories. Move them first." };
+    return {
+      ok: false as const,
+      error: "This category still has products or subcategories. Move them first.",
+    };
   }
   await prisma.category.delete({ where: { id } });
-  await recordAudit({ actorUserId: actor.id, action: "CATEGORY_DELETED", resource: "Category", resourceId: id });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "CATEGORY_DELETED",
+    resource: "Category",
+    resourceId: id,
+  });
   revalidatePath("/admin/categories");
   return { ok: true as const };
 }
@@ -553,7 +610,11 @@ export async function saveCollectionAction(input: unknown) {
   const actor = await requirePermission("catalog:write");
   const parsed = collectionSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: "Please review the collection fields.", fields: flattenZodErrors(parsed.error) };
+    return {
+      ok: false as const,
+      error: "Please review the collection fields.",
+      fields: flattenZodErrors(parsed.error),
+    };
   }
   const data = parsed.data;
   const slug = data.slug || slugify(data.name);
@@ -600,7 +661,11 @@ export async function saveCollectionAction(input: unknown) {
       await tx.collectionProduct.deleteMany({ where: { collectionId: collection.id } });
       if (data.productIds.length > 0) {
         await tx.collectionProduct.createMany({
-          data: data.productIds.map((productId, index) => ({ collectionId: collection.id, productId, sortOrder: index })),
+          data: data.productIds.map((productId, index) => ({
+            collectionId: collection.id,
+            productId,
+            sortOrder: index,
+          })),
           skipDuplicates: true,
         });
       }
@@ -608,7 +673,12 @@ export async function saveCollectionAction(input: unknown) {
     return collection;
   });
 
-  await recordAudit({ actorUserId: actor.id, action: data.id ? "COLLECTION_UPDATED" : "COLLECTION_CREATED", resource: "Collection", resourceId: saved.id });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: data.id ? "COLLECTION_UPDATED" : "COLLECTION_CREATED",
+    resource: "Collection",
+    resourceId: saved.id,
+  });
   revalidatePath("/admin/collections");
   revalidatePath(`/collections/${saved.slug}`);
   return { ok: true as const, id: saved.id };
@@ -617,7 +687,12 @@ export async function saveCollectionAction(input: unknown) {
 export async function deleteCollectionAction(id: string) {
   const actor = await requirePermission("catalog:write");
   await prisma.collection.delete({ where: { id } });
-  await recordAudit({ actorUserId: actor.id, action: "COLLECTION_DELETED", resource: "Collection", resourceId: id });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "COLLECTION_DELETED",
+    resource: "Collection",
+    resourceId: id,
+  });
   revalidatePath("/admin/collections");
   return { ok: true as const };
 }
@@ -651,7 +726,13 @@ export async function moderateReviewAction(id: string, status: "APPROVED" | "REJ
   const actor = await requirePermission("reviews:moderate");
   const review = await prisma.review.update({ where: { id }, data: { status } });
   await recomputeRating(review.productId);
-  await recordAudit({ actorUserId: actor.id, action: "REVIEW_MODERATED", resource: "Review", resourceId: id, metadata: { status } });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "REVIEW_MODERATED",
+    resource: "Review",
+    resourceId: id,
+    metadata: { status },
+  });
   revalidatePath("/admin/reviews");
   revalidatePath(`/products/${review.productId}`);
   return { ok: true as const };
@@ -663,7 +744,12 @@ export async function deleteReviewAction(id: string) {
   if (!review) return { ok: false as const, error: "Review not found." };
   await prisma.review.delete({ where: { id } });
   await recomputeRating(review.productId);
-  await recordAudit({ actorUserId: actor.id, action: "REVIEW_DELETED", resource: "Review", resourceId: id });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "REVIEW_DELETED",
+    resource: "Review",
+    resourceId: id,
+  });
   revalidatePath("/admin/reviews");
   return { ok: true as const };
 }
