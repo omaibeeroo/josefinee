@@ -1,0 +1,220 @@
+# NÛR Store — Premium COD E-Commerce for Algeria
+
+A complete, production-ready e-commerce application for a fashion/jewelry brand
+selling in **Algeria** with **Cash on Delivery (COD)**. Mobile-first, French-locale
+storefront plus a full admin back office.
+
+> **Brand:** every brand value (name, logo, colors, copy, social links) lives in
+> `src/config/brand.ts` and the database `Setting` table. Replace `NÛR` with your
+> own identity — nothing is hard-coded into the UI.
+
+## Stack
+
+| Layer      | Choice                                                        |
+| ---------- | ------------------------------------------------------------- |
+| Frontend   | Next.js 15 (App Router), React 19, TypeScript (strict), Tailwind CSS 4 |
+| Backend    | Next.js Server Actions + Route Handlers (modular monolith)    |
+| Database   | PostgreSQL 16+ with Prisma ORM 6                              |
+| Auth       | Argon2id passwords, opaque sessions (HTTP-only cookies), TOTP 2FA for staff |
+| Storage    | S3-compatible object storage (R2/S3/MinIO) · local disk in dev |
+| Deploy     | `output: "standalone"` — Vercel, VPS, or any Node host        |
+
+Money is stored as **integer dinars** (no floats). Prices, delivery fees and
+discounts are **always recomputed server-side** — the client can never submit a price.
+
+## Quick start (local)
+
+Requirements: Node.js 20+, a PostgreSQL database.
+
+```bash
+# 1. Install
+npm install
+
+# 2. Configure
+cp .env.example .env
+# edit DATABASE_URL and AUTH_SECRET (openssl rand -base64 48)
+
+# 3. Database (option A — local Postgres via Docker)
+docker compose up -d postgres
+
+# 3. Database (option B — managed Postgres)
+#    paste its connection string into DATABASE_URL
+
+# 4. Migrate + seed (58 wilayas, 1541 communes, RBAC, demo admin, catalog, CMS)
+npx prisma migrate deploy
+npx prisma db seed
+
+# 5. Run
+npm run dev
+```
+
+Open http://localhost:3000. Admin: http://localhost:3000/admin
+
+### Demo admin (development only)
+
+Configured through env, never hard-coded:
+
+```bash
+SEED_ADMIN_EMAIL=admin@example.com
+SEED_ADMIN_PASSWORD=ChangeMeNow!123
+```
+
+The seeded admin **must change its password on first login**. Create real staff
+accounts under **Admin → Staff** afterwards and disable the demo account.
+
+## Environment variables
+
+See `.env.example` for the full list. Highlights:
+
+| Variable | Purpose |
+| -------- | ------- |
+| `DATABASE_URL` | PostgreSQL connection string |
+| `AUTH_SECRET` | 32+ random bytes — sessions, order tokens, 2FA encryption |
+| `STORAGE_DRIVER` | `local` (dev) or `s3` (**required in production**) |
+| `STORAGE_BUCKET/ENDPOINT/ACCESS_KEY/SECRET_KEY/PUBLIC_HOST` | S3-compatible storage |
+| `EMAIL_PROVIDER/SMS_PROVIDER/WHATSAPP_PROVIDER` | `resend` / `twilio` / `meta`, or `console` (log only) |
+| `GOOGLE_ANALYTICS_ID / META_PIXEL_ID / TIKTOK_PIXEL_ID` | Set via Admin → Settings → Analytics (pixels load only after cookie consent) |
+| `UPSTASH_REDIS_REST_URL/TOKEN` | Optional distributed rate limiting (falls back to in-memory) |
+| `CAPTCHA_SECRET / NEXT_PUBLIC_CAPTCHA_SITE_KEY` | Optional bot protection hooks |
+
+Never commit `.env`.
+
+## Architecture
+
+```
+src/
+  app/
+    (store)/            # public storefront (server components + islands)
+    admin/              # back office (login, first-login, (dashboard)/*)
+    api/admin/*         # upload, CSV exports, order alerts (session-guarded)
+    sitemap.ts robots.ts
+  components/
+    ui.tsx              # design-system primitives
+    pagination.tsx      # server pagination
+    storefront/         # chrome, cart, product, home, catalog UI
+    admin/              # shell (sidebar/alerts), shared widgets, product editor
+  config/brand.ts       # centralized brand config (env-overridable)
+  lib/                  # prisma, auth, rbac, phone, money, validation, settings,
+                        #  storage, notifications, rate-limit, audit, csrf, totp
+  server/               # domain services: catalog, cart, orders, coupons,
+                        #  inventory, delivery, risk, analytics, navigation
+    actions/            # server actions (storefront + admin)
+prisma/
+  schema.prisma         # full data model
+  migrations/           # SQL migrations (apply with `prisma migrate deploy`)
+  seed.ts               # idempotent seed (safe to re-run)
+  data/algeria_cities.json  # public wilaya/commune dataset (source: othmanus/algeria-cities)
+```
+
+### Key flows
+
+**Checkout (`src/server/orders.ts`)** — one Prisma transaction:
+validate customer/phone → validate wilaya + commune pairing → reload every
+variant from the DB → conditional atomic stock decrement (concurrent checkouts
+can never oversell) → delivery priced from `DeliveryRate` → coupon validated
+server-side → free-shipping threshold → unique order number from a `Counter`
+(`PREFIX-YYYY-000001`) → order + snapshots + status history → coupon
+redemption → cart conversion → audit. Idempotency keys make double-clicks safe;
+recent same-phone/same-total orders trigger a confirm step, not a silent block.
+Notifications (email/SMS/WhatsApp) and analytics fire **after commit** and can
+never roll an order back.
+
+**Risk scoring (`src/server/risk.ts`)** — repeat/bad-history, frequency, value
+anomalies and shared phones produce `LOW/MEDIUM/HIGH` review flags. The system
+never auto-rejects a customer.
+
+**Sessions** — opaque 256-bit tokens, SHA-256-hashed in the DB, HTTP-only
+`SameSite=Lax` cookies. Staff sessions expire in 7 days, customer sessions in
+30. Role-based permissions gate every admin action server-side.
+
+**Inventory strategy (COD)** — stock is decremented atomically at order creation
+(Option B) and restored on cancellation/return, with every movement logged in
+`InventoryTransaction`. Concurrent checkouts for the last unit cannot oversell:
+the conditional update matches zero rows and the second order fails cleanly.
+
+**Meta Conversions API** — when `META_PIXEL_ID` + `META_CONVERSIONS_API_KEY`
+are set, a server-side `Purchase` event fires after each order (PII hashed).
+It shares `event_id` with the browser pixel (`purchase-<orderNumber>`) so Meta
+deduplicates instead of double-counting.
+
+## Admin guide
+
+| Area | Path |
+| ---- | ---- |
+| Dashboard, analytics | `/admin`, `/admin/analytics` |
+| Orders (filter/search/status/notes/print/CSV) | `/admin/orders` |
+| Products, categories, collections, inventory | `/admin/products…` |
+| Coupons, promotions, delivery rates (CSV import/export) | `/admin/coupons`, `/admin/promotions`, `/admin/delivery` |
+| Customers, reviews, messages, newsletter | `/admin/customers…` |
+| Pages, FAQ, announcements, settings, staff, audit | `/admin/content…` |
+
+Staff roles: `SUPER_ADMIN, ADMIN, ORDER_MANAGER, PRODUCT_MANAGER,
+CUSTOMER_SUPPORT, ANALYST` — each with a least-privilege permission set
+(`src/lib/auth/permissions.ts`).
+
+## Promotions (flash sales)
+
+**Admin → Promotions**: automatic, code-less discounts with a server-clocked
+time window and optional collection/product scope. The single best applicable
+promotion wins and never stacks; percentages are hard-capped at 90%.
+Evaluated inside the order transaction *before* coupons (coupons apply to the
+remainder). Every order stores `promotionId + promotionDiscount`, shown on the
+confirmation page, admin detail, print slip and CSV export. Product pages
+display an informational badge while a promotion covers them.
+
+## Delivery setup
+
+1. Review **Admin → Delivery**: every wilaya has Home/Stopdesk/Express/Standard
+   rates with ETAs. Seed values are **placeholders** — confirm them with your
+   carrier (Yalidine/Maystro/etc.) or bulk-update via CSV import.
+2. `Checkout` reads prices only from `DeliveryRate`; communes are constrained
+   to the selected wilaya.
+
+## Notifications
+
+`src/lib/notifications.ts` defines provider interfaces. Without credentials,
+events are recorded in the `Notification` table and logged (console) so flows
+stay intact. Add Resend/Twilio/Meta credentials to send real email/SMS/WhatsApp.
+
+## Backups & disaster recovery
+
+Use your provider's automated backups (example: daily pg_dump / PITR with
+7–30 day retention):
+
+```bash
+pg_dump "$DATABASE_URL" -Fc -f "backup-$(date +%F).dump"
+pg_restore -d "$DATABASE_URL" backup-2026-01-01.dump
+```
+
+Uploads live in object storage — enable bucket versioning/replication there.
+Test restores on a staging database before you need them.
+
+## Security posture
+
+- Argon2id hashing, password policy, login lockout + rate limits, TOTP 2FA
+  (encrypted secrets), forced password rotation for seeded accounts
+- CSRF: SameSite cookies + server-action origin checks + explicit origin check
+  on mutating routes · strict CSP/HSTS/security headers (`next.config.ts`)
+- Uploads: MIME + signature validation via sharp, 8 MB cap, WebP re-encode,
+  metadata strip, safe filenames, no execution
+- Validation with Zod on every boundary; HTML sanitized with an allow-list;
+  stack traces never leak to customers; audit log is append-only
+- Secrets only in env; `.env.example` ships without credentials
+
+## Scripts
+
+| Command | Purpose |
+| ------- | ------- |
+| `npm run dev / build / start` | develop / build / run production |
+| `npm run typecheck / lint / test` | `tsc --noEmit` / ESLint / Vitest |
+| `npm run db:generate / db:migrate / db:deploy / db:seed / db:studio` | Prisma workflows |
+
+## Production checklist
+
+- [ ] Real `AUTH_SECRET`, `DATABASE_URL`, `APP_URL`
+- [ ] `STORAGE_DRIVER=s3` with a public bucket hostname
+- [ ] Real delivery rates + free-shipping threshold
+- [ ] Brand settings (name, logo, socials, legal pages) via Admin → Settings/Content
+- [ ] Notification providers + analytics IDs
+- [ ] Staff accounts created, demo admin disabled, 2FA enabled
+- [ ] Backups scheduled and restore tested

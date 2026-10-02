@@ -1,0 +1,8 @@
+# Normalize line endings to LF for all agents on all platforms.
+* text=auto eol=lf
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.webp binary
+*.avif binary
+*.svg text eol=lf
