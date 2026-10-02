@@ -74,22 +74,27 @@ export const getAdminSession = cache(async () => {
   return { session, user: session.user };
 });
 
-export type AdminSessionUser = NonNullable<
-  Awaited<ReturnType<typeof getAdminSession>>
->["user"];
+export type AdminSessionUser = NonNullable<Awaited<ReturnType<typeof getAdminSession>>>["user"];
 
 export async function destroyAdminSession(): Promise<void> {
   const store = await cookies();
   const token = store.get(ADMIN_COOKIE)?.value;
   if (token) {
-    await prisma.adminSession
-      .updateMany({
-        where: { tokenHash: hashToken(token) },
-        data: { revokedAt: new Date() },
-      })
-      .catch(() => undefined);
+    await prisma.adminSession.updateMany({
+      where: { tokenHash: hashToken(token) },
+      data: { revokedAt: new Date() },
+    });
   }
   store.set(ADMIN_COOKIE, "", { ...cookieOptions(new Date(0)), maxAge: 0 });
+}
+
+export async function revokeOtherAdminSessions(userId: string): Promise<void> {
+  const store = await cookies();
+  const token = store.get(ADMIN_COOKIE)?.value;
+  await prisma.adminSession.updateMany({
+    where: { userId, ...(token ? { tokenHash: { not: hashToken(token) } } : {}) },
+    data: { revokedAt: new Date() },
+  });
 }
 
 // ---------------------------------------------------------------------------

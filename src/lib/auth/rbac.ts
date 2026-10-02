@@ -8,7 +8,6 @@ export function permissionCodes(user: AdminSessionUser): string[] {
 }
 
 export function can(user: AdminSessionUser, code: PermissionCode): boolean {
-  if (user.role.name === "SUPER_ADMIN") return true;
   return permissionCodes(user).includes(code);
 }
 

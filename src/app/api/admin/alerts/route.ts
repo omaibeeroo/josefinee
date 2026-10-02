@@ -1,15 +1,10 @@
-import { getAdminSession } from "@/lib/auth/session";
+import { requirePermission } from "@/lib/auth/rbac";
 
 export async function GET() {
-  const session = await getAdminSession();
-  if (!session) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (session.user.role.name !== "SUPER_ADMIN") {
-    const codes = session.user.role.permissions.map((entry) => entry.permission.code);
-    if (!codes.includes("orders:read")) {
-      return Response.json({ error: "Forbidden" }, { status: 403 });
-    }
+  try {
+    await requirePermission("orders:read");
+  } catch {
+    return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const { prisma } = await import("@/lib/prisma");

@@ -30,12 +30,9 @@ export async function decrementStock(
   });
 
   if (updated.count === 0) {
-    throw new AppError(
-      "OUT_OF_STOCK",
-      "Sorry, one of the items in your bag just sold out.",
-      409,
-      { variantId: input.variantId },
-    );
+    throw new AppError("OUT_OF_STOCK", "Sorry, one of the items in your bag just sold out.", 409, {
+      variantId: input.variantId,
+    });
   }
 
   await tx.inventoryTransaction.create({
@@ -91,6 +88,9 @@ export async function setStock(
   if (input.stock < 0) throw new AppError("INVALID_QUANTITY", "Stock cannot be negative.");
 
   const existing = await tx.inventory.findUnique({ where: { variantId: input.variantId } });
+  if (existing && input.stock < existing.reserved) {
+    throw new AppError("INVALID_QUANTITY", "Stock cannot be lower than reserved inventory.");
+  }
   const delta = input.stock - (existing?.stock ?? 0);
 
   const inventory = await tx.inventory.upsert({

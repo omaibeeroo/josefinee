@@ -26,11 +26,11 @@ const couponSchema = z.object({
   value: z.coerce.number().int().min(1),
   minOrder: z.coerce.number().int().min(0).nullable().optional(),
   maxDiscount: z.coerce.number().int().min(0).nullable().optional(),
-  startsAt: z.string().optional(),
-  endsAt: z.string().optional(),
+  startsAt: z.string().datetime().optional(),
+  endsAt: z.string().datetime().optional(),
   isActive: z.coerce.boolean().default(true),
-  usageLimit: z.coerce.number().int().min(0).nullable().optional(),
-  perCustomerLimit: z.coerce.number().int().min(0).nullable().optional(),
+  usageLimit: z.coerce.number().int().min(1).nullable().optional(),
+  perCustomerLimit: z.coerce.number().int().min(1).nullable().optional(),
   firstOrderOnly: z.coerce.boolean().default(false),
   appliesToAll: z.coerce.boolean().default(true),
   productSkus: z.string().optional(),
@@ -41,8 +41,16 @@ const couponSchema = z.object({
 export async function listCouponOptions() {
   await requirePermission("coupons:read");
   const [collections, wilayas] = await Promise.all([
-    prisma.collection.findMany({ where: { isActive: true }, select: { id: true, name: true, slug: true }, orderBy: { name: "asc" } }),
-    prisma.wilaya.findMany({ where: { isActive: true }, select: { id: true, name: true, code: true }, orderBy: { code: "asc" } }),
+    prisma.collection.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, slug: true },
+      orderBy: { name: "asc" },
+    }),
+    prisma.wilaya.findMany({
+      where: { isActive: true },
+      select: { id: true, name: true, code: true },
+      orderBy: { code: "asc" },
+    }),
   ]);
   return { collections, wilayas };
 }
@@ -60,7 +68,10 @@ export async function getCouponForEdit(id: string) {
   if (!coupon) throw new Error("Coupon not found.");
   return {
     ...coupon,
-    productSkus: coupon.products.map((entry) => entry.product.sku).filter(Boolean).join(", "),
+    productSkus: coupon.products
+      .map((entry) => entry.product.sku)
+      .filter(Boolean)
+      .join(", "),
     collectionSlugs: coupon.collections.map((entry) => entry.collection.slug),
     wilayaCodes: coupon.wilayas.map((entry) => entry.wilaya.code),
   };
@@ -70,10 +81,17 @@ export async function saveCouponAction(input: z.infer<typeof couponSchema>) {
   const actor = await requirePermission("coupons:write");
   const parsed = couponSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: "Please review the coupon fields.", fields: flattenZodErrors(parsed.error) };
+    return {
+      ok: false as const,
+      error: "Please review the coupon fields.",
+      fields: flattenZodErrors(parsed.error),
+    };
   }
   const data = parsed.data;
   const code = data.code.trim().toUpperCase();
+  if (data.startsAt && data.endsAt && new Date(data.startsAt) >= new Date(data.endsAt)) {
+    return { ok: false as const, error: "The end date must be after the start date." };
+  }
 
   if (data.type === "PERCENTAGE" && (data.value < 1 || data.value > 90)) {
     return { ok: false as const, error: "Percentage must be between 1 and 90." };
@@ -84,22 +102,54 @@ export async function saveCouponAction(input: z.infer<typeof couponSchema>) {
   });
   if (clash) return { ok: false as const, error: "This code is already in use." };
 
-  const productSkus = (data.productSkus ?? "").split(",").map((sku) => sku.trim()).filter(Boolean);
-  const products = productSkus.length > 0
-    ? await prisma.product.findMany({ where: { sku: { in: productSkus } }, select: { id: true, sku: true } })
-    : [];
+  const productSkus = (data.productSkus ?? "")
+    .split(",")
+    .map((sku) => sku.trim())
+    .filter(Boolean);
+  const products =
+    productSkus.length > 0
+      ? await prisma.product.findMany({
+          where: { sku: { in: productSkus } },
+          select: { id: true, sku: true },
+        })
+      : [];
   const foundSkus = new Set(products.map((product) => product.sku));
   const missing = productSkus.filter((sku) => !foundSkus.has(sku));
   if (missing.length > 0) {
     return { ok: false as const, error: `Unknown product SKUs: ${missing.join(", ")}.` };
   }
 
-  const collections = data.collectionSlugs.length > 0
-    ? await prisma.collection.findMany({ where: { slug: { in: data.collectionSlugs } }, select: { id: true } })
-    : [];
-  const wilayas = data.wilayaCodes.length > 0
-    ? await prisma.wilaya.findMany({ where: { code: { in: data.wilayaCodes } }, select: { id: true } })
-    : [];
+  const collections =
+    data.collectionSlugs.length > 0
+      ? await prisma.collection.findMany({
+          where: { slug: { in: data.collectionSlugs } },
+          select: { id: true },
+        })
+      : [];
+  const wilayas =
+    data.wilayaCodes.length > 0
+      ? await prisma.wilaya.findMany({
+          where: { code: { in: data.wilayaCodes } },
+          select: { id: true },
+        })
+      : [];
+  if (
+    collections.length !== new Set(data.collectionSlugs).size ||
+    wilayas.length !== new Set(data.wilayaCodes).size
+  ) {
+    return { ok: false as const, error: "One or more coupon targets do not exist." };
+  }
+  if (
+    !data.appliesToAll &&
+    products.length === 0 &&
+    collections.length === 0 &&
+    wilayas.length === 0
+  ) {
+    return {
+      ok: false as const,
+      error: "Choose at least one target or explicitly enable whole-store scope.",
+    };
+  }
 
   const payload = {
     code,
@@ -113,7 +163,7 @@ export async function saveCouponAction(input: z.infer<typeof couponSchema>) {
     usageLimit: data.usageLimit ?? null,
     perCustomerLimit: data.perCustomerLimit ?? null,
     firstOrderOnly: data.firstOrderOnly,
-    appliesToAll: data.appliesToAll || (products.length === 0 && collections.length === 0),
+    appliesToAll: data.appliesToAll,
   };
 
   try {
@@ -127,16 +177,30 @@ export async function saveCouponAction(input: z.infer<typeof couponSchema>) {
       await tx.couponWilaya.deleteMany({ where: { couponId: coupon.id } });
 
       if (products.length > 0) {
-        await tx.couponProduct.createMany({ data: products.map((product) => ({ couponId: coupon.id, productId: product.id })) });
+        await tx.couponProduct.createMany({
+          data: products.map((product) => ({ couponId: coupon.id, productId: product.id })),
+        });
       }
       if (collections.length > 0) {
-        await tx.couponCollection.createMany({ data: collections.map((collection) => ({ couponId: coupon.id, collectionId: collection.id })) });
+        await tx.couponCollection.createMany({
+          data: collections.map((collection) => ({
+            couponId: coupon.id,
+            collectionId: collection.id,
+          })),
+        });
       }
       if (wilayas.length > 0) {
-        await tx.couponWilaya.createMany({ data: wilayas.map((wilaya) => ({ couponId: coupon.id, wilayaId: wilaya.id })) });
+        await tx.couponWilaya.createMany({
+          data: wilayas.map((wilaya) => ({ couponId: coupon.id, wilayaId: wilaya.id })),
+        });
       }
     });
-    await recordAudit({ actorUserId: actor.id, action: data.id ? "COUPON_UPDATED" : "COUPON_CREATED", resource: "Coupon", resourceId: code });
+    await recordAudit({
+      actorUserId: actor.id,
+      action: data.id ? "COUPON_UPDATED" : "COUPON_CREATED",
+      resource: "Coupon",
+      resourceId: code,
+    });
     revalidatePath("/admin/coupons");
     return { ok: true as const };
   } catch (error) {
@@ -152,7 +216,12 @@ export async function deleteCouponAction(id: string) {
   } else {
     await prisma.coupon.delete({ where: { id } });
   }
-  await recordAudit({ actorUserId: actor.id, action: "COUPON_DELETED", resource: "Coupon", resourceId: id });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "COUPON_DELETED",
+    resource: "Coupon",
+    resourceId: id,
+  });
   revalidatePath("/admin/coupons");
   return { ok: true as const };
 }
@@ -207,15 +276,26 @@ export async function saveDeliveryRateAction(input: z.infer<typeof rateSchema>) 
       isActive: data.isActive,
     },
   });
-  await recordAudit({ actorUserId: actor.id, action: "DELIVERY_RATE_UPDATED", resource: "DeliveryRate", resourceId: data.wilayaId, metadata: { method: data.method, price: data.price } });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "DELIVERY_RATE_UPDATED",
+    resource: "DeliveryRate",
+    resourceId: data.wilayaId,
+    metadata: { method: data.method, price: data.price },
+  });
   revalidatePath("/admin/delivery");
   return { ok: true as const };
 }
 
 export async function importDeliveryCsvAction(csv: string) {
   const actor = await requirePermission("delivery:write");
+  if (typeof csv !== "string" || Buffer.byteLength(csv, "utf8") > 1_000_000)
+    return { ok: false as const, error: "CSV is too large." };
   // Columns: wilaya_code,method,price,eta_min,eta_max,active
-  const lines = csv.split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
+  const lines = csv
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
   const start = lines[0]?.toLowerCase().includes("wilaya") ? 1 : 0;
   let updated = 0;
   const errors: string[] = [];
@@ -224,6 +304,16 @@ export async function importDeliveryCsvAction(csv: string) {
   const byCode = new Map(wilayas.map((wilaya) => [wilaya.code, wilaya.id]));
   const methods = ["HOME", "STOPDESK", "EXPRESS", "STANDARD"];
 
+  if (lines.length - start > 2000)
+    return { ok: false as const, error: "CSV contains too many rows." };
+  const updates: Array<{
+    wilayaId: string;
+    method: DeliveryMethod;
+    price: number;
+    etaMin: number;
+    etaMax: number;
+    active: boolean;
+  }> = [];
   for (let index = start; index < lines.length; index += 1) {
     const parts = (lines[index] ?? "").split(",").map((part) => part.trim());
     const [codeRaw, methodRaw, priceRaw, etaMinRaw, etaMaxRaw, activeRaw] = parts;
@@ -237,19 +327,58 @@ export async function importDeliveryCsvAction(csv: string) {
     const price = Number(priceRaw);
     const etaMin = Number(etaMinRaw ?? 1);
     const etaMax = Number(etaMaxRaw ?? 3);
-    if (!Number.isInteger(price) || price < 0 || etaMax < etaMin) {
+    if (
+      parts.length !== 6 ||
+      !Number.isInteger(price) ||
+      price < 0 ||
+      !Number.isInteger(etaMin) ||
+      !Number.isInteger(etaMax) ||
+      etaMin < 0 ||
+      etaMax > 30 ||
+      etaMax < etaMin ||
+      !["0", "1"].includes(activeRaw ?? "1")
+    ) {
       errors.push(`Line ${index + 1}: invalid numbers.`);
       continue;
     }
-    await prisma.deliveryRate.upsert({
-      where: { wilayaId_method: { wilayaId, method: method as DeliveryMethod } },
-      create: { wilayaId, method: method as DeliveryMethod, price, etaMinDays: etaMin, etaMaxDays: etaMax, isActive: (activeRaw ?? "1") !== "0" },
-      update: { price, etaMinDays: etaMin, etaMaxDays: etaMax, isActive: (activeRaw ?? "1") !== "0" },
+    updates.push({
+      wilayaId,
+      method: method as DeliveryMethod,
+      price,
+      etaMin,
+      etaMax,
+      active: activeRaw !== "0",
     });
-    updated += 1;
   }
+  if (errors.length > 0) return { ok: false as const, error: errors.slice(0, 10).join(" ") };
+  await prisma.$transaction(async (tx) => {
+    for (const item of updates)
+      await tx.deliveryRate.upsert({
+        where: { wilayaId_method: { wilayaId: item.wilayaId, method: item.method } },
+        create: {
+          wilayaId: item.wilayaId,
+          method: item.method,
+          price: item.price,
+          etaMinDays: item.etaMin,
+          etaMaxDays: item.etaMax,
+          isActive: item.active,
+        },
+        update: {
+          price: item.price,
+          etaMinDays: item.etaMin,
+          etaMaxDays: item.etaMax,
+          isActive: item.active,
+        },
+      });
+  });
+  updated = updates.length;
 
-  await recordAudit({ actorUserId: actor.id, action: "DELIVERY_RATES_IMPORTED", resource: "DeliveryRate", metadata: { updated } });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "DELIVERY_RATES_IMPORTED",
+    resource: "DeliveryRate",
+    metadata: { updated },
+  });
   revalidatePath("/admin/delivery");
   return { ok: true as const, updated, errors: errors.slice(0, 10) };
 }
@@ -295,31 +424,70 @@ export async function listCustomersAdmin(params: { search?: string; page?: numbe
 }
 
 export async function getCustomerDetail(id: string) {
-  await requirePermission("customers:read");
+  const actor = await requirePermission("customers:read");
   const customer = await prisma.customer.findUnique({
     where: { id },
-    include: {
-      orders: { orderBy: { createdAt: "desc" }, take: 20, select: { id: true, orderNumber: true, status: true, total: true, createdAt: true } },
-      addresses: { include: { wilaya: { select: { name: true } }, commune: { select: { name: true } } } },
+    select: {
+      id: true,
+      firstName: true,
+      lastName: true,
+      email: true,
+      phone: true,
+      status: true,
+      riskLevel: true,
+      riskNotes: true,
+      lastOrderAt: true,
+      createdAt: true,
+      orders: {
+        orderBy: { createdAt: "desc" },
+        take: 20,
+        select: { id: true, orderNumber: true, status: true, total: true, createdAt: true },
+      },
+      addresses: {
+        include: { wilaya: { select: { name: true } }, commune: { select: { name: true } } },
+      },
     },
   });
   if (!customer) throw new Error("Customer not found.");
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "CUSTOMER_DETAIL_VIEWED",
+    resource: "Customer",
+    resourceId: id,
+  });
   return customer;
 }
 
 export async function setCustomerStatusAction(id: string, status: "ACTIVE" | "BLOCKED") {
   const actor = await requirePermission("customers:write");
   await prisma.customer.update({ where: { id }, data: { status } });
-  await prisma.customerSession.updateMany({ where: { customerId: id }, data: { revokedAt: new Date() } });
-  await recordAudit({ actorUserId: actor.id, action: "CUSTOMER_STATUS_CHANGED", resource: "Customer", resourceId: id, metadata: { status } });
+  await prisma.customerSession.updateMany({
+    where: { customerId: id },
+    data: { revokedAt: new Date() },
+  });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "CUSTOMER_STATUS_CHANGED",
+    resource: "Customer",
+    resourceId: id,
+    metadata: { status },
+  });
   revalidatePath("/admin/customers");
   return { ok: true as const };
 }
 
 export async function updateCustomerNotesAction(id: string, notes: string) {
   const actor = await requirePermission("customers:write");
-  await prisma.customer.update({ where: { id }, data: { riskNotes: notes.slice(0, 2000) || null } });
-  await recordAudit({ actorUserId: actor.id, action: "CUSTOMER_NOTES_UPDATED", resource: "Customer", resourceId: id });
+  await prisma.customer.update({
+    where: { id },
+    data: { riskNotes: notes.slice(0, 2000) || null },
+  });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "CUSTOMER_NOTES_UPDATED",
+    resource: "Customer",
+    resourceId: id,
+  });
   revalidatePath(`/admin/customers/${id}`);
   return { ok: true as const };
 }
@@ -327,7 +495,7 @@ export async function updateCustomerNotesAction(id: string, notes: string) {
 /* -------------------------------------------------------------- Newsletter */
 
 export async function listSubscribersAdmin() {
-  await requirePermission("dashboard:read");
+  await requirePermission("newsletter:read");
   return prisma.newsletterSubscriber.findMany({
     orderBy: { createdAt: "desc" },
     take: 500,
@@ -336,8 +504,14 @@ export async function listSubscribersAdmin() {
 }
 
 export async function deleteSubscriberAction(id: string) {
-  await requirePermission("dashboard:read");
+  const actor = await requirePermission("newsletter:write");
   await prisma.newsletterSubscriber.delete({ where: { id } });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "NEWSLETTER_SUBSCRIBER_DELETED",
+    resource: "NewsletterSubscriber",
+    resourceId: id,
+  });
   revalidatePath("/admin/newsletter");
   return { ok: true as const };
 }
@@ -353,10 +527,19 @@ export async function listMessagesAdmin(status?: string) {
   });
 }
 
-export async function setMessageStatusAction(id: string, status: "NEW" | "IN_PROGRESS" | "RESOLVED" | "SPAM") {
-  const actor = await requirePermission("messages:read");
+export async function setMessageStatusAction(
+  id: string,
+  status: "NEW" | "IN_PROGRESS" | "RESOLVED" | "SPAM",
+) {
+  const actor = await requirePermission("messages:write");
   await prisma.contactMessage.update({ where: { id }, data: { status } });
-  await recordAudit({ actorUserId: actor.id, action: "MESSAGE_STATUS_CHANGED", resource: "ContactMessage", resourceId: id, metadata: { status } });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "MESSAGE_STATUS_CHANGED",
+    resource: "ContactMessage",
+    resourceId: id,
+    metadata: { status },
+  });
   revalidatePath("/admin/messages");
   return { ok: true as const };
 }
@@ -365,7 +548,12 @@ export async function setMessageStatusAction(id: string, status: "NEW" | "IN_PRO
 
 const pageSchema = z.object({
   id: z.string().min(1).optional(),
-  slug: z.string().trim().min(1).max(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
+  slug: z
+    .string()
+    .trim()
+    .min(1)
+    .max(120)
+    .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   title: z.string().trim().min(1).max(200),
   content: z.string().max(100_000).default(""),
   isPublished: z.coerce.boolean().default(true),
@@ -382,7 +570,11 @@ export async function savePageAction(input: z.infer<typeof pageSchema>) {
   const actor = await requirePermission("content:write");
   const parsed = pageSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: "Please review the page fields.", fields: flattenZodErrors(parsed.error) };
+    return {
+      ok: false as const,
+      error: "Please review the page fields.",
+      fields: flattenZodErrors(parsed.error),
+    };
   }
   const data = parsed.data;
   const { cleanRichText: clean } = await import("@/lib/sanitize");
@@ -390,12 +582,31 @@ export async function savePageAction(input: z.infer<typeof pageSchema>) {
   const saved = data.id
     ? await prisma.page.update({
         where: { id: data.id },
-        data: { slug: data.slug, title: data.title, content, isPublished: data.isPublished, seoTitle: data.seoTitle || null, seoDescription: data.seoDescription || null },
+        data: {
+          slug: data.slug,
+          title: data.title,
+          content,
+          isPublished: data.isPublished,
+          seoTitle: data.seoTitle || null,
+          seoDescription: data.seoDescription || null,
+        },
       })
     : await prisma.page.create({
-        data: { slug: data.slug, title: data.title, content, isPublished: data.isPublished, seoTitle: data.seoTitle || null, seoDescription: data.seoDescription || null },
+        data: {
+          slug: data.slug,
+          title: data.title,
+          content,
+          isPublished: data.isPublished,
+          seoTitle: data.seoTitle || null,
+          seoDescription: data.seoDescription || null,
+        },
       });
-  await recordAudit({ actorUserId: actor.id, action: data.id ? "PAGE_UPDATED" : "PAGE_CREATED", resource: "Page", resourceId: saved.id });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: data.id ? "PAGE_UPDATED" : "PAGE_CREATED",
+    resource: "Page",
+    resourceId: saved.id,
+  });
   revalidatePath("/admin/content");
   revalidatePath(`/pages/${saved.slug}`);
   return { ok: true as const };
@@ -423,7 +634,12 @@ export async function saveFaqAction(input: z.infer<typeof faqSchema>) {
   const saved = data.id
     ? await prisma.faqItem.update({ where: { id: data.id }, data })
     : await prisma.faqItem.create({ data });
-  await recordAudit({ actorUserId: actor.id, action: data.id ? "FAQ_UPDATED" : "FAQ_CREATED", resource: "FaqItem", resourceId: saved.id });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: data.id ? "FAQ_UPDATED" : "FAQ_CREATED",
+    resource: "FaqItem",
+    resourceId: saved.id,
+  });
   revalidatePath("/admin/content");
   revalidatePath("/faq");
   return { ok: true as const };
@@ -432,7 +648,12 @@ export async function saveFaqAction(input: z.infer<typeof faqSchema>) {
 export async function deleteFaqAction(id: string) {
   const actor = await requirePermission("content:write");
   await prisma.faqItem.delete({ where: { id } });
-  await recordAudit({ actorUserId: actor.id, action: "FAQ_DELETED", resource: "FaqItem", resourceId: id });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "FAQ_DELETED",
+    resource: "FaqItem",
+    resourceId: id,
+  });
   revalidatePath("/admin/content");
   return { ok: true as const };
 }
@@ -455,10 +676,37 @@ export async function saveAnnouncementAction(input: z.infer<typeof announcementS
   const parsed = announcementSchema.safeParse(input);
   if (!parsed.success) return { ok: false as const, error: "Please review the announcement." };
   const data = parsed.data;
+  if (data.href) {
+    if (data.href.startsWith("//") || /^(javascript|data|vbscript):/i.test(data.href)) {
+      return { ok: false as const, error: "Please provide a safe announcement link." };
+    }
+    if (data.href.startsWith("http://"))
+      return { ok: false as const, error: "Announcement links must use HTTPS." };
+    if (data.href.startsWith("https://")) {
+      try {
+        new URL(data.href);
+      } catch {
+        return { ok: false as const, error: "Please provide a valid announcement link." };
+      }
+    } else if (!data.href.startsWith("/")) {
+      return {
+        ok: false as const,
+        error: "Announcement links must be relative paths or HTTPS URLs.",
+      };
+    }
+  }
   const saved = data.id
-    ? await prisma.announcement.update({ where: { id: data.id }, data: { ...data, href: data.href || null } })
+    ? await prisma.announcement.update({
+        where: { id: data.id },
+        data: { ...data, href: data.href || null },
+      })
     : await prisma.announcement.create({ data: { ...data, href: data.href || null } });
-  await recordAudit({ actorUserId: actor.id, action: data.id ? "ANNOUNCEMENT_UPDATED" : "ANNOUNCEMENT_CREATED", resource: "Announcement", resourceId: saved.id });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: data.id ? "ANNOUNCEMENT_UPDATED" : "ANNOUNCEMENT_CREATED",
+    resource: "Announcement",
+    resourceId: saved.id,
+  });
   revalidatePath("/admin/content");
   revalidatePath("/");
   return { ok: true as const };
@@ -467,7 +715,12 @@ export async function saveAnnouncementAction(input: z.infer<typeof announcementS
 export async function deleteAnnouncementAction(id: string) {
   const actor = await requirePermission("content:write");
   await prisma.announcement.delete({ where: { id } });
-  await recordAudit({ actorUserId: actor.id, action: "ANNOUNCEMENT_DELETED", resource: "Announcement", resourceId: id });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "ANNOUNCEMENT_DELETED",
+    resource: "Announcement",
+    resourceId: id,
+  });
   revalidatePath("/admin/content");
   return { ok: true as const };
 }
@@ -477,7 +730,7 @@ export async function deleteAnnouncementAction(id: string) {
 export async function saveSettingsAction(key: string, value: unknown) {
   const actor = await requirePermission("settings:write");
   const { DEFAULT_SETTINGS, updateSettingsSection } = await import("@/lib/settings");
-  if (!(key in DEFAULT_SETTINGS)) {
+  if (!Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, key)) {
     return { ok: false as const, error: "Unknown settings section." };
   }
   if (!value || typeof value !== "object") {
@@ -485,7 +738,12 @@ export async function saveSettingsAction(key: string, value: unknown) {
   }
   const section = key as keyof typeof DEFAULT_SETTINGS;
   await updateSettingsSection(section, value as never);
-  await recordAudit({ actorUserId: actor.id, action: "SETTINGS_UPDATED", resource: "Setting", resourceId: key });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "SETTINGS_UPDATED",
+    resource: "Setting",
+    resourceId: key,
+  });
   revalidatePath("/");
   revalidatePath("/admin/settings");
   return { ok: true as const };
@@ -494,7 +752,7 @@ export async function saveSettingsAction(key: string, value: unknown) {
 /* -------------------------------------------------------------- Promotions */
 
 export async function listPromotionsAdmin() {
-  await requirePermission("coupons:read");
+  await requirePermission("promotions:read");
   return prisma.promotion.findMany({
     orderBy: { createdAt: "desc" },
     include: {
@@ -517,10 +775,14 @@ const promotionSchema = z.object({
 });
 
 export async function savePromotionAction(input: z.infer<typeof promotionSchema>) {
-  const actor = await requirePermission("coupons:write");
+  const actor = await requirePermission("promotions:write");
   const parsed = promotionSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: "Please review the promotion fields.", fields: flattenZodErrors(parsed.error) };
+    return {
+      ok: false as const,
+      error: "Please review the promotion fields.",
+      fields: flattenZodErrors(parsed.error),
+    };
   }
   const data = parsed.data;
 
@@ -533,10 +795,17 @@ export async function savePromotionAction(input: z.infer<typeof promotionSchema>
     return { ok: false as const, error: "The end date must be after the start date." };
   }
 
-  const productSkus = (data.productSkus ?? "").split(",").map((sku) => sku.trim()).filter(Boolean);
-  const products = productSkus.length > 0
-    ? await prisma.product.findMany({ where: { sku: { in: productSkus } }, select: { id: true, sku: true } })
-    : [];
+  const productSkus = (data.productSkus ?? "")
+    .split(",")
+    .map((sku) => sku.trim())
+    .filter(Boolean);
+  const products =
+    productSkus.length > 0
+      ? await prisma.product.findMany({
+          where: { sku: { in: productSkus } },
+          select: { id: true, sku: true },
+        })
+      : [];
   const found = new Set(products.map((product) => product.sku));
   const missing = productSkus.filter((sku) => !found.has(sku));
   if (missing.length > 0) {
@@ -544,6 +813,16 @@ export async function savePromotionAction(input: z.infer<typeof promotionSchema>
   }
 
   let collectionId: string | null = null;
+  let preserveExistingScope = false;
+  if (data.id && !data.collectionSlug && productSkus.length === 0) {
+    const existing = await prisma.promotion.findUnique({
+      where: { id: data.id },
+      select: { collectionId: true },
+    });
+    if (!existing) return { ok: false as const, error: "Promotion not found." };
+    collectionId = existing.collectionId;
+    preserveExistingScope = true;
+  }
   if (data.collectionSlug) {
     const collection = await prisma.collection.findUnique({ where: { slug: data.collectionSlug } });
     if (!collection) return { ok: false as const, error: "Unknown collection slug." };
@@ -555,19 +834,41 @@ export async function savePromotionAction(input: z.infer<typeof promotionSchema>
       const promotion = data.id
         ? await tx.promotion.update({
             where: { id: data.id },
-            data: { name: data.name, type: data.type, value: data.value, startsAt, endsAt, isActive: data.isActive, collectionId },
+            data: {
+              name: data.name,
+              type: data.type,
+              value: data.value,
+              startsAt,
+              endsAt,
+              isActive: data.isActive,
+              collectionId,
+            },
           })
         : await tx.promotion.create({
-            data: { name: data.name, type: data.type, value: data.value, startsAt, endsAt, isActive: data.isActive, collectionId },
+            data: {
+              name: data.name,
+              type: data.type,
+              value: data.value,
+              startsAt,
+              endsAt,
+              isActive: data.isActive,
+              collectionId,
+            },
           });
-      await tx.promotionProduct.deleteMany({ where: { promotionId: promotion.id } });
-      if (products.length > 0) {
+      if (!preserveExistingScope)
+        await tx.promotionProduct.deleteMany({ where: { promotionId: promotion.id } });
+      if (!preserveExistingScope && products.length > 0) {
         await tx.promotionProduct.createMany({
           data: products.map((product) => ({ promotionId: promotion.id, productId: product.id })),
         });
       }
     });
-    await recordAudit({ actorUserId: actor.id, action: data.id ? "PROMOTION_UPDATED" : "PROMOTION_CREATED", resource: "Promotion", resourceId: data.name });
+    await recordAudit({
+      actorUserId: actor.id,
+      action: data.id ? "PROMOTION_UPDATED" : "PROMOTION_CREATED",
+      resource: "Promotion",
+      resourceId: data.id ?? data.name,
+    });
     revalidatePath("/admin/promotions");
     return { ok: true as const };
   } catch (error) {
@@ -576,14 +877,19 @@ export async function savePromotionAction(input: z.infer<typeof promotionSchema>
 }
 
 export async function deletePromotionAction(id: string) {
-  const actor = await requirePermission("coupons:write");
+  const actor = await requirePermission("promotions:write");
   const orders = await prisma.order.count({ where: { promotionId: id } });
   if (orders > 0) {
     await prisma.promotion.update({ where: { id }, data: { isActive: false } });
   } else {
     await prisma.promotion.delete({ where: { id } });
   }
-  await recordAudit({ actorUserId: actor.id, action: "PROMOTION_DELETED", resource: "Promotion", resourceId: id });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "PROMOTION_DELETED",
+    resource: "Promotion",
+    resourceId: id,
+  });
   revalidatePath("/admin/promotions");
   return { ok: true as const };
 }
@@ -592,7 +898,7 @@ export async function deletePromotionAction(id: string) {
 
 export async function listAuditLogs(params: { action?: string; search?: string; page?: number }) {
   await requirePermission("audit:read");
-  const page = Math.max(1, params.page ?? 1);
+  const page = Math.min(500, Math.max(1, Number.isInteger(params.page) ? (params.page ?? 1) : 1));
   const pageSize = 30;
   const where: Prisma.AuditLogWhereInput = {};
   if (params.action) where.action = params.action;
@@ -608,7 +914,16 @@ export async function listAuditLogs(params: { action?: string; search?: string; 
       orderBy: { createdAt: "desc" },
       skip: (page - 1) * pageSize,
       take: pageSize,
-      include: { actor: { select: { name: true, email: true } } },
+      select: {
+        id: true,
+        actorType: true,
+        action: true,
+        resource: true,
+        resourceId: true,
+        ip: true,
+        createdAt: true,
+        actor: { select: { name: true, email: true } },
+      },
     }),
     prisma.auditLog.count({ where }),
   ]);

@@ -23,6 +23,8 @@ export const PERMISSIONS = {
 
   COUPONS_READ: "coupons:read",
   COUPONS_WRITE: "coupons:write",
+  PROMOTIONS_READ: "promotions:read",
+  PROMOTIONS_WRITE: "promotions:write",
 
   CUSTOMERS_READ: "customers:read",
   CUSTOMERS_WRITE: "customers:write",
@@ -30,6 +32,10 @@ export const PERMISSIONS = {
   REVIEWS_MODERATE: "reviews:moderate",
   CONTENT_WRITE: "content:write",
   MESSAGES_READ: "messages:read",
+  MESSAGES_WRITE: "messages:write",
+  NEWSLETTER_READ: "newsletter:read",
+  NEWSLETTER_WRITE: "newsletter:write",
+  NEWSLETTER_EXPORT: "newsletter:export",
 
   DELIVERY_READ: "delivery:read",
   DELIVERY_WRITE: "delivery:write",
@@ -57,11 +63,23 @@ export const ROLE_NAMES = [
 export type RoleNameValue = (typeof ROLE_NAMES)[number];
 
 export const ROLES: Array<{ name: RoleNameValue; label: string; description: string }> = [
-  { name: "SUPER_ADMIN", label: "Super Admin", description: "Full access, including user management." },
+  {
+    name: "SUPER_ADMIN",
+    label: "Super Admin",
+    description: "Full access, including user management.",
+  },
   { name: "ADMIN", label: "Admin", description: "Everything except managing staff accounts." },
   { name: "ORDER_MANAGER", label: "Order Manager", description: "Orders, customers and delivery." },
-  { name: "PRODUCT_MANAGER", label: "Product Manager", description: "Catalog, inventory and marketing." },
-  { name: "CUSTOMER_SUPPORT", label: "Customer Support", description: "Orders, reviews and messages." },
+  {
+    name: "PRODUCT_MANAGER",
+    label: "Product Manager",
+    description: "Catalog, inventory and marketing.",
+  },
+  {
+    name: "CUSTOMER_SUPPORT",
+    label: "Customer Support",
+    description: "Orders, reviews and messages.",
+  },
   { name: "ANALYST", label: "Analyst", description: "Read-only access to reports." },
 ];
 
@@ -91,6 +109,8 @@ export const ROLE_PERMISSIONS: Record<RoleNameValue, PermissionCode[]> = {
     P.CATALOG_WRITE,
     P.COUPONS_READ,
     P.COUPONS_WRITE,
+    P.PROMOTIONS_READ,
+    P.PROMOTIONS_WRITE,
     P.REVIEWS_MODERATE,
     P.CONTENT_WRITE,
     P.DELIVERY_READ,
@@ -102,6 +122,7 @@ export const ROLE_PERMISSIONS: Record<RoleNameValue, PermissionCode[]> = {
     P.CUSTOMERS_READ,
     P.REVIEWS_MODERATE,
     P.MESSAGES_READ,
+    P.MESSAGES_WRITE,
     P.CONTENT_WRITE,
   ],
   ANALYST: [

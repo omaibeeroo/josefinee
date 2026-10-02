@@ -2,7 +2,12 @@
 
 import { useState, type FormEvent } from "react";
 import Image from "next/image";
-import { adminChangePasswordAction, confirm2faSetupAction, disable2faAction, start2faSetupAction } from "@/server/actions/admin-auth";
+import {
+  adminChangePasswordAction,
+  confirm2faSetupAction,
+  disable2faAction,
+  start2faSetupAction,
+} from "@/server/actions/admin-auth";
 import { Button, Field, Input } from "@/components/ui";
 
 export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolean }) {
@@ -11,6 +16,8 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
   const [token, setToken] = useState("");
   const [state, setState] = useState<{ ok: boolean; message: string } | null>(null);
   const [pending, setPending] = useState(false);
+  const [mfaPassword, setMfaPassword] = useState("");
+  const [disableToken, setDisableToken] = useState("");
 
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -18,7 +25,7 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
 
   async function start() {
     setPending(true);
-    const result = await start2faSetupAction();
+    const result = await start2faSetupAction({ currentPassword: mfaPassword });
     setPending(false);
     if (result.ok) {
       setQr(result.qr);
@@ -31,7 +38,10 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
     setPending(true);
     const result = await confirm2faSetupAction(token);
     setPending(false);
-    setState({ ok: result.ok, message: result.ok ? "Two-factor authentication is now on." : result.error });
+    setState({
+      ok: result.ok,
+      message: result.ok ? "Two-factor authentication is now on." : result.error,
+    });
     if (result.ok) {
       setQr(null);
       window.location.reload();
@@ -39,8 +49,13 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
   }
 
   async function disable() {
-    if (!window.confirm("Turn off two-factor authentication? This weakens your account security.")) return;
-    await disable2faAction();
+    if (!window.confirm("Turn off two-factor authentication? This weakens your account security."))
+      return;
+    const result = await disable2faAction({ currentPassword: mfaPassword, token: disableToken });
+    if (!result.ok) {
+      setState({ ok: false, message: result.error });
+      return;
+    }
     window.location.reload();
   }
 
@@ -62,22 +77,44 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
           Status: <span className="font-medium">{twoFactorEnabled ? "Enabled" : "Disabled"}</span>
         </p>
         {twoFactorEnabled ? (
-          <Button variant="outline" size="sm" className="mt-4" onClick={() => void disable()}>
-            Disable 2FA
-          </Button>
+          <div className="mt-4 space-y-3">
+            <Field label="Current password">
+              <Input
+                type="password"
+                value={mfaPassword}
+                onChange={(event) => setMfaPassword(event.target.value)}
+              />
+            </Field>
+            <Field label="Current authenticator code">
+              <Input
+                inputMode="numeric"
+                maxLength={6}
+                value={disableToken}
+                onChange={(event) => setDisableToken(event.target.value)}
+              />
+            </Field>
+            <Button variant="outline" size="sm" onClick={() => void disable()}>
+              Disable 2FA
+            </Button>
+          </div>
         ) : qr ? (
           <form onSubmit={confirm} className="mt-4 space-y-3">
             <p className="text-sm text-ink-soft">
-              Scan this code with your authenticator app (Google Authenticator, 1Password, …), then enter the 6-digit code.
+              Scan this code with your authenticator app (Google Authenticator, 1Password, …), then
+              enter the 6-digit code.
             </p>
             <Image src={qr} alt="Authenticator QR code" width={220} height={220} />
             {manualKey && (
-              <p className="break-all font-mono text-xs text-ink-muted">
-                Manual key: {manualKey}
-              </p>
+              <p className="break-all font-mono text-xs text-ink-muted">Manual key: {manualKey}</p>
             )}
             <Field label="6-digit code" required>
-              <Input value={token} onChange={(event) => setToken(event.target.value)} inputMode="numeric" maxLength={6} required />
+              <Input
+                value={token}
+                onChange={(event) => setToken(event.target.value)}
+                inputMode="numeric"
+                maxLength={6}
+                required
+              />
             </Field>
             {state && (
               <p className={`text-sm ${state.ok ? "text-ink-soft" : "text-sale"}`} role="status">
@@ -89,22 +126,46 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
             </Button>
           </form>
         ) : (
-          <Button size="sm" className="mt-4" disabled={pending} onClick={() => void start()}>
-            {pending ? "…" : "Set up 2FA"}
-          </Button>
+          <div className="mt-4 space-y-3">
+            <Field label="Current password">
+              <Input
+                type="password"
+                value={mfaPassword}
+                onChange={(event) => setMfaPassword(event.target.value)}
+              />
+            </Field>
+            <Button size="sm" disabled={pending} onClick={() => void start()}>
+              {pending ? "…" : "Set up 2FA"}
+            </Button>
+          </div>
         )}
       </div>
 
       <form onSubmit={changePassword} className="space-y-4 border hairline bg-white p-5">
         <h2 className="font-display text-2xl">Change password</h2>
         <Field label="Current password">
-          <Input type="password" value={current} onChange={(event) => setCurrent(event.target.value)} autoComplete="current-password" required />
+          <Input
+            type="password"
+            value={current}
+            onChange={(event) => setCurrent(event.target.value)}
+            autoComplete="current-password"
+            required
+          />
         </Field>
         <Field label="New password" hint="10+ characters, upper & lower case, a number">
-          <Input type="password" value={next} onChange={(event) => setNext(event.target.value)} autoComplete="new-password" required />
+          <Input
+            type="password"
+            value={next}
+            onChange={(event) => setNext(event.target.value)}
+            autoComplete="new-password"
+            required
+          />
         </Field>
         {passwordState && (
-          <p className={`text-sm ${passwordState.ok ? "text-ink-soft" : "text-sale"}`} role="status">
+          <p
+            className={`text-sm ${passwordState.ok ? "text-ink-soft" : "text-sale"}`}
+            role="status"
+          >
             {passwordState.message}
           </p>
         )}
