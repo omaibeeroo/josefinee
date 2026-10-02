@@ -1,4 +1,7 @@
 import type { Metadata } from "next";
+import { cache } from "react";
+import { after } from "next/server";
+import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Banknote, Truck } from "lucide-react";
@@ -13,9 +16,13 @@ import {
   ProductCarousel,
   RecentlyViewed,
 } from "@/components/storefront/product";
-import { Accordion, Price, Stars } from "@/components/ui";
+import { Accordion, Stars } from "@/components/ui";
 import { PixelEvent } from "@/components/pixels";
 import { ReviewForm } from "./reviews";
+import { serializeForInlineJsonScript } from "@/lib/script-data";
+import { cleanRichText } from "@/lib/sanitize";
+
+const getCachedProductBySlug = cache((slug: string) => getProductBySlug(slug));
 
 export const dynamic = "force-dynamic";
 
@@ -25,8 +32,8 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
-  if (!product) return { title: "Product not found" };
+  const product = await getCachedProductBySlug(slug);
+  if (!product) notFound();
   const settings = await getSettings();
   return {
     title: product.seoTitle || product.name,
@@ -62,20 +69,22 @@ async function getReviews(productId: string) {
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = await getProductBySlug(slug);
+  const product = await getCachedProductBySlug(slug);
   if (!product) notFound();
 
-  const settings = await getSettings();
+  const [settings, requestHeaders] = await Promise.all([getSettings(), headers()]);
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
   const [related, reviews, promotion] = await Promise.all([
     getRelatedProducts(product.id, product.category ? await categoryIdOf(product.category.slug) : null),
     getReviews(product.id),
     getProductPromotion(product.id, product.collectionIds),
   ]);
-  const totalAvailable = product.variants.reduce((sum, variant) => sum + variant.available, 0);
-  await trackEvent({
-    name: ANALYTICS_EVENTS.PRODUCT_VIEW,
-    props: { productId: product.id, slug: product.slug, price: product.price },
-  });
+  after(() =>
+    trackEvent({
+      name: ANALYTICS_EVENTS.PRODUCT_VIEW,
+      props: { productId: product.id, slug: product.slug, price: product.price },
+    }),
+  );
 
   const firstImage = product.images[0];
   const jsonLd = {
@@ -114,9 +123,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     <div className="container-luxe py-8 md:py-12">
       <PixelEvent
         name="ViewContent"
-        params={{ content_ids: [product.id], content_type: "product", value: product.price / 100, currency: "DZD" }}
+        params={{ content_ids: [product.id], content_type: "product", value: product.price, currency: "DZD" }}
       />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }} />
+      <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeForInlineJsonScript(jsonLd) }} />
 
       <nav aria-label="Breadcrumb" className="mb-6 text-xs uppercase tracking-[0.14em] text-ink-muted">
         <Link href="/" className="hover:text-ink">Home</Link>
@@ -145,15 +154,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               <Stars value={product.ratingAvg} count={product.ratingCount} />
             </div>
           )}
-          <div className="mt-4">
-            <Price price={product.price} compareAt={product.compareAtPrice} large />
-          </div>
           <p className="mt-2 flex items-center gap-2 text-sm" role="status">
             {product.inStock ? (
               <>
                 <span className="h-2 w-2 rounded-full bg-success" aria-hidden="true" />
                 <span className="font-medium">
-                  {totalAvailable <= 3 ? `Low stock — only ${totalAvailable} available` : "In stock, ready to ship"}
+                  In stock, ready to ship
                 </span>
               </>
             ) : (
@@ -202,7 +208,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                         content: (
                           <div
                             className="rich-text"
-                            dangerouslySetInnerHTML={{ __html: product.description }}
+                            dangerouslySetInnerHTML={{ __html: cleanRichText(product.description) }}
                           />
                         ),
                       },

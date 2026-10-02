@@ -302,6 +302,17 @@ const FAQS: Array<{ category: string; question: string; answer: string }> = [
 ];
 
 async function main() {
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD;
+  if (
+    !adminPassword ||
+    adminPassword.length < 10 ||
+    !/[a-z]/.test(adminPassword) ||
+    !/[A-Z]/.test(adminPassword) ||
+    !/[0-9]/.test(adminPassword)
+  ) {
+    throw new Error("SEED_ADMIN_PASSWORD must be explicitly set to a strong password before seeding.");
+  }
+
   console.log("Seeding roles & permissions...");
   for (const role of ROLES) {
     await prisma.role.upsert({
@@ -336,7 +347,6 @@ async function main() {
 
   console.log("Seeding demo admin...");
   const adminEmail = (process.env.SEED_ADMIN_EMAIL ?? "admin@example.com").toLowerCase();
-  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "ChangeMeNow!123";
   const superAdmin = await prisma.role.findUniqueOrThrow({ where: { name: "SUPER_ADMIN" } });
   await prisma.user.upsert({
     where: { email: adminEmail },
@@ -592,14 +602,16 @@ async function main() {
     }
     void slug;
   }
-  await prisma.announcement.deleteMany({});
-  await prisma.announcement.create({
-    data: {
+  await prisma.announcement.upsert({
+    where: { id: "seed_default_announcement" },
+    create: {
+      id: "seed_default_announcement",
       text: "Express delivery across Algeria — Cash on delivery available",
       href: "/collections/new-in",
       isActive: true,
       sortOrder: 0,
     },
+    update: {},
   });
 
   console.log("Seed complete.");

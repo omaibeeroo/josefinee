@@ -34,7 +34,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
     sales.items.push({ href: "/admin/orders", label: "Orders", badge: pendingOrders });
   if (has("customers:read")) sales.items.push({ href: "/admin/customers", label: "Customers" });
   if (has("coupons:read")) sales.items.push({ href: "/admin/coupons", label: "Coupons" });
-  if (has("coupons:read")) sales.items.push({ href: "/admin/promotions", label: "Promotions" });
+  if (has("promotions:read")) sales.items.push({ href: "/admin/promotions", label: "Promotions" });
   if (has("reviews:moderate")) sales.items.push({ href: "/admin/reviews", label: "Reviews" });
   if (sales.items.length > 0) sections.push(sales);
 

@@ -101,15 +101,15 @@ export default async function HomePage() {
             description={featuredCollection.description ?? ""}
             image={featuredCollection.image}
             href={`/collections/${featuredCollection.slug}`}
-            cta={`Shop ${featuredCollection.name}`}
+            cta={`Découvrir ${featuredCollection.name}`}
           />
         </div>
       )}
 
       <div className="section-space pt-0">
         <ProductCarousel
-          eyebrow="Handpicked"
-          title="Choose your jewellery"
+          eyebrow="Sélection choisie"
+          title="Nos bijoux"
           products={featured}
           viewAllHref="/shop"
         />
@@ -117,8 +117,8 @@ export default async function HomePage() {
 
       <div className="section-space pt-0">
         <ProductCarousel
-          eyebrow="Loved by customers"
-          title="Our best sellers"
+          eyebrow="Plébiscités par nos clientes"
+          title="Meilleures ventes"
           products={bestSellers}
           viewAllHref="/collections/best-sellers"
         />
@@ -126,8 +126,8 @@ export default async function HomePage() {
 
       <div className="section-space pt-0">
         <ProductCarousel
-          eyebrow="Just landed"
-          title="New in"
+          eyebrow="Tout juste arrivés"
+          title="Nouveautés"
           products={newIn}
           viewAllHref="/collections/new-in"
         />
@@ -156,7 +156,7 @@ export default async function HomePage() {
           href="/shop"
           className="text-xs font-medium uppercase tracking-[0.24em] underline underline-offset-8"
         >
-          Shop all products
+          Découvrir tous les produits
         </Link>
       </section>
     </div>

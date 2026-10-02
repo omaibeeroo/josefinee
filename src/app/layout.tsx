@@ -7,6 +7,7 @@ import { CartProvider } from "@/components/storefront/cart-ui";
 import { Pixels } from "@/components/pixels";
 import { CookiePreferences } from "@/components/cookie-consent";
 import { NavigationProgress } from "@/components/navigation-progress";
+import { headers } from "next/headers";
 
 const display = Cormorant_Garamond({
   subsets: ["latin"],
@@ -55,7 +56,8 @@ export const viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const settings = await getSettings();
+  const [settings, requestHeaders] = await Promise.all([getSettings(), headers()]);
+  const nonce = requestHeaders.get("x-nonce") ?? undefined;
   const style = {
     "--color-gold": settings.general.colors.accent,
     "--color-ink": settings.general.colors.ink,
@@ -78,6 +80,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           gaId={settings.analytics.gaId}
           metaPixelId={settings.analytics.metaPixelId}
           tiktokPixelId={settings.analytics.tiktokPixelId}
+          nonce={nonce}
         />
       </body>
     </html>

@@ -32,7 +32,8 @@ npm install
 
 # 2. Configure
 cp .env.example .env
-# edit DATABASE_URL and AUTH_SECRET (openssl rand -base64 48)
+# edit DATABASE_URL, AUTH_SECRET (openssl rand -base64 48), and set a unique
+# SEED_ADMIN_PASSWORD before running the seed
 
 # 3. Database (option A — local Postgres via Docker)
 docker compose up -d postgres
@@ -52,11 +53,13 @@ Open http://localhost:3000. Admin: http://localhost:3000/admin
 
 ### Demo admin (development only)
 
-Configured through env, never hard-coded:
+Configured through env, never hard-coded. Set a unique strong password before
+seeding; the seed fails closed if it is absent. Do not use a repository-published
+demo password:
 
 ```bash
 SEED_ADMIN_EMAIL=admin@example.com
-SEED_ADMIN_PASSWORD=ChangeMeNow!123
+SEED_ADMIN_PASSWORD=<set-a-unique-strong-password>
 ```
 
 The seeded admin **must change its password on first login**. Create real staff
@@ -74,10 +77,14 @@ See `.env.example` for the full list. Highlights:
 | `STORAGE_BUCKET/ENDPOINT/ACCESS_KEY/SECRET_KEY/PUBLIC_HOST` | S3-compatible storage |
 | `EMAIL_PROVIDER/SMS_PROVIDER/WHATSAPP_PROVIDER` | `resend` / `twilio` / `meta`, or `console` (log only) |
 | `GOOGLE_ANALYTICS_ID / META_PIXEL_ID / TIKTOK_PIXEL_ID` | Set via Admin → Settings → Analytics (pixels load only after cookie consent) |
-| `UPSTASH_REDIS_REST_URL/TOKEN` | Optional distributed rate limiting (falls back to in-memory) |
+| `UPSTASH_REDIS_REST_URL/TOKEN` | Optional distributed rate limiting; production falls back to shared PostgreSQL buckets, while memory fallback is development/test only |
+| `TRUSTED_CLIENT_IP_HEADER` | Header overwritten by the trusted reverse proxy (default `x-real-ip`); required for production public mutation rate limits |
+| `ORDER_OUTBOX_SECRET` | 32+ random bytes used only by the scheduled order-effect retry endpoint; required in production |
 | `CAPTCHA_SECRET / NEXT_PUBLIC_CAPTCHA_SITE_KEY` | Optional bot protection hooks |
 
 Never commit `.env`.
+
+In production, configure a scheduler to `POST /api/internal/order-outbox` at least once per minute with `Authorization: Bearer $ORDER_OUTBOX_SECRET`. Order analytics, customer notifications, and Meta conversion events are durably enqueued in the same transaction as the order; the scheduler retries pending effects with bounded exponential backoff. The order request also attempts immediate processing after its response.
 
 ## Architecture
 

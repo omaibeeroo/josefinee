@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, Menu, X } from "lucide-react";
 import { adminLogoutAction } from "@/server/actions/admin-auth";
 import { cn } from "@/lib/utils";
+import { useDialogFocus } from "@/components/ui";
 
 export type NavItem = { href: string; label: string; badge?: number };
 
@@ -25,6 +26,8 @@ export function AdminShell({
   const pathname = usePathname();
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
+  const menuPanelRef = useRef<HTMLElement>(null);
+  useDialogFocus(menuOpen, menuPanelRef, () => setMenuOpen(false));
 
   useEffect(() => {
     setMenuOpen(false);
@@ -84,7 +87,7 @@ export function AdminShell({
         {menuOpen && (
           <div className="fixed inset-0 z-50 lg:hidden print:hidden" role="dialog" aria-modal="true" aria-label="Admin navigation">
             <button aria-label="Close navigation" onClick={() => setMenuOpen(false)} className="absolute inset-0 bg-ink/50" />
-            <aside className="absolute left-0 top-0 h-full w-72 overflow-y-auto bg-ivory p-4">
+            <aside ref={menuPanelRef} tabIndex={-1} className="absolute left-0 top-0 h-full w-72 overflow-y-auto bg-ivory p-4">
               <div className="mb-3 flex items-center justify-between">
                 <span className="font-display text-lg tracking-[0.24em]">NÛR</span>
                 <button type="button" onClick={() => setMenuOpen(false)} aria-label="Close navigation" className="p-2">

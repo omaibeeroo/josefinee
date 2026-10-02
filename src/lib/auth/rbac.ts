@@ -20,6 +20,9 @@ export async function requireAdmin(): Promise<AdminSessionUser> {
   if (!session) {
     throw new AppError("UNAUTHORIZED", "Please sign in to continue.", 401);
   }
+  if (session.user.mustChangePassword) {
+    throw new AppError("FORBIDDEN", "Change your password before using the admin panel.", 403);
+  }
   return session.user;
 }
 

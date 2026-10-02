@@ -16,7 +16,7 @@ export async function trackEvent(input: {
   referrer?: string | null;
   ip?: string | null;
   userAgent?: string | null;
-}): Promise<void> {
+}): Promise<boolean> {
   try {
     await prisma.analyticsEvent.create({
       data: {
@@ -30,8 +30,14 @@ export async function trackEvent(input: {
         userAgent: input.userAgent ?? null,
       },
     });
+    return true;
   } catch (error) {
-    console.error("[analytics] failed to track", input.name, error);
+    console.error(
+      "[analytics] failed to track",
+      input.name,
+      error instanceof Error ? error.name : "unknown",
+    );
+    return false;
   }
 }
 

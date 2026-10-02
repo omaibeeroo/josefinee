@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { z } from "zod";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -17,6 +18,21 @@ import { pixelEvent } from "@/components/pixels";
 import type { CartLine } from "@/server/cart";
 import type { CommuneOption, DeliveryOption, WilayaOption } from "@/server/delivery";
 
+const CHECKOUT_DRAFT_KEY = "nur.checkout.draft.v1";
+const CHECKOUT_IDEMPOTENCY_KEY = "nur.checkout.idempotency.v1";
+const checkoutDraftSchema = z.object({
+  wilayaId: z.string().max(64),
+  communeId: z.string().max(64),
+  deliveryMethod: z.enum(["HOME", "STOPDESK", "EXPRESS", "STANDARD"]),
+  couponInput: z.string().max(40),
+});
+
+function newCheckoutKey(): string {
+  if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  return Array.from(bytes, (value) => value.toString(16).padStart(2, "0")).join("");
+}
+
 export function CheckoutForm({
   wilayas,
   initialCart,
@@ -31,11 +47,7 @@ export function CheckoutForm({
   promotion: { name: string; discount: number } | null;
 }) {
   const router = useRouter();
-  const idempotencyKey = useRef(
-    typeof crypto !== "undefined" && "randomUUID" in crypto
-      ? crypto.randomUUID()
-      : `${Date.now()}-${Math.random().toString(36).slice(2)}`,
-  );
+  const idempotencyKey = useRef<string | null>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -56,6 +68,9 @@ export function CheckoutForm({
   const [couponInput, setCouponInput] = useState("");
   const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
   const [couponMessage, setCouponMessage] = useState<string | null>(null);
+  const [couponPending, setCouponPending] = useState(false);
+  const [draftLoaded, setDraftLoaded] = useState(false);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   const [website, setWebsite] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -63,24 +78,83 @@ export function CheckoutForm({
   const [duplicateOrder, setDuplicateOrder] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [loadingRegion, setLoadingRegion] = useState(false);
+  const [regionError, setRegionError] = useState<string | null>(null);
+  const [regionRetryToken, setRegionRetryToken] = useState(0);
+
+  useEffect(() => {
+    try {
+      const rawDraft = window.sessionStorage.getItem(CHECKOUT_DRAFT_KEY);
+      if (rawDraft) {
+        const parsedDraft = checkoutDraftSchema.safeParse(JSON.parse(rawDraft));
+        if (parsedDraft.success) {
+          const draft = parsedDraft.data;
+          setWilayaId(draft.wilayaId);
+          setCommuneId(draft.communeId);
+          setDeliveryMethod(draft.deliveryMethod);
+          setCouponInput(draft.couponInput);
+          setCouponMessage(draft.couponInput ? "Code promo enregistré — appliquez-le à nouveau pour vérifier sa disponibilité." : null);
+          setDraftRestored(true);
+        } else {
+          window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+        }
+      }
+      const savedKey = window.sessionStorage.getItem(CHECKOUT_IDEMPOTENCY_KEY);
+      const key = savedKey && /^[A-Za-z0-9-]{8,100}$/.test(savedKey) ? savedKey : newCheckoutKey();
+      idempotencyKey.current = key;
+      window.sessionStorage.setItem(CHECKOUT_IDEMPOTENCY_KEY, key);
+    } catch {
+      idempotencyKey.current = newCheckoutKey();
+    }
+    setDraftLoaded(true);
+  }, []);
+
+  useEffect(() => {
+    if (!draftLoaded) return;
+    const draft = {
+      wilayaId,
+      communeId,
+      deliveryMethod,
+      couponInput,
+    };
+    try {
+      if (Object.values(draft).some((value) => value.trim().length > 0)) {
+        window.sessionStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(draft));
+      } else {
+        window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+      }
+    } catch {
+      // Storage may be disabled; checkout remains functional without draft recovery.
+    }
+  }, [draftLoaded, wilayaId, communeId, deliveryMethod, couponInput]);
 
   useEffect(() => {
     if (!wilayaId) {
       setCommunes([]);
       setDeliveryOptions([]);
+      setRegionError(null);
       return;
     }
     let cancelled = false;
     setLoadingRegion(true);
+    setRegionError(null);
     Promise.all([getCommunesAction(wilayaId), getDeliveryOptionsAction(wilayaId)])
       .then(([communeList, options]) => {
         if (cancelled) return;
         setCommunes(communeList);
         setDeliveryOptions(options);
-        setCommuneId("");
+        setCommuneId((current) => communeList.some((commune) => commune.id === current) ? current : "");
+        if (communeList.length === 0 || options.length === 0) {
+          setRegionError("Les options de livraison ne sont pas disponibles dans cette wilaya. Choisissez-en une autre ou contactez-nous.");
+        }
         if (options.length > 0 && !options.some((option) => option.method === deliveryMethod)) {
           setDeliveryMethod(options[0]?.method ?? defaultDeliveryMethod);
         }
+      })
+      .catch(() => {
+        if (cancelled) return;
+        setCommunes([]);
+        setDeliveryOptions([]);
+        setRegionError("Impossible de charger les options de livraison. Réessayez ou choisissez une autre wilaya.");
       })
       .finally(() => {
         if (!cancelled) setLoadingRegion(false);
@@ -89,7 +163,7 @@ export function CheckoutForm({
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [wilayaId]);
+  }, [wilayaId, regionRetryToken]);
 
   const selectedRate = deliveryOptions.find((option) => option.method === deliveryMethod);
   const postPromoSubtotal = Math.max(0, initialCart.subtotal - (promotion?.discount ?? 0));
@@ -103,15 +177,49 @@ export function CheckoutForm({
     [freeDeliveryThreshold, postPromoSubtotal],
   );
 
+  function clearSavedDraft() {
+    setFirstName("");
+    setLastName("");
+    setPhone("");
+    setEmail("");
+    setWilayaId("");
+    setCommuneId("");
+    setAddress("");
+    setDeliveryMethod(defaultDeliveryMethod);
+    setNotes("");
+    setCouponInput("");
+    setCoupon(null);
+    setCouponMessage(null);
+    setPassword("");
+    setCreateAccount(false);
+    setAcceptTerms(false);
+    setAllowDuplicate(false);
+    setWebsite("");
+    setDraftRestored(false);
+    try {
+      window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+    } catch {
+      // Storage may be disabled; clearing the in-memory form still works.
+    }
+  }
+
   async function applyCoupon() {
     setCouponMessage(null);
-    const result = await previewCouponAction(couponInput);
-    if (result.ok) {
-      setCoupon({ code: result.code, discount: result.discount });
-      setCouponMessage(`Code ${result.code} applied — you save ${formatDA(result.discount)}.`);
-    } else {
+    setCouponPending(true);
+    try {
+      const result = await previewCouponAction(couponInput);
+      if (result.ok) {
+        setCoupon({ code: result.code, discount: result.discount });
+        setCouponMessage(`Code ${result.code} appliqué — vous économisez ${formatDA(result.discount)}.`);
+      } else {
+        setCoupon(null);
+        setCouponMessage(result.error);
+      }
+    } catch {
       setCoupon(null);
-      setCouponMessage(result.error);
+      setCouponMessage("Impossible de vérifier ce code. Veuillez réessayer.");
+    } finally {
+      setCouponPending(false);
     }
   }
 
@@ -120,27 +228,47 @@ export function CheckoutForm({
     setFormError(null);
     setFields({});
 
-    const result = await submitOrderAction({
-      firstName,
-      lastName,
-      phone,
-      email: email || undefined,
-      wilayaId,
-      communeId,
-      address,
-      deliveryMethod: deliveryMethod as "HOME" | "STOPDESK" | "EXPRESS" | "STANDARD",
-      notes: notes || undefined,
-      couponCode: coupon?.code,
-      createAccount,
-      password: createAccount ? password : undefined,
-      acceptTerms,
-      allowDuplicate: forceDuplicate || allowDuplicate,
-      idempotencyKey: idempotencyKey.current,
-      website,
-    });
+    const requestKey = idempotencyKey.current ?? newCheckoutKey();
+    idempotencyKey.current = requestKey;
+    try {
+      window.sessionStorage.setItem(CHECKOUT_IDEMPOTENCY_KEY, requestKey);
+    } catch {
+      // The request key is still valid in-memory when session storage is unavailable.
+    }
+    let result: Awaited<ReturnType<typeof submitOrderAction>>;
+    try {
+      result = await submitOrderAction({
+        firstName,
+        lastName,
+        phone,
+        email: email || undefined,
+        wilayaId,
+        communeId,
+        address,
+        deliveryMethod: deliveryMethod as "HOME" | "STOPDESK" | "EXPRESS" | "STANDARD",
+        notes: notes || undefined,
+        couponCode: coupon?.code,
+        createAccount,
+        password: createAccount ? password : undefined,
+        acceptTerms,
+        allowDuplicate: forceDuplicate || allowDuplicate,
+        idempotencyKey: requestKey,
+        website,
+      });
+    } catch {
+      setSubmitting(false);
+      setFormError("La réponse n’a pas pu être confirmée. Vos informations restent enregistrées dans cet onglet ; réessayez pour vérifier la commande sans risque de doublon.");
+      return;
+    }
 
     if (result.ok) {
-      pixelEvent("Purchase", { value: total / 100, currency: "DZD" });
+      try {
+        window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
+        window.sessionStorage.removeItem(CHECKOUT_IDEMPOTENCY_KEY);
+      } catch {
+        // Successful order navigation must not depend on browser storage access.
+      }
+      pixelEvent("Purchase", { value: result.total, currency: "DZD" });
       router.push(`/order/${result.orderNumber}?t=${encodeURIComponent(result.trackingToken)}`);
       return;
     }
@@ -166,6 +294,12 @@ export function CheckoutForm({
         className="relative space-y-8"
       >
         <Honeypot value={website} onChange={setWebsite} />
+        {draftRestored && (
+          <div className="flex flex-wrap items-center justify-between gap-3 border hairline bg-white px-4 py-3 text-sm" role="status">
+            <span>Vos choix de livraison et votre code promo ont été restaurés dans cet onglet. Vos coordonnées et votre adresse ne sont jamais enregistrées.</span>
+            <Button type="button" variant="outline" size="sm" onClick={clearSavedDraft}>Effacer les choix enregistrés</Button>
+          </div>
+        )}
         {formError && (
           <p className="border border-[#9e342e]/30 bg-[#9e342e]/5 px-4 py-3 text-sm text-[#9e342e]" role="alert">
             {formError}
@@ -173,9 +307,9 @@ export function CheckoutForm({
         )}
         {duplicateOrder && (
           <div className="border border-gold/50 bg-gold/10 px-4 py-3 text-sm" role="alert">
-            <p className="font-medium">We already received a similar order from this number.</p>
+            <p className="font-medium">Nous avons déjà reçu une commande similaire avec ce numéro.</p>
             <p className="mt-1 text-ink-soft">
-              Order {duplicateOrder} was placed a moment ago. Only continue if you meant to order twice.
+              La commande {duplicateOrder} vient d’être passée. Continuez uniquement si vous souhaitez vraiment commander deux fois.
             </p>
             <Button
               type="button"
@@ -188,37 +322,37 @@ export function CheckoutForm({
                 void doSubmit(true);
               }}
             >
-              Yes, place it anyway
+              Oui, passer une nouvelle commande
             </Button>
           </div>
         )}
 
         <section aria-labelledby="contact-heading">
-          <h2 id="contact-heading" className="mb-4 font-display text-2xl">1 · Your details</h2>
+          <h2 id="contact-heading" className="mb-4 font-display text-2xl">1 · Vos coordonnées</h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="First name" required error={fields.firstName}>
+            <Field label="Prénom" required error={fields.firstName}>
               <Input value={firstName} onChange={(event) => setFirstName(event.target.value)} invalid={Boolean(fields.firstName)} autoComplete="given-name" required />
             </Field>
-            <Field label="Last name" required error={fields.lastName}>
+            <Field label="Nom" required error={fields.lastName}>
               <Input value={lastName} onChange={(event) => setLastName(event.target.value)} invalid={Boolean(fields.lastName)} autoComplete="family-name" required />
             </Field>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field label="Phone number" required error={fields.phone} hint="0550 12 34 56 — we call to confirm">
+            <Field label="Numéro de téléphone" required error={fields.phone} hint="0550 12 34 56 — nous vous appellerons pour confirmer">
               <Input value={phone} onChange={(event) => setPhone(event.target.value)} invalid={Boolean(fields.phone)} autoComplete="tel" inputMode="tel" placeholder="05 / 06 / 07 …" required />
             </Field>
-            <Field label="Email (optional)" error={fields.email}>
+            <Field label="E-mail (facultatif)" error={fields.email}>
               <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} invalid={Boolean(fields.email)} autoComplete="email" />
             </Field>
           </div>
         </section>
 
-        <section aria-labelledby="delivery-heading">
-          <h2 id="delivery-heading" className="mb-4 font-display text-2xl">2 · Delivery</h2>
+        <section aria-labelledby="delivery-heading" aria-busy={loadingRegion}>
+          <h2 id="delivery-heading" className="mb-4 font-display text-2xl">2 · Livraison</h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Wilaya" required error={fields.wilayaId}>
               <Select value={wilayaId} onChange={(event) => setWilayaId(event.target.value)} required>
-                <option value="">Select your wilaya…</option>
+                <option value="">Choisissez votre wilaya…</option>
                 {wilayas.map((wilaya) => (
                   <option key={wilaya.id} value={wilaya.id}>
                     {String(wilaya.code).padStart(2, "0")} — {wilaya.name}
@@ -228,7 +362,7 @@ export function CheckoutForm({
             </Field>
             <Field label="Commune" required error={fields.communeId}>
               <Select value={communeId} onChange={(event) => setCommuneId(event.target.value)} required disabled={!wilayaId || loadingRegion}>
-                <option value="">{loadingRegion ? "Loading…" : wilayaId ? "Select your commune…" : "Select a wilaya first"}</option>
+                <option value="">{loadingRegion ? "Chargement…" : wilayaId ? "Choisissez votre commune…" : "Choisissez d’abord une wilaya"}</option>
                 {communes.map((commune) => (
                   <option key={commune.id} value={commune.id}>
                     {commune.name}
@@ -237,15 +371,25 @@ export function CheckoutForm({
               </Select>
             </Field>
           </div>
+          {regionError && (
+            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#9e342e]" role="alert">
+              <span>{regionError}</span>
+              {wilayaId && (
+                <Button type="button" variant="outline" size="sm" disabled={loadingRegion} onClick={() => setRegionRetryToken((value) => value + 1)}>
+                  {loadingRegion ? "Chargement…" : "Réessayer"}
+                </Button>
+              )}
+            </div>
+          )}
           <div className="mt-4">
-            <Field label="Full address" required error={fields.address} hint="Street, landmark, building…">
+            <Field label="Adresse complète" required error={fields.address} hint="Rue, repère, immeuble…">
               <Textarea value={address} onChange={(event) => setAddress(event.target.value)} required rows={2} />
             </Field>
           </div>
 
           {deliveryOptions.length > 0 && (
             <fieldset className="mt-5">
-              <legend className="field-label">Delivery method</legend>
+              <legend className="field-label">Mode de livraison</legend>
               <div className="grid gap-2 sm:grid-cols-2">
                 {deliveryOptions.map((option) => (
                   <label
@@ -266,11 +410,11 @@ export function CheckoutForm({
                       <span>
                         <span className="block font-medium">{DELIVERY_METHOD_LABELS[option.method]}</span>
                         <span className="block text-xs text-ink-muted">
-                          {option.etaMinDays}–{option.etaMaxDays} days
+                          {option.etaMinDays}–{option.etaMaxDays} jours
                         </span>
                       </span>
                     </span>
-                    <span className="font-medium">{freeDelivery ? "Free" : formatDA(option.price)}</span>
+                    <span className="font-medium">{freeDelivery ? "Offerte" : formatDA(option.price)}</span>
                   </label>
                 ))}
               </div>
@@ -278,14 +422,14 @@ export function CheckoutForm({
           )}
 
           <div className="mt-4">
-            <Field label="Order notes (optional)">
-              <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} placeholder="Anything we should know?" />
+            <Field label="Instructions (facultatif)">
+              <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} placeholder="Une précision à nous communiquer ?" />
             </Field>
           </div>
         </section>
 
         <section aria-labelledby="account-heading">
-          <h2 id="account-heading" className="mb-4 font-display text-2xl">3 · Almost done</h2>
+          <h2 id="account-heading" className="mb-4 font-display text-2xl">3 · Dernière étape</h2>
           <label className="flex cursor-pointer items-start gap-3 text-sm">
             <input
               type="checkbox"
@@ -294,13 +438,13 @@ export function CheckoutForm({
               className="mt-0.5 h-4 w-4 accent-[#1c1a17]"
             />
             <span>
-              Create an account for faster checkout next time
-              <span className="block text-xs text-ink-muted">Requires an email address and a password.</span>
+              Créer un compte pour commander plus rapidement la prochaine fois
+              <span className="block text-xs text-ink-muted">Une adresse e-mail et un mot de passe sont nécessaires.</span>
             </span>
           </label>
           {createAccount && (
             <div className="mt-3">
-              <Field label="Password" required error={fields.password} hint="10+ characters, upper & lower case, a number">
+              <Field label="Mot de passe" required error={fields.password} hint="10 caractères minimum, majuscule, minuscule et chiffre">
                 <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" />
               </Field>
             </div>
@@ -314,13 +458,13 @@ export function CheckoutForm({
               required
             />
             <span>
-              I accept the{" "}
+              J’accepte les{" "}
               <Link href="/pages/terms" target="_blank" className="underline underline-offset-2">
-                terms & conditions
+                conditions générales
               </Link>{" "}
-              and the{" "}
+              et la{" "}
               <Link href="/pages/returns" target="_blank" className="underline underline-offset-2">
-                return policy
+                politique de retour
               </Link>
               .
             </span>
@@ -330,17 +474,17 @@ export function CheckoutForm({
           )}
         </section>
 
-        <Button type="submit" disabled={submitting} variant="gold" size="lg" className="w-full">
-          {submitting ? "Placing your order…" : `Confirm order · ${formatDA(total)}`}
+        <Button type="submit" disabled={submitting || loadingRegion || !selectedRate || !communeId} variant="gold" size="lg" className="w-full">
+          {submitting ? "Validation de votre commande…" : `Confirmer la commande · ${formatDA(total)}`}
         </Button>
         <p className="text-center text-xs text-ink-muted">
-          Cash on delivery — you pay {formatDA(total)} when your order arrives.
+          Paiement à la livraison — vous réglerez {formatDA(total)} à la réception de votre commande.
         </p>
       </form>
 
-      <aside className="lg:sticky lg:top-32 lg:self-start" aria-label="Order summary">
+      <aside className="lg:sticky lg:top-32 lg:self-start" aria-label="Récapitulatif de la commande">
         <div className="border hairline bg-white p-6">
-          <h2 className="text-xs font-medium uppercase tracking-[0.2em]">Order summary</h2>
+          <h2 className="text-xs font-medium uppercase tracking-[0.2em]">Récapitulatif de la commande</h2>
           <ul className="mt-4 space-y-4">
             {initialCart.items.map((item) => (
               <li key={item.id} className="flex gap-3">
@@ -362,11 +506,11 @@ export function CheckoutForm({
           </ul>
 
           <div className="mt-5 border-t hairline pt-4">
-            <label htmlFor="coupon" className="field-label">Promo code</label>
+            <label htmlFor="coupon" className="field-label">Code promotionnel</label>
             <div className="flex gap-2">
               <Input id="coupon" value={couponInput} onChange={(event) => setCouponInput(event.target.value)} placeholder="WELCOME10" className="uppercase" />
-              <Button type="button" variant="outline" size="sm" onClick={() => void applyCoupon()}>
-                Apply
+              <Button type="button" variant="outline" size="sm" disabled={couponPending} onClick={() => void applyCoupon()}>
+                {couponPending ? "Vérification…" : "Appliquer"}
               </Button>
             </div>
             {couponMessage && (
@@ -378,7 +522,7 @@ export function CheckoutForm({
 
           <dl className="mt-4 space-y-1.5 border-t hairline pt-4 text-sm">
             <div className="flex justify-between">
-              <dt className="text-ink-soft">Subtotal</dt>
+              <dt className="text-ink-soft">Sous-total</dt>
               <dd>{formatDA(initialCart.subtotal)}</dd>
             </div>
             {promotion && promotion.discount > 0 && (
@@ -389,22 +533,22 @@ export function CheckoutForm({
             )}
             {discount > 0 && (
               <div className="flex justify-between text-success">
-                <dt>Discount{coupon ? ` (${coupon.code})` : ""}</dt>
+              <dt>Remise{coupon ? ` (${coupon.code})` : ""}</dt>
                 <dd>−{formatDA(discount)}</dd>
               </div>
             )}
             <div className="flex justify-between">
-              <dt className="text-ink-soft">Delivery</dt>
-              <dd>{selectedRate ? (freeDelivery ? "Free" : formatDA(shipping)) : "—"}</dd>
+              <dt className="text-ink-soft">Livraison</dt>
+              <dd>{selectedRate ? (freeDelivery ? "Offerte" : formatDA(shipping)) : "—"}</dd>
             </div>
             <div className="flex justify-between border-t hairline pt-2 text-base font-medium">
-              <dt>Total to pay</dt>
+              <dt>Total à payer</dt>
               <dd>{formatDA(total)}</dd>
             </div>
           </dl>
           {remainingForFree > 0 && (
             <p className="mt-3 text-xs text-ink-muted">
-              Add {formatDA(remainingForFree)} more to unlock free delivery.
+              Ajoutez {formatDA(remainingForFree)} à votre panier pour bénéficier de la livraison offerte.
             </p>
           )}
         </div>

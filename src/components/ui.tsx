@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
 import { cn } from "@/lib/utils";
 import { formatDA } from "@/lib/money";
 import { Star, StarHalf, Minus, Plus, X, ChevronDown } from "lucide-react";
@@ -45,6 +45,19 @@ export function Button({
 
 /* ------------------------------------------------------------------- Fields */
 
+type FieldControlContextValue = {
+  id: string;
+  describedBy?: string;
+  invalid: boolean;
+};
+
+const FieldControlContext = createContext<FieldControlContextValue | null>(null);
+
+function mergeDescriptionIds(...values: Array<string | undefined>): string | undefined {
+  const ids = [...new Set(values.flatMap((value) => value?.split(/\s+/).filter(Boolean) ?? []))];
+  return ids.length > 0 ? ids.join(" ") : undefined;
+}
+
 export function Field({
   label,
   error,
@@ -59,42 +72,89 @@ export function Field({
   required?: boolean;
 }) {
   const id = useId();
+  const hintId = hint ? `${id}-hint` : undefined;
+  const errorId = error ? `${id}-error` : undefined;
+  const context: FieldControlContextValue = {
+    id,
+    describedBy: mergeDescriptionIds(hintId, errorId),
+    invalid: Boolean(error),
+  };
   return (
     <div>
-      <label className="field-label" htmlFor={id}>
-        {label}
-        {required && <span aria-hidden="true"> *</span>}
-      </label>
-      <div data-field={id}>{children}</div>
-      {error ? (
-        <p className="mt-1.5 text-sm text-[#9e342e]" role="alert">
-          {error}
-        </p>
-      ) : hint ? (
-        <p className="mt-1.5 text-sm text-ink-muted">{hint}</p>
-      ) : null}
+      <FieldControlContext.Provider value={context}>
+        <label className="field-label" htmlFor={id}>
+          {label}
+          {required && <span aria-hidden="true"> *</span>}
+        </label>
+        <div data-field={id}>{children}</div>
+        {hint && <p id={hintId} className="mt-1.5 text-sm text-ink-muted">{hint}</p>}
+        {error && (
+          <p id={errorId} className="mt-1.5 text-sm text-[#9e342e]" role="alert">
+            {error}
+          </p>
+        )}
+      </FieldControlContext.Provider>
     </div>
   );
 }
 
 type InputProps = React.InputHTMLAttributes<HTMLInputElement> & { invalid?: boolean };
 
-export function Input({ invalid, className, ...props }: InputProps) {
+export function Input({
+  invalid,
+  className,
+  id,
+  "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedBy,
+  ...props
+}: InputProps) {
+  const field = useContext(FieldControlContext);
+  const isInvalid = invalid ?? field?.invalid;
   return (
     <input
-      className={cn("field", invalid && "border-[#9e342e]", className)}
-      aria-invalid={invalid || undefined}
+      className={cn("field", isInvalid && "border-[#9e342e]", className)}
+      id={id ?? field?.id}
+      aria-invalid={ariaInvalid ?? (isInvalid ? true : undefined)}
+      aria-describedby={mergeDescriptionIds(ariaDescribedBy, field?.describedBy)}
       {...props}
     />
   );
 }
 
-export function Textarea(props: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
-  return <textarea className={cn("field min-h-28 py-3", props.className)} {...props} />;
+export function Textarea({
+  id,
+  "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedBy,
+  ...props
+}: React.TextareaHTMLAttributes<HTMLTextAreaElement>) {
+  const field = useContext(FieldControlContext);
+  return (
+    <textarea
+      className={cn("field min-h-28 py-3", props.className, field?.invalid && "border-[#9e342e]")}
+      id={id ?? field?.id}
+      aria-invalid={ariaInvalid ?? (field?.invalid ? true : undefined)}
+      aria-describedby={mergeDescriptionIds(ariaDescribedBy, field?.describedBy)}
+      {...props}
+    />
+  );
 }
 
-export function Select(props: React.SelectHTMLAttributes<HTMLSelectElement>) {
-  return <select className={cn("field", props.className)} {...props} />;
+export function Select({
+  id,
+  "aria-invalid": ariaInvalid,
+  "aria-describedby": ariaDescribedBy,
+  ...props
+}: React.SelectHTMLAttributes<HTMLSelectElement>) {
+  const field = useContext(FieldControlContext);
+  return (
+    <select
+      className={cn("field", props.className, field?.invalid && "border-[#9e342e]")}
+      id={id ?? field?.id}
+      aria-invalid={ariaInvalid ?? (field?.invalid ? true : undefined)}
+      aria-describedby={mergeDescriptionIds(ariaDescribedBy, field?.describedBy)}
+      {...props}
+    />
+  );
 }
 
 /* -------------------------------------------------------------------- Badge */
@@ -114,7 +174,7 @@ export function Badge({
         "inline-flex items-center px-2 py-1 text-[0.625rem] font-medium uppercase tracking-[0.14em]",
         tone === "ink" && "bg-ink text-ivory",
         tone === "sale" && "bg-sale text-white",
-        tone === "gold" && "bg-gold text-white",
+        tone === "gold" && "bg-gold-dark text-white",
         tone === "green" && "bg-success text-white",
         tone === "muted" && "bg-cream text-ink-soft",
         className,
@@ -177,25 +237,53 @@ export function QuantitySelector({
 
 /* ------------------------------------------------------------ Focus trap */
 
-function useFocusTrap(active: boolean, containerRef: React.RefObject<HTMLElement | null>) {
+export function useDialogFocus(
+  active: boolean,
+  containerRef: RefObject<HTMLElement | null>,
+  onClose: () => void,
+  initialFocusRef?: RefObject<HTMLElement | null>,
+) {
+  const closeRef = useRef(onClose);
+  useEffect(() => {
+    closeRef.current = onClose;
+  }, [onClose]);
+
   useEffect(() => {
     if (!active) return;
     const container = containerRef.current;
     if (!container) return;
+    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previousOverflow = document.body.style.overflow;
     const selector =
       'a[href], button:not([disabled]), textarea, input:not([type="hidden"]), select, [tabindex]:not([tabindex="-1"])';
     const focusables = () =>
       Array.from(container.querySelectorAll<HTMLElement>(selector)).filter(
         (element) => element.offsetParent !== null,
       );
-    focusables()[0]?.focus();
+    document.body.style.overflow = "hidden";
+    const preferredFocus = initialFocusRef?.current;
+    (preferredFocus && preferredFocus.offsetParent !== null
+      ? preferredFocus
+      : focusables()[0] ?? container).focus();
     const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        closeRef.current();
+        return;
+      }
       if (event.key !== "Tab") return;
       const items = focusables();
-      if (items.length === 0) return;
+      if (items.length === 0) {
+        event.preventDefault();
+        container.focus();
+        return;
+      }
       const first = items[0]!;
       const last = items[items.length - 1]!;
-      if (event.shiftKey && document.activeElement === first) {
+      if (!container.contains(document.activeElement)) {
+        event.preventDefault();
+        (event.shiftKey ? last : first).focus();
+      } else if (event.shiftKey && document.activeElement === first) {
         event.preventDefault();
         last.focus();
       } else if (!event.shiftKey && document.activeElement === last) {
@@ -204,8 +292,12 @@ function useFocusTrap(active: boolean, containerRef: React.RefObject<HTMLElement
       }
     };
     document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [active, containerRef]);
+    return () => {
+      document.removeEventListener("keydown", onKey);
+      document.body.style.overflow = previousOverflow;
+      previouslyFocused?.focus();
+    };
+  }, [active, containerRef, initialFocusRef]);
 }
 
 /* -------------------------------------------------------------------- Modal */
@@ -223,28 +315,15 @@ export function Modal({
   children: ReactNode;
   labelledBy?: string;
 }) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [open, onClose]);
-
   const panelRef = useRef<HTMLDivElement>(null);
-  useFocusTrap(open, panelRef);
+  useDialogFocus(open, panelRef, onClose);
 
   if (!open) return null;
   const headingId = labelledBy ?? `modal-${title.replace(/\s+/g, "-").toLowerCase()}`;
   return (
     <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-labelledby={headingId}>
       <button aria-label="Close" onClick={onClose} className="absolute inset-0 bg-ink/50" />
-      <div ref={panelRef} className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto bg-ivory p-6 shadow-card animate-slide-up sm:p-8">
+      <div ref={panelRef} tabIndex={-1} className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto bg-ivory p-6 shadow-card animate-slide-up sm:p-8">
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 id={headingId} className="font-display text-2xl">
             {title}
@@ -274,28 +353,15 @@ export function Drawer({
   children: ReactNode;
   labelledBy?: string;
 }) {
-  useEffect(() => {
-    if (!open) return;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    document.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
-    };
-  }, [open, onClose]);
-
   const panelRef = useRef<HTMLElement>(null);
-  useFocusTrap(open, panelRef);
+  useDialogFocus(open, panelRef, onClose);
 
   if (!open) return null;
   const headingId = labelledBy ?? `drawer-${title.replace(/\s+/g, "-").toLowerCase()}`;
   return (
     <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-labelledby={headingId}>
       <button aria-label="Close" onClick={onClose} className="absolute inset-0 bg-ink/50 animate-fade-in" />
-      <aside ref={panelRef} className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-ivory shadow-drawer animate-slide-in-right">
+      <aside ref={panelRef} tabIndex={-1} className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-ivory shadow-drawer animate-slide-in-right">
         <div className="flex items-center justify-between border-b hairline px-5 py-4">
           <h2 id={headingId} className="text-xs font-medium uppercase tracking-[0.2em]">
             {title}

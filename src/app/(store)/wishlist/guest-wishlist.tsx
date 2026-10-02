@@ -26,6 +26,8 @@ export function GuestWishlist() {
   const router = useRouter();
   const { add } = useCart();
   const [items, setItems] = useState<GuestWishlistRow[] | null>(null);
+  const [movingProductIds, setMovingProductIds] = useState<string[]>([]);
+  const [moveErrors, setMoveErrors] = useState<Record<string, string>>({});
 
   const load = useCallback(async () => {
     const ids = readGuestWishlist();
@@ -55,9 +57,18 @@ export function GuestWishlist() {
   }
 
   async function moveToBag(item: GuestWishlistRow) {
-    if (!item.defaultVariantId) return;
-    const result = await add(item.defaultVariantId, 1);
-    if (result.ok) remove(item.productId);
+    if (!item.defaultVariantId || movingProductIds.includes(item.productId)) return;
+    setMovingProductIds((current) => [...current, item.productId]);
+    setMoveErrors((current) => ({ ...current, [item.productId]: "" }));
+    try {
+      const result = await add(item.defaultVariantId, 1);
+      if (result.ok) remove(item.productId);
+      else setMoveErrors((current) => ({ ...current, [item.productId]: result.error || "We could not add this item. Please retry." }));
+    } catch {
+      setMoveErrors((current) => ({ ...current, [item.productId]: "We could not add this item. Please retry." }));
+    } finally {
+      setMovingProductIds((current) => current.filter((productId) => productId !== item.productId));
+    }
   }
 
   if (items === null) {
@@ -102,14 +113,15 @@ export function GuestWishlist() {
             <div className="mt-1">
               <Price price={item.price} compareAt={item.compareAtPrice} />
             </div>
-            <div className="mt-auto pt-2">
+          <div className="mt-auto pt-2">
               {item.inStock && item.defaultVariantId ? (
-                <Button size="sm" variant="outline" onClick={() => void moveToBag(item)}>
-                  Move to bag
+                <Button size="sm" variant="outline" disabled={movingProductIds.includes(item.productId)} onClick={() => void moveToBag(item)}>
+                  {movingProductIds.includes(item.productId) ? "Adding…" : "Move to bag"}
                 </Button>
               ) : (
                 <p className="text-xs uppercase tracking-[0.14em] text-ink-muted">Out of stock</p>
               )}
+              {moveErrors[item.productId] && <p className="mt-2 text-xs text-sale" role="alert">{moveErrors[item.productId]}</p>}
             </div>
           </div>
         </li>

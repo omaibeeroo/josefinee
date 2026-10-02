@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { toUserMessage } from "@/lib/errors";
@@ -17,6 +18,11 @@ import { clientIp, enforceRateLimit, LIMITS } from "@/lib/rate-limit";
 
 export type ActionResult<T = Record<string, unknown>> =
   ({ ok: true } & T) | { ok: false; error: string; code?: string; fields?: Record<string, string> };
+
+async function enforceCartMutationLimit(operation: string): Promise<void> {
+  const ip = await clientIp();
+  await enforceRateLimit({ ...LIMITS.cartMutation, key: `cart:${operation}:${ip}` });
+}
 
 export async function fetchCart() {
   return getCartSummary();
@@ -43,13 +49,19 @@ export async function getProductsByIdsAction(productIds: string[]) {
 }
 
 export async function addToCartAction(variantId: string, quantity = 1) {
+  const parsed = z.object({ variantId: z.string().min(1).max(64), quantity: z.number().int().min(1).max(20) })
+    .safeParse({ variantId, quantity });
+  if (!parsed.success) return { ok: false as const, error: "Please choose a valid item and quantity." };
   try {
-    const { added, count } = await addToCart(variantId, quantity);
+    await enforceCartMutationLimit("add");
+    const { added, count } = await addToCart(parsed.data.variantId, parsed.data.quantity);
     const customer = await getCustomerSession().catch(() => null);
-    await trackEvent({
-      name: ANALYTICS_EVENTS.ADD_TO_CART,
-      props: { variantId, quantity: added },
-      customerId: customer?.customer.id ?? null,
+    after(async () => {
+      await trackEvent({
+        name: ANALYTICS_EVENTS.ADD_TO_CART,
+        props: { variantId: parsed.data.variantId, quantity: added },
+        customerId: customer?.customer.id ?? null,
+      });
     });
     revalidatePath("/cart");
     return { ok: true as const, added, count };
@@ -59,8 +71,12 @@ export async function addToCartAction(variantId: string, quantity = 1) {
 }
 
 export async function updateCartItemAction(itemId: string, quantity: number) {
+  const parsed = z.object({ itemId: z.string().min(1).max(64), quantity: z.number().int().min(0).max(20) })
+    .safeParse({ itemId, quantity });
+  if (!parsed.success) return { ok: false as const, error: "Please choose a valid quantity." };
   try {
-    await setCartItemQuantity(itemId, quantity);
+    await enforceCartMutationLimit("update");
+    await setCartItemQuantity(parsed.data.itemId, parsed.data.quantity);
     revalidatePath("/cart");
     return { ok: true as const };
   } catch (error) {
@@ -69,8 +85,11 @@ export async function updateCartItemAction(itemId: string, quantity: number) {
 }
 
 export async function removeCartItemAction(itemId: string) {
+  const parsedId = z.string().min(1).max(64).safeParse(itemId);
+  if (!parsedId.success) return { ok: false as const, error: "This bag item is not available." };
   try {
-    await removeCartItem(itemId);
+    await enforceCartMutationLimit("remove");
+    await removeCartItem(parsedId.data);
     revalidatePath("/cart");
     return { ok: true as const };
   } catch (error) {
@@ -80,6 +99,7 @@ export async function removeCartItemAction(itemId: string) {
 
 export async function clearCartAction() {
   try {
+    await enforceCartMutationLimit("clear");
     await clearCart();
     revalidatePath("/cart");
     return { ok: true as const };

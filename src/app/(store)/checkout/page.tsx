@@ -9,7 +9,7 @@ import { PixelEvent } from "@/components/pixels";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Checkout",
+  title: "Finaliser ma commande",
   robots: { index: false, follow: false },
 };
 
@@ -20,11 +20,11 @@ export default async function CheckoutPage() {
     return (
       <div className="container-luxe py-10 md:py-14">
         <EmptyState
-          title="Your bag is empty"
-          message="Add some pieces before checking out."
+          title="Votre panier est vide"
+          message="Ajoutez des articles avant de finaliser votre commande."
           action={
             <Link href="/shop" className="btn btn-primary">
-              Start shopping
+              Découvrir la boutique
             </Link>
           }
         />
@@ -36,9 +36,9 @@ export default async function CheckoutPage() {
     <div className="container-luxe py-10 md:py-14">
       <PixelEvent name="InitiateCheckout" />
       <div className="mb-8 text-center">
-        <p className="eyebrow mb-2">Cash on delivery</p>
-        <h1 className="font-display text-4xl font-medium md:text-5xl">Checkout</h1>
-        <p className="mt-3 text-ink-soft">Pay in cash when your order arrives. No card needed.</p>
+        <p className="eyebrow mb-2">Paiement à la livraison</p>
+        <h1 className="font-display text-4xl font-medium md:text-5xl">Finaliser ma commande</h1>
+        <p className="mt-3 text-ink-soft">Réglez en espèces à la réception de votre commande. Aucune carte nécessaire.</p>
       </div>
       <CheckoutForm
         wilayas={wilayas}

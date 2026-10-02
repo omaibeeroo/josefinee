@@ -1,8 +1,9 @@
 import "server-only";
+import { createHmac } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { AppError } from "@/lib/errors";
 import { checkoutSchema, type CheckoutInput } from "@/lib/validation/checkout";
-import { getCartForCheckout, getCartCustomerId } from "@/server/cart";
+import { getCartForCheckout } from "@/server/cart";
 import { resolveDeliveryRate } from "@/server/delivery";
 import { validateCoupon, isFirstOrder, consumeCoupon } from "@/server/coupons";
 import { resolveBestPromotion } from "@/server/promotions";
@@ -12,10 +13,8 @@ import { getSettings } from "@/lib/settings";
 import { getCustomerSession } from "@/lib/auth/session";
 import { hashPassword, passwordIssues } from "@/lib/auth/password";
 import { signOrderToken } from "@/lib/order-token";
-import { recordAudit } from "@/lib/audit";
-import { sendOrderReceived } from "@/lib/notifications";
-import { sendMetaPurchase } from "@/lib/meta-capi";
-import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
+import { processPendingOrderOutbox } from "@/server/order-outbox";
+import { after } from "next/server";
 import type { DeliveryMethod } from "@prisma/client";
 
 export type CreateOrderResult = {
@@ -34,11 +33,12 @@ export type CreateOrderResult = {
   address: string;
   deliveryMethod: DeliveryMethod;
   trackingToken: string;
-  isDuplicate: false;
+  isDuplicate: boolean;
 };
 
 const DUPLICATE_WINDOW_MS = 15 * 60_000;
 const OPEN_FOR_DUPLICATE = ["PENDING", "CONFIRMED", "PROCESSING"] as const;
+const ORDER_OUTBOX_KINDS = ["ORDER_ANALYTICS", "CUSTOMER_NOTIFICATION", "META_PURCHASE"] as const;
 
 type CreateOrderContext = {
   ip: string | null;
@@ -54,13 +54,6 @@ export async function createOrder(
     throw new AppError("VALIDATION", "Please review the highlighted fields and try again.");
   }
   const data = parsed.data;
-  const idempotencyKey = `checkout:${data.idempotencyKey}`;
-
-  const prior = await prisma.idempotencyKey.findUnique({ where: { key: idempotencyKey } });
-  if (prior?.response && typeof prior.response === "object") {
-    const response = prior.response as unknown as CreateOrderResult;
-    if (response?.orderNumber) return response;
-  }
 
   const settings = await getSettings();
   if (!settings.commerce.codEnabled) {
@@ -68,25 +61,85 @@ export async function createOrder(
   }
 
   const placed = await prisma.$transaction(async (tx) => {
-    try {
-      await tx.idempotencyKey.create({
-        data: {
-          key: idempotencyKey,
-          scope: "checkout",
-          expiresAt: new Date(Date.now() + 24 * 60 * 60_000),
-        },
-      });
-    } catch {
-      throw new AppError(
-        "DUPLICATE_REQUEST",
-        "Your order is already being processed. Please wait.",
-        409,
-      );
+    // Read the cart even if it is already converted so a lost response can be recovered.
+    const { cartId, customerId: cartCustomerId, status: cartStatus, lines } = await getCartForCheckout(tx, {
+      includeInactive: true,
+    });
+    const session = await getCustomerSession();
+    if (cartCustomerId && session && cartCustomerId !== session.customer.id) {
+      throw new AppError("CART_NOT_OWNED", "Please refresh your bag before placing this order.", 403);
+    }
+    const secret = process.env.AUTH_SECRET;
+    if (!secret || secret.length < 32) {
+      throw new AppError("CONFIG", "Checkout is temporarily unavailable.", 503);
+    }
+    const idempotencyKey = `checkout:${createHmac("sha256", secret)
+      .update(`${cartId}:${data.idempotencyKey}`)
+      .digest("hex")}`;
+
+    const prior = await tx.idempotencyKey.findUnique({ where: { key: idempotencyKey } });
+    const savedResponse = prior?.response as unknown as Partial<CreateOrderResult> | null;
+    if (savedResponse && typeof savedResponse.orderNumber === "string") {
+      const replay: CreateOrderResult = {
+        ...(savedResponse as CreateOrderResult),
+        trackingToken: signOrderToken(savedResponse.orderNumber),
+        isDuplicate: true,
+      };
+      await tx.idempotencyKey.update({ where: { key: idempotencyKey }, data: { response: replay as never } });
+      return { replay: true as const, result: replay };
     }
 
+    const existingOrder = await tx.order.findUnique({
+      where: { idempotencyKey },
+      include: { promotion: { select: { name: true } } },
+    });
+    if (existingOrder) {
+      const recovered: CreateOrderResult = {
+        orderId: existingOrder.id,
+        orderNumber: existingOrder.orderNumber,
+        total: existingOrder.total,
+        subtotal: existingOrder.subtotal,
+        discount: existingOrder.discount,
+        promotionDiscount: existingOrder.promotionDiscount,
+        promotionName: existingOrder.promotion?.name ?? null,
+        shipping: existingOrder.shipping,
+        firstName: existingOrder.firstName,
+        phone: existingOrder.phone,
+        wilayaName: existingOrder.wilayaName,
+        communeName: existingOrder.communeName,
+        address: existingOrder.address,
+        deliveryMethod: existingOrder.deliveryMethod,
+        trackingToken: signOrderToken(existingOrder.orderNumber),
+        isDuplicate: true,
+      };
+      if (prior) {
+        await tx.idempotencyKey.update({ where: { key: idempotencyKey }, data: { response: recovered as never } });
+      } else {
+        await tx.idempotencyKey.create({
+          data: {
+            key: idempotencyKey,
+            scope: "checkout",
+            expiresAt: new Date(Date.now() + 24 * 60 * 60_000),
+            response: recovered as never,
+          },
+        });
+      }
+      return { replay: true as const, result: recovered };
+    }
+
+    if (prior) await tx.idempotencyKey.delete({ where: { key: idempotencyKey } });
+    if (cartStatus !== "ACTIVE") {
+      throw new AppError("CART_ALREADY_CHECKED_OUT", "Your bag has already been checked out.", 409);
+    }
+    await tx.idempotencyKey.create({
+      data: {
+        key: idempotencyKey,
+        scope: "checkout",
+        expiresAt: new Date(Date.now() + 24 * 60 * 60_000),
+      },
+    });
+
     // All authoritative cart, catalog, delivery, promotion and coupon reads use tx.
-    const { cartId, lines } = await getCartForCheckout(tx);
-    if (lines.length === 0) throw new AppError("CART_EMPTY", "Your bag is empty.", 400);
 
     const wilaya = await tx.wilaya.findUnique({ where: { id: data.wilayaId } });
     if (!wilaya || !wilaya.isActive) {
@@ -108,6 +161,7 @@ export async function createOrder(
             name: true,
             sku: true,
             status: true,
+            publishedAt: true,
             price: true,
             collectionLinks: { select: { collectionId: true } },
           },
@@ -118,7 +172,11 @@ export async function createOrder(
     const variantById = new Map(variants.map((variant) => [variant.id, variant]));
     const freshLines = lines.map((line) => {
       const variant = variantById.get(line.variantId);
-      if (!variant || variant.product.status !== "ACTIVE") {
+      if (
+        !variant ||
+        variant.product.status !== "ACTIVE" ||
+        (variant.product.publishedAt !== null && variant.product.publishedAt > new Date())
+      ) {
         throw new AppError(
           "PRODUCT_UNAVAILABLE",
           `"${line.productName}" is no longer available.`,
@@ -171,8 +229,6 @@ export async function createOrder(
         ? 0
         : rate.price;
 
-    const cartCustomerId = await getCartCustomerId(tx);
-    const session = await getCustomerSession();
     const sessionCustomerId = session?.customer.id ?? cartCustomerId ?? null;
     const customer = sessionCustomerId
       ? await tx.customer.findUnique({ where: { id: sessionCustomerId } })
@@ -379,6 +435,9 @@ export async function createOrder(
     if (converted.count !== 1) {
       throw new AppError("CART_ALREADY_CHECKED_OUT", "Your bag has already been checked out.", 409);
     }
+    await tx.orderOutboxEvent.createMany({
+      data: ORDER_OUTBOX_KINDS.map((kind) => ({ orderId: order.id, kind })),
+    });
     await tx.auditLog.create({
       data: {
         actorType: "SYSTEM",
@@ -391,81 +450,47 @@ export async function createOrder(
       },
     });
 
-    return {
-      order,
-      customerId,
+    const result: CreateOrderResult = {
+      orderId: order.id,
+      orderNumber: order.orderNumber,
       total,
       subtotal,
       discount,
       promotionDiscount,
       promotionName: promotion?.name ?? null,
       shipping,
-      freshLineCount: freshLines.length,
+      firstName: data.firstName,
+      phone: data.phone,
       wilayaName: wilaya.name,
       communeName: commune.name,
+      address: data.address,
+      deliveryMethod: data.deliveryMethod,
+      trackingToken: signOrderToken(order.orderNumber),
+      isDuplicate: false,
+    };
+    await tx.idempotencyKey.update({
+      where: { key: idempotencyKey },
+      data: { response: result as never },
+    });
+
+    return {
+      replay: false as const,
+      result,
+      customerId,
+      freshLineCount: freshLines.length,
     };
   });
 
-  const result: CreateOrderResult = {
-    orderId: placed.order.id,
-    orderNumber: placed.order.orderNumber,
-    total: placed.total,
-    subtotal: placed.subtotal,
-    discount: placed.discount,
-    promotionDiscount: placed.promotionDiscount,
-    promotionName: placed.promotionName,
-    shipping: placed.shipping,
-    firstName: data.firstName,
-    phone: data.phone,
-    wilayaName: placed.wilayaName,
-    communeName: placed.communeName,
-    address: data.address,
-    deliveryMethod: data.deliveryMethod,
-    trackingToken: signOrderToken(placed.order.orderNumber),
-    isDuplicate: false,
-  };
+  if (placed.replay) {
+    after(async () => {
+      await processPendingOrderOutbox({ orderId: placed.result.orderId });
+    });
+    return placed.result;
+  }
+  const result = placed.result;
 
-  await prisma.idempotencyKey
-    .update({ where: { key: idempotencyKey }, data: { response: result as never } })
-    .catch(() => undefined);
-
-  await trackEvent({
-    name: ANALYTICS_EVENTS.ORDER_CREATED,
-    props: {
-      orderNumber: placed.order.orderNumber,
-      total: placed.total,
-      itemCount: placed.freshLineCount,
-    },
-    customerId: placed.customerId,
-    ip: context.ip,
-    userAgent: context.userAgent,
-  });
-
-  await sendOrderReceived({
-    orderId: placed.order.id,
-    phone: data.phone,
-    email: data.email ?? null,
-    orderNumber: placed.order.orderNumber,
-    firstName: data.firstName,
-    total: placed.total,
-  }).catch(() => undefined);
-
-  await sendMetaPurchase({
-    orderNumber: placed.order.orderNumber,
-    total: placed.total,
-    email: data.email ?? null,
-    phone: data.phone,
-    ip: context.ip,
-    userAgent: context.userAgent,
-  }).catch(() => undefined);
-
-  await recordAudit({
-    actorType: "SYSTEM",
-    action: "ORDER_NOTIFICATION_SENT",
-    resource: "Order",
-    resourceId: placed.order.id,
-    ip: context.ip,
-    metadata: { orderNumber: placed.order.orderNumber },
+  after(async () => {
+    await processPendingOrderOutbox({ orderId: result.orderId });
   });
 
   return result;

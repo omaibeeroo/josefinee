@@ -40,10 +40,10 @@ export const OPEN_ORDER_STATUSES: OrderStatus[] = [
 export const CLOSED_ORDER_STATUSES: OrderStatus[] = ["DELIVERED", "CANCELLED", "RETURNED", "FAILED_DELIVERY"];
 
 export const DELIVERY_METHOD_LABELS: Record<DeliveryMethod, string> = {
-  HOME: "Home delivery",
-  STOPDESK: "Stopdesk (pickup point)",
-  EXPRESS: "Express delivery",
-  STANDARD: "Standard delivery",
+  HOME: "Livraison à domicile",
+  STOPDESK: "Point de retrait",
+  EXPRESS: "Livraison express",
+  STANDARD: "Livraison standard",
 };
 
 export const RISK_LABELS: Record<RiskLevel, string> = {

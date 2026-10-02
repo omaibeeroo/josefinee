@@ -24,12 +24,15 @@ export async function decrementStock(
     throw new AppError("OUT_OF_STOCK", "Sorry, this item is no longer available.", 409);
   }
 
-  const updated = await tx.inventory.updateMany({
-    where: { id: inventory.id, stock: { gte: input.quantity } },
-    data: { stock: { decrement: input.quantity } },
-  });
+  const updated = await tx.$queryRaw<Array<{ stock: number }>>`
+    UPDATE "Inventory"
+    SET "stock" = "stock" - ${input.quantity}, "updatedAt" = CURRENT_TIMESTAMP
+    WHERE "id" = ${inventory.id}
+      AND "stock" - "reserved" >= ${input.quantity}
+    RETURNING "stock"
+  `;
 
-  if (updated.count === 0) {
+  if (updated.length === 0) {
     throw new AppError("OUT_OF_STOCK", "Sorry, one of the items in your bag just sold out.", 409, {
       variantId: input.variantId,
     });
@@ -41,7 +44,7 @@ export async function decrementStock(
       variantId: input.variantId,
       type: "SALE",
       quantity: -input.quantity,
-      stockAfter: inventory.stock - input.quantity,
+      stockAfter: updated[0]!.stock,
       orderId: input.orderId,
       reason: input.reason,
     },

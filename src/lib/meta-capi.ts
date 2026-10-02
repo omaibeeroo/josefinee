@@ -27,10 +27,10 @@ export async function sendMetaPurchase(input: {
   phone?: string | null;
   ip?: string | null;
   userAgent?: string | null;
-}): Promise<void> {
+}): Promise<boolean> {
   const pixelId = process.env.META_PIXEL_ID ?? process.env.NEXT_PUBLIC_META_PIXEL_ID;
   const token = process.env.META_CONVERSIONS_API_KEY;
-  if (!pixelId || !token) return;
+  if (!pixelId || !token) return true;
 
   const eventId = `purchase-${input.orderNumber}`;
   const userData: Record<string, string | string[]> = {};
@@ -61,8 +61,11 @@ export async function sendMetaPurchase(input: {
     );
     if (!response.ok) {
       console.error("[meta-capi] rejected", response.status);
+      return false;
     }
+    return true;
   } catch (error) {
-    console.error("[meta-capi] failed", error);
+    console.error("[meta-capi] failed", error instanceof Error ? error.name : "unknown");
+    return false;
   }
 }

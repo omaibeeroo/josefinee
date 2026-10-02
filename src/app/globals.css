@@ -8,7 +8,7 @@
 @theme {
   --color-ink: #171513;
   --color-ink-soft: #5e5750;
-  --color-ink-muted: #918981;
+  --color-ink-muted: #6b625a;
   --color-ivory: #fbfaf7;
   --color-cream: #f4f0ea;
   --color-sand: #e7dfd5;
@@ -114,7 +114,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-gold);
+    outline: 2px solid var(--color-gold-dark);
     outline-offset: 2px;
   }
 
@@ -229,7 +229,7 @@
   }
 
   .btn-gold {
-    background-color: var(--color-gold);
+    background-color: var(--color-gold-dark);
     color: #fff;
   }
 

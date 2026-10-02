@@ -8,6 +8,8 @@ import { signOrderToken } from "@/lib/order-token";
 import { z } from "zod";
 import { zId, zOptionalString, zPhone } from "@/lib/validation/common";
 import { recordAudit } from "@/lib/audit";
+import { enforceRateLimit, LIMITS } from "@/lib/rate-limit";
+import { storefrontProductWhere } from "@/server/catalog";
 
 async function requireCustomer() {
   const session = await getCustomerSession();
@@ -62,7 +64,10 @@ export async function getCustomerOrders() {
 export async function getWishlistItems() {
   const customer = await requireCustomer();
   const items = await prisma.wishlistItem.findMany({
-    where: { wishlist: { customerId: customer.id } },
+    where: {
+      wishlist: { customerId: customer.id },
+      product: storefrontProductWhere(),
+    },
     orderBy: { createdAt: "desc" },
     include: {
       product: {
@@ -120,6 +125,11 @@ export async function saveAddressAction(input: z.infer<typeof addressSchema>) {
   const parsed = addressSchema.safeParse(input);
   if (!parsed.success) return { ok: false as const, error: "Please review the address fields." };
   const data = parsed.data;
+  try {
+    await enforceRateLimit({ ...LIMITS.accountMutation, key: `address:${customer.id}` });
+  } catch (error) {
+    return { ok: false as const, error: toUserMessage(error) };
+  }
 
   const wilaya = await prisma.wilaya.findUnique({ where: { id: data.wilayaId } });
   if (!wilaya?.isActive) return { ok: false as const, error: "Please select a valid wilaya." };
@@ -130,6 +140,7 @@ export async function saveAddressAction(input: z.infer<typeof addressSchema>) {
 
   try {
     await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${customer.id}, 0))`;
       if (data.isDefault) {
         await tx.address.updateMany({
           where: { customerId: customer.id },
@@ -141,7 +152,8 @@ export async function saveAddressAction(input: z.infer<typeof addressSchema>) {
           where: { id: data.id, customerId: customer.id },
         });
         if (!existing) throw new Error("Address not found.");
-        await tx.address.update({ where: { id: data.id }, data: { ...data, id: undefined } });
+        const { id: _id, ...addressData } = data;
+        await tx.address.update({ where: { id: data.id }, data: addressData });
       } else {
         const count = await tx.address.count({ where: { customerId: customer.id } });
         await tx.address.create({
@@ -164,7 +176,30 @@ export async function saveAddressAction(input: z.infer<typeof addressSchema>) {
 
 export async function deleteAddressAction(id: string) {
   const customer = await requireCustomer();
-  await prisma.address.deleteMany({ where: { id, customerId: customer.id } });
+  const parsedId = zId.safeParse(id);
+  if (!parsedId.success) return { ok: false as const, error: "Address not found." };
+  try {
+    await enforceRateLimit({ ...LIMITS.accountMutation, key: `address:${customer.id}` });
+    await prisma.$transaction(async (tx) => {
+      await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtextextended(${customer.id}, 0))`;
+      const address = await tx.address.findFirst({
+        where: { id: parsedId.data, customerId: customer.id },
+        select: { id: true, isDefault: true },
+      });
+      if (!address) return;
+      await tx.address.delete({ where: { id: address.id } });
+      if (address.isDefault) {
+        const next = await tx.address.findFirst({
+          where: { customerId: customer.id },
+          orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+          select: { id: true },
+        });
+        if (next) await tx.address.update({ where: { id: next.id }, data: { isDefault: true } });
+      }
+    });
+  } catch (error) {
+    return { ok: false as const, error: toUserMessage(error) };
+  }
   revalidatePath("/account/addresses");
   return { ok: true as const };
 }

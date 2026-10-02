@@ -153,10 +153,14 @@ export async function addToCart(
 
   const variant = await prisma.productVariant.findFirst({
     where: { id: variantId, isActive: true },
-    include: { product: { select: { status: true } }, inventory: true },
+    include: { product: { select: { status: true, publishedAt: true } }, inventory: true },
   });
 
-  if (!variant || variant.product.status !== "ACTIVE") {
+  if (
+    !variant ||
+    variant.product.status !== "ACTIVE" ||
+    (variant.product.publishedAt !== null && variant.product.publishedAt > new Date())
+  ) {
     throw new AppError("PRODUCT_UNAVAILABLE", "This item is no longer available.", 404);
   }
 
@@ -249,8 +253,11 @@ export async function attachCartToCustomer(customerId: string): Promise<void> {
 /** Full cart lines for the checkout transaction (fresh prices from the DB). */
 export async function getCartForCheckout(
   db: PrismaClient | Prisma.TransactionClient = prisma,
+  options: { includeInactive?: boolean } = {},
 ): Promise<{
   cartId: string;
+  customerId: string | null;
+  status: "ACTIVE" | "CONVERTED" | "ABANDONED";
   lines: CartLine[];
   subtotal: number;
 }> {
@@ -258,7 +265,7 @@ export async function getCartForCheckout(
   if (!token) throw new AppError("CART_EMPTY", "Your bag is empty.", 400);
 
   const cart = await db.cart.findUnique({
-    where: { token, status: "ACTIVE" },
+    where: options.includeInactive ? { token } : { token, status: "ACTIVE" },
     include: { items: { include: cartItemInclude } },
   });
 
@@ -268,7 +275,7 @@ export async function getCartForCheckout(
 
   const lines = cart.items.map(mapLine);
   const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
-  return { cartId: cart.id, lines, subtotal };
+  return { cartId: cart.id, customerId: cart.customerId, status: cart.status, lines, subtotal };
 }
 
 export async function getCartCustomerId(

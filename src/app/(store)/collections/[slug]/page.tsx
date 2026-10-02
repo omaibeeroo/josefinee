@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { cache } from "react";
+import { after } from "next/server";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
@@ -12,9 +14,8 @@ import { parseCatalogParams, withPage } from "../../catalog-helpers";
 
 export const dynamic = "force-dynamic";
 
-async function getCollection(slug: string) {
-  return prisma.collection
-    .findFirst({
+const getCollection = cache((slug: string) =>
+  prisma.collection.findFirst({
       where: { slug, isActive: true },
       select: {
         id: true,
@@ -26,9 +27,8 @@ async function getCollection(slug: string) {
         seoTitle: true,
         seoDescription: true,
       },
-    })
-    .catch(() => null);
-}
+    }),
+);
 
 export async function generateMetadata({
   params,
@@ -37,12 +37,26 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const collection = await getCollection(slug);
-  if (!collection) return { title: "Collection" };
+  if (!collection) notFound();
+  const title = collection.seoTitle || collection.name;
+  const description = collection.seoDescription || collection.description || undefined;
   return {
-    title: collection.seoTitle || collection.name,
-    description: collection.seoDescription || collection.description || undefined,
+    title,
+    description,
     // Filter/sort query strings never canonicalize — one URL per collection.
     alternates: { canonical: `/collections/${collection.slug}` },
+    openGraph: {
+      title,
+      description,
+      type: "website",
+      images: collection.image ? [{ url: collection.image }] : undefined,
+    },
+    twitter: {
+      card: collection.image ? "summary_large_image" : "summary",
+      title,
+      description,
+      images: collection.image ? [collection.image] : undefined,
+    },
   };
 }
 
@@ -59,7 +73,7 @@ export default async function CollectionPage({
   if (!collection) notFound();
 
   const query = parseCatalogParams(queryParams);
-  await trackEvent({ name: ANALYTICS_EVENTS.VIEW_COLLECTION, props: { slug: collection.slug } });
+  after(() => trackEvent({ name: ANALYTICS_EVENTS.VIEW_COLLECTION, props: { slug: collection.slug } }));
   const [result, facets] = await Promise.all([
     getStorefrontProducts({
       ...query,
@@ -100,11 +114,11 @@ export default async function CollectionPage({
           <div className="min-w-0 flex-1">
             {result.items.length === 0 ? (
               <EmptyState
-                title="Nothing here yet"
-                message="New pieces are on their way — check back soon."
+                title="Aucun article pour le moment"
+                message="De nouvelles pièces arrivent bientôt. Revenez nous voir."
                 action={
                   <Link href="/shop" className="btn btn-outline">
-                    Shop all
+                    Voir la boutique
                   </Link>
                 }
               />

@@ -1,6 +1,7 @@
 "use server";
 
 import { headers } from "next/headers";
+import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAppError, toUserMessage } from "@/lib/errors";
 import { flattenZodErrors, isBotSubmission } from "@/lib/validation/common";
@@ -13,7 +14,7 @@ import { enforceRateLimit, LIMITS, clientIp } from "@/lib/rate-limit";
 import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
 
 export type SubmitOrderResult =
-  | { ok: true; orderNumber: string; trackingToken: string }
+  | { ok: true; orderNumber: string; trackingToken: string; total: number }
   | {
       ok: false;
       error: string;
@@ -44,12 +45,17 @@ export async function submitOrderAction(input: CheckoutInput): Promise<SubmitOrd
 
   const headerList = await headers();
   try {
-    await trackEvent({ name: ANALYTICS_EVENTS.BEGIN_CHECKOUT, ip });
+    after(() => trackEvent({ name: ANALYTICS_EVENTS.BEGIN_CHECKOUT, ip }));
     const result = await createOrder(parsed.data, {
       ip,
       userAgent: headerList.get("user-agent"),
     });
-    return { ok: true, orderNumber: result.orderNumber, trackingToken: result.trackingToken };
+    return {
+      ok: true,
+      orderNumber: result.orderNumber,
+      trackingToken: result.trackingToken,
+      total: result.total,
+    };
   } catch (error) {
     if (isAppError(error)) {
       return {
@@ -111,6 +117,18 @@ export async function lookupOrderAction(orderNumber: string, phoneRaw: string) {
   if (!parsed.success) {
     return { ok: false as const, error: "Enter your order number and phone number." };
   }
+  const ip = await clientIp();
+  try {
+    await Promise.all([
+      enforceRateLimit({ ...LIMITS.lookup, key: `order-lookup:${ip}` }),
+      enforceRateLimit({
+        ...LIMITS.lookup,
+        key: `order-lookup-identity:${parsed.data.orderNumber.trim().toUpperCase()}:${parsed.data.phone}`,
+      }),
+    ]);
+  } catch (error) {
+    return { ok: false as const, error: toUserMessage(error) };
+  }
   try {
     const order = await prisma.order.findFirst({
       where: { orderNumber: parsed.data.orderNumber.trim().toUpperCase(), phone: parsed.data.phone },
@@ -130,5 +148,3 @@ export async function lookupOrderAction(orderNumber: string, phoneRaw: string) {
 export async function verifyOrderAccess(orderNumber: string, token: string): Promise<boolean> {
   return verifyOrderToken(orderNumber, token);
 }
-
-
