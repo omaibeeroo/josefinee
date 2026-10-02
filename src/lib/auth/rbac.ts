@@ -8,6 +8,10 @@ export function permissionCodes(user: AdminSessionUser): string[] {
 }
 
 export function can(user: AdminSessionUser, code: PermissionCode): boolean {
+  // Pure explicit grants — no name-based bypass. SUPER_ADMIN always holds
+  // every code because the seed derives its grants from PERMISSIONS itself,
+  // so re-running the seed after adding codes keeps it complete. (Covered by
+  // rbac.test.ts: exact grants are authoritative for every role.)
   return permissionCodes(user).includes(code);
 }
 

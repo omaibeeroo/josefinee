@@ -79,13 +79,18 @@ export type AdminSessionUser = NonNullable<Awaited<ReturnType<typeof getAdminSes
 export async function destroyAdminSession(): Promise<void> {
   const store = await cookies();
   const token = store.get(ADMIN_COOKIE)?.value;
-  if (token) {
-    await prisma.adminSession.updateMany({
-      where: { tokenHash: hashToken(token) },
-      data: { revokedAt: new Date() },
-    });
+  try {
+    if (token) {
+      await prisma.adminSession.updateMany({
+        where: { tokenHash: hashToken(token) },
+        data: { revokedAt: new Date() },
+      });
+    }
+  } finally {
+    // The browser cookie is always cleared, even if the database is
+    // unreachable — logout must never leave a session cookie behind.
+    store.set(ADMIN_COOKIE, "", { ...cookieOptions(new Date(0)), maxAge: 0 });
   }
-  store.set(ADMIN_COOKIE, "", { ...cookieOptions(new Date(0)), maxAge: 0 });
 }
 
 export async function revokeOtherAdminSessions(userId: string): Promise<void> {
