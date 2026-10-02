@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
 import { getSettings } from "@/lib/settings";
-import { BRAND_CONFIG } from "@/config/brand";
+import { BRAND_CONFIG, appUrl } from "@/config/brand";
 import { CartProvider } from "@/components/storefront/cart-ui";
 import { Pixels } from "@/components/pixels";
 import { CookiePreferences } from "@/components/cookie-consent";
@@ -23,10 +23,10 @@ const sans = Inter({
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
   const name = settings.general.name || BRAND_CONFIG.name;
-  const appUrl = process.env.APP_URL ?? "http://localhost:3000";
+  const base = appUrl();
   const ogImage = settings.seo.defaultOgImage || undefined;
   return {
-    metadataBase: new URL(appUrl),
+    metadataBase: new URL(base),
     title: {
       default: `${name} — ${settings.seo.titleSuffix}`,
       template: `%s · ${name}`,

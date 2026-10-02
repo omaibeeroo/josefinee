@@ -58,3 +58,13 @@ export const isAnalyticsConfigured = (): boolean =>
       process.env.NEXT_PUBLIC_META_PIXEL_ID ||
       process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID,
   );
+
+/**
+ * Public application URL. Falls back to Vercel's automatic URL on preview
+ * and production deployments, so shareable links work with zero config.
+ */
+export function appUrl(): string {
+  if (process.env.APP_URL) return process.env.APP_URL;
+  if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`;
+  return "http://localhost:3000";
+}
