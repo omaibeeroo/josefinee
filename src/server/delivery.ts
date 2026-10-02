@@ -68,6 +68,21 @@ export async function getDeliveryOptions(wilayaId: string): Promise<DeliveryOpti
   }));
 }
 
+/** Lowest active HOME rate nationwide — an honest "delivery from" estimate. */
+export async function getDeliveryFloor(): Promise<{ minHome: number } | null> {
+  try {
+    const cheapest = await prisma.deliveryRate.findFirst({
+      where: { method: "HOME", isActive: true, wilaya: { isActive: true } },
+      orderBy: { price: "asc" },
+      select: { price: true },
+    });
+    return cheapest ? { minHome: cheapest.price } : null;
+  } catch (error) {
+    console.error("[delivery] floor failed", error);
+    return null;
+  }
+}
+
 export async function resolveDeliveryRate(
   wilayaId: string,
   method: DeliveryMethod,

@@ -22,6 +22,26 @@ export async function fetchCart() {
   return getCartSummary();
 }
 
+export async function getQuickAddAction(productId: string) {
+  const { getQuickAddData } = await import("@/server/catalog");
+  return getQuickAddData(productId);
+}
+
+export async function getDeliveryFloorAction() {
+  const { getDeliveryFloor } = await import("@/server/delivery");
+  return getDeliveryFloor();
+}
+
+/** Storefront cards for an explicit id list, in the requested order. */
+export async function getProductsByIdsAction(productIds: string[]) {
+  const ids = [...new Set(productIds)].slice(0, 12);
+  if (ids.length === 0) return [];
+  const { getStorefrontProducts } = await import("@/server/catalog");
+  const result = await getStorefrontProducts({ ids, pageSize: 12 });
+  const rank = new Map(ids.map((id, index) => [id, index]));
+  return result.items.sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
+}
+
 export async function addToCartAction(variantId: string, quantity = 1) {
   try {
     const { added, count } = await addToCart(variantId, quantity);

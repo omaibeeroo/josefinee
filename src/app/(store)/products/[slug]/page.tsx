@@ -5,11 +5,13 @@ import { Banknote, Truck } from "lucide-react";
 import { prisma } from "@/lib/prisma";
 import { getProductBySlug, getRelatedProducts } from "@/server/catalog";
 import { getProductPromotion } from "@/server/promotions";
+import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
 import { getSettings } from "@/lib/settings";
 import {
   AddToBagPanel,
   ProductGallery,
   ProductCarousel,
+  RecentlyViewed,
 } from "@/components/storefront/product";
 import { Accordion, Price, Stars } from "@/components/ui";
 import { PixelEvent } from "@/components/pixels";
@@ -29,11 +31,18 @@ export async function generateMetadata({
   return {
     title: product.seoTitle || product.name,
     description: product.seoDescription || product.shortDescription || settings.seo.defaultDescription,
+    alternates: { canonical: `/products/${product.slug}` },
     openGraph: {
       title: product.name,
       description: product.shortDescription ?? undefined,
       type: "website",
       images: product.images[0]?.url ? [{ url: product.images[0].url }] : undefined,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: product.seoTitle || product.name,
+      description: product.seoDescription || product.shortDescription || undefined,
+      images: product.images[0]?.url ? [product.images[0].url] : undefined,
     },
   };
 }
@@ -62,6 +71,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
     getReviews(product.id),
     getProductPromotion(product.id, product.collectionIds),
   ]);
+  const totalAvailable = product.variants.reduce((sum, variant) => sum + variant.available, 0);
+  await trackEvent({
+    name: ANALYTICS_EVENTS.PRODUCT_VIEW,
+    props: { productId: product.id, slug: product.slug, price: product.price },
+  });
 
   const firstImage = product.images[0];
   const jsonLd = {
@@ -134,6 +148,21 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           <div className="mt-4">
             <Price price={product.price} compareAt={product.compareAtPrice} large />
           </div>
+          <p className="mt-2 flex items-center gap-2 text-sm" role="status">
+            {product.inStock ? (
+              <>
+                <span className="h-2 w-2 rounded-full bg-success" aria-hidden="true" />
+                <span className="font-medium">
+                  {totalAvailable <= 3 ? `Low stock — only ${totalAvailable} available` : "In stock, ready to ship"}
+                </span>
+              </>
+            ) : (
+              <>
+                <span className="h-2 w-2 rounded-full bg-sale" aria-hidden="true" />
+                <span className="font-medium text-sale">Sold out — check back soon</span>
+              </>
+            )}
+          </p>
           {promotion && (
             <p className="mt-2 inline-block bg-gold/15 px-3 py-1.5 text-sm font-medium text-gold-dark" role="status">
               {promotion.type === "PERCENTAGE" ? `${promotion.value}% off` : `${promotion.value} DA off`} with {promotion.name} — applied automatically at checkout
@@ -251,6 +280,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       <div className="mt-16 md:mt-24">
         <ProductCarousel title="You may also like" products={related} viewAllHref="/shop" />
+      </div>
+
+      <div className="mt-12 md:mt-16">
+        <RecentlyViewed productId={product.id} />
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { notFound } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
 import { getOrderConfirmation } from "@/server/orders";
+import { getSettings } from "@/lib/settings";
 import { verifyOrderToken } from "@/lib/order-token";
 import { CUSTOMER_ORDER_FLOW, DELIVERY_METHOD_LABELS, ORDER_STATUS_LABELS } from "@/lib/constants";
 import { formatDA } from "@/lib/money";
@@ -33,6 +34,13 @@ export default async function ConfirmationPage({
 
   const order = await getOrderConfirmation(normalized);
   if (!order) notFound();
+  const settings = await getSettings();
+  const whatsappNumber = settings.social.whatsapp.replace(/\D/g, "");
+  const whatsappHref = whatsappNumber
+    ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
+        `Hello, I have a question about my order ${order.orderNumber}.`,
+      )}`
+    : null;
 
   const reachedIndex = CUSTOMER_ORDER_FLOW.indexOf(order.status);
   const activeIndex = reachedIndex === -1 ? 0 : reachedIndex;
@@ -151,11 +159,17 @@ export default async function ConfirmationPage({
         <Link href="/shop" className="btn btn-primary">
           Continue shopping
         </Link>
+        {whatsappHref ? (
+          <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="btn btn-gold">
+            WhatsApp us about this order
+          </a>
+        ) : (
+          <Link href="/contact" className="btn btn-ghost">
+            Contact support
+          </Link>
+        )}
         <Link href={`/order/${order.orderNumber}?t=${encodeURIComponent(t ?? "")}`} className="btn btn-ghost">
           Refresh status
-        </Link>
-        <Link href="/contact" className="btn btn-ghost">
-          Contact support
         </Link>
       </div>
     </div>

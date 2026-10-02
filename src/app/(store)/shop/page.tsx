@@ -10,6 +10,7 @@ export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
   title: "Shop all",
   description: "Browse the full collection — jewelry, bags and accessories delivered across Algeria.",
+  alternates: { canonical: "/shop" },
 };
 
 export default async function ShopPage({

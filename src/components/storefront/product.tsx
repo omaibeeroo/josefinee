@@ -33,10 +33,63 @@ function writeGuestWishlist(ids: string[]): void {
 export function clearGuestWishlist(): void {
   writeGuestWishlist([]);
 }
+
+const RECENT_KEY = "nur-recently-viewed";
+const RECENT_MAX = 12;
+
+export function recordRecentlyViewed(productId: string): void {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = window.localStorage.getItem(RECENT_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    const ids = (Array.isArray(parsed) ? parsed : []).filter(
+      (entry): entry is string => typeof entry === "string",
+    );
+    const next = [productId, ...ids.filter((id) => id !== productId)].slice(0, RECENT_MAX);
+    window.localStorage.setItem(RECENT_KEY, JSON.stringify(next));
+  } catch {
+    // private browsing — recently viewed simply stays empty
+  }
+}
+
+function readRecentlyViewed(excludeId: string): string[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(RECENT_KEY);
+    const parsed: unknown = raw ? JSON.parse(raw) : [];
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter(
+      (entry): entry is string => typeof entry === "string" && entry !== excludeId,
+    );
+  } catch {
+    return [];
+  }
+}
+
+export function RecentlyViewed({ productId }: { productId: string }) {
+  const [products, setProducts] = useState<StoreProductCard[] | null>(null);
+
+  useEffect(() => {
+    recordRecentlyViewed(productId);
+    let cancelled = false;
+    void getProductsByIdsAction(readRecentlyViewed(productId))
+      .then((items) => {
+        if (!cancelled && items.length > 0) setProducts(items);
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [productId]);
+
+  if (!products) return null;
+  return <ProductCarousel title="Recently viewed" products={products} />;
+}
 import { discountPercent, formatPrice } from "@/lib/money";
 import { pixelEvent } from "@/components/pixels";
 import { cn } from "@/lib/utils";
-import type { StoreProduct, StoreProductCard } from "@/server/catalog";
+import type { QuickAddData, StoreProduct, StoreProductCard } from "@/server/catalog";
+import { getProductsByIdsAction, getQuickAddAction } from "@/server/actions/cart";
 
 /* --------------------------------------------------------- Image fallback */
 
@@ -126,14 +179,14 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
             onClick={() => (product.hasVariants ? setQuickOpen(true) : void quickAdd())}
             className="absolute inset-x-0 bottom-0 hidden translate-y-2 bg-ink/90 py-3 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-ivory opacity-0 transition-all duration-200 hover:bg-ink group-hover:translate-y-0 group-hover:opacity-100 md:block"
           >
-            {pending ? "Adding…" : product.hasVariants ? "Quick view" : "Quick add"}
+            {pending ? "Adding…" : product.hasVariants ? "Choose options" : "Quick add"}
           </button>
         )}
         {!soldOut && (
           <button
             type="button"
             disabled={pending}
-            aria-label={product.hasVariants ? `Quick view ${product.name}` : `Add ${product.name} to bag`}
+            aria-label={product.hasVariants ? `Choose options for ${product.name}` : `Add ${product.name} to bag`}
             onClick={() => (product.hasVariants ? setQuickOpen(true) : void quickAdd())}
             className="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-ivory shadow-card md:hidden"
           >
@@ -173,16 +226,56 @@ export function QuickAddModal({
   onClose: () => void;
 }) {
   const { add } = useCart();
+  const [data, setData] = useState<QuickAddData | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [selected, setSelected] = useState<Record<string, string>>({});
+  const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
+  useEffect(() => {
+    if (!open || data || !product.hasVariants) return;
+    let cancelled = false;
+    setLoading(true);
+    void getQuickAddAction(product.id)
+      .then((result) => {
+        if (!cancelled) setData(result);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, product.id]);
+
+  const matched = useMemo(() => {
+    if (!data) return null;
+    const chosen = Object.values(selected).filter(Boolean);
+    if (chosen.length < data.options.length) return null;
+    return (
+      data.variants.find((variant) =>
+        chosen.every((valueId) => variant.optionValueIds.includes(valueId)),
+      ) ?? null
+    );
+  }, [data, selected]);
+
+  const activeVariant = data ? (matched ?? (data.options.length === 0 ? data.variants[0] ?? null : null)) : null;
+  const maxQuantity = Math.min(10, activeVariant?.available ?? 0);
+
   async function submit() {
-    if (!product.defaultVariantId) return;
+    const variantId = product.hasVariants ? activeVariant?.id : product.defaultVariantId;
+    if (!variantId) {
+      setError("Please choose your options first.");
+      return;
+    }
     setPending(true);
     setError(null);
-    const result = await add(product.defaultVariantId, 1);
+    const result = await add(variantId, product.hasVariants ? quantity : 1);
     setPending(false);
     if (result.ok) {
+      pixelEvent("AddToCart", { content_ids: [product.id], currency: "DZD" });
       onClose();
     } else {
       setError(result.error ?? "Could not add to bag.");
@@ -193,20 +286,89 @@ export function QuickAddModal({
     <Modal open={open} onClose={onClose} title={product.name}>
       <div className="flex gap-4">
         <div className="relative h-28 w-24 shrink-0 overflow-hidden bg-cream">
-          <ProductImage url={product.images[0]?.url ?? null} alt={product.name} sizes="96px" />
+          <ProductImage url={data?.image?.url ?? product.images[0]?.url ?? null} alt={product.name} sizes="96px" />
         </div>
         <div>
-          <Price price={product.price} compareAt={product.compareAtPrice} />
+          <Price
+            price={activeVariant?.price ?? product.price}
+            compareAt={activeVariant?.compareAtPrice ?? product.compareAtPrice}
+          />
           {!product.inStock && <p className="mt-1 text-sm text-sale">Out of stock</p>}
+          {activeVariant && activeVariant.available <= 3 && activeVariant.available > 0 && (
+            <p className="mt-1 text-sm font-medium text-sale" role="status">
+              Only {activeVariant.available} left
+            </p>
+          )}
         </div>
       </div>
+
+      {loading && <p className="mt-4 text-sm text-ink-soft">Loading options…</p>}
+
+      {data && data.options.length > 0 && (
+        <div className="mt-4 space-y-3">
+          {data.options.map((option) => (
+            <div key={option.name}>
+              <p className="mb-1.5 text-xs font-medium uppercase tracking-[0.14em] text-ink-soft">
+                {option.name}
+              </p>
+              <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={option.name}>
+                {option.values.map((value) => {
+                  const isActive = selected[option.name] === value.id;
+                  const available = data.variants.some(
+                    (variant) => variant.optionValueIds.includes(value.id) && variant.available > 0,
+                  );
+                  return (
+                    <button
+                      key={value.id}
+                      type="button"
+                      role="radio"
+                      aria-checked={isActive}
+                      disabled={!available}
+                      onClick={() => {
+                        setError(null);
+                        setSelected((previous) => ({ ...previous, [option.name]: value.id }));
+                      }}
+                      className={cn(
+                        "flex min-h-10 items-center gap-2 border px-4 text-sm transition-colors",
+                        isActive ? "border-ink bg-ink text-ivory" : "hairline bg-white",
+                        !available && "opacity-40 line-through",
+                      )}
+                    >
+                      {value.hexColor && (
+                        <span
+                          className="h-3.5 w-3.5 rounded-full border hairline"
+                          style={{ backgroundColor: value.hexColor }}
+                          aria-hidden="true"
+                        />
+                      )}
+                      {value.value}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {product.hasVariants && (
+        <div className="mt-4 flex items-center gap-3">
+          <QuantitySelector value={quantity} onChange={setQuantity} max={Math.max(1, maxQuantity)} />
+          <span className="text-xs text-ink-muted">Select options to see availability</span>
+        </div>
+      )}
+
       {error && (
         <p className="mt-3 text-sm text-[#9e342e]" role="alert">
           {error}
         </p>
       )}
       <div className="mt-5 flex gap-2">
-        <Button onClick={() => void submit()} disabled={pending || !product.inStock} className="flex-1">
+        <Button
+          onClick={() => void submit()}
+          disabled={pending || loading || !product.inStock || (product.hasVariants && !activeVariant)}
+          className="flex-1"
+        >
           {pending ? "Adding…" : "Add to bag"}
         </Button>
         <Link href={`/products/${product.slug}`} onClick={onClose} className="btn btn-ghost flex-1 text-center">

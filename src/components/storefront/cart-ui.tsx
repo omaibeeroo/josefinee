@@ -15,6 +15,7 @@ import { Trash2 } from "lucide-react";
 import {
   addToCartAction,
   fetchCart,
+  getDeliveryFloorAction,
   removeCartItemAction,
   updateCartItemAction,
 } from "@/server/actions/cart";
@@ -28,6 +29,7 @@ type CartContextValue = CartSummary & {
   refresh: () => Promise<void>;
   add: (variantId: string, quantity?: number) => Promise<{ ok: boolean; error?: string }>;
   justAdded: boolean;
+  floor: { minHome: number } | null;
 };
 
 const CartContext = createContext<CartContextValue | null>(null);
@@ -38,6 +40,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [summary, setSummary] = useState<CartSummary>(EMPTY);
   const [open, setOpen] = useState(false);
   const [justAdded, setJustAdded] = useState(false);
+  const [floor, setFloor] = useState<{ minHome: number } | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -49,6 +52,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     void refresh();
+    void getDeliveryFloorAction()
+      .then(setFloor)
+      .catch(() => undefined);
   }, [refresh]);
 
   const add = useCallback(
@@ -64,8 +70,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<CartContextValue>(
-    () => ({ ...summary, open, setOpen, refresh, add, justAdded }),
-    [summary, open, refresh, add, justAdded],
+    () => ({ ...summary, open, setOpen, refresh, add, justAdded, floor }),
+    [summary, open, refresh, add, justAdded, floor],
   );
 
   return (
@@ -83,7 +89,7 @@ export function useCart(): CartContextValue {
 }
 
 function CartDrawer() {
-  const { open, setOpen, items, subtotal, count } = useCart();
+  const { open, setOpen, items, subtotal, count, floor } = useCart();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { refresh } = useCart();
@@ -190,7 +196,8 @@ function CartDrawer() {
                 <span className="text-base font-medium">{formatDA(subtotal)}</span>
               </div>
               <p className="mb-4 text-xs text-ink-muted">
-                Delivery calculated at checkout. Cash on delivery.
+                {floor ? `Delivery from ${formatDA(floor.minHome)} · ` : ""}
+                Exact fee calculated at checkout. Cash on delivery.
               </p>
               <div className="flex flex-col gap-2">
                 <Link href="/checkout" onClick={() => setOpen(false)} className="btn btn-primary w-full">

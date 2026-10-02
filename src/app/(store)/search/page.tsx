@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getFilterFacets, getStorefrontProducts } from "@/server/catalog";
 import { recordSearch } from "@/server/navigation";
+import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
+import { PixelEvent } from "@/components/pixels";
 import { CatalogToolbar, DesktopFilters, ProductGrid } from "@/components/storefront/catalog-ui";
 import { EmptyState } from "@/components/ui";
 import { Pagination } from "@/components/pagination";
@@ -24,7 +26,10 @@ export default async function SearchPage({
   const raw = params.q;
   const term = (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? "";
 
-  if (term) await recordSearch(term);
+  if (term) {
+    await recordSearch(term);
+    await trackEvent({ name: ANALYTICS_EVENTS.SEARCH, props: { term: term.slice(0, 80) } });
+  }
 
   const query = parseCatalogParams(params);
   const [result, facets] = term
@@ -33,6 +38,7 @@ export default async function SearchPage({
 
   return (
     <div className="container-luxe py-10 md:py-14">
+      {term && <PixelEvent name="Search" params={{ search_string: term }} />}
       <div className="mb-8 text-center">
         <p className="eyebrow mb-2">Search</p>
         <h1 className="font-display text-4xl font-medium md:text-5xl">
