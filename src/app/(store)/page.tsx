@@ -81,58 +81,74 @@ export default async function HomePage() {
     await getHomeData();
 
   return (
-    <div className="flex flex-col gap-12 md:gap-20">
+    <div className="flex flex-col gap-0">
       <Hero hero={settings.homepage.hero} />
 
       <TrustBar />
 
       {featuredCollection && (
-        <FeaturedCollection
-          title={featuredCollection.name}
-          description={featuredCollection.description ?? ""}
-          image={featuredCollection.image}
-          href={`/collections/${featuredCollection.slug}`}
-          cta={`Shop ${featuredCollection.name}`}
-        />
+        <div className="section-space">
+          <FeaturedCollection
+            title={featuredCollection.name}
+            description={featuredCollection.description ?? ""}
+            image={featuredCollection.image}
+            href={`/collections/${featuredCollection.slug}`}
+            cta={`Shop ${featuredCollection.name}`}
+          />
+        </div>
       )}
 
-      <CategoryGrid categories={categoryTiles} />
+      <div className="section-space pt-0">
+        <CategoryGrid categories={categoryTiles} />
+      </div>
 
-      <ProductCarousel
-        eyebrow="Handpicked"
-        title="Choose your jewellery"
-        products={featured}
-        viewAllHref="/shop"
-      />
+      <div className="section-space pt-0">
+        <ProductCarousel
+          eyebrow="The edit"
+          title="Choose your jewellery"
+          products={featured}
+          viewAllHref="/shop"
+        />
+      </div>
 
-      <Editorial
-        image={null}
-        eyebrow="New in"
-        title="Fresh pieces, weekly drops"
-        text="Small-batch arrivals in gold and silver tones — when a piece sells out, it may never return. Follow the New In edit to catch this week's drop before it is gone."
-        href="/collections/new-in"
-        cta="Shop new in"
-      />
+      <div className="section-space bg-cream/50">
+        <Editorial
+          image={featuredCollection?.image ?? null}
+          eyebrow="The NÛR edit"
+          title="Fresh pieces, made for repeat wear"
+          text="Small-batch arrivals in considered tones and textures — pieces that stay in rotation long after the first wear."
+          href="/collections/new-in"
+          cta="Shop new in"
+        />
+      </div>
 
-      <ProductCarousel
-        eyebrow="Just landed"
-        title="New in"
-        products={newIn}
-        viewAllHref="/collections/new-in"
-      />
+      <div className="section-space">
+        <ProductCarousel
+          eyebrow="Just landed"
+          title="New in"
+          products={newIn}
+          viewAllHref="/collections/new-in"
+        />
+      </div>
 
       {settings.homepage.showSocialProof && <SocialProof deliveredCount={deliveredCount} />}
 
-      <ProductCarousel
-        eyebrow="Loved by customers"
-        title="Our best sellers"
-        products={bestSellers}
-        viewAllHref="/collections/best-sellers"
-      />
+      <div className="section-space">
+        <ProductCarousel
+          eyebrow="Loved by customers"
+          title="Our best sellers"
+          products={bestSellers}
+          viewAllHref="/collections/best-sellers"
+        />
+      </div>
 
-      <Pillars items={settings.homepage.pillars} />
+      <div className="section-space pt-0">
+        <Pillars items={settings.homepage.pillars} />
+      </div>
 
-      <NewsletterSection />
+      <div className="section-space pt-0">
+        <NewsletterSection />
+      </div>
 
       <section className="container-luxe pb-4 text-center">
         <Link

@@ -175,6 +175,9 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             <Link href="/account" aria-label="Account" className="p-2.5 hover:text-gold-dark">
               <User size={19} strokeWidth={1.75} />
             </Link>
+            <Link href="/wishlist" aria-label="Wishlist" className="p-2.5 hover:text-gold-dark">
+              <Heart size={19} strokeWidth={1.75} />
+            </Link>
             <button
               type="button"
               onClick={() => setOpen(true)}
