@@ -14,20 +14,27 @@ function pageIds(prefix: Exclude<SitemapId, "fixed"> extends `${infer P}-${numbe
   }));
 }
 
+const fixedSitemap = [{ id: "fixed" as SitemapId }];
+
 export async function generateSitemaps(): Promise<Array<{ id: SitemapId }>> {
-  const [products, collections, categories, pages] = await Promise.all([
-    prisma.product.count({ where: storefrontProductWhere() }),
-    prisma.collection.count({ where: { isActive: true } }),
-    prisma.category.count({ where: { isActive: true } }),
-    prisma.page.count({ where: { isPublished: true } }),
-  ]);
-  return [
-    { id: "fixed" },
-    ...pageIds("products", products),
-    ...pageIds("collections", collections),
-    ...pageIds("categories", categories),
-    ...pageIds("pages", pages),
-  ];
+  try {
+    const [products, collections, categories, pages] = await Promise.all([
+      prisma.product.count({ where: storefrontProductWhere() }),
+      prisma.collection.count({ where: { isActive: true } }),
+      prisma.category.count({ where: { isActive: true } }),
+      prisma.page.count({ where: { isPublished: true } }),
+    ]);
+    return [
+      ...fixedSitemap,
+      ...pageIds("products", products),
+      ...pageIds("collections", collections),
+      ...pageIds("categories", categories),
+      ...pageIds("pages", pages),
+    ];
+  } catch (error) {
+    console.warn("[sitemap] dynamic partition discovery unavailable; serving fixed sitemap only", error);
+    return fixedSitemap;
+  }
 }
 
 export default async function sitemap({ id }: { id: string | Promise<string> }): Promise<MetadataRoute.Sitemap> {
