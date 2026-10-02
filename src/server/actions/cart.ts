@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { toUserMessage } from "@/lib/errors";
 import {
@@ -12,10 +13,10 @@ import {
 } from "@/server/cart";
 import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
 import { getCustomerSession } from "@/lib/auth/session";
+import { clientIp, enforceRateLimit, LIMITS } from "@/lib/rate-limit";
 
 export type ActionResult<T = Record<string, unknown>> =
-  | ({ ok: true } & T)
-  | { ok: false; error: string; code?: string; fields?: Record<string, string> };
+  ({ ok: true } & T) | { ok: false; error: string; code?: string; fields?: Record<string, string> };
 
 export async function fetchCart() {
   return getCartSummary();
@@ -68,9 +69,12 @@ export async function clearCartAction() {
 }
 
 export async function previewCouponAction(code: string) {
-  const normalized = code.trim().toUpperCase();
-  if (!normalized) return { ok: false as const, error: "Enter a promo code." };
+  const parsedCode = z.string().trim().min(1).max(40).safeParse(code);
+  if (!parsedCode.success) return { ok: false as const, error: "Enter a valid promo code." };
+  const normalized = parsedCode.data.toUpperCase();
   try {
+    const ip = await clientIp();
+    await enforceRateLimit({ ...LIMITS.coupon, key: `coupon:${ip}` });
     const { validateCoupon, isFirstOrder } = await import("@/server/coupons");
     const { resolveBestPromotion } = await import("@/server/promotions");
     const cart = await getCartSummary();

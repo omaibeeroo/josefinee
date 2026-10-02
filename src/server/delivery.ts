@@ -1,8 +1,11 @@
 import "server-only";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AppError } from "@/lib/errors";
 import { DELIVERY_METHOD_LABELS } from "@/lib/constants";
 import type { DeliveryMethod } from "@prisma/client";
+
+type DbClient = typeof prisma | Prisma.TransactionClient;
 
 export type WilayaOption = {
   id: string;
@@ -68,13 +71,14 @@ export async function getDeliveryOptions(wilayaId: string): Promise<DeliveryOpti
 export async function resolveDeliveryRate(
   wilayaId: string,
   method: DeliveryMethod,
+  db: DbClient = prisma,
 ): Promise<{ price: number; etaMinDays: number; etaMaxDays: number }> {
-  const rate = await prisma.deliveryRate.findFirst({
+  const rate = await db.deliveryRate.findFirst({
     where: { wilayaId, method, isActive: true },
   });
   if (!rate) {
     // Fall back to home delivery for this wilaya if the chosen method is unavailable.
-    const fallback = await prisma.deliveryRate.findFirst({
+    const fallback = await db.deliveryRate.findFirst({
       where: { wilayaId, method: "HOME", isActive: true },
     });
     if (!fallback) {

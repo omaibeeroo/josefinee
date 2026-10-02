@@ -1,6 +1,9 @@
 import "server-only";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AppError } from "@/lib/errors";
+
+type DbClient = typeof prisma | Prisma.TransactionClient;
 
 export type CouponLine = {
   productId: string;
@@ -29,9 +32,11 @@ export async function validateCoupon(params: {
   isFirstOrder: boolean;
   /** Used only for bag previews — final checkout always enforces everything. */
   skipWilayaCheck?: boolean;
+  db?: DbClient;
 }): Promise<CouponValidation> {
   const code = params.code.trim().toUpperCase();
-  const coupon = await prisma.coupon.findUnique({
+  const db = params.db ?? prisma;
+  const coupon = await db.coupon.findUnique({
     where: { code },
     include: {
       products: true,
@@ -58,10 +63,13 @@ export async function validateCoupon(params: {
     throw new AppError("COUPON_FIRST_ORDER", "This promo code is for first orders only.");
   }
   if (coupon.perCustomerLimit !== null && coupon.perCustomerLimit > 0) {
-    const used = await prisma.couponRedemption.count({
+    const used = await db.couponRedemption.count({
       where: {
         couponId: coupon.id,
-        OR: [{ phone: params.phone }, ...(params.customerId ? [{ customerId: params.customerId }] : [])],
+        OR: [
+          { phone: params.phone },
+          ...(params.customerId ? [{ customerId: params.customerId }] : []),
+        ],
       },
     });
     if (used >= coupon.perCustomerLimit) {
@@ -85,15 +93,18 @@ export async function validateCoupon(params: {
   const productIds = new Set(coupon.products.map((entry) => entry.productId));
   const collectionIds = new Set(coupon.collections.map((entry) => entry.collectionId));
 
-  const eligibleSubtotal = coupon.appliesToAll
-    ? params.subtotal
-    : params.lines
-        .filter(
-          (line) =>
-            productIds.has(line.productId) ||
-            line.collectionIds?.some((id) => collectionIds.has(id)),
-        )
-        .reduce((sum, line) => sum + line.unitPrice * line.quantity, 0);
+  const eligibleSubtotal = Math.min(
+    coupon.appliesToAll
+      ? params.subtotal
+      : params.lines
+          .filter(
+            (line) =>
+              productIds.has(line.productId) ||
+              line.collectionIds?.some((id) => collectionIds.has(id)),
+          )
+          .reduce((sum, line) => sum + line.unitPrice * line.quantity, 0),
+    params.subtotal,
+  );
 
   if (eligibleSubtotal <= 0) {
     throw new AppError("COUPON_NOT_APPLICABLE", "This promo code does not apply to your bag.");
@@ -119,8 +130,9 @@ export async function validateCoupon(params: {
 export async function isFirstOrder(params: {
   phone: string;
   customerId?: string | null;
+  db?: DbClient;
 }): Promise<boolean> {
-  const existing = await prisma.order.findFirst({
+  const existing = await (params.db ?? prisma).order.findFirst({
     where: {
       OR: [
         { phone: params.phone },
@@ -131,4 +143,31 @@ export async function isFirstOrder(params: {
     select: { id: true },
   });
   return !existing;
+}
+
+/** Consume a coupon while holding the database row's usage-limit condition atomically. */
+export async function consumeCoupon(
+  db: Prisma.TransactionClient,
+  params: { couponId: string; phone: string; customerId?: string | null },
+): Promise<void> {
+  const rows = await db.$queryRaw<Array<{ id: string }>>`
+    UPDATE "Coupon"
+    SET "usageCount" = "usageCount" + 1
+    WHERE "id" = ${params.couponId}
+      AND ("usageLimit" IS NULL OR "usageCount" < "usageLimit")
+      AND (
+        "perCustomerLimit" IS NULL OR "perCustomerLimit" <= 0 OR
+        (
+          SELECT COUNT(*)
+          FROM "CouponRedemption" AS redemption
+          WHERE redemption."couponId" = "Coupon"."id"
+            AND (redemption."phone" = ${params.phone}
+              OR (${params.customerId}::text IS NOT NULL AND redemption."customerId" = ${params.customerId}))
+        ) < "perCustomerLimit"
+      )
+    RETURNING "id"
+  `;
+  if (rows.length === 0) {
+    throw new AppError("COUPON_USED_UP", "This promo code has reached its limit.");
+  }
 }

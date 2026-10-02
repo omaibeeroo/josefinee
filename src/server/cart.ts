@@ -1,7 +1,7 @@
 import "server-only";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { Prisma } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { generateToken } from "@/lib/auth/tokens";
 import { CART_COOKIE } from "@/lib/auth/session";
 import { AppError } from "@/lib/errors";
@@ -71,10 +71,7 @@ function mapLine(item: CartItemWithRelations): CartLine {
     compareAtPrice: variant.compareAtPrice ?? product.compareAtPrice,
     quantity: item.quantity,
     lineTotal: unitPrice * item.quantity,
-    available: computeAvailable(
-      variant.inventory?.stock ?? 0,
-      variant.inventory?.reserved ?? 0,
-    ),
+    available: computeAvailable(variant.inventory?.stock ?? 0, variant.inventory?.reserved ?? 0),
     optionValueIds: variant.optionValues.map((entry) => entry.optionValueId),
   };
 }
@@ -250,7 +247,9 @@ export async function attachCartToCustomer(customerId: string): Promise<void> {
 }
 
 /** Full cart lines for the checkout transaction (fresh prices from the DB). */
-export async function getCartForCheckout(): Promise<{
+export async function getCartForCheckout(
+  db: PrismaClient | Prisma.TransactionClient = prisma,
+): Promise<{
   cartId: string;
   lines: CartLine[];
   subtotal: number;
@@ -258,8 +257,8 @@ export async function getCartForCheckout(): Promise<{
   const token = await readCartToken();
   if (!token) throw new AppError("CART_EMPTY", "Your bag is empty.", 400);
 
-  const cart = await prisma.cart.findUnique({
-    where: { token },
+  const cart = await db.cart.findUnique({
+    where: { token, status: "ACTIVE" },
     include: { items: { include: cartItemInclude } },
   });
 
@@ -272,10 +271,12 @@ export async function getCartForCheckout(): Promise<{
   return { cartId: cart.id, lines, subtotal };
 }
 
-export async function getCartCustomerId(): Promise<string | null> {
+export async function getCartCustomerId(
+  db: PrismaClient | Prisma.TransactionClient = prisma,
+): Promise<string | null> {
   const token = await readCartToken();
   if (!token) return null;
-  const cart = await prisma.cart.findUnique({
+  const cart = await db.cart.findUnique({
     where: { token },
     select: { customerId: true },
   });

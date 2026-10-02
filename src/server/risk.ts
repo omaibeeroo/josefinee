@@ -1,5 +1,8 @@
 import "server-only";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+
+type DbClient = typeof prisma | Prisma.TransactionClient;
 
 export type RiskAssessment = {
   level: "LOW" | "MEDIUM" | "HIGH";
@@ -16,13 +19,15 @@ export async function assessOrderRisk(params: {
   customerId?: string | null;
   total: number;
   itemCount: number;
+  db?: DbClient;
 }): Promise<RiskAssessment> {
   const flags: string[] = [];
   let score = 0;
 
   const since = new Date(Date.now() - 30 * 24 * 60 * 60_000);
 
-  const previousOrders = await prisma.order.findMany({
+  const db = params.db ?? prisma;
+  const previousOrders = await db.order.findMany({
     where: { phone: params.phone },
     select: { id: true, status: true, total: true, createdAt: true },
     orderBy: { createdAt: "desc" },
@@ -50,9 +55,7 @@ export async function assessOrderRisk(params: {
   }
 
   const averageOrderValue =
-    totalOrders > 0
-      ? previousOrders.reduce((sum, order) => sum + order.total, 0) / totalOrders
-      : 0;
+    totalOrders > 0 ? previousOrders.reduce((sum, order) => sum + order.total, 0) / totalOrders : 0;
   if (averageOrderValue > 0 && params.total > averageOrderValue * 4 && params.total > 20_000) {
     flags.push("Order value far above this customer's average");
     score += 15;
@@ -69,7 +72,7 @@ export async function assessOrderRisk(params: {
   }
 
   // Multiple customer profiles sharing the same phone number.
-  const samePhoneCustomers = await prisma.customer.count({ where: { phone: params.phone } });
+  const samePhoneCustomers = await db.customer.count({ where: { phone: params.phone } });
   if (samePhoneCustomers > 1) {
     flags.push("Multiple customer accounts share this phone number");
     score += 15;
