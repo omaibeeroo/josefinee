@@ -3,7 +3,7 @@ import { productionEnvironmentIssues } from "./production-env";
 
 const validProductionEnv = {
   NODE_ENV: "production",
-  DATABASE_URL: "postgresql://app-user:test-only-password@db.example.test:5432/nur_store?schema=public",
+  DATABASE_URL: "postgresql://app-user:test-only-password@db.example.test:5432/josefinee_store?schema=public",
   AUTH_SECRET: "unit-test-secret-value-that-is-not-used-outside-tests",
   ORDER_OUTBOX_SECRET: "separate-unit-test-outbox-secret-value",
   RETENTION_JOB_SECRET: "separate-unit-test-retention-secret-value",

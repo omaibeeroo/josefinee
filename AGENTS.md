@@ -1,4 +1,4 @@
-# AGENTS.md — Working on NÛR Store
+# AGENTS.md — Working on Josefinee
 
 This file orients AI coding agents. Humans: see `README.md`.
 

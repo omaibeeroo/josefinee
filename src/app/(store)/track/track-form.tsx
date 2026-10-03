@@ -31,7 +31,7 @@ export function TrackForm() {
         <Input
           value={orderNumber}
           onChange={(event) => setOrderNumber(event.target.value)}
-          placeholder="NUR-2026-000123"
+          placeholder="JOS-2026-000123"
           autoComplete="off"
           required
         />

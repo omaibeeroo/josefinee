@@ -1,12 +1,13 @@
-# NÛR Store — Premium COD E-Commerce for Algeria
+# Josefinee — Premium COD E-Commerce for Algeria
 
 A complete, production-ready e-commerce application for a fashion/jewelry brand
 selling in **Algeria** with **Cash on Delivery (COD)**. Mobile-first, French-locale
 storefront plus a full admin back office.
 
 > **Brand:** every brand value (name, logo, colors, copy, social links) lives in
-> `src/config/brand.ts` and the database `Setting` table. Replace `NÛR` with your
-> own identity — nothing is hard-coded into the UI.
+> `src/config/brand.ts` and the database `Setting` table. The storefront brand is
+> Josefinee; update these sources when changing it again. Nothing is hard-coded
+> into the UI.
 
 ## Stack
 
