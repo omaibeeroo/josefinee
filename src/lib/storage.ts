@@ -144,34 +144,3 @@ export async function storeImage(file: {
     sizeBytes,
   };
 }
-
-export async function deleteStoredImage(storageKey: string): Promise<void> {
-  try {
-    if (storageKey.startsWith("local:")) {
-      const { unlink } = await import("node:fs/promises");
-      const key = storageKey.slice("local:".length);
-      const uploadsRoot = path.join(process.cwd(), "public", "uploads");
-      const absolute = path.join(uploadsRoot, key);
-      if (!absolute.startsWith(uploadsRoot)) return;
-      await unlink(absolute).catch(() => undefined);
-      return;
-    }
-    if (isS3Configured()) {
-      const { S3Client, DeleteObjectCommand } = await import("@aws-sdk/client-s3");
-      const client = new S3Client({
-        region: process.env.STORAGE_REGION || "auto",
-        endpoint: process.env.STORAGE_ENDPOINT || undefined,
-        forcePathStyle: process.env.STORAGE_FORCE_PATH_STYLE === "true",
-        credentials: {
-          accessKeyId: process.env.STORAGE_ACCESS_KEY as string,
-          secretAccessKey: process.env.STORAGE_SECRET_KEY as string,
-        },
-      });
-      await client.send(
-        new DeleteObjectCommand({ Bucket: process.env.STORAGE_BUCKET, Key: storageKey }),
-      );
-    }
-  } catch (error) {
-    console.error("[storage] delete failed", storageKey, error);
-  }
-}

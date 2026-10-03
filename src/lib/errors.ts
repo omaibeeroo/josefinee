@@ -28,7 +28,3 @@ export function toUserMessage(error: unknown): string {
   if (isAppError(error)) return error.userMessage;
   return "Something went wrong. Please try again.";
 }
-
-export function errorCode(error: unknown): string {
-  return isAppError(error) ? error.code : "INTERNAL_ERROR";
-}

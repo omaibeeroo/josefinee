@@ -7,9 +7,9 @@ import { isAppError, toUserMessage } from "@/lib/errors";
 import { flattenZodErrors, isBotSubmission } from "@/lib/validation/common";
 import { checkoutSchema, trackOrderSchema, type CheckoutInput } from "@/lib/validation/checkout";
 import { createOrder } from "@/server/orders";
-import { getCartForCheckout, getCartSummary } from "@/server/cart";
+import { getCartForCheckout } from "@/server/cart";
 import { getActiveWilayas, getCommunes, getDeliveryOptions } from "@/server/delivery";
-import { signOrderToken, verifyOrderToken } from "@/lib/order-token";
+import { signOrderToken } from "@/lib/order-token";
 import { enforceRateLimit, LIMITS, clientIp } from "@/lib/rate-limit";
 import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
 
@@ -100,10 +100,6 @@ export async function getCheckoutData() {
   return { cart, wilayas, promotion };
 }
 
-export async function getCartPageData() {
-  return getCartSummary();
-}
-
 export async function getCommunesAction(wilayaId: string) {
   return getCommunes(wilayaId);
 }
@@ -148,8 +144,4 @@ export async function lookupOrderAction(orderNumber: string, phoneRaw: string) {
     console.error("[track] lookup failed", error);
     return { ok: false as const, error: "Something went wrong. Please try again." };
   }
-}
-
-export async function verifyOrderAccess(orderNumber: string, token: string): Promise<boolean> {
-  return verifyOrderToken(orderNumber, token);
 }

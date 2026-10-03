@@ -473,28 +473,6 @@ export function Price({
   );
 }
 
-/* ----------------------------------------------------------- Section head */
-
-export function SectionHeading({
-  eyebrow,
-  title,
-  action,
-  align = "center",
-}: {
-  eyebrow?: string;
-  title: string;
-  action?: ReactNode;
-  align?: "center" | "left";
-}) {
-  return (
-    <div className={cn("mb-8 md:mb-12", align === "center" ? "text-center" : "text-left")}>
-      {eyebrow && <p className="eyebrow mb-3">{eyebrow}</p>}
-      <h2 className="font-display text-3xl font-medium tracking-tight md:text-4xl">{title}</h2>
-      {action && <div className="mt-5">{action}</div>}
-    </div>
-  );
-}
-
 /* ---------------------------------------------------------------- Honeypot */
 
 export function Honeypot({

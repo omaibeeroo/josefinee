@@ -1,8 +1,6 @@
 import { z } from "zod";
 import { normalizeAlgerianPhone, phoneError } from "@/lib/phone";
 
-export const zTrimmed = z.string().trim();
-
 export const zEmail = z
   .string()
   .trim()
@@ -10,15 +8,6 @@ export const zEmail = z
   .email("Please enter a valid email address.")
   .max(200)
   .transform((value) => value.toLowerCase());
-
-export const zOptionalEmail = z
-  .string()
-  .trim()
-  .email("Please enter a valid email address.")
-  .max(200)
-  .transform((value) => value.toLowerCase())
-  .optional()
-  .or(z.literal("").transform(() => undefined));
 
 export const zPhone = z
   .string()
@@ -54,10 +43,7 @@ export const zOptionalString = (max = 300) =>
     .or(z.literal("").transform(() => undefined));
 
 export const zInt = z.coerce.number().int();
-export const zNonNegativeInt = zInt.min(0);
 export const zPrice = z.coerce.number().int().min(0).max(100_000_000);
-
-export type FieldErrors = Record<string, string[] | undefined>;
 
 export function flattenZodErrors(error: z.ZodError): Record<string, string> {
   const result: Record<string, string> = {};

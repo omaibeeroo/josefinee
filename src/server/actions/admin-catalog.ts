@@ -593,16 +593,6 @@ export async function deleteCategoryAction(id: string) {
   return { ok: true as const };
 }
 
-/* ------------------------------------------------------------ Collections */
-
-export async function listCollectionsAdmin() {
-  await requirePermission("products:read");
-  return prisma.collection.findMany({
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    include: { _count: { select: { products: true } } },
-  });
-}
-
 export async function saveCollectionAction(input: unknown) {
   const actor = await requirePermission("catalog:write");
   const parsed = collectionSchema.safeParse(input);

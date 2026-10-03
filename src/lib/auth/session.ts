@@ -138,10 +138,6 @@ export const getCustomerSession = cache(async () => {
   return { session, customer: session.customer };
 });
 
-export type CustomerSessionUser = NonNullable<
-  Awaited<ReturnType<typeof getCustomerSession>>
->["customer"];
-
 export async function destroyCustomerSession(): Promise<void> {
   const store = await cookies();
   const token = store.get(CUSTOMER_COOKIE)?.value;
