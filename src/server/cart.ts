@@ -108,11 +108,6 @@ export async function getCartSummary(): Promise<CartSummary> {
   }
 }
 
-export async function getCartCount(): Promise<number> {
-  const summary = await getCartSummary();
-  return summary.count;
-}
-
 async function getOrCreateCart(): Promise<{ id: string; token: string }> {
   const store = await cookies();
   const token = store.get(CART_COOKIE)?.value;
@@ -276,16 +271,4 @@ export async function getCartForCheckout(
   const lines = cart.items.map(mapLine);
   const subtotal = lines.reduce((sum, line) => sum + line.lineTotal, 0);
   return { cartId: cart.id, customerId: cart.customerId, status: cart.status, lines, subtotal };
-}
-
-export async function getCartCustomerId(
-  db: PrismaClient | Prisma.TransactionClient = prisma,
-): Promise<string | null> {
-  const token = await readCartToken();
-  if (!token) return null;
-  const cart = await db.cart.findUnique({
-    where: { token },
-    select: { customerId: true },
-  });
-  return cart?.customerId ?? null;
 }

@@ -1,4 +1,6 @@
-# Josefinee — Release Summary
+# Josefinee — Historical Release Summary
+
+> This document records the earlier premium storefront release. Its branch, commit, and seeded-flow metadata are historical snapshots, not the current repository state.
 
 **Release scope:** Checkout integrity, admin security hardening, regression coverage, and premium storefront redesign  
 **Release branch:** `manus/premium-storefront-redesign`  
@@ -275,11 +277,11 @@ Validated recovery payload:
 
 The final confirmation was submitted for the fictional seeded test order:
 
-- Order number: `JOS-2026-000001`
+- Order number: `NUR-2026-000001`
 - Payment method: `COD`
 - Initial status: `PENDING`
 - Order item: 1 × Mira Mini Bag — Noir
-- SKU: `JOS-006-BLK`
+- SKU: `NUR-006-BLK`
 
 The order confirmation page displayed the expected customer, address, item, delivery, and total data.
 
@@ -306,7 +308,7 @@ Database verification confirmed:
 - Customer notifications were recorded for transitions.
 - COD remained the payment method; no online payment was captured.
 - Inventory had exactly one sale transaction for the order.
-- SKU `JOS-006-BLK` stock moved from 9 to 8 and did not decrement again during fulfillment.
+- SKU `NUR-006-BLK` stock moved from 9 to 8 and did not decrement again during fulfillment.
 - Reserved stock remained 0.
 
 ## 8. Verification status

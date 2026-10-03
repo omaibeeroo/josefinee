@@ -1,7 +1,6 @@
 "use server";
 
 import { createHmac } from "node:crypto";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { newsletterSchema, contactSchema } from "@/lib/validation/auth";
@@ -12,7 +11,6 @@ import {
   destroyCustomerSession,
   getCustomerSession,
   revokeCustomerSessions,
-  CART_COOKIE,
 } from "@/lib/auth/session";
 import { hashPassword, verifyPassword, passwordIssues } from "@/lib/auth/password";
 import { attachCartToCustomer } from "@/server/cart";
@@ -427,9 +425,4 @@ export async function changePasswordAction(input: { current: string; next: strin
     resourceId: session.customer.id,
   });
   return { ok: true as const, message: "Your password has been updated." };
-}
-
-export async function clearCartCookieAction() {
-  const store = await cookies();
-  store.delete(CART_COOKIE);
 }

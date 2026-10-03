@@ -6,16 +6,6 @@ import { Modal } from "@/components/ui";
 
 const STORAGE_KEY = "nur-cookie-consent";
 
-export function consentChoice(): "accepted" | "rejected" | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const value = window.localStorage.getItem(STORAGE_KEY);
-    return value === "accepted" || value === "rejected" ? value : null;
-  } catch {
-    return null;
-  }
-}
-
 /**
  * No banner, no interruption: analytics default to OFF and the visitor can
  * change their mind anytime through the footer's cookie preferences.
