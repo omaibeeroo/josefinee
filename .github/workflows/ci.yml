@@ -41,7 +41,10 @@ jobs:
         with:
           node-version: 20
           cache: npm
-      - run: npm ci
+      # CI needs devDependencies for the Prisma seed (tsx), TypeScript, ESLint,
+      # Vitest, and the Next.js build. Keep NODE_ENV=production for runtime
+      # configuration, but explicitly install the full validation toolchain.
+      - run: npm ci --include=dev
       - run: npx prisma migrate deploy
       - name: Seed CI fixtures
         run: |
