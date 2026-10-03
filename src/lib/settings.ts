@@ -96,18 +96,18 @@ export const DEFAULT_SETTINGS: SettingsMap = {
   },
   homepage: {
     announcement: {
-      text: "Express delivery across Algeria — Cash on delivery available",
+      text: "Livraison partout en Algérie · Paiement à la livraison",
       href: "/collections/new-in",
       isActive: true,
     },
     hero: {
-      eyebrow: "New collection",
-      headline: "THE PIECES YOU'LL WEAR ON REPEAT",
+      eyebrow: "Nouvelle collection",
+      headline: "DES PIÈCES À PORTER ENCORE ET ENCORE",
       subheading:
-        "Timeless jewelry and accessories, carefully finished and delivered to your door anywhere in Algeria.",
-      primaryLabel: "Shop now",
+        "Des bijoux et accessoires intemporels, préparés avec soin et livrés chez vous partout en Algérie.",
+      primaryLabel: "Découvrir la boutique",
       primaryHref: "/shop",
-      secondaryLabel: "Discover collection",
+      secondaryLabel: "Voir la collection",
       secondaryHref: "/collections/new-in",
       imageDesktop: "",
       imageMobile: "",
@@ -117,16 +117,16 @@ export const DEFAULT_SETTINGS: SettingsMap = {
     socialProofOverride: 0,
     pillars: [
       {
-        title: "Prepared with care",
-        text: "Every order is checked and wrapped by hand before it leaves our studio.",
+        title: "Préparé avec soin",
+        text: "Chaque commande est vérifiée et emballée avec attention avant son expédition.",
       },
       {
-        title: "Delivered to you",
-        text: "Fast delivery to all 58 wilayas, with cash on delivery for peace of mind.",
+        title: "Livré chez vous",
+        text: "Livraison dans les 58 wilayas, avec paiement à la livraison en toute simplicité.",
       },
       {
-        title: "Customer support",
-        text: "Our team is available to answer your questions before and after your order.",
+        title: "À votre écoute",
+        text: "Notre équipe répond à vos questions avant et après votre commande.",
       },
     ],
   },
@@ -164,6 +164,8 @@ function mergeSection<K extends keyof SettingsMap>(key: K, value: unknown): Sett
 
   if (key === "general") {
     const general = merged as unknown as GeneralSettings;
+    if (general.email.toLowerCase().endsWith("@example.com")) general.email = "";
+    if (general.phone.replace(/\D/g, "") === "0550000000") general.phone = "";
     general.colors = {
       ...DEFAULT_SETTINGS.general.colors,
       ...((stored.colors as Partial<GeneralSettings["colors"]> | undefined) ?? {}),
@@ -178,6 +180,12 @@ function mergeSection<K extends keyof SettingsMap>(key: K, value: unknown): Sett
     };
     if (Array.isArray(stored.pillars) && stored.pillars.length > 0) {
       home.pillars = stored.pillars as HomepageSettings["pillars"];
+    }
+  }
+  if (key === "social") {
+    const social = merged as unknown as SocialSettings;
+    for (const field of ["instagram", "tiktok", "facebook"] as const) {
+      if (/^https:\/\/[^/]+\/?$/.test(social[field])) social[field] = "";
     }
   }
   return merged;

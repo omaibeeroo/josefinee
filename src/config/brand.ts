@@ -16,11 +16,11 @@ const env = (key: string, fallback: string): string => {
 
 export const BRAND_CONFIG = {
   name: env("NEXT_PUBLIC_BRAND_NAME", "NÛR"),
-  legalName: env("NEXT_PUBLIC_BRAND_LEGAL_NAME", "NÛR Store"),
-  tagline: env("NEXT_PUBLIC_BRAND_TAGLINE", "Pieces you will wear on repeat"),
+  legalName: env("NEXT_PUBLIC_BRAND_LEGAL_NAME", ""),
+  tagline: env("NEXT_PUBLIC_BRAND_TAGLINE", "Des pièces à porter encore et encore"),
   description: env(
     "NEXT_PUBLIC_BRAND_DESCRIPTION",
-    "Modern jewelry, bags and accessories, delivered across Algeria. Pay cash on delivery.",
+    "Bijoux, sacs et accessoires modernes livrés partout en Algérie. Paiement à la livraison.",
   ),
   orderPrefix: env("NEXT_PUBLIC_ORDER_PREFIX", "NUR"),
   currency: env("NEXT_PUBLIC_CURRENCY", "DZD"),
@@ -28,14 +28,14 @@ export const BRAND_CONFIG = {
   country: env("NEXT_PUBLIC_COUNTRY", "Algeria"),
   countryCode: "DZ",
   locale: env("NEXT_PUBLIC_LOCALE", "fr-DZ"),
-  supportEmail: env("NEXT_PUBLIC_SUPPORT_EMAIL", "support@example.com"),
-  supportPhone: env("NEXT_PUBLIC_SUPPORT_PHONE", "0550 00 00 00"),
-  supportHours: env("NEXT_PUBLIC_SUPPORT_HOURS", "Sun–Thu, 9:00–17:00"),
-  defaultTitleSuffix: env("NEXT_PUBLIC_BRAND_NAME", "NÛR") + " — Modern Jewelry & Accessories",
+  supportEmail: env("NEXT_PUBLIC_SUPPORT_EMAIL", ""),
+  supportPhone: env("NEXT_PUBLIC_SUPPORT_PHONE", ""),
+  supportHours: env("NEXT_PUBLIC_SUPPORT_HOURS", "Dimanche–jeudi, 9 h–17 h"),
+  defaultTitleSuffix: "Bijoux et accessoires modernes | Paiement à la livraison",
   social: {
-    instagram: env("NEXT_PUBLIC_INSTAGRAM_URL", "https://instagram.com/"),
-    tiktok: env("NEXT_PUBLIC_TIKTOK_URL", "https://tiktok.com/"),
-    facebook: env("NEXT_PUBLIC_FACEBOOK_URL", "https://facebook.com/"),
+    instagram: env("NEXT_PUBLIC_INSTAGRAM_URL", ""),
+    tiktok: env("NEXT_PUBLIC_TIKTOK_URL", ""),
+    facebook: env("NEXT_PUBLIC_FACEBOOK_URL", ""),
     whatsapp: env("NEXT_PUBLIC_WHATSAPP_NUMBER", ""),
   },
   /** Free delivery threshold in DA. 0 disables the free-delivery promise. */

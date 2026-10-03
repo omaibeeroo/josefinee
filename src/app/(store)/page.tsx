@@ -19,7 +19,7 @@ import {
 } from "@/components/storefront/home";
 import { ProductCarousel } from "@/components/storefront/product";
 
-export const dynamic = "force-dynamic";
+export const revalidate = 60;
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
@@ -29,12 +29,20 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function getHomeData() {
-  const [settings, featured, newIn, bestSellers] = await Promise.all([
-    getSettings(),
+  const settings = await getSettings();
+  const [featuredResult, newInResult, bestSellersResult] = await Promise.allSettled([
     getFeaturedProducts(10),
     getNewInProducts(10),
     getBestSellers(10),
   ]);
+  const featured = featuredResult.status === "fulfilled" ? featuredResult.value : [];
+  const newIn = newInResult.status === "fulfilled" ? newInResult.value : [];
+  const bestSellers = bestSellersResult.status === "fulfilled" ? bestSellersResult.value : [];
+  const catalogError = [featuredResult, newInResult, bestSellersResult].some((result) => result.status === "rejected");
+
+  if (catalogError) {
+    console.error("[home] product data failed");
+  }
 
   let categoryTiles: Array<{ name: string; slug: string; image: string | null; count: number }> = [];
   let featuredCollection: { name: string; slug: string; description: string | null; image: string | null } | null = null;
@@ -81,11 +89,11 @@ async function getHomeData() {
     console.error("[home] data failed", error);
   }
 
-  return { settings, featured, newIn, bestSellers, categoryTiles, featuredCollection, deliveredCount, faqs };
+  return { settings, featured, newIn, bestSellers, catalogError, categoryTiles, featuredCollection, deliveredCount, faqs };
 }
 
 export default async function HomePage() {
-  const { settings, featured, newIn, bestSellers, categoryTiles, featuredCollection, deliveredCount, faqs } =
+  const { settings, featured, newIn, bestSellers, catalogError, categoryTiles, featuredCollection, deliveredCount, faqs } =
     await getHomeData();
 
   return (
@@ -106,14 +114,31 @@ export default async function HomePage() {
         </div>
       )}
 
-      <div className="section-space pt-0">
-        <ProductCarousel
-          eyebrow="Sélection choisie"
-          title="Nos bijoux"
-          products={featured}
-          viewAllHref="/shop"
-        />
-      </div>
+      {featured.length === 0 && newIn.length === 0 && bestSellers.length === 0 ? (
+        <section className="container-luxe section-space pt-0 text-center" aria-labelledby="catalog-empty-title">
+          <div className="border-y hairline bg-cream/60 px-6 py-14 md:py-20">
+            <p className="eyebrow">{catalogError ? "Service momentanément indisponible" : "Bientôt disponible"}</p>
+            <h2 id="catalog-empty-title" className="mt-3 font-display text-3xl font-medium md:text-4xl">
+              {catalogError ? "Impossible de charger la sélection" : "Nos nouveautés arrivent bientôt"}
+            </h2>
+            <p className="mx-auto mt-3 max-w-lg text-ink-soft">
+              {catalogError
+                ? "Un problème temporaire empêche l’affichage des produits. Veuillez réessayer dans quelques instants."
+                : "La boutique prépare actuellement sa première sélection. Inscrivez-vous pour être informée des nouveautés."}
+            </p>
+            {catalogError && <Link href="/" className="btn btn-outline mt-6">Réessayer</Link>}
+          </div>
+        </section>
+      ) : (
+        <div className="section-space pt-0">
+          <ProductCarousel
+            eyebrow="Sélection choisie"
+            title="Nos bijoux"
+            products={featured}
+            viewAllHref="/shop"
+          />
+        </div>
+      )}
 
       <div className="section-space pt-0">
         <ProductCarousel

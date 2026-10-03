@@ -25,7 +25,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();
   const name = settings.general.name || BRAND_CONFIG.name;
   const base = appUrl();
-  const ogImage = settings.seo.defaultOgImage || undefined;
+  const ogImage = settings.seo.defaultOgImage || "/og-default.svg";
   return {
     metadataBase: new URL(base),
     title: {
@@ -71,7 +71,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[80] focus:bg-ink focus:px-4 focus:py-2 focus:text-ivory"
         >
-          Skip to content
+          Aller au contenu
         </a>
         <NavigationProgress />
         <CartProvider>{children}</CartProvider>
