@@ -44,10 +44,10 @@ jobs:
       - run: npm ci
       - run: npx prisma migrate deploy
       - name: Seed CI fixtures
-        run: npm run db:seed
-        env:
-          SEED_ADMIN_EMAIL: ci-admin@example.test
-          SEED_ADMIN_PASSWORD: CI-only-strong-password-2026-0123456789
+        run: |
+          export SEED_ADMIN_EMAIL=ci-admin@example.test
+          export SEED_ADMIN_PASSWORD="$(openssl rand -base64 32)"
+          npm run db:seed
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test
