@@ -76,11 +76,10 @@ See `.env.example` for the full list. Highlights:
 | `STORAGE_DRIVER` | `local` (dev) or `s3` (**required in production**) |
 | `STORAGE_BUCKET/ENDPOINT/ACCESS_KEY/SECRET_KEY/PUBLIC_HOST` | S3-compatible storage |
 | `EMAIL_PROVIDER/SMS_PROVIDER/WHATSAPP_PROVIDER` | `resend` / `twilio` / `meta`, or `console` (log only) |
-| `GOOGLE_ANALYTICS_ID / META_PIXEL_ID / TIKTOK_PIXEL_ID` | Set via Admin → Settings → Analytics (pixels load only after cookie consent) |
+| `META_PIXEL_ID` | Optional server-side Meta Conversions API identifier |
 | `UPSTASH_REDIS_REST_URL/TOKEN` | Optional distributed rate limiting; production falls back to shared PostgreSQL buckets, while memory fallback is development/test only |
 | `TRUSTED_CLIENT_IP_HEADER` | Header overwritten by the trusted reverse proxy (default `x-real-ip`); required for production public mutation rate limits |
 | `ORDER_OUTBOX_SECRET` | 32+ random bytes used only by the scheduled order-effect retry endpoint; required in production |
-| `CAPTCHA_SECRET / NEXT_PUBLIC_CAPTCHA_SITE_KEY` | Optional bot protection hooks |
 
 Never commit `.env`.
 

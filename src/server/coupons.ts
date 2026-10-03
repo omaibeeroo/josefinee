@@ -9,6 +9,8 @@ export type CouponLine = {
   productId: string;
   unitPrice: number;
   quantity: number;
+  /** Promotion-adjusted line total when checkout has already resolved promotions. */
+  lineTotal?: number;
   collectionIds?: string[];
 };
 
@@ -102,7 +104,7 @@ export async function validateCoupon(params: {
               productIds.has(line.productId) ||
               line.collectionIds?.some((id) => collectionIds.has(id)),
           )
-          .reduce((sum, line) => sum + line.unitPrice * line.quantity, 0),
+          .reduce((sum, line) => sum + (line.lineTotal ?? line.unitPrice * line.quantity), 0),
     params.subtotal,
   );
 

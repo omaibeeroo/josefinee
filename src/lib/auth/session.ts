@@ -155,3 +155,10 @@ export async function destroyCustomerSession(): Promise<void> {
   }
   store.set(CUSTOMER_COOKIE, "", { ...cookieOptions(new Date(0)), maxAge: 0 });
 }
+
+export async function revokeCustomerSessions(customerId: string): Promise<void> {
+  await prisma.customerSession.updateMany({
+    where: { customerId, revokedAt: null },
+    data: { revokedAt: new Date() },
+  });
+}

@@ -52,13 +52,6 @@ export const isS3Configured = (): boolean =>
       process.env.STORAGE_SECRET_KEY,
   );
 
-export const isAnalyticsConfigured = (): boolean =>
-  Boolean(
-    process.env.NEXT_PUBLIC_GA_ID ||
-      process.env.NEXT_PUBLIC_META_PIXEL_ID ||
-      process.env.NEXT_PUBLIC_TIKTOK_PIXEL_ID,
-  );
-
 /** Public canonical application origin; production must configure APP_URL explicitly. */
 export function appUrl(): string {
   if (process.env.APP_URL) {

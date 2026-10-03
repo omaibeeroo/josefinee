@@ -2,6 +2,7 @@ import "server-only";
 import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 import { BRAND_CONFIG } from "@/config/brand";
+import { z } from "zod";
 
 export type GeneralSettings = {
   name: string;
@@ -156,6 +157,34 @@ export const DEFAULT_SETTINGS: SettingsMap = {
 
 const SETTING_KEYS = Object.keys(DEFAULT_SETTINGS) as Array<keyof SettingsMap>;
 
+const safeLink = z.string().max(1000).refine(
+  (value) =>
+    value === "" ||
+    (value.startsWith("/") && !value.startsWith("//") && !value.includes("\\") && !/[\u0000-\u001f\u007f]/.test(value)) ||
+    /^https:\/\/[^\s]+$/i.test(value),
+  "Links must be relative paths or HTTPS URLs.",
+);
+
+const settingsSchemas = {
+  general: z.object({
+    name: z.string().max(120), legalName: z.string().max(200), tagline: z.string().max(240),
+    description: z.string().max(2000), email: z.string().max(320), phone: z.string().max(40),
+    address: z.string().max(500), logoUrl: safeLink, faviconUrl: safeLink,
+    colors: z.object({ accent: z.string().regex(/^#[0-9a-f]{6}$/i), ink: z.string().regex(/^#[0-9a-f]{6}$/i), background: z.string().regex(/^#[0-9a-f]{6}$/i) }),
+  }),
+  homepage: z.object({
+    announcement: z.object({ text: z.string().max(240), href: safeLink, isActive: z.boolean() }),
+    hero: z.object({ eyebrow: z.string().max(120), headline: z.string().max(240), subheading: z.string().max(1000), primaryLabel: z.string().max(120), primaryHref: safeLink, secondaryLabel: z.string().max(120), secondaryHref: safeLink, imageDesktop: safeLink, imageMobile: safeLink }),
+    featuredCollectionSlug: z.string().max(160), showSocialProof: z.boolean(), socialProofOverride: z.number().int().nonnegative(),
+    pillars: z.array(z.object({ title: z.string().max(120), text: z.string().max(500) })).max(12),
+  }),
+  commerce: z.object({ currency: z.string().max(10), currencySymbol: z.string().max(10), codEnabled: z.boolean(), freeDeliveryThreshold: z.number().int().nonnegative(), lowStockThresholdDefault: z.number().int().nonnegative(), orderPrefix: z.string().regex(/^[A-Z0-9-]{1,20}$/), defaultDeliveryMethod: z.enum(["HOME", "STOPDESK", "EXPRESS", "STANDARD"]) }),
+  seo: z.object({ titleSuffix: z.string().max(160), defaultDescription: z.string().max(2000), defaultOgImage: safeLink }),
+  social: z.object({ instagram: safeLink, tiktok: safeLink, facebook: safeLink, whatsapp: safeLink }),
+  analytics: z.object({ gaId: z.string().max(100), metaPixelId: z.string().max(100), tiktokPixelId: z.string().max(100) }),
+  notifications: z.object({ orderEmailEnabled: z.boolean(), orderSmsEnabled: z.boolean(), orderWhatsappEnabled: z.boolean() }),
+} satisfies { [K in keyof SettingsMap]: z.ZodType<SettingsMap[K]> };
+
 function mergeSection<K extends keyof SettingsMap>(key: K, value: unknown): SettingsMap[K] {
   const defaults = DEFAULT_SETTINGS[key] as SettingsMap[K];
   if (!value || typeof value !== "object") return defaults;
@@ -188,7 +217,8 @@ function mergeSection<K extends keyof SettingsMap>(key: K, value: unknown): Sett
       if (/^https:\/\/[^/]+\/?$/.test(social[field])) social[field] = "";
     }
   }
-  return merged;
+  const parsed = settingsSchemas[key].safeParse(merged);
+  return (parsed.success ? parsed.data : defaults) as SettingsMap[K];
 }
 
 export const getSettings = cache(async (): Promise<SettingsMap> => {

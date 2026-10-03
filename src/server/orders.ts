@@ -249,10 +249,11 @@ export async function createOrder(
       });
       const validation = await validateCoupon({
         code: data.couponCode,
-        lines: freshLines.map((line) => ({
+        lines: freshLines.map((line, index) => ({
           productId: line.productId,
           unitPrice: line.unitPrice,
           quantity: line.quantity,
+          lineTotal: promotion?.lineTotalsAfterPromotion[index],
           collectionIds: line.collectionIds,
         })),
         subtotal: postPromoSubtotal,
@@ -482,7 +483,6 @@ export async function createOrder(
       replay: false as const,
       result,
       customerId,
-      freshLineCount: freshLines.length,
     };
   });
 

@@ -17,7 +17,7 @@ Prisma 6 · PostgreSQL · Argon2id · S3-compatible storage. No microservices.
 
 ```bash
 npm run dev          # develop (needs DATABASE_URL)
-npm run build        # production build (runs typecheck + lint)
+npm run build        # production build (Next.js type/lint checks run during build)
 npm run typecheck    # tsc --noEmit
 npm run lint         # eslint .
 npm run test         # vitest run

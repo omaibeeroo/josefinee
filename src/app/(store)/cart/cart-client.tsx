@@ -14,28 +14,50 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
   const { items, subtotal, refresh } = useCart();
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   async function changeQuantity(itemId: string, quantity: number) {
     setPending(itemId);
-    await updateCartItemAction(itemId, quantity);
-    await refresh();
-    setPending(null);
+    setError(null);
+    try {
+      const result = await updateCartItemAction(itemId, quantity);
+      if (!result.ok) setError(result.error);
+      await refresh();
+    } catch {
+      setError("Impossible de mettre à jour le panier. Réessayez.");
+    } finally {
+      setPending(null);
+    }
   }
 
   async function remove(itemId: string) {
     setPending(itemId);
-    await removeCartItemAction(itemId);
-    await refresh();
-    router.refresh();
-    setPending(null);
+    setError(null);
+    try {
+      const result = await removeCartItemAction(itemId);
+      if (!result.ok) setError(result.error);
+      await refresh();
+      router.refresh();
+    } catch {
+      setError("Impossible de retirer cet article. Réessayez.");
+    } finally {
+      setPending(null);
+    }
   }
 
   async function clear() {
     setPending("clear");
-    await clearCartAction();
-    await refresh();
-    router.refresh();
-    setPending(null);
+    setError(null);
+    try {
+      const result = await clearCartAction();
+      if (!result.ok) setError(result.error);
+      await refresh();
+      router.refresh();
+    } catch {
+      setError("Impossible de vider le panier. Réessayez.");
+    } finally {
+      setPending(null);
+    }
   }
 
   if (items.length === 0) {
@@ -54,6 +76,11 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
 
   return (
     <div className="grid gap-10 lg:grid-cols-[1fr_380px]">
+      {error && (
+        <p className="border border-[#9e342e]/30 bg-[#fff8f7] p-4 text-sm text-[#9e342e] lg:col-span-2" role="alert">
+          {error}
+        </p>
+      )}
       <ul className="divide-y divide-line border-y hairline">
         {items.map((item) => (
           <li key={item.id} className="flex gap-4 py-5 md:gap-6">

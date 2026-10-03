@@ -16,6 +16,7 @@ export type ResolvedPromotion = {
   promotionId: string;
   name: string;
   discount: number;
+  lineTotalsAfterPromotion: number[];
 };
 
 /**
@@ -49,19 +50,31 @@ export async function resolveBestPromotion(
     const productIds = new Set(promotion.products.map((entry) => entry.productId));
     const scoped = productIds.size > 0 || promotion.collectionId;
 
-    const eligible = scoped
-      ? lines
-          .filter(
-            (line) =>
-              productIds.has(line.productId) ||
-              (promotion.collectionId && line.collectionIds.includes(promotion.collectionId)),
-          )
-          .reduce((sum, line) => sum + line.unitPrice * line.quantity, 0)
-      : subtotal;
+    const eligibleIndexes = lines.flatMap((line, index) =>
+      !scoped ||
+      productIds.has(line.productId) ||
+      (promotion.collectionId && line.collectionIds.includes(promotion.collectionId))
+        ? [index]
+        : [],
+    );
+    const eligible = eligibleIndexes.reduce(
+      (sum, index) => sum + lines[index]!.unitPrice * lines[index]!.quantity,
+      0,
+    );
 
     const discount = promotionDiscountFor(promotion, eligible);
     if (discount > 0 && (!best || discount > best.discount)) {
-      best = { promotionId: promotion.id, name: promotion.name, discount };
+      const lineTotalsAfterPromotion = lines.map((line) => line.unitPrice * line.quantity);
+      let remaining = discount;
+      for (const [position, index] of eligibleIndexes.entries()) {
+        const lineTotal = lineTotalsAfterPromotion[index]!;
+        const lineDiscount = position === eligibleIndexes.length - 1
+          ? remaining
+          : Math.min(remaining, Math.floor((discount * lineTotal) / eligible));
+        lineTotalsAfterPromotion[index] = lineTotal - lineDiscount;
+        remaining -= lineDiscount;
+      }
+      best = { promotionId: promotion.id, name: promotion.name, discount, lineTotalsAfterPromotion };
     }
   }
 

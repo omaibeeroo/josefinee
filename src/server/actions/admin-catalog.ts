@@ -6,6 +6,7 @@ import { AppError, toUserMessage } from "@/lib/errors";
 import { requirePermission } from "@/lib/auth/rbac";
 import { recordAudit } from "@/lib/audit";
 import { cleanRichText } from "@/lib/sanitize";
+import { setStock } from "@/server/inventory";
 import { flattenZodErrors } from "@/lib/validation/common";
 import {
   categorySchema,
@@ -397,21 +398,15 @@ export async function saveProductAction(input: ProductInput) {
             },
           });
         } else if (inventory.stock !== variant.stock) {
-          const delta = variant.stock - inventory.stock;
+          await setStock(tx, {
+            variantId: savedVariant.id,
+            stock: variant.stock,
+            reason: "Product editor",
+            userId: actor.id,
+          });
           await tx.inventory.update({
             where: { id: inventory.id },
-            data: { stock: variant.stock, lowStockThreshold: variant.lowStockThreshold },
-          });
-          await tx.inventoryTransaction.create({
-            data: {
-              inventoryId: inventory.id,
-              variantId: savedVariant.id,
-              type: "MANUAL_ADJUSTMENT",
-              quantity: delta,
-              stockAfter: variant.stock,
-              reason: "Product editor",
-              userId: actor.id,
-            },
+            data: { lowStockThreshold: variant.lowStockThreshold },
           });
         } else {
           await tx.inventory.update({
@@ -482,12 +477,14 @@ export async function archiveProductAction(id: string) {
 
 export async function setProductStatusAction(id: string, status: "DRAFT" | "ACTIVE" | "ARCHIVED") {
   const actor = await requirePermission("products:write");
+  const current = await prisma.product.findUnique({ where: { id }, select: { status: true } });
+  if (!current) return { ok: false as const, error: "Product not found." };
   await prisma.product.update({
     where: { id },
     data: {
       status,
       archivedAt: status === "ARCHIVED" ? new Date() : null,
-      publishedAt: status === "ACTIVE" ? new Date() : undefined,
+      publishedAt: status === "ACTIVE" && current.status !== "ACTIVE" ? new Date() : undefined,
     },
   });
   await recordAudit({
