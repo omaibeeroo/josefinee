@@ -15,14 +15,14 @@ const env = (key: string, fallback: string): string => {
 };
 
 export const BRAND_CONFIG = {
-  name: env("NEXT_PUBLIC_BRAND_NAME", "NÛR"),
+  name: env("NEXT_PUBLIC_BRAND_NAME", "Josefinee"),
   legalName: env("NEXT_PUBLIC_BRAND_LEGAL_NAME", ""),
   tagline: env("NEXT_PUBLIC_BRAND_TAGLINE", "Des pièces à porter encore et encore"),
   description: env(
     "NEXT_PUBLIC_BRAND_DESCRIPTION",
     "Bijoux, sacs et accessoires modernes livrés partout en Algérie. Paiement à la livraison.",
   ),
-  orderPrefix: env("NEXT_PUBLIC_ORDER_PREFIX", "NUR"),
+  orderPrefix: env("NEXT_PUBLIC_ORDER_PREFIX", "JOS"),
   currency: env("NEXT_PUBLIC_CURRENCY", "DZD"),
   currencySymbol: env("NEXT_PUBLIC_CURRENCY_SYMBOL", "DA"),
   country: env("NEXT_PUBLIC_COUNTRY", "Algeria"),

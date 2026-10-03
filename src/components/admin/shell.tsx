@@ -43,7 +43,7 @@ export function AdminShell({
               <Menu size={20} />
             </button>
             <Link href="/admin" className="font-display text-lg tracking-[0.28em]">
-              NÛR <span className="text-xs tracking-[0.2em] text-ink-muted">ADMIN</span>
+              Josefinee <span className="text-xs tracking-[0.2em] text-ink-muted">ADMIN</span>
             </Link>
           </div>
           <div className="flex items-center gap-3">
@@ -89,7 +89,7 @@ export function AdminShell({
             <button aria-label="Close navigation" onClick={() => setMenuOpen(false)} className="absolute inset-0 bg-ink/50" />
             <aside ref={menuPanelRef} tabIndex={-1} className="absolute left-0 top-0 h-full w-72 overflow-y-auto bg-ivory p-4">
               <div className="mb-3 flex items-center justify-between">
-                <span className="font-display text-lg tracking-[0.24em]">NÛR</span>
+                <span className="font-display text-lg tracking-[0.12em]">Josefinee</span>
                 <button type="button" onClick={() => setMenuOpen(false)} aria-label="Close navigation" className="p-2">
                   <X size={20} />
                 </button>

@@ -147,7 +147,7 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
           <p className="eyebrow mb-2">Pour vous</p>
           <h2 className="font-display text-3xl font-medium md:text-4xl">Acheter par catégorie</h2>
         </div>
-        <span className="hidden text-xs uppercase tracking-[0.18em] text-ink-muted sm:block">The NÛR wardrobe</span>
+        <span className="hidden text-xs uppercase tracking-[0.18em] text-ink-muted sm:block">The Josefinee wardrobe</span>
       </div>
       </Reveal>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">

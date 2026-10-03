@@ -1,4 +1,4 @@
-# NÛR Store — Release Summary
+# Josefinee — Release Summary
 
 **Release scope:** Checkout integrity, admin security hardening, regression coverage, and premium storefront redesign  
 **Release branch:** `manus/premium-storefront-redesign`  
@@ -11,7 +11,7 @@
 
 ## Executive summary
 
-This release strengthens NÛR Store across the complete commerce lifecycle:
+This release strengthens Josefinee across the complete commerce lifecycle:
 
 - Checkout pricing is authoritative, transactionally consistent, and resistant to overselling, duplicate checkout, stale carts, and coupon races.
 - Admin operations now follow least-privilege permission checks, audit logging, validation, and concurrency-safe order transitions.
@@ -275,11 +275,11 @@ Validated recovery payload:
 
 The final confirmation was submitted for the fictional seeded test order:
 
-- Order number: `NUR-2026-000001`
+- Order number: `JOS-2026-000001`
 - Payment method: `COD`
 - Initial status: `PENDING`
 - Order item: 1 × Mira Mini Bag — Noir
-- SKU: `NUR-006-BLK`
+- SKU: `JOS-006-BLK`
 
 The order confirmation page displayed the expected customer, address, item, delivery, and total data.
 
@@ -306,7 +306,7 @@ Database verification confirmed:
 - Customer notifications were recorded for transitions.
 - COD remained the payment method; no online payment was captured.
 - Inventory had exactly one sale transaction for the order.
-- SKU `NUR-006-BLK` stock moved from 9 to 8 and did not decrement again during fulfillment.
+- SKU `JOS-006-BLK` stock moved from 9 to 8 and did not decrement again during fulfillment.
 - Reserved stock remained 0.
 
 ## 8. Verification status

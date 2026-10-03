@@ -14,17 +14,17 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: nur_store
+          POSTGRES_DB: josefinee_store
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d nur_store"
+          --health-cmd "pg_isready -U postgres -d josefinee_store"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
     env:
       NODE_ENV: production
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/nur_store?schema=public
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/josefinee_store?schema=public
       AUTH_SECRET: ci-only-auth-secret-012345678901234567890123456789
       ORDER_OUTBOX_SECRET: ci-only-outbox-secret-012345678901234567890123456789
       RETENTION_JOB_SECRET: ci-only-retention-secret-012345678901234567890123456789
@@ -50,7 +50,7 @@ jobs:
       - run: npm run build
       - name: Production HTTP smoke tests
         run: |
-          npm run start -- -p 3000 > /tmp/nur-store.log 2>&1 &
+          npm run start -- -p 3000 > /tmp/josefinee-store.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid"' EXIT
           BASE_URL=http://localhost:3000 npm run smoke:production

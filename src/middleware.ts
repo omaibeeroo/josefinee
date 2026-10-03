@@ -73,7 +73,7 @@ export async function middleware(request: NextRequest) {
 
 function maintenanceResponse(csp: string): NextResponse {
   return new NextResponse(
-    "<!doctype html><html lang=\"fr\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex,nofollow\"><title>Boutique temporairement fermée | NÛR</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#faf8f4;color:#1c1a17;font-family:Arial,sans-serif;text-align:center}main{max-width:38rem;padding:2rem}strong{display:block;margin-bottom:2rem;color:#b08d57;font-family:Georgia,serif;font-size:2.2rem;letter-spacing:.25em}p{color:#665f56;line-height:1.7}</style></head><body><main><strong>NÛR</strong><h1>La boutique revient bientôt</h1><p>Notre boutique est temporairement indisponible pendant une mise à jour. Merci de revenir dans quelques instants.</p></main></body></html>",
+    "<!doctype html><html lang=\"fr\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex,nofollow\"><title>Boutique temporairement fermée | Josefinee</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#faf8f4;color:#1c1a17;font-family:Arial,sans-serif;text-align:center}main{max-width:38rem;padding:2rem}strong{display:block;margin-bottom:2rem;color:#b08d57;font-family:Georgia,serif;font-size:2.2rem;letter-spacing:.08em}p{color:#665f56;line-height:1.7}</style></head><body><main><strong>Josefinee</strong><h1>La boutique revient bientôt</h1><p>Notre boutique est temporairement indisponible pendant une mise à jour. Merci de revenir dans quelques instants.</p></main></body></html>",
     {
       status: 503,
       headers: {
@@ -89,7 +89,7 @@ function maintenanceResponse(csp: string): NextResponse {
 
 function productNotFound(csp: string): NextResponse {
   return new NextResponse(
-    "<!doctype html><html lang=\"fr\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>Produit introuvable | NÛR Store</title></head><body><main><h1>Produit introuvable</h1><p>Ce produit n’existe plus ou n’est pas disponible.</p><a href=\"/shop\">Retour à la boutique</a></main></body></html>",
+    "<!doctype html><html lang=\"fr\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><meta name=\"robots\" content=\"noindex\"><title>Produit introuvable | Josefinee</title></head><body><main><h1>Produit introuvable</h1><p>Ce produit n’existe plus ou n’est pas disponible.</p><a href=\"/shop\">Retour à la boutique</a></main></body></html>",
     {
       status: 404,
       headers: {

@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// NÛR Store — database schema (PostgreSQL + Prisma)
+// Josefinee — database schema (PostgreSQL + Prisma)
 //
 // Conventions:
 //  - IDs are cuid strings; sequential DB ids are never exposed to customers.
