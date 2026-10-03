@@ -27,6 +27,8 @@ export default async function StoreLayout({ children }: { children: React.ReactN
       social={settings.social}
       supportEmail={settings.general.email}
       supportPhone={settings.general.phone}
+      legalName={settings.general.legalName}
+      address={settings.general.address}
       popularSearches={popularSearches}
     >
       <div id="main-content">{children}</div>

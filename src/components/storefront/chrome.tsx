@@ -27,6 +27,8 @@ export type ChromeProps = {
   social: { instagram: string; tiktok: string; facebook: string; whatsapp: string };
   supportEmail: string;
   supportPhone: string;
+  legalName: string;
+  address: string;
   popularSearches: string[];
 };
 
@@ -412,10 +414,12 @@ function MobileMenu({
             </Link>
           ))}
         </nav>
-        <div className="border-t hairline bg-cream/60 px-6 py-4">
-          <p className="text-[0.625rem] uppercase tracking-[0.24em] text-ink-muted">Besoin d’aide ?</p>
-          <p className="mt-1 text-sm font-medium">{supportPhone}</p>
-        </div>
+        {supportPhone && (
+          <div className="border-t hairline bg-cream/60 px-6 py-4">
+            <p className="text-[0.625rem] uppercase tracking-[0.24em] text-ink-muted">Besoin d’aide ?</p>
+            <a href={`tel:${supportPhone.replace(/\s/g, "")}`} className="mt-1 block text-sm font-medium">{supportPhone}</a>
+          </div>
+        )}
       </aside>
     </div>
   );
@@ -551,22 +555,24 @@ function NewsletterMini() {
 
 function SiteFooter(props: ChromeProps) {
   const year = new Date().getFullYear();
+  const socialLinks = [
+    { label: "Instagram", href: props.social.instagram },
+    { label: "TikTok", href: props.social.tiktok },
+    { label: "Facebook", href: props.social.facebook },
+  ].filter(({ href }) => /^https:\/\/[^/]+\/.+/.test(href));
   return (
     <footer className="mt-20 bg-ink text-ivory">
       <div className="container-luxe grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
         <div>
           <p className="font-display text-2xl tracking-[0.3em]">{props.brandName}</p>
           <p className="mt-3 max-w-xs text-sm leading-relaxed text-ivory/70">{props.tagline}</p>
-          <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm uppercase tracking-[0.14em]">
-            <a href={props.social.instagram} target="_blank" rel="noopener noreferrer" className="text-ivory/80 hover:text-ivory">
-              Instagram
-            </a>
-            <a href={props.social.tiktok} target="_blank" rel="noopener noreferrer" className="text-ivory/80 hover:text-ivory">
-              TikTok
-            </a>
-            <a href={props.social.facebook} target="_blank" rel="noopener noreferrer" className="text-ivory/80 hover:text-ivory">
-              Facebook
-            </a>
+          {socialLinks.length > 0 && (
+            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm uppercase tracking-[0.14em]">
+              {socialLinks.map((social) => (
+                <a key={social.label} href={social.href} target="_blank" rel="noopener noreferrer" className="text-ivory/80 hover:text-ivory">
+                  {social.label}
+                </a>
+              ))}
             {props.social.whatsapp && (
               <a
                 href={`https://wa.me/${props.social.whatsapp.replace(/\D/g, "")}`}
@@ -577,7 +583,8 @@ function SiteFooter(props: ChromeProps) {
                 WhatsApp
               </a>
             )}
-          </div>
+            </div>
+          )}
         </div>
         <nav aria-label="Boutique">
           <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">Boutique</p>
@@ -605,11 +612,20 @@ function SiteFooter(props: ChromeProps) {
         </nav>
         <div>
           <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">Restons en contact</p>
-          <p className="text-sm text-ivory/70">
-            {props.supportEmail}
-            <br />
-            {props.supportPhone}
-          </p>
+          {(props.supportEmail || props.supportPhone) && (
+            <p className="text-sm text-ivory/70">
+              {props.supportEmail && <a href={`mailto:${props.supportEmail}`} className="hover:text-ivory">{props.supportEmail}</a>}
+              {props.supportEmail && props.supportPhone && <br />}
+              {props.supportPhone && <a href={`tel:${props.supportPhone.replace(/\s/g, "")}`} className="hover:text-ivory">{props.supportPhone}</a>}
+            </p>
+          )}
+          {(props.legalName || props.address) && (
+            <p className="mt-3 text-sm text-ivory/60">
+              {props.legalName}
+              {props.legalName && props.address && <br />}
+              {props.address}
+            </p>
+          )}
           <NewsletterMini />
         </div>
       </div>

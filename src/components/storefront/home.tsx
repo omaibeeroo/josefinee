@@ -119,7 +119,7 @@ export function FeaturedCollection({
           )}
           <div className="absolute inset-0 bg-gradient-to-t from-ink/55 via-transparent to-transparent" />
           <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-2 p-6 text-ivory md:p-10">
-            <p className="eyebrow !text-ivory/80">Featured collection</p>
+            <p className="eyebrow !text-ivory/80">Collection à découvrir</p>
             <h2 className="font-display text-4xl font-medium md:text-5xl">{title}</h2>
             <p className="max-w-lg text-sm text-ivory/85 md:text-base">{description}</p>
             <span className="btn mt-3 bg-ivory text-ink group-hover:bg-white">
@@ -140,12 +140,12 @@ export type CategoryTile = { name: string; slug: string; image: string | null; c
 export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
   if (categories.length === 0) return null;
   return (
-    <section className="container-luxe" aria-label="Shop by category">
+    <section className="container-luxe" aria-label="Acheter par catégorie">
       <Reveal>
       <div className="mb-6 flex items-end justify-between gap-6 md:mb-8">
         <div>
-          <p className="eyebrow mb-2">Curated for you</p>
-          <h2 className="font-display text-3xl font-medium md:text-4xl">Shop by category</h2>
+          <p className="eyebrow mb-2">Pour vous</p>
+          <h2 className="font-display text-3xl font-medium md:text-4xl">Acheter par catégorie</h2>
         </div>
         <span className="hidden text-xs uppercase tracking-[0.18em] text-ink-muted sm:block">The NÛR wardrobe</span>
       </div>
@@ -175,7 +175,7 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
               <div className="absolute inset-x-0 bottom-0 p-3 text-ivory md:p-4">
                 <p className="text-sm font-medium md:text-base">{category.name}</p>
                 <p className="mt-0.5 flex items-center gap-1 text-[0.6875rem] uppercase tracking-[0.16em] text-ivory/80">
-                  Shop now <ArrowRight size={12} />
+                  Découvrir <ArrowRight size={12} />
                 </p>
               </div>
             </div>
@@ -234,7 +234,7 @@ export function SocialProof({ deliveredCount }: { deliveredCount: number }) {
 export function Pillars({ items }: { items: Array<{ title: string; text: string }> }) {
   if (items.length === 0) return null;
   return (
-    <section className="container-luxe" aria-label="Our promise">
+    <section className="container-luxe" aria-label="Nos engagements">
       <div className="grid gap-8 md:grid-cols-3">
         {items.map((item, index) => (
           <Reveal key={item.title} delay={index * 90}>
@@ -301,11 +301,11 @@ export function Editorial({
 export function FaqTeaser({ items }: { items: Array<{ question: string; answer: string }> }) {
   if (items.length === 0) return null;
   return (
-    <section className="container-luxe max-w-3xl" aria-label="Common questions">
+    <section className="container-luxe max-w-3xl" aria-label="Questions fréquentes">
       <Reveal>
       <div className="mb-6 text-center">
-        <p className="eyebrow mb-2">Good to know</p>
-        <h2 className="font-display text-3xl font-medium md:text-4xl">Questions, answered</h2>
+        <p className="eyebrow mb-2">À savoir</p>
+        <h2 className="font-display text-3xl font-medium md:text-4xl">Vos questions, nos réponses</h2>
       </div>
       </Reveal>
       <Reveal delay={100}>
@@ -318,7 +318,7 @@ export function FaqTeaser({ items }: { items: Array<{ question: string; answer: 
       </Reveal>
       <div className="mt-6 text-center">
         <Link href="/faq" className="text-xs font-medium uppercase tracking-[0.24em] underline underline-offset-8">
-          Read all FAQs
+          Voir toutes les questions
         </Link>
       </div>
     </section>
@@ -346,9 +346,9 @@ export function NewsletterSection() {
     <section className="container-luxe" aria-label="Newsletter">
       <Reveal>
       <div className="border-y hairline bg-cream/60 px-6 py-14 text-center md:py-20">
-        <p className="eyebrow">Stay in the loop</p>
+        <p className="eyebrow">Restez informée</p>
         <h2 className="mx-auto mt-2 max-w-xl font-display text-3xl font-medium md:text-4xl">
-          New pieces, private sales & styling notes
+          Nouveautés, ventes privées et inspirations
         </h2>
         <form onSubmit={submit} className="relative mx-auto mt-6 flex max-w-md flex-col gap-2 sm:flex-row">
           <Honeypot value={website} onChange={setWebsite} />
@@ -357,12 +357,12 @@ export function NewsletterSection() {
             required
             value={email}
             onChange={(event) => setEmail(event.target.value)}
-            placeholder="Your email address"
-            aria-label="Email address"
+            placeholder="Votre adresse e-mail"
+            aria-label="Adresse e-mail"
             className="field"
           />
           <button type="submit" disabled={pending} className="btn btn-primary shrink-0">
-            {pending ? "…" : "Subscribe"}
+            {pending ? "…" : "S’inscrire"}
           </button>
         </form>
         {state && (
