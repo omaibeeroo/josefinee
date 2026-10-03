@@ -28,7 +28,7 @@ type CartContextValue = CartSummary & {
   setOpen: (open: boolean) => void;
   refresh: () => Promise<void>;
   add: (variantId: string, quantity?: number) => Promise<{ ok: boolean; error?: string }>;
-  justAdded: boolean;
+  error: string | null;
   floor: { minHome: number } | null;
 };
 
@@ -39,14 +39,15 @@ const EMPTY: CartSummary = { cartId: null, items: [], subtotal: 0, count: 0 };
 export function CartProvider({ children }: { children: ReactNode }) {
   const [summary, setSummary] = useState<CartSummary>(EMPTY);
   const [open, setOpen] = useState(false);
-  const [justAdded, setJustAdded] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [floor, setFloor] = useState<{ minHome: number } | null>(null);
 
   const refresh = useCallback(async () => {
     try {
       setSummary(await fetchCart());
+      setError(null);
     } catch {
-      setSummary(EMPTY);
+      setError("Impossible de charger le panier. Réessayez.");
     }
   }, []);
 
@@ -61,8 +62,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
     async (variantId: string, quantity = 1) => {
       const result = await addToCartAction(variantId, quantity);
       if (!result.ok) return { ok: false as const, error: result.error };
+      setError(null);
       await refresh();
-      setJustAdded(true);
       setOpen(true);
       return { ok: true as const };
     },
@@ -70,8 +71,8 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const value = useMemo<CartContextValue>(
-    () => ({ ...summary, open, setOpen, refresh, add, justAdded, floor }),
-    [summary, open, refresh, add, justAdded, floor],
+    () => ({ ...summary, open, setOpen, refresh, add, error, floor }),
+    [summary, open, refresh, add, error, floor],
   );
 
   return (
@@ -89,7 +90,7 @@ export function useCart(): CartContextValue {
 }
 
 function CartDrawer() {
-  const { open, setOpen, items, subtotal, count, floor } = useCart();
+  const { open, setOpen, items, subtotal, count, floor, error: loadError } = useCart();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const { refresh } = useCart();
@@ -105,20 +106,32 @@ function CartDrawer() {
 
   async function removeItem(itemId: string) {
     setPending(itemId);
-    await removeCartItemAction(itemId);
-    await refresh();
-    setPending(null);
+    setError(null);
+    try {
+      const result = await removeCartItemAction(itemId);
+      if (!result.ok) setError(result.error);
+      await refresh();
+    } catch {
+      setError("Impossible de retirer cet article. Réessayez.");
+    } finally {
+      setPending(null);
+    }
   }
 
   return (
     <Drawer open={open} onClose={() => setOpen(false)} title={`Your bag (${count})`}>
       <div className="flex h-full flex-col">
-        {error && (
+        {(error || loadError) && (
           <p className="border-b hairline px-5 py-3 text-sm text-[#9e342e]" role="alert">
-            {error}
+            {error ?? loadError}
           </p>
         )}
-        {items.length === 0 ? (
+        {loadError ? (
+          <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+            <p className="font-display text-2xl">Panier indisponible</p>
+            <Button variant="outline" size="sm" onClick={() => void refresh()}>Réessayer</Button>
+          </div>
+        ) : items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
             <p className="font-display text-2xl">Your bag is empty</p>
             <p className="text-sm text-ink-soft">

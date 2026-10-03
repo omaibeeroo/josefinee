@@ -176,9 +176,12 @@ export function buildWhere(query: CatalogQuery): Prisma.ProductWhereInput {
     and.push({ category: { slug: { in: categorySlugs }, isActive: true } });
   }
   if (query.collectionSlug) {
-    and.push({
-      collectionLinks: { some: { collection: { slug: query.collectionSlug, isActive: true } } },
-    });
+    const automaticType = query.type === "NEW_IN" || query.type === "BEST_SELLERS" || query.type === "SALE";
+    if (!automaticType) {
+      and.push({
+        collectionLinks: { some: { collection: { slug: query.collectionSlug, isActive: true } } },
+      });
+    }
   }
   if (query.tag) and.push({ tags: { has: query.tag } });
   if (query.onSale || query.type === "SALE") {

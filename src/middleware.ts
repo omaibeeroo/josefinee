@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 export async function middleware(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
   const development = process.env.NODE_ENV !== "production";
-  const maintenanceEnabled = process.env.PUBLIC_SITE_MAINTENANCE !== "false";
+  const maintenanceEnabled = process.env.PUBLIC_SITE_MAINTENANCE === "true";
   const csp = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://www.googletagmanager.com https://connect.facebook.net https://analytics.tiktok.com${development ? " 'unsafe-eval'" : ""}`,

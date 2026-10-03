@@ -11,6 +11,7 @@ import {
   createCustomerSession,
   destroyCustomerSession,
   getCustomerSession,
+  revokeCustomerSessions,
   CART_COOKIE,
 } from "@/lib/auth/session";
 import { hashPassword, verifyPassword, passwordIssues } from "@/lib/auth/password";
@@ -417,6 +418,8 @@ export async function changePasswordAction(input: { current: string; next: strin
     where: { id: session.customer.id },
     data: { passwordHash: await hashPassword(parsed.data.next) },
   });
+  await revokeCustomerSessions(session.customer.id);
+  await createCustomerSession(session.customer.id);
   await recordAudit({
     actorType: "CUSTOMER",
     action: "PASSWORD_CHANGED",
