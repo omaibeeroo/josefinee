@@ -429,7 +429,7 @@ export function ProductCarousel({
       </div>
       <div
         ref={trackRef}
-        className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 lg:grid-cols-5"
+        className="motion-stagger no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 lg:grid-cols-5"
       >
         {products.map((product) => (
           <div key={product.id} className="w-[46%] shrink-0 snap-start md:w-auto">

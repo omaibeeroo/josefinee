@@ -99,7 +99,9 @@ export function AdminShell({
           </div>
         )}
 
-        <main className="min-w-0 flex-1 px-4 py-6 lg:px-8">{children}</main>
+        <main key={pathname} className="admin-surface min-w-0 flex-1 px-4 py-6 lg:px-8">
+          {children}
+        </main>
       </div>
       <NewOrderAlerts initialPending={pendingOrders} />
     </div>
@@ -123,7 +125,7 @@ function SidebarNav({ sections, pathname }: { sections: Array<{ title: string; i
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "flex items-center justify-between rounded-sm px-2 py-2 text-sm",
+                      "admin-nav-link flex items-center justify-between rounded-sm px-2 py-2 text-sm",
                       active ? "bg-ink font-medium text-ivory" : "text-ink-soft hover:bg-cream hover:text-ink",
                     )}
                   >
@@ -189,7 +191,7 @@ function NewOrderAlerts({ initialPending }: { initialPending: number }) {
 
   if (!notice) return null;
   return (
-    <div className="fixed bottom-4 right-4 z-[70] max-w-sm border hairline bg-ink p-4 text-ivory shadow-card print:hidden" role="alert">
+    <div className="fixed bottom-4 right-4 z-[70] max-w-sm animate-slide-up border hairline bg-ink p-4 text-ivory shadow-card print:hidden" role="alert">
       <p className="text-sm font-medium">New order received</p>
       <p className="mt-1 text-sm text-ivory/80">{notice}</p>
       <div className="mt-3 flex gap-2">

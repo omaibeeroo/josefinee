@@ -198,7 +198,7 @@ const TRUST_ITEMS = [
 export function TrustBar() {
   return (
     <section className="border-y hairline bg-white" aria-label="Pourquoi choisir notre boutique">
-      <div className="container-luxe grid grid-cols-1 gap-6 py-8 sm:grid-cols-3">
+      <div className="motion-stagger container-luxe grid grid-cols-1 gap-6 py-8 sm:grid-cols-3">
         {TRUST_ITEMS.map((item) => (
           <div key={item.title} className="group flex items-center gap-4">
             <span className="trust-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cream">
