@@ -34,7 +34,7 @@ export type ChromeProps = {
 
 function BrandMark({ brandName, logoUrl, onClick }: { brandName: string; logoUrl: string; onClick?: () => void }) {
   return (
-    <Link href="/" onClick={onClick} className="inline-flex items-center gap-2" aria-label={`Accueil ${brandName}`}>
+    <Link href="/" onClick={onClick} className="inline-flex items-center gap-2 transition-transform duration-300 hover:scale-[1.02]" aria-label={`Accueil ${brandName}`}>
       {logoUrl ? (
         <Image src={logoUrl} alt={brandName} width={120} height={36} className="h-9 w-auto" />
       ) : (
@@ -49,7 +49,7 @@ function DesktopDropdown({ label, href, children }: { label: string; href: strin
     <div className="group relative">
       <Link
         href={href}
-        className="flex items-center gap-1 py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] text-ink transition-colors hover:text-gold-dark"
+        className="nav-link flex items-center gap-1 py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] text-ink transition-colors hover:text-gold-dark"
       >
         {label}
         <ChevronDown size={12} className="transition-transform group-hover:rotate-180" />
@@ -120,7 +120,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         <div className="container-luxe hidden items-center justify-between gap-6 lg:grid lg:grid-cols-[1fr_auto_1fr]">
           <BrandMark brandName={brandName} logoUrl={props.logoUrl} />
           <nav aria-label="Navigation principale" className="flex items-center gap-7">
-            <Link className="py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark" href="/shop">
+            <Link className="nav-link py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark" href="/shop">
               Boutique
             </Link>
             {jewelry && (
@@ -152,7 +152,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
               </DesktopDropdown>
             )}
             {clothes && (
-              <Link className="py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark" href={`/categories/${clothes.slug}`}>
+              <Link className="nav-link py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark" href={`/categories/${clothes.slug}`}>
                 {clothes.name}
               </Link>
             )}
@@ -165,13 +165,13 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             </DesktopDropdown>
             <Link
               href="/collections/new-in"
-              className="py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark"
+              className="nav-link py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark"
             >
               Nouveautés
             </Link>
             <Link
               href="/collections/best-sellers"
-              className="py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark"
+              className="nav-link py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark"
             >
               Meilleures ventes
             </Link>
@@ -183,20 +183,20 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             </Link>
           </nav>
           <div className="flex items-center justify-end gap-1">
-            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Rechercher" className="p-2.5 hover:text-gold-dark">
+            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Rechercher" className="icon-button p-2.5 hover:text-gold-dark">
               <Search size={19} strokeWidth={1.75} />
             </button>
-            <Link href="/account" aria-label="Mon compte" className="p-2.5 hover:text-gold-dark">
+            <Link href="/account" aria-label="Mon compte" className="icon-button p-2.5 hover:text-gold-dark">
               <User size={19} strokeWidth={1.75} />
             </Link>
-            <Link href="/wishlist" aria-label="Liste d’envies" className="p-2.5 hover:text-gold-dark">
+            <Link href="/wishlist" aria-label="Liste d’envies" className="icon-button p-2.5 hover:text-gold-dark">
               <Heart size={19} strokeWidth={1.75} />
             </Link>
             <button
               type="button"
               onClick={() => setOpen(true)}
               aria-label={`Ouvrir le panier, ${count} article${count > 1 ? "s" : ""}`}
-              className="relative p-2.5 hover:text-gold-dark"
+              className="icon-button relative p-2.5 hover:text-gold-dark"
             >
               <ShoppingBag size={19} strokeWidth={1.75} />
               {count > 0 && (

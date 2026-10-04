@@ -24,7 +24,7 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
               fill
               priority
               sizes="100vw"
-              className="object-cover"
+              className="object-cover motion-safe:animate-hero-image"
             />
           </div>
           <div className="relative aspect-[4/5] w-full sm:aspect-[16/10] md:hidden">
@@ -34,21 +34,21 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
               fill
               priority
               sizes="100vw"
-              className="object-cover"
+              className="object-cover motion-safe:animate-hero-image"
             />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/15 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 pb-10 md:pb-16">
             <div className="container-luxe text-ivory">
-              <p className="eyebrow !text-ivory/80">{hero.eyebrow}</p>
-              <h1 className="mt-3 max-w-2xl font-display text-4xl font-medium leading-[1.05] md:text-6xl">
+              <p className="eyebrow !text-ivory/80 motion-safe:animate-hero-enter opacity-0" style={{ animationDelay: "120ms" }}>{hero.eyebrow}</p>
+              <h1 className="mt-3 max-w-2xl font-display text-4xl font-medium leading-[1.05] motion-safe:animate-hero-enter opacity-0 md:text-6xl" style={{ animationDelay: "220ms" }}>
                 {hero.headline}
               </h1>
-              <p className="mt-4 max-w-xl text-[0.9375rem] leading-relaxed text-ivory/85">
+              <p className="mt-4 max-w-xl text-[0.9375rem] leading-relaxed text-ivory/85 motion-safe:animate-hero-enter opacity-0" style={{ animationDelay: "320ms" }}>
                 {hero.subheading}
               </p>
-              <div className="mt-6 flex flex-wrap gap-3">
-                <Link href={hero.primaryHref} className="btn bg-ivory text-ink hover:bg-white">
+              <div className="mt-6 flex flex-wrap gap-3 motion-safe:animate-hero-enter opacity-0" style={{ animationDelay: "420ms" }}>
+                <Link href={hero.primaryHref} className="btn btn-shine bg-ivory text-ink hover:bg-white">
                   {hero.primaryLabel}
                 </Link>
                 <Link
@@ -63,13 +63,13 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
         </>
       ) : (
         <div className="container-luxe py-16 text-center md:py-28">
-          <p className="eyebrow">{hero.eyebrow}</p>
-          <h1 className="mx-auto mt-4 max-w-3xl font-display text-5xl font-medium leading-[1.05] md:text-7xl">
+          <p className="eyebrow motion-safe:animate-hero-enter opacity-0" style={{ animationDelay: "120ms" }}>{hero.eyebrow}</p>
+          <h1 className="mx-auto mt-4 max-w-3xl font-display text-5xl font-medium leading-[1.05] motion-safe:animate-hero-enter opacity-0 md:text-7xl" style={{ animationDelay: "220ms" }}>
             {hero.headline}
           </h1>
-          <p className="mx-auto mt-5 max-w-xl text-ink-soft">{hero.subheading}</p>
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <Link href={hero.primaryHref} className="btn btn-primary">
+          <p className="mx-auto mt-5 max-w-xl text-ink-soft motion-safe:animate-hero-enter opacity-0" style={{ animationDelay: "320ms" }}>{hero.subheading}</p>
+          <div className="mt-8 flex flex-wrap justify-center gap-3 motion-safe:animate-hero-enter opacity-0" style={{ animationDelay: "420ms" }}>
+            <Link href={hero.primaryHref} className="btn btn-primary btn-shine">
               {hero.primaryLabel}
             </Link>
             <Link href={hero.secondaryHref} className="btn btn-outline">
@@ -100,7 +100,7 @@ export function FeaturedCollection({
   return (
     <section className="container-luxe" aria-label={title}>
       <Reveal>
-      <Link href={href} className="group relative block overflow-hidden bg-cream">
+      <Link href={href} className="group relative block overflow-hidden bg-cream transition-transform duration-500 hover:-translate-y-1">
         <div className="relative aspect-[16/10] w-full md:aspect-[21/8]">
           {image ? (
             <Image
@@ -108,7 +108,7 @@ export function FeaturedCollection({
               alt={title}
               fill
               sizes="(max-width: 768px) 100vw, 1200px"
-              className="object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+              className="editorial-image object-cover transition-transform duration-700 group-hover:scale-[1.03]"
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center">
@@ -155,7 +155,7 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
           <Reveal key={category.slug} delay={Math.min(index, 5) * 70}>
           <Link
             href={`/categories/${category.slug}`}
-            className="group relative block overflow-hidden bg-cream"
+            className="group relative block overflow-hidden bg-cream transition-transform duration-500 hover:-translate-y-1"
           >
             <div className="relative aspect-[3/4] w-full">
               {category.image ? (
@@ -200,8 +200,8 @@ export function TrustBar() {
     <section className="border-y hairline bg-white" aria-label="Pourquoi choisir notre boutique">
       <div className="container-luxe grid grid-cols-1 gap-6 py-8 sm:grid-cols-3">
         {TRUST_ITEMS.map((item) => (
-          <div key={item.title} className="flex items-center gap-4">
-            <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cream">
+          <div key={item.title} className="group flex items-center gap-4">
+            <span className="trust-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cream">
               <item.icon size={20} strokeWidth={1.5} />
             </span>
             <div>
@@ -273,7 +273,7 @@ export function Editorial({
         <Reveal>
         <div className="relative aspect-[4/5] overflow-hidden bg-cream">
           {image ? (
-            <Image src={image} alt={title} fill sizes="(max-width: 768px) 100vw, 50vw" className="object-cover" />
+            <Image src={image} alt={title} fill sizes="(max-width: 768px) 100vw, 50vw" className="editorial-image object-cover" />
           ) : (
             <span className="flex h-full w-full items-center justify-center font-display text-8xl text-ink-muted/50">
               {title.charAt(0)}
@@ -361,7 +361,7 @@ export function NewsletterSection() {
             aria-label="Adresse e-mail"
             className="field"
           />
-          <button type="submit" disabled={pending} className="btn btn-primary shrink-0">
+          <button type="submit" disabled={pending} className="btn btn-primary btn-shine shrink-0">
             {pending ? "…" : "S’inscrire"}
           </button>
         </form>
