@@ -32,7 +32,24 @@ export interface NotificationProvider {
 type OrderEmailData = {
   orderNumber: string;
   firstName: string;
+  lastName?: string;
+  phone?: string;
+  wilayaName?: string;
+  communeName?: string;
+  address?: string;
+  deliveryMethod?: string;
+  subtotal?: number;
+  discount?: number;
+  promotionDiscount?: number;
+  shipping?: number;
   total: number;
+  items?: Array<{
+    productName: string;
+    variantLabel: string | null;
+    unitPrice: number;
+    quantity: number;
+    lineTotal: number;
+  }>;
   status?: string;
   trackingNote?: string;
 };
@@ -125,8 +142,21 @@ const whatsappProvider: NotificationProvider = {
           body: JSON.stringify({
             messaging_product: "whatsapp",
             to: message.to.replace(/^0/, "213"),
-            type: "text",
-            text: { body: message.body },
+            ...(process.env.WHATSAPP_TEMPLATE_NAME
+              ? {
+                  type: "template",
+                  template: {
+                    name: process.env.WHATSAPP_TEMPLATE_NAME,
+                    language: { code: process.env.WHATSAPP_TEMPLATE_LANGUAGE ?? "fr" },
+                    components: [
+                      {
+                        type: "body",
+                        parameters: [{ type: "text", text: message.body }],
+                      },
+                    ],
+                  },
+                }
+              : { type: "text", text: { body: message.body } }),
           }),
           signal: providerSignal(),
         },
@@ -143,12 +173,35 @@ const providers = [emailProvider, smsProvider, whatsappProvider];
 function templates(data: OrderEmailData) {
   const greeting = `Bonjour ${data.firstName},`;
   const signature = `\n\n${BRAND_CONFIG.name}\n${BRAND_CONFIG.supportEmail}`;
+  const itemLines = (data.items ?? [])
+    .map(
+      (item) =>
+        `- ${item.productName}${item.variantLabel ? ` (${item.variantLabel})` : ""} × ${item.quantity} : ${formatDA(item.lineTotal)}`,
+    )
+    .join("\n");
+  const orderDetails = [
+    `Commande : ${data.orderNumber}`,
+    "",
+    "Articles :",
+    itemLines || "- Aucun article",
+    "",
+    `Sous-total : ${formatDA(data.subtotal ?? data.total)}`,
+    ...(data.promotionDiscount && data.promotionDiscount > 0
+      ? [`Promotion : −${formatDA(data.promotionDiscount)}`]
+      : []),
+    ...(data.discount && data.discount > 0 ? [`Réduction : −${formatDA(data.discount)}`] : []),
+    `Livraison (${data.deliveryMethod ?? "à domicile"}) : ${formatDA(data.shipping ?? 0)}`,
+    `Total à payer à la livraison : ${formatDA(data.total)}`,
+    "",
+    "Livraison :",
+    `${data.firstName} ${data.lastName ?? ""}`.trim(),
+    data.phone ? formatPhoneDisplay(data.phone) : "",
+    [data.address, data.communeName, data.wilayaName].filter(Boolean).join(", "),
+  ].join("\n");
   return {
     received: {
       subject: `Commande ${data.orderNumber} reçue — ${BRAND_CONFIG.name}`,
-      body: `${greeting}\n\nNous avons bien reçu votre commande ${data.orderNumber} d'un total de ${formatDA(
-        data.total,
-      )}. Nous vous contacterons pour confirmer avant l'expédition.${signature}`,
+      body: `${greeting}\n\nNous avons bien reçu votre commande.\n\n${orderDetails}\n\nNous vous contacterons pour confirmer avant l'expédition.${signature}`,
     },
     status: {
       subject: `Mise à jour de votre commande ${data.orderNumber}`,
@@ -244,9 +297,19 @@ export async function sendOrderReceived(data: {
   email?: string | null;
   orderNumber: string;
   firstName: string;
+  lastName: string;
+  wilayaName: string;
+  communeName: string;
+  address: string;
+  deliveryMethod: string;
+  subtotal: number;
+  discount: number;
+  promotionDiscount: number;
+  shipping: number;
   total: number;
+  items: NonNullable<OrderEmailData["items"]>;
 }): Promise<NotificationDispatchResult> {
-  const tpl = templates({ orderNumber: data.orderNumber, firstName: data.firstName, total: data.total });
+  const tpl = templates(data);
   return dispatch({
     orderId: data.orderId,
     phone: data.phone,

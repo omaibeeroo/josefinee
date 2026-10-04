@@ -74,6 +74,24 @@ export async function processPendingOrderOutbox(options: {
           customerId: true,
           ip: true,
           userAgent: true,
+          lastName: true,
+          wilayaName: true,
+          communeName: true,
+          address: true,
+          deliveryMethod: true,
+          subtotal: true,
+          discount: true,
+          promotionDiscount: true,
+          shipping: true,
+          items: {
+            select: {
+              productName: true,
+              variantLabel: true,
+              unitPrice: true,
+              quantity: true,
+              lineTotal: true,
+            },
+          },
           _count: { select: { items: true } },
         },
       });
@@ -100,7 +118,17 @@ export async function processPendingOrderOutbox(options: {
           email: order.email,
           orderNumber: order.orderNumber,
           firstName: order.firstName,
+          lastName: order.lastName,
+          wilayaName: order.wilayaName,
+          communeName: order.communeName,
+          address: order.address,
+          deliveryMethod: order.deliveryMethod,
+          subtotal: order.subtotal,
+          discount: order.discount,
+          promotionDiscount: order.promotionDiscount,
+          shipping: order.shipping,
           total: order.total,
+          items: order.items,
         });
         sentChannels = delivery.sent;
         if (delivery.failed.length > 0) throw new Error("NotificationDeliveryFailed");
