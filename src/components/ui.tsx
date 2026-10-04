@@ -422,7 +422,7 @@ export function Accordion({
               <span className="text-sm font-medium uppercase tracking-[0.1em]">{item.title}</span>
               <ChevronDown size={16} className={cn("transition-transform", isOpen && "rotate-180")} />
             </button>
-            {isOpen && <div className="pb-5">{item.content}</div>}
+            {isOpen && <div className="motion-expand pb-5">{item.content}</div>}
           </div>
         );
       })}

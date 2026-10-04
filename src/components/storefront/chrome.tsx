@@ -255,7 +255,9 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         onClose={() => setSearchOpen(false)}
         popularSearches={props.popularSearches}
       />
-      <main>{children}</main>
+      <main key={pathname} className="page-enter">
+        {children}
+      </main>
       <SiteFooter {...props} />
     </>
   );
