@@ -3,6 +3,8 @@ import { prisma } from "@/lib/prisma";
 import { sendOrderReceived } from "@/lib/notifications";
 import { sendMetaPurchase } from "@/lib/meta-capi";
 import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
+import { appUrl } from "@/config/brand";
+import { signOrderToken } from "@/lib/order-token";
 
 const MAX_ATTEMPTS = 8;
 const LEASE_MS = 5 * 60_000;
@@ -129,6 +131,7 @@ export async function processPendingOrderOutbox(options: {
           shipping: order.shipping,
           total: order.total,
           items: order.items,
+          trackingUrl: `${appUrl()}/order/${encodeURIComponent(order.orderNumber)}?t=${encodeURIComponent(signOrderToken(order.orderNumber))}`,
         });
         sentChannels = delivery.sent;
         if (delivery.failed.length > 0) throw new Error("NotificationDeliveryFailed");

@@ -21,6 +21,7 @@ export type NotificationMessage = {
   to: string;
   subject: string;
   body: string;
+  html?: string;
 };
 
 export interface NotificationProvider {
@@ -50,6 +51,7 @@ type OrderEmailData = {
     quantity: number;
     lineTotal: number;
   }>;
+  trackingUrl?: string;
   status?: string;
   trackingNote?: string;
 };
@@ -79,6 +81,7 @@ const emailProvider: NotificationProvider = {
           to: [message.to],
           subject: message.subject,
           text: message.body,
+          ...(message.html ? { html: message.html } : {}),
         }),
         signal: providerSignal(),
       });
@@ -198,10 +201,23 @@ function templates(data: OrderEmailData) {
     data.phone ? formatPhoneDisplay(data.phone) : "",
     [data.address, data.communeName, data.wilayaName].filter(Boolean).join(", "),
   ].join("\n");
+  const escapeHtml = (value: string): string =>
+    value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  const htmlItems = (data.items ?? [])
+    .map(
+      (item) => `<tr>
+        <td style="padding:14px 0;border-bottom:1px solid #e8e1d8;color:#3e3934;font-size:14px;line-height:1.45"><strong>${escapeHtml(item.productName)}</strong>${item.variantLabel ? `<br><span style="color:#81786f;font-size:12px">${escapeHtml(item.variantLabel)}</span>` : ""}</td>
+        <td style="padding:14px 0;border-bottom:1px solid #e8e1d8;color:#81786f;text-align:center;font-size:14px">× ${item.quantity}</td>
+        <td style="padding:14px 0;border-bottom:1px solid #e8e1d8;color:#3e3934;text-align:right;font-size:14px;white-space:nowrap">${escapeHtml(formatDA(item.lineTotal))}</td>
+      </tr>`,
+    )
+    .join("");
+  const html = `<!doctype html><html lang="fr"><body style="margin:0;background:#f5f1eb;color:#3e3934;font-family:Arial,Helvetica,sans-serif"><div style="max-width:620px;margin:0 auto;padding:28px 18px"><div style="background:#fff;padding:36px 28px"><div style="border-bottom:1px solid #e8e1d8;padding-bottom:24px"><span style="font-family:Georgia,serif;font-size:27px;letter-spacing:.08em;color:#b08d57">${escapeHtml(BRAND_CONFIG.name)}</span><span style="float:right;color:#81786f;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding-top:8px">Commande #${escapeHtml(data.orderNumber)}</span></div><h1 style="margin:34px 0 10px;font-family:Georgia,serif;font-size:31px;line-height:1.15;font-weight:500;color:#3e3934">Merci pour votre commande !</h1><p style="margin:0;color:#81786f;font-size:16px;line-height:1.65">Bonjour ${escapeHtml(data.firstName)},<br>Nous préparons votre commande avec soin. Nous vous contacterons pour confirmer avant l'expédition.</p>${data.trackingUrl ? `<p style="margin:26px 0 34px"><a href="${escapeHtml(data.trackingUrl)}" style="display:inline-block;background:#b08d57;color:#fff;text-decoration:none;padding:15px 24px;font-size:14px;font-weight:bold">Afficher votre commande</a></p>` : ""}<h2 style="margin:0 0 16px;font-size:18px;color:#3e3934">Résumé de la commande</h2><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tbody>${htmlItems}</tbody></table><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:16px;font-size:14px"><tbody><tr><td style="padding:5px 0;color:#81786f">Sous-total</td><td style="padding:5px 0;text-align:right">${escapeHtml(formatDA(data.subtotal ?? data.total))}</td></tr>${data.promotionDiscount && data.promotionDiscount > 0 ? `<tr><td style="padding:5px 0;color:#81786f">Promotion</td><td style="padding:5px 0;text-align:right">−${escapeHtml(formatDA(data.promotionDiscount))}</td></tr>` : ""}${data.discount && data.discount > 0 ? `<tr><td style="padding:5px 0;color:#81786f">Réduction</td><td style="padding:5px 0;text-align:right">−${escapeHtml(formatDA(data.discount))}</td></tr>` : ""}<tr><td style="padding:5px 0;color:#81786f">Expédition</td><td style="padding:5px 0;text-align:right">${escapeHtml(formatDA(data.shipping ?? 0))}</td></tr><tr><td style="border-top:1px solid #3e3934;padding:18px 0 5px;font-size:17px;font-weight:bold">Total</td><td style="border-top:1px solid #3e3934;padding:18px 0 5px;text-align:right;font-size:19px;font-weight:bold">${escapeHtml(formatDA(data.total))}</td></tr><tr><td style="padding:5px 0;color:#81786f">Montant payé aujourd'hui</td><td style="padding:5px 0;text-align:right;color:#81786f">0 DA</td></tr></tbody></table><h2 style="margin:38px 0 16px;font-size:18px;color:#3e3934">Informations client</h2><div style="color:#81786f;font-size:14px;line-height:1.7"><strong style="color:#3e3934">Adresse d'expédition</strong><br>${escapeHtml(`${data.firstName} ${data.lastName ?? ""}`.trim())}<br>${escapeHtml(data.address ?? "")}<br>${escapeHtml(`${data.communeName ?? ""}, ${data.wilayaName ?? ""}`)}<br>Algérie<p style="margin:22px 0 0"><strong style="color:#3e3934">Paiement</strong><br>Paiement à la livraison</p><p style="margin:22px 0 0"><strong style="color:#3e3934">Mode d'expédition</strong><br>${escapeHtml(data.deliveryMethod ?? "Livraison à domicile")}</p></div><div style="border-top:1px solid #e8e1d8;margin-top:34px;padding-top:22px;color:#81786f;font-size:13px;line-height:1.6">Si vous avez des questions, répondez à cet e-mail${BRAND_CONFIG.supportEmail ? ` ou contactez-nous à l'adresse <a href="mailto:${escapeHtml(BRAND_CONFIG.supportEmail)}" style="color:#b08d57">${escapeHtml(BRAND_CONFIG.supportEmail)}</a>` : ""}.<br><br>${escapeHtml(BRAND_CONFIG.name)}</div></div></div></body></html>`;
   return {
     received: {
       subject: `Commande ${data.orderNumber} reçue — ${BRAND_CONFIG.name}`,
       body: `${greeting}\n\nNous avons bien reçu votre commande.\n\n${orderDetails}\n\nNous vous contacterons pour confirmer avant l'expédition.${signature}`,
+      html,
     },
     status: {
       subject: `Mise à jour de votre commande ${data.orderNumber}`,
@@ -219,6 +235,7 @@ type DispatchOptions = {
   template: string;
   subject: string;
   body: string;
+  html?: string;
   channels?: NotificationChannel[];
 };
 
@@ -251,7 +268,7 @@ async function dispatch(options: DispatchOptions): Promise<NotificationDispatchR
     }
 
     try {
-      await provider.send({ to: recipient, subject: options.subject, body: options.body });
+      await provider.send({ to: recipient, subject: options.subject, body: options.body, html: options.html });
       await prisma.notification.create({
         data: {
           orderId: options.orderId,
@@ -308,6 +325,7 @@ export async function sendOrderReceived(data: {
   shipping: number;
   total: number;
   items: NonNullable<OrderEmailData["items"]>;
+  trackingUrl?: string;
 }): Promise<NotificationDispatchResult> {
   const tpl = templates(data);
   return dispatch({
@@ -317,6 +335,7 @@ export async function sendOrderReceived(data: {
     template: "ORDER_RECEIVED",
     subject: tpl.received.subject,
     body: tpl.received.body,
+    html: tpl.received.html,
     channels: ["EMAIL", "WHATSAPP"],
   });
 }
