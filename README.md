@@ -269,6 +269,14 @@ reuses a staging-to-main pull request, and enables automatic squash merge.
 Merging `main` then triggers Vercel's linked Git integration to deploy the
 tested commit to the production domains.
 
+After Vercel reports a successful production deployment, the
+[`Production smoke tests`](./.github/workflows/production-smoke.yml) workflow
+checks the live deployment URL, storefront/product routes, expected 404
+behavior, internal-route authorization, and security headers. If the
+`production` GitHub environment contains `RETENTION_JOB_SECRET`, the workflow
+also verifies the authorized retention endpoint; otherwise it reports that
+optional check as skipped while still running the public safety checks.
+
 ## Scripts
 
 | Command | Purpose |
