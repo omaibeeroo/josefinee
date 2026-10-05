@@ -8,7 +8,7 @@ import { recordAudit } from "@/lib/audit";
 import { cleanRichText } from "@/lib/sanitize";
 import { setStock } from "@/server/inventory";
 import { flattenZodErrors } from "@/lib/validation/common";
-import { adminId, productStatus, reviewStatus } from "@/lib/validation/admin";
+import { adminId, productListParams, productStatus, reviewStatus } from "@/lib/validation/admin";
 import {
   categorySchema,
   collectionSchema,
@@ -27,13 +27,16 @@ export async function listAdminProducts(params: {
   page?: number;
 }) {
   await requirePermission("products:read");
-  const page = Math.max(1, params.page ?? 1);
+  const parsed = productListParams.safeParse(params);
+  if (!parsed.success) return { items: [], total: 0, page: 1, totalPages: 1 };
+  const safeParams = parsed.data;
+  const page = safeParams.page;
   const pageSize = 20;
 
   const where: Prisma.ProductWhereInput = {};
-  if (params.status) where.status = params.status as "DRAFT" | "ACTIVE" | "ARCHIVED";
-  if (params.search) {
-    const term = params.search.trim();
+  if (safeParams.status) where.status = safeParams.status;
+  if (safeParams.search) {
+    const term = safeParams.search;
     where.OR = [
       { name: { contains: term, mode: "insensitive" } },
       { sku: { contains: term, mode: "insensitive" } },
@@ -82,8 +85,10 @@ export async function listAdminProducts(params: {
 
 export async function getProductForEdit(id: string) {
   await requirePermission("products:read");
+  const parsedId = adminId.safeParse(id);
+  if (!parsedId.success) throw new AppError("INVALID_INPUT", "Invalid product ID.", 400);
   const product = await prisma.product.findUnique({
-    where: { id },
+    where: { id: parsedId.data },
     include: {
       images: { orderBy: [{ sortOrder: "asc" }] },
       options: {

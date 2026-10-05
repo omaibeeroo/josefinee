@@ -66,14 +66,24 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
    remote boundaries; TypeScript types are not validation. Use the shared Zod
    schemas in `src/lib/validation/common.ts` and `src/lib/validation/admin.ts`
    for IDs, enums, pagination, dates, searches, and all untrusted inputs.
-10. **Concurrent writes must be serialized or conditional.** Absolute
+   The admin module includes `adminId`, `adminPage`, `adminSearch`, status
+   enums, `productListParams`, `inventoryListParams`, `auditListParams`,
+   `orderFilters`, `deliveryCsv`, `customerNotes`, `settingsKey`, and
+   `settingsValue`. Reuse these before Prisma work; add a local schema for
+   domain-specific form payloads.
+10. **Validate after authorization, before data access.** Admin actions must
+   call `requirePermission()` first, then `safeParse()` all arguments, and only
+   then execute a Prisma query or mutation. Invalid list/filter input returns a
+   bounded empty result; invalid mutations return a controlled error object or
+   `AppError`, never an unhandled Zod/Prisma exception.
+11. **Concurrent writes must be serialized or conditional.** Absolute
     inventory edits use a PostgreSQL transaction advisory lock per variant;
     preserve that invariant for any new stock or reservation operation.
-11. **External effects must be retry-safe.** Outbox effects are at-least-once.
+12. **External effects must be retry-safe.** Outbox effects are at-least-once.
     Pass a stable event-derived idempotency key to every provider and persist
     provider delivery records; never assume a process crash means the provider
     did not accept a request.
-12. **Keep dependency security fixes reproducible.** Do not downgrade the
+13. **Keep dependency security fixes reproducible.** Do not downgrade the
     Next.js toolchain to satisfy an audit blindly. The depth-guarded `braces`
     package is vendored under `vendor/braces` and pinned by the npm override;
     update it only with a reviewed upstream replacement.

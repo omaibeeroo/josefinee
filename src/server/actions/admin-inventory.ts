@@ -7,16 +7,20 @@ import { requirePermission } from "@/lib/auth/rbac";
 import { recordAudit } from "@/lib/audit";
 import { setStock } from "@/server/inventory";
 import { z } from "zod";
+import { adminId, inventoryListParams } from "@/lib/validation/admin";
 import type { Prisma } from "@prisma/client";
 
 export async function listInventory(params: { search?: string; lowOnly?: boolean; page?: number }) {
   await requirePermission("inventory:read");
-  const page = Math.max(1, params.page ?? 1);
+  const parsed = inventoryListParams.safeParse(params);
+  if (!parsed.success) return { items: [], total: 0, page: 1, totalPages: 1 };
+  const safeParams = parsed.data;
+  const page = safeParams.page;
   const pageSize = 30;
 
   const where: Prisma.InventoryWhereInput = {};
-  if (params.search) {
-    const term = params.search.trim();
+  if (safeParams.search) {
+    const term = safeParams.search;
     where.variant = {
       OR: [
         { sku: { contains: term, mode: "insensitive" } },
@@ -24,7 +28,7 @@ export async function listInventory(params: { search?: string; lowOnly?: boolean
       ],
     };
   }
-  if (params.lowOnly) {
+  if (safeParams.lowOnly) {
     where.stock = { lte: 5 };
   }
 
@@ -105,8 +109,10 @@ export async function adjustStockAction(input: z.infer<typeof adjustSchema>) {
 
 export async function listInventoryTransactions(variantId: string) {
   await requirePermission("inventory:read");
+  const parsedId = adminId.safeParse(variantId);
+  if (!parsedId.success) return [];
   return prisma.inventoryTransaction.findMany({
-    where: { variantId },
+    where: { variantId: parsedId.data },
     orderBy: { createdAt: "desc" },
     take: 50,
     include: { user: { select: { name: true } } },

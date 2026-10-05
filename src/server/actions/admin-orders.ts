@@ -10,7 +10,7 @@ import { sendOrderStatusUpdate, sendShippingNotification } from "@/lib/notificat
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 import type { OrderStatus, Prisma } from "@prisma/client";
 import { z } from "zod";
-import { adminId, adminPage, adminSearch, orderStatus } from "@/lib/validation/admin";
+import { adminId, orderFilters } from "@/lib/validation/admin";
 
 const PAGE_SIZE = 20;
 
@@ -18,17 +18,7 @@ import { allowedNextStatuses, type OrderFilters } from "@/server/order-transitio
 
 export async function listOrders(filters: OrderFilters) {
   await requirePermission("orders:read");
-  const parsed = z
-    .object({
-      status: orderStatus.optional(),
-      wilayaId: adminId.optional(),
-      risk: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
-      search: adminSearch,
-      from: z.string().datetime().optional(),
-      to: z.string().datetime().optional(),
-      page: adminPage,
-    })
-    .safeParse(filters);
+  const parsed = orderFilters.safeParse(filters);
   if (!parsed.success) return { items: [], total: 0, page: 1, totalPages: 1 };
   const safeFilters = parsed.data;
   const page = safeFilters.page;
@@ -262,6 +252,9 @@ export async function updateAdminNotesAction(orderId: string, notes: string) {
 
 export async function exportOrdersCsv(filters: OrderFilters): Promise<string> {
   const actor = await requirePermission("orders:export");
+  const parsedFilters = orderFilters.safeParse(filters);
+  if (!parsedFilters.success) return "";
+  filters = parsedFilters.data;
 
   // Page through every matching order — exports are complete, not truncated.
   const summaries: Awaited<ReturnType<typeof listOrders>>["items"] = [];

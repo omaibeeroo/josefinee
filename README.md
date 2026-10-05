@@ -238,6 +238,23 @@ The five tracked findings were addressed as follows:
    vendored and pinned through npm overrides, avoiding the vulnerable parser
    without downgrading Next.js. Production dependencies remain audit-clean.
 
+### Admin action schemas
+
+All permission-gated admin actions treat their arguments as untrusted remote
+input. The reusable schemas in
+[`src/lib/validation/admin.ts`](./src/lib/validation/admin.ts) cover IDs,
+product and order statuses, customer/message statuses, bounded pagination and
+search, inventory/product lists, audit-log filters, delivery CSV size, customer
+notes, settings keys/objects, and order export filters. Action-specific form
+schemas remain beside their actions when the input has domain-specific rules.
+
+Each action must call `safeParse()` after `requirePermission()` and before any
+Prisma query or mutation. Invalid list/filter input returns a bounded empty
+result; invalid mutations return a controlled error object (or an `AppError`
+for read lookups), never a raw Prisma validation exception. When adding a new
+admin action, extend the shared schema module or add a local Zod schema and add
+malformed-input coverage to the test suite.
+
 Before deployment, run `npm ci`, `npm run typecheck`, `npm run lint`,
 `npm test`, `npm audit --omit=dev`, and `npm run build`.
 
