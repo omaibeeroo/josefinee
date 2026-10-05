@@ -22,6 +22,7 @@ export type NotificationMessage = {
   subject: string;
   body: string;
   html?: string;
+  idempotencyKey?: string;
 };
 
 export interface NotificationProvider {
@@ -75,6 +76,7 @@ const emailProvider: NotificationProvider = {
         headers: {
           Authorization: `Bearer ${process.env.EMAIL_API_KEY}`,
           "Content-Type": "application/json",
+          ...(message.idempotencyKey ? { "Idempotency-Key": message.idempotencyKey } : {}),
         },
         body: JSON.stringify({
           from: process.env.EMAIL_FROM ?? `${BRAND_CONFIG.name} <no-reply@example.com>`,
@@ -114,6 +116,7 @@ const smsProvider: NotificationProvider = {
           headers: {
             Authorization: `Basic ${Buffer.from(`${sid}:${token}`).toString("base64")}`,
             "Content-Type": "application/x-www-form-urlencoded",
+            ...(message.idempotencyKey ? { "X-Idempotency-Key": message.idempotencyKey } : {}),
           },
           body,
           signal: providerSignal(),
@@ -141,6 +144,7 @@ const whatsappProvider: NotificationProvider = {
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
+            ...(message.idempotencyKey ? { "X-Idempotency-Key": message.idempotencyKey } : {}),
           },
           body: JSON.stringify({
             messaging_product: "whatsapp",
@@ -237,6 +241,7 @@ type DispatchOptions = {
   body: string;
   html?: string;
   channels?: NotificationChannel[];
+  idempotencyKey?: string;
 };
 
 export type NotificationDispatchResult = {
@@ -268,7 +273,15 @@ async function dispatch(options: DispatchOptions): Promise<NotificationDispatchR
     }
 
     try {
-      await provider.send({ to: recipient, subject: options.subject, body: options.body, html: options.html });
+      await provider.send({
+        to: recipient,
+        subject: options.subject,
+        body: options.body,
+        html: options.html,
+        idempotencyKey: options.idempotencyKey
+          ? `${options.idempotencyKey}:${provider.channel.toLowerCase()}`
+          : undefined,
+      });
       await prisma.notification.create({
         data: {
           orderId: options.orderId,
@@ -326,6 +339,7 @@ export async function sendOrderReceived(data: {
   total: number;
   items: NonNullable<OrderEmailData["items"]>;
   trackingUrl?: string;
+  idempotencyKey?: string;
 }): Promise<NotificationDispatchResult> {
   const tpl = templates(data);
   return dispatch({
@@ -337,6 +351,7 @@ export async function sendOrderReceived(data: {
     body: tpl.received.body,
     html: tpl.received.html,
     channels: ["EMAIL", "WHATSAPP"],
+    idempotencyKey: data.idempotencyKey,
   });
 }
 
@@ -349,6 +364,7 @@ export async function sendOrderStatusUpdate(data: {
   total: number;
   status: string;
   note?: string;
+  idempotencyKey?: string;
 }): Promise<void> {
   const tpl = templates({
     orderNumber: data.orderNumber,
@@ -364,6 +380,7 @@ export async function sendOrderStatusUpdate(data: {
     subject: tpl.status.subject,
     body: tpl.status.body,
     channels: ["EMAIL", "SMS", "WHATSAPP"],
+    idempotencyKey: data.idempotencyKey,
   });
 }
 
@@ -374,6 +391,7 @@ export async function sendShippingNotification(data: {
   orderNumber: string;
   firstName: string;
   total: number;
+  idempotencyKey?: string;
 }): Promise<void> {
   const greeting = `Bonjour ${data.firstName},`;
   await dispatch({
@@ -386,5 +404,6 @@ export async function sendShippingNotification(data: {
       data.phone,
     )} avant la livraison.`,
     channels: ["EMAIL", "SMS", "WHATSAPP"],
+    idempotencyKey: data.idempotencyKey,
   });
 }

@@ -6,6 +6,7 @@ import { toUserMessage } from "@/lib/errors";
 import { requirePermission } from "@/lib/auth/rbac";
 import { recordAudit } from "@/lib/audit";
 import { flattenZodErrors } from "@/lib/validation/common";
+import { adminId, customerStatus, messageStatus } from "@/lib/validation/admin";
 import { z } from "zod";
 import type { DeliveryMethod, Prisma } from "@prisma/client";
 
@@ -425,8 +426,10 @@ export async function listCustomersAdmin(params: { search?: string; page?: numbe
 
 export async function getCustomerDetail(id: string) {
   const actor = await requirePermission("customers:read");
+  const parsedId = adminId.safeParse(id);
+  if (!parsedId.success) throw new Error("Invalid customer ID.");
   const customer = await prisma.customer.findUnique({
-    where: { id },
+    where: { id: parsedId.data },
     select: {
       id: true,
       firstName: true,
@@ -460,9 +463,12 @@ export async function getCustomerDetail(id: string) {
 
 export async function setCustomerStatusAction(id: string, status: "ACTIVE" | "BLOCKED") {
   const actor = await requirePermission("customers:write");
-  await prisma.customer.update({ where: { id }, data: { status } });
+  const parsedId = adminId.safeParse(id);
+  const parsedStatus = customerStatus.safeParse(status);
+  if (!parsedId.success || !parsedStatus.success) return { ok: false as const, error: "Invalid customer status update." };
+  await prisma.customer.update({ where: { id: parsedId.data }, data: { status: parsedStatus.data } });
   await prisma.customerSession.updateMany({
-    where: { customerId: id },
+    where: { customerId: parsedId.data },
     data: { revokedAt: new Date() },
   });
   await recordAudit({
@@ -532,7 +538,10 @@ export async function setMessageStatusAction(
   status: "NEW" | "IN_PROGRESS" | "RESOLVED" | "SPAM",
 ) {
   const actor = await requirePermission("messages:write");
-  await prisma.contactMessage.update({ where: { id }, data: { status } });
+  const parsedId = adminId.safeParse(id);
+  const parsedStatus = messageStatus.safeParse(status);
+  if (!parsedId.success || !parsedStatus.success) return { ok: false as const, error: "Invalid message status update." };
+  await prisma.contactMessage.update({ where: { id: parsedId.data }, data: { status: parsedStatus.data } });
   await recordAudit({
     actorUserId: actor.id,
     action: "MESSAGE_STATUS_CHANGED",

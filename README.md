@@ -203,7 +203,8 @@ Test restores on a staging database before you need them.
 
 ## Security posture
 
-- Argon2id hashing, password policy, login lockout + rate limits, TOTP 2FA
+- Argon2id hashing, password policy, atomic five-failure admin login lockout
+  (15-minute lockout) + rate limits, TOTP 2FA
   (encrypted secrets), forced password rotation for seeded accounts
 - CSRF: SameSite cookies + server-action origin checks + explicit origin check
   on mutating routes · strict CSP/HSTS/security headers (`next.config.ts`)
@@ -212,6 +213,33 @@ Test restores on a staging database before you need them.
 - Validation with Zod on every boundary; HTML sanitized with an allow-list;
   stack traces never leak to customers; audit log is append-only
 - Secrets only in env; `.env.example` ships without credentials
+
+## 2026-10-05 security remediation report
+
+The repository-wide review and remediation pass covered authentication,
+authorization, checkout pricing, inventory, order transitions, notifications,
+uploads, database boundaries, API routes, and production configuration. The
+full line-referenced report is maintained in
+[`CODE_REVIEW_2026-10-05.md`](./CODE_REVIEW_2026-10-05.md).
+
+The five tracked findings were addressed as follows:
+
+1. **Admin lockout:** failed login counters now atomically transition an active
+   account to `LOCKED` on the fifth failure for 15 minutes; successful login
+   resets the counter.
+2. **Runtime action validation:** shared Zod schemas validate IDs, enums,
+   pagination, searches, dates, and order filters at server-action boundaries.
+3. **Inventory integrity:** absolute stock edits take a PostgreSQL transaction
+   advisory lock per variant, so audit deltas match serialized writes.
+4. **Outbox delivery:** stable event keys are passed to notification providers;
+   Resend receives its native `Idempotency-Key`, while other providers receive
+   the stable key for adapter-level deduplication and tracing.
+5. **Development dependency advisory:** the depth-guarded `braces` package is
+   vendored and pinned through npm overrides, avoiding the vulnerable parser
+   without downgrading Next.js. Production dependencies remain audit-clean.
+
+Before deployment, run `npm ci`, `npm run typecheck`, `npm run lint`,
+`npm test`, `npm audit --omit=dev`, and `npm run build`.
 
 ## Scripts
 

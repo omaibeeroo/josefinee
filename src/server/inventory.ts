@@ -90,6 +90,10 @@ export async function setStock(
 ): Promise<void> {
   if (input.stock < 0) throw new AppError("INVALID_QUANTITY", "Stock cannot be negative.");
 
+  // Serialize absolute stock edits for this variant. Without this lock, two
+  // admins can both calculate a delta from the same stale stock value and
+  // produce an audit trail that does not match the applied writes.
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${input.variantId}, 0))`;
   const existing = await tx.inventory.findUnique({ where: { variantId: input.variantId } });
   if (existing && input.stock < existing.reserved) {
     throw new AppError("INVALID_QUANTITY", "Stock cannot be lower than reserved inventory.");

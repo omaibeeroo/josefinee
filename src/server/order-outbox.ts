@@ -132,6 +132,7 @@ export async function processPendingOrderOutbox(options: {
           total: order.total,
           items: order.items,
           trackingUrl: `${appUrl()}/order/${encodeURIComponent(order.orderNumber)}?t=${encodeURIComponent(signOrderToken(order.orderNumber))}`,
+          idempotencyKey: `order-outbox:${event.id}`,
         });
         sentChannels = delivery.sent;
         if (delivery.failed.length > 0) throw new Error("NotificationDeliveryFailed");

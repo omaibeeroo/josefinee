@@ -62,6 +62,21 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
 7. **Secrets stay in env.** Never commit `.env`. Never log passwords/tokens.
 8. **Order of discount application:** automatic promotion first, coupon on the
    remainder, then delivery (free-shipping threshold applies post-promotion).
+9. **Runtime validation is mandatory.** Server actions and route handlers are
+   remote boundaries; TypeScript types are not validation. Use the shared Zod
+   schemas in `src/lib/validation/common.ts` and `src/lib/validation/admin.ts`
+   for IDs, enums, pagination, dates, searches, and all untrusted inputs.
+10. **Concurrent writes must be serialized or conditional.** Absolute
+    inventory edits use a PostgreSQL transaction advisory lock per variant;
+    preserve that invariant for any new stock or reservation operation.
+11. **External effects must be retry-safe.** Outbox effects are at-least-once.
+    Pass a stable event-derived idempotency key to every provider and persist
+    provider delivery records; never assume a process crash means the provider
+    did not accept a request.
+12. **Keep dependency security fixes reproducible.** Do not downgrade the
+    Next.js toolchain to satisfy an audit blindly. The depth-guarded `braces`
+    package is vendored under `vendor/braces` and pinned by the npm override;
+    update it only with a reviewed upstream replacement.
 
 ## Database workflow
 
@@ -69,12 +84,17 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
 - Never edit applied migrations (checksums). New change = new migration.
 - `.env` is local-only; `.env.example` documents every variable.
 - Seed is idempotent; the demo admin forces a password change on first login.
+- Do not edit `package-lock.json` manually. If dependencies change, run
+  `npm install --package-lock-only` and review both the lockfile and
+  `npm audit --omit=dev` output.
 
 ## Verification pattern
 
 Pure logic gets Vitest tests (`*.test.ts`; `server-only` is stubbed in tests).
 For DB-backed flows, add a temporary dev-only route, exercise it over HTTP,
 assert results, then **delete the route** (never ship test routes).
+For security fixes, add a regression test for the failure mode and run the
+complete typecheck, lint, test, production-build, and dependency-audit suite.
 
 ## UX bar
 

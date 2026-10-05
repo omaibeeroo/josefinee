@@ -19,6 +19,7 @@ const eslintConfig = [
       "coverage/**",
       "next-env.d.ts",
       "prisma/migrations/**",
+      "vendor/**",
     ],
   },
   {

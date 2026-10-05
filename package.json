@@ -57,11 +57,13 @@
     "tailwindcss": "^4.3.3",
     "tsx": "^4.19.0",
     "typescript": "5.9.3",
-    "vitest": "^5.0.3"
+    "vitest": "^5.0.3",
+    "braces": "file:vendor/braces"
   },
   "overrides": {
     "postcss": "8.5.28",
-    "deepmerge-ts": "8.0.2"
+    "deepmerge-ts": "8.0.2",
+    "braces": "file:vendor/braces"
   },
   "allowScripts": {
     "prisma@6.19.3": true,
