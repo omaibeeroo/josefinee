@@ -1,13 +1,21 @@
-name: CI
+name: CI/CD
 
 on:
   push:
-    branches: [main, "manus/**"]
   pull_request:
 
+concurrency:
+  group: josefinee-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
 jobs:
-  validate:
+  validate-build-package:
+    name: Validate, build, and package
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     services:
       postgres:
         image: postgres:16
@@ -35,30 +43,71 @@ jobs:
       STORAGE_ACCESS_KEY: ci-access-key
       STORAGE_SECRET_KEY: ci-secret-key
       STORAGE_PUBLIC_HOST: https://cdn.example.invalid
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: npm
-      # CI needs devDependencies for the Prisma seed (tsx), TypeScript, ESLint,
-      # Vitest, and the Next.js build. Keep NODE_ENV=production for runtime
-      # configuration, but explicitly install the full validation toolchain.
-      - run: npm ci --include=dev
-      - run: npx prisma migrate deploy
+
+      # Keep NODE_ENV=production for runtime configuration while installing
+      # devDependencies needed by Prisma seed, TypeScript, ESLint, and Vitest.
+      - name: Install dependencies
+        run: npm ci --include=dev
+
+      - name: Apply database migrations
+        run: npx prisma migrate deploy
+
       - name: Seed CI fixtures
+        env:
+          SEED_ADMIN_EMAIL: ci-admin@example.test
+          SEED_ADMIN_PASSWORD: CI-Admin-Password-2026-Strong!
+        run: npm run db:seed
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
+
+      - name: Audit production dependencies
+        run: npm audit --omit=dev
+
+      - name: Build standalone application
+        run: npm run build
+
+      - name: Prepare standalone runtime files
         run: |
-          export SEED_ADMIN_EMAIL=ci-admin@example.test
-          export SEED_ADMIN_PASSWORD="$(openssl rand -base64 32)"
-          npm run db:seed
-      - run: npm run typecheck
-      - run: npm run lint
-      - run: npm test
-      - run: npm audit --omit=dev
-      - run: npm run build
+          if [ -d public ]; then cp -R public .next/standalone/public; fi
+          mkdir -p .next/standalone/.next
+          cp -R .next/static .next/standalone/.next/static
+
       - name: Production HTTP smoke tests
+        env:
+          PORT: 3000
+          HOSTNAME: 127.0.0.1
         run: |
-          npm run start -- -p 3000 > /tmp/josefinee-store.log 2>&1 &
+          node .next/standalone/server.js > /tmp/josefinee-store.log 2>&1 &
           server_pid=$!
-          trap 'kill "$server_pid"' EXIT
-          BASE_URL=http://localhost:3000 npm run smoke:production
+          trap 'kill "$server_pid" 2>/dev/null || true' EXIT
+          BASE_URL=http://127.0.0.1:3000 npm run smoke:production
+
+      - name: Package standalone deployment artifact
+        run: |
+          tar -czf "josefinee-standalone-${GITHUB_SHA}.tar.gz" \
+            -C .next/standalone .
+
+      - name: Upload standalone deployment artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: josefinee-standalone-${{ github.sha }}
+          path: josefinee-standalone-${{ github.sha }}.tar.gz
+          if-no-files-found: error
+          retention-days: 14
