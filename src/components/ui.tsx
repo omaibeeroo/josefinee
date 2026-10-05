@@ -392,12 +392,14 @@ export function Drawer({
   title,
   children,
   labelledBy,
+  className,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   labelledBy?: string;
+  className?: string;
 }) {
   const panelRef = useRef<HTMLElement>(null);
   useDialogFocus(open, panelRef, onClose);
@@ -419,7 +421,10 @@ export function Drawer({
       <aside
         ref={panelRef}
         tabIndex={-1}
-        className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-ivory shadow-drawer animate-slide-in-right"
+        className={cn(
+          "absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-ivory shadow-drawer animate-slide-in-right",
+          className,
+        )}
       >
         <div className="flex items-center justify-between border-b hairline px-5 py-4">
           <h2 id={headingId} className="text-xs font-medium uppercase tracking-[0.2em]">

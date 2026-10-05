@@ -92,7 +92,11 @@ export function CheckoutForm({
           setCommuneId(draft.communeId);
           setDeliveryMethod(draft.deliveryMethod);
           setCouponInput(draft.couponInput);
-          setCouponMessage(draft.couponInput ? "Code promo enregistré — appliquez-le à nouveau pour vérifier sa disponibilité." : null);
+          setCouponMessage(
+            draft.couponInput
+              ? "Code promo enregistré — appliquez-le à nouveau pour vérifier sa disponibilité."
+              : null,
+          );
           setDraftRestored(true);
         } else {
           window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
@@ -142,9 +146,13 @@ export function CheckoutForm({
         if (cancelled) return;
         setCommunes(communeList);
         setDeliveryOptions(options);
-        setCommuneId((current) => communeList.some((commune) => commune.id === current) ? current : "");
+        setCommuneId((current) =>
+          communeList.some((commune) => commune.id === current) ? current : "",
+        );
         if (communeList.length === 0 || options.length === 0) {
-          setRegionError("Les options de livraison ne sont pas disponibles dans cette wilaya. Choisissez-en une autre ou contactez-nous.");
+          setRegionError(
+            "Les options de livraison ne sont pas disponibles dans cette wilaya. Choisissez-en une autre ou contactez-nous.",
+          );
         }
         if (options.length > 0 && !options.some((option) => option.method === deliveryMethod)) {
           setDeliveryMethod(options[0]?.method ?? defaultDeliveryMethod);
@@ -154,7 +162,9 @@ export function CheckoutForm({
         if (cancelled) return;
         setCommunes([]);
         setDeliveryOptions([]);
-        setRegionError("Impossible de charger les options de livraison. Réessayez ou choisissez une autre wilaya.");
+        setRegionError(
+          "Impossible de charger les options de livraison. Réessayez ou choisissez une autre wilaya.",
+        );
       })
       .finally(() => {
         if (!cancelled) setLoadingRegion(false);
@@ -210,7 +220,9 @@ export function CheckoutForm({
       const result = await previewCouponAction(couponInput);
       if (result.ok) {
         setCoupon({ code: result.code, discount: result.discount });
-        setCouponMessage(`Code ${result.code} appliqué — vous économisez ${formatDA(result.discount)}.`);
+        setCouponMessage(
+          `Code ${result.code} appliqué — vous économisez ${formatDA(result.discount)}.`,
+        );
       } else {
         setCoupon(null);
         setCouponMessage(result.error);
@@ -257,7 +269,9 @@ export function CheckoutForm({
       });
     } catch {
       setSubmitting(false);
-      setFormError("La réponse n’a pas pu être confirmée. Vos informations restent enregistrées dans cet onglet ; réessayez pour vérifier la commande sans risque de doublon.");
+      setFormError(
+        "La réponse n’a pas pu être confirmée. Vos informations restent enregistrées dans cet onglet ; réessayez pour vérifier la commande sans risque de doublon.",
+      );
       return;
     }
 
@@ -284,32 +298,46 @@ export function CheckoutForm({
   }
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[1fr_400px]">
+    <div className="checkout-form-layout grid gap-10 lg:grid-cols-[1fr_400px]">
       <form
         onSubmit={(event) => {
           event.preventDefault();
           void doSubmit();
         }}
         noValidate
-        className="relative space-y-8"
+        className="checkout-form relative space-y-8"
       >
         <Honeypot value={website} onChange={setWebsite} />
         {draftRestored && (
-          <div className="flex flex-wrap items-center justify-between gap-3 border hairline bg-white px-4 py-3 text-sm" role="status">
-            <span>Vos choix de livraison et votre code promo ont été restaurés dans cet onglet. Vos coordonnées et votre adresse ne sont jamais enregistrées.</span>
-            <Button type="button" variant="outline" size="sm" onClick={clearSavedDraft}>Effacer les choix enregistrés</Button>
+          <div
+            className="flex flex-wrap items-center justify-between gap-3 border hairline bg-white px-4 py-3 text-sm"
+            role="status"
+          >
+            <span>
+              Vos choix de livraison et votre code promo ont été restaurés dans cet onglet. Vos
+              coordonnées et votre adresse ne sont jamais enregistrées.
+            </span>
+            <Button type="button" variant="outline" size="sm" onClick={clearSavedDraft}>
+              Effacer les choix enregistrés
+            </Button>
           </div>
         )}
         {formError && (
-          <p className="border border-[#9e342e]/30 bg-[#9e342e]/5 px-4 py-3 text-sm text-[#9e342e]" role="alert">
+          <p
+            className="border border-[#9e342e]/30 bg-[#9e342e]/5 px-4 py-3 text-sm text-[#9e342e]"
+            role="alert"
+          >
             {formError}
           </p>
         )}
         {duplicateOrder && (
           <div className="border border-gold/50 bg-gold/10 px-4 py-3 text-sm" role="alert">
-            <p className="font-medium">Nous avons déjà reçu une commande similaire avec ce numéro.</p>
+            <p className="font-medium">
+              Nous avons déjà reçu une commande similaire avec ce numéro.
+            </p>
             <p className="mt-1 text-ink-soft">
-              La commande {duplicateOrder} vient d’être passée. Continuez uniquement si vous souhaitez vraiment commander deux fois.
+              La commande {duplicateOrder} vient d’être passée. Continuez uniquement si vous
+              souhaitez vraiment commander deux fois.
             </p>
             <Button
               type="button"
@@ -328,30 +356,69 @@ export function CheckoutForm({
         )}
 
         <section aria-labelledby="contact-heading">
-          <h2 id="contact-heading" className="mb-4 font-display text-2xl">1 · Vos coordonnées</h2>
+          <h2 id="contact-heading" className="mb-4 font-display text-2xl">
+            1 · Vos coordonnées
+          </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Prénom" required error={fields.firstName}>
-              <Input value={firstName} onChange={(event) => setFirstName(event.target.value)} invalid={Boolean(fields.firstName)} autoComplete="given-name" required />
+              <Input
+                value={firstName}
+                onChange={(event) => setFirstName(event.target.value)}
+                invalid={Boolean(fields.firstName)}
+                autoComplete="given-name"
+                required
+              />
             </Field>
             <Field label="Nom" required error={fields.lastName}>
-              <Input value={lastName} onChange={(event) => setLastName(event.target.value)} invalid={Boolean(fields.lastName)} autoComplete="family-name" required />
+              <Input
+                value={lastName}
+                onChange={(event) => setLastName(event.target.value)}
+                invalid={Boolean(fields.lastName)}
+                autoComplete="family-name"
+                required
+              />
             </Field>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field label="Numéro de téléphone" required error={fields.phone} hint="0550 12 34 56 — nous vous appellerons pour confirmer">
-              <Input value={phone} onChange={(event) => setPhone(event.target.value)} invalid={Boolean(fields.phone)} autoComplete="tel" inputMode="tel" placeholder="05 / 06 / 07 …" required />
+            <Field
+              label="Numéro de téléphone"
+              required
+              error={fields.phone}
+              hint="0550 12 34 56 — nous vous appellerons pour confirmer"
+            >
+              <Input
+                value={phone}
+                onChange={(event) => setPhone(event.target.value)}
+                invalid={Boolean(fields.phone)}
+                autoComplete="tel"
+                inputMode="tel"
+                placeholder="05 / 06 / 07 …"
+                required
+              />
             </Field>
             <Field label="E-mail (facultatif)" error={fields.email}>
-              <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} invalid={Boolean(fields.email)} autoComplete="email" />
+              <Input
+                type="email"
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                invalid={Boolean(fields.email)}
+                autoComplete="email"
+              />
             </Field>
           </div>
         </section>
 
         <section aria-labelledby="delivery-heading" aria-busy={loadingRegion}>
-          <h2 id="delivery-heading" className="mb-4 font-display text-2xl">2 · Livraison</h2>
+          <h2 id="delivery-heading" className="mb-4 font-display text-2xl">
+            2 · Livraison
+          </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Wilaya" required error={fields.wilayaId}>
-              <Select value={wilayaId} onChange={(event) => setWilayaId(event.target.value)} required>
+              <Select
+                value={wilayaId}
+                onChange={(event) => setWilayaId(event.target.value)}
+                required
+              >
                 <option value="">Choisissez votre wilaya…</option>
                 {wilayas.map((wilaya) => (
                   <option key={wilaya.id} value={wilaya.id}>
@@ -361,8 +428,19 @@ export function CheckoutForm({
               </Select>
             </Field>
             <Field label="Commune" required error={fields.communeId}>
-              <Select value={communeId} onChange={(event) => setCommuneId(event.target.value)} required disabled={!wilayaId || loadingRegion}>
-                <option value="">{loadingRegion ? "Chargement…" : wilayaId ? "Choisissez votre commune…" : "Choisissez d’abord une wilaya"}</option>
+              <Select
+                value={communeId}
+                onChange={(event) => setCommuneId(event.target.value)}
+                required
+                disabled={!wilayaId || loadingRegion}
+              >
+                <option value="">
+                  {loadingRegion
+                    ? "Chargement…"
+                    : wilayaId
+                      ? "Choisissez votre commune…"
+                      : "Choisissez d’abord une wilaya"}
+                </option>
                 {communes.map((commune) => (
                   <option key={commune.id} value={commune.id}>
                     {commune.name}
@@ -372,18 +450,37 @@ export function CheckoutForm({
             </Field>
           </div>
           {regionError && (
-            <div className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#9e342e]" role="alert">
+            <div
+              className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#9e342e]"
+              role="alert"
+            >
               <span>{regionError}</span>
               {wilayaId && (
-                <Button type="button" variant="outline" size="sm" disabled={loadingRegion} onClick={() => setRegionRetryToken((value) => value + 1)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={loadingRegion}
+                  onClick={() => setRegionRetryToken((value) => value + 1)}
+                >
                   {loadingRegion ? "Chargement…" : "Réessayer"}
                 </Button>
               )}
             </div>
           )}
           <div className="mt-4">
-            <Field label="Adresse complète" required error={fields.address} hint="Rue, repère, immeuble…">
-              <Textarea value={address} onChange={(event) => setAddress(event.target.value)} required rows={2} />
+            <Field
+              label="Adresse complète"
+              required
+              error={fields.address}
+              hint="Rue, repère, immeuble…"
+            >
+              <Textarea
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+                required
+                rows={2}
+              />
             </Field>
           </div>
 
@@ -395,7 +492,9 @@ export function CheckoutForm({
                   <label
                     key={option.method}
                     className={`flex cursor-pointer items-center justify-between gap-3 border px-4 py-3 text-sm transition-colors ${
-                      deliveryMethod === option.method ? "border-ink bg-white" : "hairline bg-white/60"
+                      deliveryMethod === option.method
+                        ? "border-ink bg-white"
+                        : "hairline bg-white/60"
                     }`}
                   >
                     <span className="flex items-center gap-2">
@@ -408,13 +507,17 @@ export function CheckoutForm({
                         className="h-4 w-4 accent-[#1c1a17]"
                       />
                       <span>
-                        <span className="block font-medium">{DELIVERY_METHOD_LABELS[option.method]}</span>
+                        <span className="block font-medium">
+                          {DELIVERY_METHOD_LABELS[option.method]}
+                        </span>
                         <span className="block text-xs text-ink-muted">
                           {option.etaMinDays}–{option.etaMaxDays} jours
                         </span>
                       </span>
                     </span>
-                    <span className="font-medium">{freeDelivery ? "Offerte" : formatDA(option.price)}</span>
+                    <span className="font-medium">
+                      {freeDelivery ? "Offerte" : formatDA(option.price)}
+                    </span>
                   </label>
                 ))}
               </div>
@@ -423,13 +526,20 @@ export function CheckoutForm({
 
           <div className="mt-4">
             <Field label="Instructions (facultatif)">
-              <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={2} placeholder="Une précision à nous communiquer ?" />
+              <Textarea
+                value={notes}
+                onChange={(event) => setNotes(event.target.value)}
+                rows={2}
+                placeholder="Une précision à nous communiquer ?"
+              />
             </Field>
           </div>
         </section>
 
         <section aria-labelledby="account-heading">
-          <h2 id="account-heading" className="mb-4 font-display text-2xl">3 · Dernière étape</h2>
+          <h2 id="account-heading" className="mb-4 font-display text-2xl">
+            3 · Dernière étape
+          </h2>
           <label className="flex cursor-pointer items-start gap-3 text-sm">
             <input
               type="checkbox"
@@ -439,13 +549,25 @@ export function CheckoutForm({
             />
             <span>
               Créer un compte pour commander plus rapidement la prochaine fois
-              <span className="block text-xs text-ink-muted">Une adresse e-mail et un mot de passe sont nécessaires.</span>
+              <span className="block text-xs text-ink-muted">
+                Une adresse e-mail et un mot de passe sont nécessaires.
+              </span>
             </span>
           </label>
           {createAccount && (
             <div className="mt-3">
-              <Field label="Mot de passe" required error={fields.password} hint="10 caractères minimum, majuscule, minuscule et chiffre">
-                <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="new-password" />
+              <Field
+                label="Mot de passe"
+                required
+                error={fields.password}
+                hint="10 caractères minimum, majuscule, minuscule et chiffre"
+              >
+                <Input
+                  type="password"
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                  autoComplete="new-password"
+                />
               </Field>
             </div>
           )}
@@ -470,27 +592,49 @@ export function CheckoutForm({
             </span>
           </label>
           {fields.acceptTerms && (
-            <p className="mt-1.5 text-sm text-[#9e342e]" role="alert">{fields.acceptTerms}</p>
+            <p className="mt-1.5 text-sm text-[#9e342e]" role="alert">
+              {fields.acceptTerms}
+            </p>
           )}
         </section>
 
-        <Button type="submit" disabled={submitting || loadingRegion || !selectedRate || !communeId} variant="gold" size="lg" className="w-full">
-          {submitting ? "Validation de votre commande…" : `Confirmer la commande · ${formatDA(total)}`}
+        <Button
+          type="submit"
+          disabled={submitting || loadingRegion || !selectedRate || !communeId}
+          variant="gold"
+          size="lg"
+          className="w-full"
+        >
+          {submitting
+            ? "Validation de votre commande…"
+            : `Confirmer la commande · ${formatDA(total)}`}
         </Button>
         <p className="text-center text-xs text-ink-muted">
-          Paiement à la livraison — vous réglerez {formatDA(total)} à la réception de votre commande.
+          Paiement à la livraison — vous réglerez {formatDA(total)} à la réception de votre
+          commande.
         </p>
       </form>
 
-      <aside className="lg:sticky lg:top-32 lg:self-start" aria-label="Récapitulatif de la commande">
-        <div className="border hairline bg-white p-6">
-          <h2 className="text-xs font-medium uppercase tracking-[0.2em]">Récapitulatif de la commande</h2>
+      <aside
+        className="lg:sticky lg:top-32 lg:self-start"
+        aria-label="Récapitulatif de la commande"
+      >
+        <div className="checkout-summary border hairline bg-white p-6">
+          <h2 className="text-xs font-medium uppercase tracking-[0.2em]">
+            Récapitulatif de la commande
+          </h2>
           <ul className="mt-4 space-y-4">
             {initialCart.items.map((item) => (
               <li key={item.id} className="flex gap-3">
                 <div className="relative h-16 w-14 shrink-0 overflow-hidden bg-cream">
                   {item.imageUrl && (
-                    <Image src={item.imageUrl} alt={item.productName} fill sizes="56px" className="object-cover" />
+                    <Image
+                      src={item.imageUrl}
+                      alt={item.productName}
+                      fill
+                      sizes="56px"
+                      className="object-cover"
+                    />
                   )}
                   <span className="absolute right-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-ink px-1 text-[0.625rem] text-ivory">
                     {item.quantity}
@@ -498,7 +642,9 @@ export function CheckoutForm({
                 </div>
                 <div className="flex-1">
                   <p className="text-sm font-medium leading-tight">{item.productName}</p>
-                  {item.variantLabel && <p className="text-xs text-ink-muted">{item.variantLabel}</p>}
+                  {item.variantLabel && (
+                    <p className="text-xs text-ink-muted">{item.variantLabel}</p>
+                  )}
                 </div>
                 <p className="text-sm font-medium">{formatDA(item.lineTotal)}</p>
               </li>
@@ -506,10 +652,24 @@ export function CheckoutForm({
           </ul>
 
           <div className="mt-5 border-t hairline pt-4">
-            <label htmlFor="coupon" className="field-label">Code promotionnel</label>
+            <label htmlFor="coupon" className="field-label">
+              Code promotionnel
+            </label>
             <div className="flex gap-2">
-              <Input id="coupon" value={couponInput} onChange={(event) => setCouponInput(event.target.value)} placeholder="WELCOME10" className="uppercase" />
-              <Button type="button" variant="outline" size="sm" disabled={couponPending} onClick={() => void applyCoupon()}>
+              <Input
+                id="coupon"
+                value={couponInput}
+                onChange={(event) => setCouponInput(event.target.value)}
+                placeholder="WELCOME10"
+                className="uppercase"
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={couponPending}
+                onClick={() => void applyCoupon()}
+              >
                 {couponPending ? "Vérification…" : "Appliquer"}
               </Button>
             </div>
@@ -533,7 +693,7 @@ export function CheckoutForm({
             )}
             {discount > 0 && (
               <div className="flex justify-between text-success">
-              <dt>Remise{coupon ? ` (${coupon.code})` : ""}</dt>
+                <dt>Remise{coupon ? ` (${coupon.code})` : ""}</dt>
                 <dd>−{formatDA(discount)}</dd>
               </div>
             )}
@@ -548,7 +708,8 @@ export function CheckoutForm({
           </dl>
           {remainingForFree > 0 && (
             <p className="mt-3 text-xs text-ink-muted">
-              Ajoutez {formatDA(remainingForFree)} à votre panier pour bénéficier de la livraison offerte.
+              Ajoutez {formatDA(remainingForFree)} à votre panier pour bénéficier de la livraison
+              offerte.
             </p>
           )}
         </div>

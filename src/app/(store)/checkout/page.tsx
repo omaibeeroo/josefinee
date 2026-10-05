@@ -14,11 +14,14 @@ export const metadata: Metadata = {
 };
 
 export default async function CheckoutPage() {
-  const [{ cart, wilayas, promotion }, settings] = await Promise.all([getCheckoutData(), getSettings()]);
+  const [{ cart, wilayas, promotion }, settings] = await Promise.all([
+    getCheckoutData(),
+    getSettings(),
+  ]);
 
   if (!cart || cart.lines.length === 0) {
     return (
-      <div className="container-luxe py-10 md:py-14">
+      <div className="checkout-page container-luxe py-10 md:py-14">
         <EmptyState
           title="Votre panier est vide"
           message="Ajoutez des articles avant de finaliser votre commande."
@@ -33,12 +36,14 @@ export default async function CheckoutPage() {
   }
 
   return (
-    <div className="container-luxe py-10 md:py-14">
+    <div className="checkout-page container-luxe py-10 md:py-14">
       <PixelEvent name="InitiateCheckout" />
       <div className="mb-8 text-center">
         <p className="eyebrow mb-2">Paiement à la livraison</p>
         <h1 className="font-display text-4xl font-medium md:text-5xl">Finaliser ma commande</h1>
-        <p className="mt-3 text-ink-soft">Réglez en espèces à la réception de votre commande. Aucune carte nécessaire.</p>
+        <p className="mt-3 text-ink-soft">
+          Réglez en espèces à la réception de votre commande. Aucune carte nécessaire.
+        </p>
       </div>
       <CheckoutForm
         wilayas={wilayas}
