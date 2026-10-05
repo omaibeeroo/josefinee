@@ -3,6 +3,7 @@ import { listDeliveryRates } from "@/server/actions/admin-ops";
 import { recordAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
+const NO_STORE = { "Cache-Control": "no-store" };
 
 export async function GET() {
   let actor;
@@ -11,9 +12,9 @@ export async function GET() {
   } catch (error) {
     const { isAppError } = await import("@/lib/errors");
     if (isAppError(error)) {
-      return Response.json({ ok: false, error: error.userMessage }, { status: error.status });
+      return Response.json({ ok: false, error: error.userMessage }, { status: error.status, headers: NO_STORE });
     }
-    return Response.json({ ok: false, error: "Something went wrong." }, { status: 500 });
+    return Response.json({ ok: false, error: "Something went wrong." }, { status: 500, headers: NO_STORE });
   }
   const wilayas = await listDeliveryRates();
   const lines = ["wilaya_code,method,price,eta_min,eta_max,active"];
@@ -41,6 +42,7 @@ export async function GET() {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="delivery-rates-${new Date().toISOString().slice(0, 10)}.csv"`,
+      ...NO_STORE,
     },
   });
 }

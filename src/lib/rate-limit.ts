@@ -178,6 +178,7 @@ export const LIMITS = {
   accountMutation: { limit: 60, windowMs: 15 * 60_000 },
   upload: { limit: 40, windowMs: 10 * 60_000 },
   api: { limit: 120, windowMs: 60_000 },
+  cspReport: { limit: 30, windowMs: 60_000 },
 } as const;
 
 export async function clientIp(): Promise<string> {

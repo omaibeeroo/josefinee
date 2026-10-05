@@ -4,6 +4,7 @@ import { enforceRateLimit, LIMITS } from "@/lib/rate-limit";
 import { recordAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
+const NO_STORE = { "Cache-Control": "no-store" };
 
 export async function GET() {
   let actor;
@@ -11,7 +12,7 @@ export async function GET() {
     actor = await requirePermission("newsletter:export");
     await enforceRateLimit({ ...LIMITS.adminLogin, key: `newsletter-export:${actor.id}` });
   } catch {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
+    return Response.json({ error: "Forbidden" }, { status: 403, headers: NO_STORE });
   }
 
   const subscribers = await prisma.newsletterSubscriber.findMany({
@@ -20,7 +21,7 @@ export async function GET() {
   });
 
   if (subscribers.length >= 5000)
-    return Response.json({ error: "Export too large." }, { status: 413 });
+    return Response.json({ error: "Export too large." }, { status: 413, headers: NO_STORE });
   const lines = ["email,subscribed_at,status"];
   const escape = (value: string) =>
     `"${(/^\s*[=+\-@]/.test(value) ? `'${value}` : value).replace(/"/g, '""')}"`;
@@ -44,6 +45,7 @@ export async function GET() {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="newsletter-${new Date().toISOString().slice(0, 10)}.csv"`,
+      ...NO_STORE,
     },
   });
 }
