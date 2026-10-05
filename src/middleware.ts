@@ -1,4 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { ADMIN_COOKIE } from "@/lib/auth/session";
+import { hashToken } from "@/lib/auth/tokens";
 
 export async function middleware(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
@@ -27,7 +30,8 @@ export async function middleware(request: NextRequest) {
   const pathname = request.nextUrl.pathname;
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   if (maintenanceEnabled && !isAdminRoute) {
-    return maintenanceResponse(csp);
+    const adminPreview = await hasActiveAdminSession(request);
+    if (!adminPreview) return maintenanceResponse(csp);
   }
 
   if (pathname.startsWith("/products/")) {
@@ -69,6 +73,27 @@ export async function middleware(request: NextRequest) {
     response.headers.set("Referrer-Policy", "no-referrer");
   }
   return response;
+}
+
+async function hasActiveAdminSession(request: NextRequest): Promise<boolean> {
+  const token = request.cookies.get(ADMIN_COOKIE)?.value;
+  if (!token) return false;
+
+  try {
+    const session = await prisma.adminSession.findUnique({
+      where: { tokenHash: hashToken(token) },
+      select: { revokedAt: true, expiresAt: true, user: { select: { status: true } } },
+    });
+    return Boolean(
+      session &&
+        !session.revokedAt &&
+        session.expiresAt.getTime() > Date.now() &&
+        session.user.status === "ACTIVE",
+    );
+  } catch {
+    // A database failure must fail closed: maintenance remains public-only.
+    return false;
+  }
 }
 
 function maintenanceResponse(csp: string): NextResponse {
