@@ -1,0 +1,27 @@
+name: Production smoke tests
+
+on:
+  deployment_status:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: Smoke-test successful production deployment
+    if: >-
+      github.event.deployment_status.state == 'success' &&
+      (github.event.deployment.environment == 'Production' ||
+      github.event.deployment.environment == 'production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    environment: production
+    env:
+      BASE_URL: ${{ github.event.deployment_status.target_url }}
+      RETENTION_JOB_SECRET: ${{ secrets.RETENTION_JOB_SECRET }}
+    steps:
+      - name: Check out smoke-test scripts
+        uses: actions/checkout@v4
+
+      - name: Run production smoke tests
+        run: ./scripts/smoke-production-deployment.sh
