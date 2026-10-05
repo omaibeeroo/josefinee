@@ -14,7 +14,7 @@ export async function middleware(request: NextRequest) {
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https: *.facebook.com *.fbcdn.net *.tiktokcdn.com",
     "media-src 'self' https:",
-    "connect-src 'self' ws: https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://graph.facebook.com https://connect.facebook.net https://analytics.tiktok.com https://*.tiktok.com",
+    `connect-src 'self'${development ? " ws:" : ""} https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://graph.facebook.com https://connect.facebook.net https://analytics.tiktok.com https://*.tiktok.com`,
     "frame-src https://www.facebook.com",
     "object-src 'none'",
     "frame-ancestors 'none'",

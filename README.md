@@ -43,7 +43,7 @@ docker compose up -d postgres
 #    paste its connection string into DATABASE_URL
 
 # 4. Migrate + seed (58 wilayas, 1541 communes, RBAC, demo admin, catalog, CMS)
-npx prisma migrate deploy
+npm run db:deploy
 npx prisma db seed
 
 # 5. Run
@@ -73,6 +73,7 @@ See `.env.example` for the full list. Highlights:
 | Variable | Purpose |
 | -------- | ------- |
 | `DATABASE_URL` | PostgreSQL connection string |
+| `DIRECT_URL` | Optional direct PostgreSQL connection for online index creation when `DATABASE_URL` uses a pooler |
 | `AUTH_SECRET` | 32+ random bytes — sessions, order tokens, 2FA encryption |
 | `STORAGE_DRIVER` | `local` (dev) or `s3` (**required in production**) |
 | `STORAGE_BUCKET/ENDPOINT/ACCESS_KEY/SECRET_KEY/PUBLIC_HOST` | S3-compatible storage |
@@ -229,3 +230,8 @@ Test restores on a staging database before you need them.
 - [ ] Notification providers + analytics IDs
 - [ ] Staff accounts created, demo admin disabled, 2FA enabled
 - [ ] Backups scheduled and restore tested
+
+
+## Safe database deployment
+
+For existing databases, use `npm run db:deploy` rather than invoking `prisma migrate deploy` directly. It verifies and creates the FK lookup indexes with `CREATE INDEX CONCURRENTLY` before Prisma applies migrations; the migration itself uses `IF NOT EXISTS` as a safe fallback. If `DATABASE_URL` points through a transaction pooler, set `DIRECT_URL` to the provider's direct PostgreSQL connection for the online-index step. On a fresh database, the runner skips tables/columns that do not exist yet, and the migration creates the indexes after the schema is established.
