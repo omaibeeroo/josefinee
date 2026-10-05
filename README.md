@@ -258,6 +258,17 @@ malformed-input coverage to the test suite.
 Before deployment, run `npm ci`, `npm run typecheck`, `npm run lint`,
 `npm test`, `npm audit --omit=dev`, and `npm run build`.
 
+### Vercel staging and production
+
+The linked Vercel project is `josefinee-store`. The `staging` branch is the
+Preview/staging source, and `main` is the production source. Vercel Preview
+deployments are enabled for staging. The `Promote staging to production`
+workflow runs only after the all-push `CI/CD` workflow succeeds for staging;
+it verifies that the branch has not advanced since the tested commit, opens or
+reuses a staging-to-main pull request, and enables automatic squash merge.
+Merging `main` then triggers Vercel's linked Git integration to deploy the
+tested commit to the production domains.
+
 ## Scripts
 
 | Command | Purpose |
