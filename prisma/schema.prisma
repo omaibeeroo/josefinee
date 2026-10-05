@@ -294,6 +294,8 @@ model Address {
   commune  Commune  @relation(fields: [communeId], references: [id])
 
   @@index([customerId])
+  @@index([wilayaId])
+  @@index([communeId])
 }
 
 // ===========================================================================
@@ -608,6 +610,7 @@ model InventoryTransaction {
   @@index([variantId])
   @@index([orderId])
   @@index([createdAt])
+  @@index([userId])
 }
 
 // ===========================================================================
@@ -645,6 +648,7 @@ model CartItem {
 
   @@unique([cartId, variantId])
   @@index([cartId])
+  @@index([variantId])
 }
 
 // ===========================================================================
@@ -720,6 +724,9 @@ model Order {
   @@index([createdAt])
   @@index([customerId])
   @@index([riskLevel])
+  @@index([communeId])
+  @@index([couponId])
+  @@index([promotionId])
 }
 
 model OrderItem {
@@ -760,6 +767,7 @@ model OrderStatusHistory {
 
   @@index([orderId])
   @@index([createdAt])
+  @@index([changedByUserId])
 }
 
 // ===========================================================================
@@ -803,6 +811,7 @@ model CouponProduct {
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@id([couponId, productId])
+  @@index([productId])
 }
 
 model CouponCollection {
@@ -813,6 +822,7 @@ model CouponCollection {
   collection Collection @relation(fields: [collectionId], references: [id], onDelete: Cascade)
 
   @@id([couponId, collectionId])
+  @@index([collectionId])
 }
 
 model CouponWilaya {
@@ -823,6 +833,7 @@ model CouponWilaya {
   wilaya Wilaya @relation(fields: [wilayaId], references: [id], onDelete: Cascade)
 
   @@id([couponId, wilayaId])
+  @@index([wilayaId])
 }
 
 model CouponRedemption {
@@ -840,6 +851,7 @@ model CouponRedemption {
 
   @@index([couponId])
   @@index([phone])
+  @@index([customerId])
 }
 
 model Promotion {
@@ -861,6 +873,7 @@ model Promotion {
 
   @@index([isActive])
   @@index([startsAt, endsAt])
+  @@index([collectionId])
 }
 
 model PromotionProduct {
@@ -871,6 +884,7 @@ model PromotionProduct {
   product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@id([promotionId, productId])
+  @@index([productId])
 }
 
 model Review {
@@ -897,6 +911,8 @@ model Review {
   @@unique([productId, customerId])
   @@unique([productId, guestIdentityHash])
   @@index([productId, status])
+  @@index([customerId])
+  @@index([orderId])
 }
 
 model Wishlist {
