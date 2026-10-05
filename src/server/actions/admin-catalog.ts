@@ -8,6 +8,7 @@ import { recordAudit } from "@/lib/audit";
 import { cleanRichText } from "@/lib/sanitize";
 import { setStock } from "@/server/inventory";
 import { flattenZodErrors } from "@/lib/validation/common";
+import { adminId, productStatus, reviewStatus } from "@/lib/validation/admin";
 import {
   categorySchema,
   collectionSchema,
@@ -16,6 +17,7 @@ import {
 } from "@/lib/validation/product";
 import { randomSuffix, slugify } from "@/lib/slug";
 import type { Prisma } from "@prisma/client";
+import { z } from "zod";
 
 /* --------------------------------------------------------------- Products */
 
@@ -456,14 +458,16 @@ export async function saveProductAction(input: ProductInput) {
 
 export async function archiveProductAction(id: string) {
   const actor = await requirePermission("products:delete");
-  const orderItems = await prisma.orderItem.count({ where: { productId: id } });
+  const parsedId = adminId.safeParse(id);
+  if (!parsedId.success) return { ok: false as const, error: "Invalid product ID." };
+  const orderItems = await prisma.orderItem.count({ where: { productId: parsedId.data } });
   if (orderItems > 0) {
     await prisma.product.update({
-      where: { id },
+      where: { id: parsedId.data },
       data: { status: "ARCHIVED", archivedAt: new Date() },
     });
   } else {
-    await prisma.product.delete({ where: { id } });
+    await prisma.product.delete({ where: { id: parsedId.data } });
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -477,14 +481,19 @@ export async function archiveProductAction(id: string) {
 
 export async function setProductStatusAction(id: string, status: "DRAFT" | "ACTIVE" | "ARCHIVED") {
   const actor = await requirePermission("products:write");
-  const current = await prisma.product.findUnique({ where: { id }, select: { status: true } });
+  const parsedId = adminId.safeParse(id);
+  const parsedStatus = productStatus.safeParse(status);
+  if (!parsedId.success || !parsedStatus.success) {
+    return { ok: false as const, error: "Invalid product status update." };
+  }
+  const current = await prisma.product.findUnique({ where: { id: parsedId.data }, select: { status: true } });
   if (!current) return { ok: false as const, error: "Product not found." };
   await prisma.product.update({
-    where: { id },
+    where: { id: parsedId.data },
     data: {
-      status,
-      archivedAt: status === "ARCHIVED" ? new Date() : null,
-      publishedAt: status === "ACTIVE" && current.status !== "ACTIVE" ? new Date() : undefined,
+      status: parsedStatus.data,
+      archivedAt: parsedStatus.data === "ARCHIVED" ? new Date() : null,
+      publishedAt: parsedStatus.data === "ACTIVE" && current.status !== "ACTIVE" ? new Date() : undefined,
     },
   });
   await recordAudit({
@@ -688,8 +697,10 @@ export async function deleteCollectionAction(id: string) {
 
 export async function listReviewsAdmin(status?: string) {
   await requirePermission("reviews:moderate");
+  const parsedStatus = status ? z.enum(["PENDING", "APPROVED", "REJECTED"]).safeParse(status) : null;
+  if (parsedStatus && !parsedStatus.success) return [];
   return prisma.review.findMany({
-    where: status ? { status: status as "PENDING" | "APPROVED" | "REJECTED" } : {},
+    where: parsedStatus?.success ? { status: parsedStatus.data } : {},
     orderBy: { createdAt: "desc" },
     take: 100,
     include: { product: { select: { name: true, slug: true } } },
@@ -711,7 +722,12 @@ async function recomputeRating(productId: string) {
 
 export async function moderateReviewAction(id: string, status: "APPROVED" | "REJECTED") {
   const actor = await requirePermission("reviews:moderate");
-  const review = await prisma.review.update({ where: { id }, data: { status } });
+  const parsedId = adminId.safeParse(id);
+  const parsedStatus = reviewStatus.safeParse(status);
+  if (!parsedId.success || !parsedStatus.success) {
+    return { ok: false as const, error: "Invalid review moderation request." };
+  }
+  const review = await prisma.review.update({ where: { id: parsedId.data }, data: { status: parsedStatus.data } });
   await recomputeRating(review.productId);
   await recordAudit({
     actorUserId: actor.id,
@@ -727,9 +743,11 @@ export async function moderateReviewAction(id: string, status: "APPROVED" | "REJ
 
 export async function deleteReviewAction(id: string) {
   const actor = await requirePermission("reviews:moderate");
-  const review = await prisma.review.findUnique({ where: { id } });
+  const parsedId = adminId.safeParse(id);
+  if (!parsedId.success) return { ok: false as const, error: "Invalid review ID." };
+  const review = await prisma.review.findUnique({ where: { id: parsedId.data } });
   if (!review) return { ok: false as const, error: "Review not found." };
-  await prisma.review.delete({ where: { id } });
+  await prisma.review.delete({ where: { id: parsedId.data } });
   await recomputeRating(review.productId);
   await recordAudit({
     actorUserId: actor.id,

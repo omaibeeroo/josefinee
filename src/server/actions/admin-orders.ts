@@ -10,6 +10,7 @@ import { sendOrderStatusUpdate, sendShippingNotification } from "@/lib/notificat
 import { ORDER_STATUS_LABELS } from "@/lib/constants";
 import type { OrderStatus, Prisma } from "@prisma/client";
 import { z } from "zod";
+import { adminId, adminPage, adminSearch, orderStatus } from "@/lib/validation/admin";
 
 const PAGE_SIZE = 20;
 
@@ -17,23 +18,36 @@ import { allowedNextStatuses, type OrderFilters } from "@/server/order-transitio
 
 export async function listOrders(filters: OrderFilters) {
   await requirePermission("orders:read");
-  const page = Math.max(1, filters.page ?? 1);
+  const parsed = z
+    .object({
+      status: orderStatus.optional(),
+      wilayaId: adminId.optional(),
+      risk: z.enum(["LOW", "MEDIUM", "HIGH"]).optional(),
+      search: adminSearch,
+      from: z.string().datetime().optional(),
+      to: z.string().datetime().optional(),
+      page: adminPage,
+    })
+    .safeParse(filters);
+  if (!parsed.success) return { items: [], total: 0, page: 1, totalPages: 1 };
+  const safeFilters = parsed.data;
+  const page = safeFilters.page;
 
   const where: Prisma.OrderWhereInput = {};
-  if (filters.status) where.status = filters.status as OrderStatus;
-  if (filters.wilayaId) where.wilayaId = filters.wilayaId;
-  if (filters.risk) where.riskLevel = filters.risk as "LOW" | "MEDIUM" | "HIGH";
-  if (filters.from || filters.to) {
+  if (safeFilters.status) where.status = safeFilters.status as OrderStatus;
+  if (safeFilters.wilayaId) where.wilayaId = safeFilters.wilayaId;
+  if (safeFilters.risk) where.riskLevel = safeFilters.risk;
+  if (safeFilters.from || safeFilters.to) {
     where.createdAt = {};
-    if (filters.from) where.createdAt.gte = new Date(filters.from);
-    if (filters.to) {
-      const to = new Date(filters.to);
+    if (safeFilters.from) where.createdAt.gte = new Date(safeFilters.from);
+    if (safeFilters.to) {
+      const to = new Date(safeFilters.to);
       to.setHours(23, 59, 59, 999);
       where.createdAt.lte = to;
     }
   }
-  if (filters.search) {
-    const term = filters.search.trim();
+  if (safeFilters.search) {
+    const term = safeFilters.search;
     where.OR = [
       { orderNumber: { contains: term, mode: "insensitive" } },
       { phone: { contains: term } },
@@ -72,8 +86,10 @@ export async function listOrders(filters: OrderFilters) {
 
 export async function getAdminOrder(id: string) {
   await requirePermission("orders:read");
+  const parsedId = adminId.safeParse(id);
+  if (!parsedId.success) throw new AppError("INVALID_INPUT", "Invalid order ID.", 400);
   const order = await prisma.order.findUnique({
-    where: { id },
+    where: { id: parsedId.data },
     include: {
       items: true,
       wilaya: { select: { name: true, code: true } },
@@ -103,7 +119,7 @@ export async function changeOrderStatusAction(
   const actor = await requirePermission("orders:write");
   const parsedInput = z
     .object({
-      orderId: z.string().min(1),
+      orderId: adminId,
       status: z.enum([
         "PENDING",
         "CONFIRMED",
@@ -192,6 +208,7 @@ export async function changeOrderStatusAction(
           orderNumber: order.orderNumber,
           firstName: order.firstName,
           total: order.total,
+          idempotencyKey: `order-status:${orderId}:${status}`,
         }).catch(() => undefined);
       } else {
         await sendOrderStatusUpdate({
@@ -203,6 +220,7 @@ export async function changeOrderStatusAction(
           total: order.total,
           status: label,
           note,
+          idempotencyKey: `order-status:${orderId}:${status}`,
         }).catch(() => undefined);
       }
     }
@@ -226,9 +244,11 @@ export async function changeOrderStatusAction(
 
 export async function updateAdminNotesAction(orderId: string, notes: string) {
   const actor = await requirePermission("orders:write");
+  const parsed = z.object({ orderId: adminId, notes: z.string().max(4000) }).safeParse({ orderId, notes });
+  if (!parsed.success) return { ok: false as const, error: "Invalid order note." };
   await prisma.order.update({
-    where: { id: orderId },
-    data: { adminNotes: notes.slice(0, 4000) || null },
+    where: { id: parsed.data.orderId },
+    data: { adminNotes: parsed.data.notes.trim() || null },
   });
   await recordAudit({
     actorUserId: actor.id,

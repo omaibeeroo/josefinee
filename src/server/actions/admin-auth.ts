@@ -23,6 +23,10 @@ import {
 } from "@/lib/auth/totp";
 import { getSettings } from "@/lib/settings";
 import { z } from "zod";
+import { adminId, userStatus } from "@/lib/validation/admin";
+
+const ADMIN_LOGIN_FAILURE_LIMIT = 5;
+const ADMIN_LOCKOUT_MS = 15 * 60_000;
 
 function redirectIfPasswordChangeRequired(mustChangePassword: boolean): void {
   if (mustChangePassword) redirect("/admin/first-login");
@@ -68,10 +72,23 @@ export async function adminLoginAction(input: { email: string; password: string;
     : false;
 
   if (!valid) {
-    await prisma.user.update({
-      where: { id: user.id },
-      data: { failedLoginCount: { increment: 1 } },
-    });
+    const lockedUntil = new Date(Date.now() + ADMIN_LOCKOUT_MS);
+    await prisma.$executeRaw`
+      UPDATE "User"
+      SET
+        "failedLoginCount" = "failedLoginCount" + 1,
+        "status" = CASE
+          WHEN "failedLoginCount" + 1 >= ${ADMIN_LOGIN_FAILURE_LIMIT}
+            THEN 'LOCKED'::"UserStatus"
+          ELSE "status"
+        END,
+        "lockedUntil" = CASE
+          WHEN "failedLoginCount" + 1 >= ${ADMIN_LOGIN_FAILURE_LIMIT}
+            THEN ${lockedUntil}
+          ELSE "lockedUntil"
+        END
+      WHERE "id" = ${user.id} AND "status" = 'ACTIVE'::"UserStatus"
+    `;
     await recordAudit({
       actorType: "SYSTEM",
       actorUserId: null,
@@ -363,46 +380,49 @@ export async function createUserAction(input: z.infer<typeof createUserSchema>) 
 
 export async function setUserStatusAction(userId: string, status: "ACTIVE" | "DISABLED") {
   const actor = await requirePermission("users:manage");
-  if (actor.id === userId)
+  const parsed = z.object({ userId: adminId, status: userStatus }).safeParse({ userId, status });
+  if (!parsed.success) return { ok: false as const, error: "Invalid user status update." };
+  if (actor.id === parsed.data.userId)
     return { ok: false as const, error: "You cannot disable your own account." };
   await prisma.user.update({
-    where: { id: userId },
-    data: { status, failedLoginCount: 0, lockedUntil: null },
+    where: { id: parsed.data.userId },
+    data: { status: parsed.data.status, failedLoginCount: 0, lockedUntil: null },
   });
-  await prisma.adminSession.updateMany({ where: { userId }, data: { revokedAt: new Date() } });
+  await prisma.adminSession.updateMany({ where: { userId: parsed.data.userId }, data: { revokedAt: new Date() } });
   await recordAudit({
     actorUserId: actor.id,
     action: "USER_STATUS_CHANGED",
     resource: "User",
-    resourceId: userId,
-    metadata: { status },
+    resourceId: parsed.data.userId,
+    metadata: { status: parsed.data.status },
   });
   return { ok: true as const };
 }
 
 export async function resetUserPasswordAction(userId: string, password: string) {
   const actor = await requirePermission("users:manage");
-  if (!isStrongPassword(password)) {
+  const parsed = z.object({ userId: adminId, password: z.string().max(200) }).safeParse({ userId, password });
+  if (!parsed.success || !isStrongPassword(parsed.data.password)) {
     return {
       ok: false as const,
       error: "Password must be 10+ chars with mixed case and a number.",
     };
   }
   await prisma.user.update({
-    where: { id: userId },
+    where: { id: parsed.data.userId },
     data: {
-      passwordHash: await hashPassword(password),
+      passwordHash: await hashPassword(parsed.data.password),
       mustChangePassword: true,
       failedLoginCount: 0,
       lockedUntil: null,
     },
   });
-  await prisma.adminSession.updateMany({ where: { userId }, data: { revokedAt: new Date() } });
+  await prisma.adminSession.updateMany({ where: { userId: parsed.data.userId }, data: { revokedAt: new Date() } });
   await recordAudit({
     actorUserId: actor.id,
     action: "USER_PASSWORD_RESET",
     resource: "User",
-    resourceId: userId,
+    resourceId: parsed.data.userId,
   });
   return { ok: true as const };
 }
