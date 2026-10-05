@@ -1261,3 +1261,94 @@
     right: -4rem;
   }
 }
+
+/* Product-first refinement: quieter controls, more visual space for the item. */
+@layer components {
+  .product-detail-layout {
+    grid-template-columns: minmax(0, 1.22fr) minmax(21rem, 0.78fr);
+  }
+
+  .product-detail-page::before {
+    opacity: 0.45;
+  }
+
+  .product-detail-page .product-gallery-hero {
+    border-radius: 0.8rem;
+    box-shadow: 0 22px 52px -44px rgb(29 35 43 / 0.55);
+  }
+
+  .product-detail-page .product-purchase-panel {
+    margin-top: 1.25rem;
+    border-top-color: #e6eaee;
+    border-bottom-color: #e6eaee;
+    padding-block: 1rem;
+  }
+
+  .product-detail-page .btn {
+    border-radius: 0.65rem;
+    box-shadow: none;
+  }
+
+  .product-detail-page .btn::before {
+    display: none;
+  }
+
+  .product-detail-page .btn:hover:not(:disabled),
+  .product-detail-page .btn-interactive:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 8px 16px -14px rgb(29 35 43 / 0.6);
+  }
+
+  .product-detail-page .btn-primary {
+    background: #1d232b;
+  }
+
+  .product-detail-page .btn-primary:hover:not(:disabled) {
+    background: #3b4651;
+  }
+
+  .product-detail-page .btn-gold {
+    border: 1px solid #cfd6dc;
+    background: #f1f3f5;
+    color: #1d232b;
+  }
+
+  .product-detail-page .btn-gold:hover:not(:disabled) {
+    border-color: #aeb8c2;
+    background: #e6ebef;
+    color: #1d232b;
+  }
+
+  .product-detail-page .variant-option {
+    border-radius: 0.6rem;
+    background: #fff;
+    box-shadow: none;
+  }
+
+  .product-detail-page .variant-option::after {
+    display: none;
+  }
+
+  .product-detail-page .variant-option:hover:not(:disabled),
+  .product-detail-page .variant-option:focus-visible:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px -12px rgb(29 35 43 / 0.7);
+  }
+
+  .product-detail-page .variant-option-active {
+    background: #1d232b;
+    box-shadow: 0 0 0 2px #c6a7b8;
+    animation: none;
+  }
+
+  .product-detail-page .quantity-selector,
+  .product-detail-page .icon-button {
+    border-radius: 0.6rem;
+  }
+}
+
+@media (max-width: 1023px) {
+  .product-detail-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
