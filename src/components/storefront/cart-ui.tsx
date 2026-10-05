@@ -141,7 +141,7 @@ function CartDrawer() {
         ) : items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
             <p className="font-display text-2xl">Your bag is empty</p>
-            <p className="text-sm text-ink-soft">Discover pieces made to be worn on repeat.</p>
+            <p className="text-sm text-ink-soft">Découvrez des pièces à porter jour après jour.</p>
             <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
               Continue shopping
             </Button>

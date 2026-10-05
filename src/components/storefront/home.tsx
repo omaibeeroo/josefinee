@@ -14,7 +14,7 @@ import type { StoreProductCard } from "@/server/catalog";
 export function DiscoveryStrip() {
   const items = [
     { label: "Nouveautés", detail: "Les dernières pièces", href: "/collections/new-in" },
-    { label: "Bestsellers", detail: "Les favoris du moment", href: "/collections/best-sellers" },
+    { label: "Meilleures ventes", detail: "Les favoris du moment", href: "/collections/best-sellers" },
     { label: "Livraison", detail: "Partout en Algérie", href: "/pages/shipping" },
   ];
 

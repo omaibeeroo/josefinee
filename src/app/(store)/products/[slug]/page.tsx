@@ -21,6 +21,7 @@ import { PixelEvent } from "@/components/pixels";
 import { ReviewForm } from "./reviews";
 import { serializeForInlineJsonScript } from "@/lib/script-data";
 import { cleanRichText } from "@/lib/sanitize";
+import { formatDA } from "@/lib/money";
 
 const getCachedProductBySlug = cache((slug: string) => getProductBySlug(slug));
 
@@ -205,9 +206,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               role="status"
             >
               {promotion.type === "PERCENTAGE"
-                ? `${promotion.value}% off`
-                : `${promotion.value} DA off`}{" "}
-              with {promotion.name} — applied automatically at checkout
+                ? `${promotion.value} % de réduction`
+                : `${formatDA(promotion.value)} de réduction`}{" "}
+              avec l’offre «{promotion.name}», appliquée automatiquement lors de la commande.
             </p>
           )}
           {product.shortDescription && (
