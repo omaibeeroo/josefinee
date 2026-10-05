@@ -4,7 +4,17 @@ import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "rea
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { ChevronDown, ChevronRight, Heart, Menu, PackageSearch, Search, ShoppingBag, User, X } from "lucide-react";
+import {
+  ChevronDown,
+  ChevronRight,
+  Heart,
+  Menu,
+  PackageSearch,
+  Search,
+  ShoppingBag,
+  User,
+  X,
+} from "lucide-react";
 import { useCart } from "@/components/storefront/cart-ui";
 import { subscribeNewsletterAction } from "@/server/actions/engagement";
 import { Honeypot, useDialogFocus } from "@/components/ui";
@@ -32,19 +42,42 @@ export type ChromeProps = {
   popularSearches: string[];
 };
 
-function BrandMark({ brandName, logoUrl, onClick }: { brandName: string; logoUrl: string; onClick?: () => void }) {
+function BrandMark({
+  brandName,
+  logoUrl,
+  onClick,
+}: {
+  brandName: string;
+  logoUrl: string;
+  onClick?: () => void;
+}) {
   return (
-    <Link href="/" onClick={onClick} className="inline-flex items-center gap-2 transition-transform duration-300 hover:scale-[1.02]" aria-label={`Accueil ${brandName}`}>
+    <Link
+      href="/"
+      onClick={onClick}
+      className="inline-flex items-center gap-2 transition-transform duration-300 hover:scale-[1.02]"
+      aria-label={`Accueil ${brandName}`}
+    >
       {logoUrl ? (
         <Image src={logoUrl} alt={brandName} width={120} height={36} className="h-9 w-auto" />
       ) : (
-        <span className="font-display text-[1.7rem] font-medium tracking-[0.32em]">{brandName}</span>
+        <span className="font-display text-[1.7rem] font-medium tracking-[0.32em]">
+          {brandName}
+        </span>
       )}
     </Link>
   );
 }
 
-function DesktopDropdown({ label, href, children }: { label: string; href: string; children: ReactNode }) {
+function DesktopDropdown({
+  label,
+  href,
+  children,
+}: {
+  label: string;
+  href: string;
+  children: ReactNode;
+}) {
   return (
     <div className="group relative">
       <Link
@@ -100,7 +133,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
   return (
     <>
       {announcement && (
-        <div className="bg-ink text-ivory">
+        <div className="announcement-bar">
           <Link
             href={announcement.href}
             className="mx-auto flex max-w-7xl items-center justify-center px-4 py-2 text-center text-[0.68rem] font-medium uppercase tracking-[0.2em]"
@@ -120,7 +153,10 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         <div className="container-luxe hidden items-center justify-between gap-6 lg:grid lg:grid-cols-[1fr_auto_1fr]">
           <BrandMark brandName={brandName} logoUrl={props.logoUrl} />
           <nav aria-label="Navigation principale" className="flex items-center gap-7">
-            <Link className="nav-link py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark" href="/shop">
+            <Link
+              className="nav-link py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark"
+              href="/shop"
+            >
               Boutique
             </Link>
             {jewelry && (
@@ -152,7 +188,10 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
               </DesktopDropdown>
             )}
             {clothes && (
-              <Link className="nav-link py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark" href={`/categories/${clothes.slug}`}>
+              <Link
+                className="nav-link py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark"
+                href={`/categories/${clothes.slug}`}
+              >
                 {clothes.name}
               </Link>
             )}
@@ -183,13 +222,26 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             </Link>
           </nav>
           <div className="flex items-center justify-end gap-1">
-            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Rechercher" className="icon-button p-2.5 hover:text-gold-dark">
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Rechercher"
+              className="icon-button p-2.5 hover:text-gold-dark"
+            >
               <Search size={19} strokeWidth={1.75} />
             </button>
-            <Link href="/account" aria-label="Mon compte" className="icon-button p-2.5 hover:text-gold-dark">
+            <Link
+              href="/account"
+              aria-label="Mon compte"
+              className="icon-button p-2.5 hover:text-gold-dark"
+            >
               <User size={19} strokeWidth={1.75} />
             </Link>
-            <Link href="/wishlist" aria-label="Liste d’envies" className="icon-button p-2.5 hover:text-gold-dark">
+            <Link
+              href="/wishlist"
+              aria-label="Liste d’envies"
+              className="icon-button p-2.5 hover:text-gold-dark"
+            >
               <Heart size={19} strokeWidth={1.75} />
             </Link>
             <button
@@ -222,7 +274,12 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             <BrandMark brandName={brandName} logoUrl={props.logoUrl} />
           </div>
           <div className="flex items-center">
-            <button type="button" onClick={() => setSearchOpen(true)} aria-label="Rechercher" className="p-2.5">
+            <button
+              type="button"
+              onClick={() => setSearchOpen(true)}
+              aria-label="Rechercher"
+              className="p-2.5"
+            >
               <Search size={20} strokeWidth={1.75} />
             </button>
             <button
@@ -292,9 +349,22 @@ function MobileMenu({
     "animate-menu-item flex items-center justify-between border-b hairline py-[1.1rem] text-[0.8125rem] font-medium uppercase tracking-[0.18em]";
 
   return (
-    <div className="fixed inset-0 z-[60] lg:hidden" role="dialog" aria-modal="true" aria-label="Menu">
-      <button aria-label="Fermer le menu" onClick={onClose} className="absolute inset-0 animate-fade-in bg-ink/55 backdrop-blur-[2px]" />
-      <aside ref={panelRef} tabIndex={-1} className="absolute left-0 top-0 flex h-full w-[86%] max-w-sm animate-slide-in-left flex-col bg-ivory shadow-drawer">
+    <div
+      className="fixed inset-0 z-[60] lg:hidden"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Menu"
+    >
+      <button
+        aria-label="Fermer le menu"
+        onClick={onClose}
+        className="absolute inset-0 animate-fade-in bg-ink/55 backdrop-blur-[2px]"
+      />
+      <aside
+        ref={panelRef}
+        tabIndex={-1}
+        className="absolute left-0 top-0 flex h-full w-[86%] max-w-sm animate-slide-in-left flex-col bg-ivory shadow-drawer"
+      >
         <div className="flex items-center justify-between border-b hairline px-6 pb-5 pt-6">
           <div>
             <p className="font-display text-[1.35rem] leading-none tracking-[0.3em]">{brandName}</p>
@@ -316,12 +386,21 @@ function MobileMenu({
             Boutique
             <ChevronRight size={15} className="text-ink-muted" />
           </Link>
-          <Link href="/collections/new-in" onClick={onClose} className={itemClass} style={stagger(1)}>
+          <Link
+            href="/collections/new-in"
+            onClick={onClose}
+            className={itemClass}
+            style={stagger(1)}
+          >
             Nouveautés
             <ChevronRight size={15} className="text-ink-muted" />
           </Link>
           {categories.map((category, index) => (
-            <div key={category.slug} className="animate-menu-item border-b hairline" style={stagger(index + 2)}>
+            <div
+              key={category.slug}
+              className="animate-menu-item border-b hairline"
+              style={stagger(index + 2)}
+            >
               <div className="flex items-center justify-between">
                 <Link
                   href={`/categories/${category.slug}`}
@@ -340,7 +419,10 @@ function MobileMenu({
                   >
                     <ChevronDown
                       size={15}
-                      className={cn("text-ink-muted transition-transform duration-300", expanded === category.slug && "rotate-180")}
+                      className={cn(
+                        "text-ink-muted transition-transform duration-300",
+                        expanded === category.slug && "rotate-180",
+                      )}
                     />
                   </button>
                 ) : (
@@ -364,9 +446,16 @@ function MobileMenu({
               )}
             </div>
           ))}
-          <div className="animate-menu-item border-b hairline" style={stagger(categories.length + 2)}>
+          <div
+            className="animate-menu-item border-b hairline"
+            style={stagger(categories.length + 2)}
+          >
             <div className="flex items-center justify-between">
-              <Link href="/collections" onClick={onClose} className="flex-1 py-[1.1rem] text-[0.8125rem] font-medium uppercase tracking-[0.18em]">
+              <Link
+                href="/collections"
+                onClick={onClose}
+                className="flex-1 py-[1.1rem] text-[0.8125rem] font-medium uppercase tracking-[0.18em]"
+              >
                 Collections
               </Link>
               <button
@@ -376,7 +465,13 @@ function MobileMenu({
                 onClick={() => setExpandedCollections(!expandedCollections)}
                 className="flex h-10 w-10 items-center justify-center"
               >
-                <ChevronDown size={15} className={cn("text-ink-muted transition-transform duration-300", expandedCollections && "rotate-180")} />
+                <ChevronDown
+                  size={15}
+                  className={cn(
+                    "text-ink-muted transition-transform duration-300",
+                    expandedCollections && "rotate-180",
+                  )}
+                />
               </button>
             </div>
             {expandedCollections && (
@@ -394,12 +489,19 @@ function MobileMenu({
               </div>
             )}
           </div>
-          <Link href="/collections/sale" onClick={onClose} className={itemClass} style={stagger(categories.length + 3)}>
+          <Link
+            href="/collections/sale"
+            onClick={onClose}
+            className={itemClass}
+            style={stagger(categories.length + 3)}
+          >
             <span className="text-sale">Promotions</span>
             <ChevronRight size={15} className="text-sale/60" />
           </Link>
 
-          <p className="mb-1 mt-6 text-[0.625rem] uppercase tracking-[0.28em] text-ink-muted">Mon espace</p>
+          <p className="mb-1 mt-6 text-[0.625rem] uppercase tracking-[0.28em] text-ink-muted">
+            Mon espace
+          </p>
           {[
             { href: "/account", label: "Mon compte", Icon: User },
             { href: "/wishlist", label: "Liste d’envies", Icon: Heart },
@@ -418,8 +520,15 @@ function MobileMenu({
         </nav>
         {supportPhone && (
           <div className="border-t hairline bg-cream/60 px-6 py-4">
-            <p className="text-[0.625rem] uppercase tracking-[0.24em] text-ink-muted">Besoin d’aide ?</p>
-            <a href={`tel:${supportPhone.replace(/\s/g, "")}`} className="mt-1 block text-sm font-medium">{supportPhone}</a>
+            <p className="text-[0.625rem] uppercase tracking-[0.24em] text-ink-muted">
+              Besoin d’aide ?
+            </p>
+            <a
+              href={`tel:${supportPhone.replace(/\s/g, "")}`}
+              className="mt-1 block text-sm font-medium"
+            >
+              {supportPhone}
+            </a>
           </div>
         )}
       </aside>
@@ -456,12 +565,25 @@ function SearchOverlay({
 
   return (
     <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Recherche">
-      <button aria-label="Fermer la recherche" onClick={onClose} className="absolute inset-0 bg-ink/50" />
-      <div ref={panelRef} tabIndex={-1} className="absolute inset-x-0 top-0 bg-ivory px-4 py-6 shadow-card animate-slide-up md:px-8 md:py-10">
+      <button
+        aria-label="Fermer la recherche"
+        onClick={onClose}
+        className="absolute inset-0 bg-ink/50"
+      />
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        className="absolute inset-x-0 top-0 bg-ivory px-4 py-6 shadow-card animate-slide-up md:px-8 md:py-10"
+      >
         <div className="mx-auto max-w-2xl">
           <div className="mb-5 flex items-center justify-between">
             <p className="eyebrow">Rechercher dans la boutique</p>
-            <button type="button" onClick={onClose} aria-label="Fermer la recherche" className="p-1">
+            <button
+              type="button"
+              onClick={onClose}
+              aria-label="Fermer la recherche"
+              className="p-1"
+            >
               <X size={22} />
             </button>
           </div>
@@ -483,7 +605,9 @@ function SearchOverlay({
           </form>
           {popularSearches.length > 0 && (
             <div className="mt-5">
-              <p className="mb-2 text-xs uppercase tracking-[0.16em] text-ink-muted">Recherches populaires</p>
+              <p className="mb-2 text-xs uppercase tracking-[0.16em] text-ink-muted">
+                Recherches populaires
+              </p>
               <div className="flex flex-wrap gap-2">
                 {popularSearches.map((term) => (
                   <Link
@@ -530,7 +654,7 @@ function NewsletterMini() {
     <form onSubmit={submit} className="relative mt-4">
       <Honeypot value={website} onChange={setWebsite} />
       <label htmlFor="footer-newsletter" className="field-label !text-ivory/70">
-          Newsletter
+        Newsletter
       </label>
       <div className="flex gap-2">
         <input
@@ -571,54 +695,108 @@ function SiteFooter(props: ChromeProps) {
           {socialLinks.length > 0 && (
             <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm uppercase tracking-[0.14em]">
               {socialLinks.map((social) => (
-                <a key={social.label} href={social.href} target="_blank" rel="noopener noreferrer" className="text-ivory/80 hover:text-ivory">
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-ivory/80 hover:text-ivory"
+                >
                   {social.label}
                 </a>
               ))}
-            {props.social.whatsapp && (
-              <a
-                href={`https://wa.me/${props.social.whatsapp.replace(/\D/g, "")}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-ivory/80 hover:text-ivory"
-              >
-                WhatsApp
-              </a>
-            )}
+              {props.social.whatsapp && (
+                <a
+                  href={`https://wa.me/${props.social.whatsapp.replace(/\D/g, "")}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-ivory/80 hover:text-ivory"
+                >
+                  WhatsApp
+                </a>
+              )}
             </div>
           )}
         </div>
         <nav aria-label="Boutique">
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">Boutique</p>
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">
+            Boutique
+          </p>
           <ul className="space-y-2.5 text-[0.9375rem]">
-            <li><Link href="/shop" className="text-ivory/85 hover:text-ivory">Voir la boutique</Link></li>
+            <li>
+              <Link href="/shop" className="text-ivory/85 hover:text-ivory">
+                Voir la boutique
+              </Link>
+            </li>
             {props.categories.slice(0, 4).map((category) => (
               <li key={category.slug}>
-                <Link href={`/categories/${category.slug}`} className="text-ivory/85 hover:text-ivory">
+                <Link
+                  href={`/categories/${category.slug}`}
+                  className="text-ivory/85 hover:text-ivory"
+                >
                   {category.name}
                 </Link>
               </li>
             ))}
-            <li><Link href="/collections/new-in" className="text-ivory/85 hover:text-ivory">Nouveautés</Link></li>
+            <li>
+              <Link href="/collections/new-in" className="text-ivory/85 hover:text-ivory">
+                Nouveautés
+              </Link>
+            </li>
           </ul>
         </nav>
         <nav aria-label="Service client">
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">Service client</p>
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">
+            Service client
+          </p>
           <ul className="space-y-2.5 text-[0.9375rem]">
-            <li><Link href="/contact" className="text-ivory/85 hover:text-ivory">Contact</Link></li>
-            <li><Link href="/pages/shipping" className="text-ivory/85 hover:text-ivory">Livraison</Link></li>
-            <li><Link href="/track" className="text-ivory/85 hover:text-ivory">Suivre une commande</Link></li>
-            <li><Link href="/faq" className="text-ivory/85 hover:text-ivory">Questions fréquentes</Link></li>
-            <li><Link href="/pages/returns" className="text-ivory/85 hover:text-ivory">Retours</Link></li>
+            <li>
+              <Link href="/contact" className="text-ivory/85 hover:text-ivory">
+                Contact
+              </Link>
+            </li>
+            <li>
+              <Link href="/pages/shipping" className="text-ivory/85 hover:text-ivory">
+                Livraison
+              </Link>
+            </li>
+            <li>
+              <Link href="/track" className="text-ivory/85 hover:text-ivory">
+                Suivre une commande
+              </Link>
+            </li>
+            <li>
+              <Link href="/faq" className="text-ivory/85 hover:text-ivory">
+                Questions fréquentes
+              </Link>
+            </li>
+            <li>
+              <Link href="/pages/returns" className="text-ivory/85 hover:text-ivory">
+                Retours
+              </Link>
+            </li>
           </ul>
         </nav>
         <div>
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">Restons en contact</p>
+          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">
+            Restons en contact
+          </p>
           {(props.supportEmail || props.supportPhone) && (
             <p className="text-sm text-ivory/70">
-              {props.supportEmail && <a href={`mailto:${props.supportEmail}`} className="hover:text-ivory">{props.supportEmail}</a>}
+              {props.supportEmail && (
+                <a href={`mailto:${props.supportEmail}`} className="hover:text-ivory">
+                  {props.supportEmail}
+                </a>
+              )}
               {props.supportEmail && props.supportPhone && <br />}
-              {props.supportPhone && <a href={`tel:${props.supportPhone.replace(/\s/g, "")}`} className="hover:text-ivory">{props.supportPhone}</a>}
+              {props.supportPhone && (
+                <a
+                  href={`tel:${props.supportPhone.replace(/\s/g, "")}`}
+                  className="hover:text-ivory"
+                >
+                  {props.supportPhone}
+                </a>
+              )}
             </p>
           )}
           {(props.legalName || props.address) && (
@@ -633,11 +811,17 @@ function SiteFooter(props: ChromeProps) {
       </div>
       <div className="border-t border-white/10">
         <div className="container-luxe flex flex-col items-center justify-between gap-3 py-5 text-xs text-ivory/60 md:flex-row">
-          <p>© {year} {props.brandName}. Tous droits réservés.</p>
+          <p>
+            © {year} {props.brandName}. Tous droits réservés.
+          </p>
           <p className="uppercase tracking-[0.16em]">Paiement à la livraison · 58 wilayas</p>
           <div className="flex gap-4">
-            <Link href="/pages/privacy-policy" className="hover:text-ivory">Confidentialité</Link>
-            <Link href="/pages/terms" className="hover:text-ivory">Conditions</Link>
+            <Link href="/pages/privacy-policy" className="hover:text-ivory">
+              Confidentialité
+            </Link>
+            <Link href="/pages/terms" className="hover:text-ivory">
+              Conditions
+            </Link>
             <button type="button" onClick={openCookieSettings} className="hover:text-ivory">
               Cookies
             </button>
