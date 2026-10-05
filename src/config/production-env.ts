@@ -99,6 +99,32 @@ export function productionEnvironmentIssues(env: Environment = process.env): str
     issues.push("STORAGE_PUBLIC_HOST must contain valid HTTPS hosts without credentials, query strings, or fragments");
   }
 
+  const emailProvider = env.EMAIL_PROVIDER ?? "console";
+  if (!["console", "resend"].includes(emailProvider)) {
+    issues.push("EMAIL_PROVIDER must be resend or console");
+  } else if (emailProvider === "resend") {
+    if (!env.EMAIL_API_KEY?.trim()) issues.push("EMAIL_API_KEY must be configured when EMAIL_PROVIDER is resend");
+    if (!env.EMAIL_FROM?.trim()) issues.push("EMAIL_FROM must be configured when EMAIL_PROVIDER is resend");
+  }
+
+  const smsProvider = env.SMS_PROVIDER ?? "console";
+  if (!["console", "twilio"].includes(smsProvider)) {
+    issues.push("SMS_PROVIDER must be twilio or console");
+  } else if (smsProvider === "twilio") {
+    for (const name of ["SMS_ACCOUNT_SID", "SMS_API_KEY", "SMS_FROM"]) {
+      if (!env[name]?.trim()) issues.push(`${name} must be configured when SMS_PROVIDER is twilio`);
+    }
+  }
+
+  const whatsappProvider = env.WHATSAPP_PROVIDER ?? "console";
+  if (!["console", "meta"].includes(whatsappProvider)) {
+    issues.push("WHATSAPP_PROVIDER must be meta or console");
+  } else if (whatsappProvider === "meta") {
+    for (const name of ["WHATSAPP_API_KEY", "WHATSAPP_PHONE_NUMBER_ID"]) {
+      if (!env[name]?.trim()) issues.push(`${name} must be configured when WHATSAPP_PROVIDER is meta`);
+    }
+  }
+
   return issues;
 }
 
