@@ -6,7 +6,16 @@ import { toUserMessage } from "@/lib/errors";
 import { requirePermission } from "@/lib/auth/rbac";
 import { recordAudit } from "@/lib/audit";
 import { flattenZodErrors } from "@/lib/validation/common";
-import { adminId, customerStatus, messageStatus } from "@/lib/validation/admin";
+import {
+  adminId,
+  auditListParams,
+  customerNotes,
+  customerStatus,
+  deliveryCsv,
+  messageStatus,
+  settingsKey,
+  settingsValue,
+} from "@/lib/validation/admin";
 import { z } from "zod";
 import type { DeliveryMethod, Prisma } from "@prisma/client";
 
@@ -211,11 +220,13 @@ export async function saveCouponAction(input: z.infer<typeof couponSchema>) {
 
 export async function deleteCouponAction(id: string) {
   const actor = await requirePermission("coupons:write");
-  const redemptions = await prisma.couponRedemption.count({ where: { couponId: id } });
+  const parsedId = adminId.safeParse(id);
+  if (!parsedId.success) return { ok: false as const, error: "Invalid coupon ID." };
+  const redemptions = await prisma.couponRedemption.count({ where: { couponId: parsedId.data } });
   if (redemptions > 0) {
-    await prisma.coupon.update({ where: { id }, data: { isActive: false } });
+    await prisma.coupon.update({ where: { id: parsedId.data }, data: { isActive: false } });
   } else {
-    await prisma.coupon.delete({ where: { id } });
+    await prisma.coupon.delete({ where: { id: parsedId.data } });
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -290,8 +301,10 @@ export async function saveDeliveryRateAction(input: z.infer<typeof rateSchema>) 
 
 export async function importDeliveryCsvAction(csv: string) {
   const actor = await requirePermission("delivery:write");
-  if (typeof csv !== "string" || Buffer.byteLength(csv, "utf8") > 1_000_000)
+  const parsedCsv = deliveryCsv.safeParse(csv);
+  if (!parsedCsv.success || Buffer.byteLength(parsedCsv.data, "utf8") > 1_000_000)
     return { ok: false as const, error: "CSV is too large." };
+  csv = parsedCsv.data;
   // Columns: wilaya_code,method,price,eta_min,eta_max,active
   const lines = csv
     .split(/\r?\n/)
@@ -484,9 +497,11 @@ export async function setCustomerStatusAction(id: string, status: "ACTIVE" | "BL
 
 export async function updateCustomerNotesAction(id: string, notes: string) {
   const actor = await requirePermission("customers:write");
+  const parsed = z.object({ id: adminId, notes: customerNotes }).safeParse({ id, notes });
+  if (!parsed.success) return { ok: false as const, error: "Invalid customer notes." };
   await prisma.customer.update({
-    where: { id },
-    data: { riskNotes: notes.slice(0, 2000) || null },
+    where: { id: parsed.data.id },
+    data: { riskNotes: parsed.data.notes.trim() || null },
   });
   await recordAudit({
     actorUserId: actor.id,
@@ -723,7 +738,9 @@ export async function saveAnnouncementAction(input: z.infer<typeof announcementS
 
 export async function deleteAnnouncementAction(id: string) {
   const actor = await requirePermission("content:write");
-  await prisma.announcement.delete({ where: { id } });
+  const parsedId = adminId.safeParse(id);
+  if (!parsedId.success) return { ok: false as const, error: "Invalid announcement ID." };
+  await prisma.announcement.delete({ where: { id: parsedId.data } });
   await recordAudit({
     actorUserId: actor.id,
     action: "ANNOUNCEMENT_DELETED",
@@ -739,19 +756,17 @@ export async function deleteAnnouncementAction(id: string) {
 export async function saveSettingsAction(key: string, value: unknown) {
   const actor = await requirePermission("settings:write");
   const { DEFAULT_SETTINGS, updateSettingsSection } = await import("@/lib/settings");
-  if (!Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, key)) {
-    return { ok: false as const, error: "Unknown settings section." };
-  }
-  if (!value || typeof value !== "object") {
+  const parsed = z.object({ key: settingsKey, value: settingsValue }).safeParse({ key, value });
+  if (!parsed.success || !Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, parsed.data.key)) {
     return { ok: false as const, error: "Invalid settings value." };
   }
-  const section = key as keyof typeof DEFAULT_SETTINGS;
-  await updateSettingsSection(section, value as never);
+  const section = parsed.data.key as keyof typeof DEFAULT_SETTINGS;
+  await updateSettingsSection(section, parsed.data.value as never);
   await recordAudit({
     actorUserId: actor.id,
     action: "SETTINGS_UPDATED",
     resource: "Setting",
-    resourceId: key,
+    resourceId: parsed.data.key,
   });
   revalidatePath("/");
   revalidatePath("/admin/settings");
@@ -887,11 +902,13 @@ export async function savePromotionAction(input: z.infer<typeof promotionSchema>
 
 export async function deletePromotionAction(id: string) {
   const actor = await requirePermission("promotions:write");
-  const orders = await prisma.order.count({ where: { promotionId: id } });
+  const parsedId = adminId.safeParse(id);
+  if (!parsedId.success) return { ok: false as const, error: "Invalid promotion ID." };
+  const orders = await prisma.order.count({ where: { promotionId: parsedId.data } });
   if (orders > 0) {
-    await prisma.promotion.update({ where: { id }, data: { isActive: false } });
+    await prisma.promotion.update({ where: { id: parsedId.data }, data: { isActive: false } });
   } else {
-    await prisma.promotion.delete({ where: { id } });
+    await prisma.promotion.delete({ where: { id: parsedId.data } });
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -907,14 +924,17 @@ export async function deletePromotionAction(id: string) {
 
 export async function listAuditLogs(params: { action?: string; search?: string; page?: number }) {
   await requirePermission("audit:read");
-  const page = Math.min(500, Math.max(1, Number.isInteger(params.page) ? (params.page ?? 1) : 1));
+  const parsed = auditListParams.safeParse(params);
+  if (!parsed.success) return { items: [], total: 0, page: 1, totalPages: 1 };
+  const safeParams = parsed.data;
+  const page = safeParams.page;
   const pageSize = 30;
   const where: Prisma.AuditLogWhereInput = {};
-  if (params.action) where.action = params.action;
-  if (params.search) {
+  if (safeParams.action) where.action = safeParams.action;
+  if (safeParams.search) {
     where.OR = [
-      { resourceId: { contains: params.search } },
-      { action: { contains: params.search, mode: "insensitive" } },
+      { resourceId: { contains: safeParams.search } },
+      { action: { contains: safeParams.search, mode: "insensitive" } },
     ];
   }
   const [items, total] = await Promise.all([
