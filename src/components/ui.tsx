@@ -368,7 +368,7 @@ export function Modal({
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto bg-ivory p-6 shadow-card animate-slide-up sm:p-8"
+        className="relative max-h-[90vh] max-h-[90svh] w-full max-w-lg overflow-y-auto overscroll-contain bg-ivory p-6 shadow-card animate-slide-up sm:p-8"
       >
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 id={headingId} className="font-display text-2xl">
@@ -422,7 +422,7 @@ export function Drawer({
         ref={panelRef}
         tabIndex={-1}
         className={cn(
-          "absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-ivory shadow-drawer animate-slide-in-right",
+          "absolute right-0 top-0 flex h-full min-h-[100svh] w-full max-w-md flex-col overscroll-contain bg-ivory shadow-drawer animate-slide-in-right",
           className,
         )}
       >
