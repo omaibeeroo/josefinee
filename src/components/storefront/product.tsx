@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Heart, Plus } from "lucide-react";
@@ -507,6 +507,7 @@ export function ProductGallery({
 }) {
   const [active, setActive] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
+  const [zoomPoint, setZoomPoint] = useState({ x: 50, y: 50 });
   const current = images[Math.min(active, images.length - 1)];
 
   return (
@@ -514,19 +515,35 @@ export function ProductGallery({
       <button
         type="button"
         onClick={() => setFullscreen(true)}
-        className="relative block aspect-[3/4] w-full overflow-hidden bg-cream"
+        onMouseMove={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect();
+          setZoomPoint({
+            x: ((event.clientX - rect.left) / rect.width) * 100,
+            y: ((event.clientY - rect.top) / rect.height) * 100,
+          });
+        }}
+        className="product-gallery-hero group relative block aspect-[3/4] w-full overflow-hidden bg-cream"
         aria-label="Open fullscreen gallery"
       >
-        {current ? (
-          <ProductImage
-            url={current.url}
-            alt={current.alt || name}
-            sizes="(max-width: 768px) 100vw, 50vw"
-            priority
-          />
-        ) : (
-          <ProductImage url={null} alt={name} />
-        )}
+        <div
+          className="product-zoom-frame absolute inset-0"
+          style={{ "--zoom-x": `${zoomPoint.x}%`, "--zoom-y": `${zoomPoint.y}%` } as CSSProperties}
+        >
+          {current ? (
+            <ProductImage
+              url={current.url}
+              alt={current.alt || name}
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority
+              className="product-zoom-image"
+            />
+          ) : (
+            <ProductImage url={null} alt={name} />
+          )}
+        </div>
+        <span className="product-zoom-hint pointer-events-none absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-white/85 px-3 py-2 text-[0.625rem] font-medium uppercase tracking-[0.18em] text-ink-soft opacity-0 backdrop-blur transition-opacity duration-300 group-hover:opacity-100">
+          Survoler pour agrandir
+        </span>
       </button>
       {images.length > 1 && (
         <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
@@ -538,8 +555,8 @@ export function ProductGallery({
               aria-label={`View image ${index + 1}`}
               aria-current={index === active}
               className={cn(
-                "relative h-20 w-16 shrink-0 overflow-hidden bg-cream",
-                index === active && "ring-2 ring-gold ring-offset-2",
+                "product-gallery-thumb relative h-20 w-16 shrink-0 overflow-hidden bg-cream",
+                index === active && "product-gallery-thumb-active ring-2 ring-gold ring-offset-2",
               )}
             >
               <ProductImage url={image.url} alt={image.alt || name} sizes="64px" />
@@ -662,8 +679,8 @@ export function VariantPicker({
                       if (result.variantId) onChange(result.variantId);
                     }}
                     className={cn(
-                      "flex min-h-10 items-center gap-2 border px-4 text-sm transition-colors",
-                      isActive ? "border-ink bg-ink text-ivory" : "hairline bg-white",
+                      "variant-option flex min-h-10 items-center gap-2 border px-4 text-sm",
+                      isActive ? "variant-option-active" : "hairline bg-white",
                       !available && "opacity-40 line-through",
                     )}
                   >

@@ -37,7 +37,8 @@ export async function generateMetadata({
   const settings = await getSettings();
   return {
     title: product.seoTitle || product.name,
-    description: product.seoDescription || product.shortDescription || settings.seo.defaultDescription,
+    description:
+      product.seoDescription || product.shortDescription || settings.seo.defaultDescription,
     alternates: { canonical: `/products/${product.slug}` },
     openGraph: {
       title: product.name,
@@ -59,7 +60,15 @@ async function getReviews(productId: string) {
     return await prisma.review.findMany({
       where: { productId, status: "APPROVED" },
       orderBy: { createdAt: "desc" },
-      select: { id: true, authorName: true, rating: true, title: true, body: true, createdAt: true, isVerifiedPurchase: true },
+      select: {
+        id: true,
+        authorName: true,
+        rating: true,
+        title: true,
+        body: true,
+        createdAt: true,
+        isVerifiedPurchase: true,
+      },
       take: 20,
     });
   } catch {
@@ -75,7 +84,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const [settings, requestHeaders] = await Promise.all([getSettings(), headers()]);
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
   const [related, reviews, promotion] = await Promise.all([
-    getRelatedProducts(product.id, product.category ? await categoryIdOf(product.category.slug) : null),
+    getRelatedProducts(
+      product.id,
+      product.category ? await categoryIdOf(product.category.slug) : null,
+    ),
     getReviews(product.id),
     getProductPromotion(product.id, product.collectionIds),
   ]);
@@ -99,7 +111,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       "@type": "Offer",
       priceCurrency: "DZD",
       price: product.price,
-      availability: product.inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      availability: product.inStock
+        ? "https://schema.org/InStock"
+        : "https://schema.org/OutOfStock",
     },
     ...(product.ratingCount > 0
       ? {
@@ -120,15 +134,29 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   ];
 
   return (
-    <div className="container-luxe py-8 md:py-12">
+    <div className="product-detail-page container-luxe py-8 md:py-12">
       <PixelEvent
         name="ViewContent"
-        params={{ content_ids: [product.id], content_type: "product", value: product.price, currency: "DZD" }}
+        params={{
+          content_ids: [product.id],
+          content_type: "product",
+          value: product.price,
+          currency: "DZD",
+        }}
       />
-      <script nonce={nonce} type="application/ld+json" dangerouslySetInnerHTML={{ __html: serializeForInlineJsonScript(jsonLd) }} />
+      <script
+        nonce={nonce}
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: serializeForInlineJsonScript(jsonLd) }}
+      />
 
-      <nav aria-label="Breadcrumb" className="mb-6 text-xs uppercase tracking-[0.14em] text-ink-muted">
-        <Link href="/" className="hover:text-ink">Home</Link>
+      <nav
+        aria-label="Breadcrumb"
+        className="mb-6 text-xs uppercase tracking-[0.14em] text-ink-muted"
+      >
+        <Link href="/" className="hover:text-ink">
+          Home
+        </Link>
         <span aria-hidden="true"> / </span>
         {product.category ? (
           <>
@@ -138,17 +166,21 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             <span aria-hidden="true"> / </span>
           </>
         ) : null}
-        <span aria-current="page" className="text-ink">{product.name}</span>
+        <span aria-current="page" className="text-ink">
+          {product.name}
+        </span>
       </nav>
 
-      <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
-        <div className="lg:sticky lg:top-24 lg:self-start">
+      <div className="product-detail-layout grid gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(24rem,0.92fr)] lg:gap-16">
+        <div className="product-detail-gallery lg:sticky lg:top-24 lg:self-start">
           <ProductGallery images={product.images} name={product.name} />
         </div>
 
-        <div>
+        <div className="product-detail-info">
           {product.category && <p className="eyebrow mb-3">{product.category.name}</p>}
-          <h1 className="font-display text-4xl font-medium leading-[1.05] tracking-tight md:text-5xl">{product.name}</h1>
+          <h1 className="product-detail-title font-display text-4xl font-medium leading-[1.05] tracking-tight md:text-6xl">
+            {product.name}
+          </h1>
           {product.ratingCount > 0 && (
             <div className="mt-3">
               <Stars value={product.ratingAvg} count={product.ratingCount} />
@@ -158,9 +190,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             {product.inStock ? (
               <>
                 <span className="h-2 w-2 rounded-full bg-success" aria-hidden="true" />
-                <span className="font-medium">
-                  In stock, ready to ship
-                </span>
+                <span className="font-medium">In stock, ready to ship</span>
               </>
             ) : (
               <>
@@ -170,26 +200,44 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             )}
           </p>
           {promotion && (
-            <p className="mt-2 inline-block bg-gold/15 px-3 py-1.5 text-sm font-medium text-gold-dark" role="status">
-              {promotion.type === "PERCENTAGE" ? `${promotion.value}% off` : `${promotion.value} DA off`} with {promotion.name} — applied automatically at checkout
+            <p
+              className="mt-2 inline-block bg-gold/15 px-3 py-1.5 text-sm font-medium text-gold-dark"
+              role="status"
+            >
+              {promotion.type === "PERCENTAGE"
+                ? `${promotion.value}% off`
+                : `${promotion.value} DA off`}{" "}
+              with {promotion.name} — applied automatically at checkout
             </p>
           )}
           {product.shortDescription && (
             <p className="mt-4 leading-relaxed text-ink-soft">{product.shortDescription}</p>
           )}
 
-          <AddToBagPanel product={product} />
+          <div className="product-purchase-panel">
+            <AddToBagPanel product={product} />
+          </div>
 
           <dl className="mt-7 grid grid-cols-1 gap-3 border-t hairline pt-6 text-sm sm:grid-cols-2">
             <div className="flex items-start gap-3">
-              <Banknote size={18} strokeWidth={1.5} className="mt-0.5 shrink-0 text-gold-dark" aria-hidden="true" />
+              <Banknote
+                size={18}
+                strokeWidth={1.5}
+                className="mt-0.5 shrink-0 text-gold-dark"
+                aria-hidden="true"
+              />
               <div>
                 <dt className="font-medium">Cash on delivery</dt>
                 <dd className="text-ink-soft">Pay when your order arrives.</dd>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <Truck size={18} strokeWidth={1.5} className="mt-0.5 shrink-0 text-gold-dark" aria-hidden="true" />
+              <Truck
+                size={18}
+                strokeWidth={1.5}
+                className="mt-0.5 shrink-0 text-gold-dark"
+                aria-hidden="true"
+              />
               <div>
                 <dt className="font-medium">58 wilayas</dt>
                 <dd className="text-ink-soft">Delivery calculated at checkout.</dd>
@@ -236,7 +284,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                     ]
                   : []),
                 ...(product.careInstructions
-                  ? [{ title: "Care", content: <p className="rich-text">{product.careInstructions}</p> }]
+                  ? [
+                      {
+                        title: "Care",
+                        content: <p className="rich-text">{product.careInstructions}</p>,
+                      },
+                    ]
                   : []),
                 {
                   title: "Shipping & returns",
@@ -265,7 +318,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       <section className="mt-16 md:mt-24" aria-label="Reviews">
         <h2 className="font-display text-3xl font-medium">Reviews</h2>
         {reviews.length === 0 ? (
-          <p className="mt-3 text-ink-soft">No reviews yet — be the first to share your thoughts.</p>
+          <p className="mt-3 text-ink-soft">
+            No reviews yet — be the first to share your thoughts.
+          </p>
         ) : (
           <ul className="mt-6 grid gap-4 md:grid-cols-2">
             {reviews.map((review) => (
