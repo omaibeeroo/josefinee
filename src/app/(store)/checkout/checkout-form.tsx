@@ -491,9 +491,9 @@ export function CheckoutForm({
                 {deliveryOptions.map((option) => (
                   <label
                     key={option.method}
-                    className={`flex cursor-pointer items-center justify-between gap-3 border px-4 py-3 text-sm transition-colors ${
+                    className={`checkout-option flex cursor-pointer items-center justify-between gap-3 border px-4 py-3 text-sm transition-colors ${
                       deliveryMethod === option.method
-                        ? "border-ink bg-white"
+                        ? "checkout-option-selected border-ink bg-white"
                         : "hairline bg-white/60"
                     }`}
                   >

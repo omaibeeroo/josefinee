@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
 import { getSettings } from "@/lib/settings";
@@ -28,6 +28,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const ogImage = settings.seo.defaultOgImage || "/og-default.svg";
   return {
     metadataBase: new URL(base),
+    applicationName: name,
     title: {
       default: `${name} — ${settings.seo.titleSuffix}`,
       template: `%s · ${name}`,
@@ -45,13 +46,23 @@ export async function generateMetadata(): Promise<Metadata> {
       description: settings.seo.defaultDescription,
       images: ogImage ? [ogImage] : undefined,
     },
+    appleWebApp: {
+      capable: true,
+      title: name,
+      statusBarStyle: "default",
+    },
+    formatDetection: {
+      telephone: false,
+    },
     icons: settings.general.faviconUrl ? { icon: settings.general.faviconUrl } : undefined,
   };
 }
 
-export const viewport = {
+export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
+  viewportFit: "cover",
+  colorScheme: "light",
   themeColor: "#f1f3f5",
 };
 
