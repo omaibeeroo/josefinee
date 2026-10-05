@@ -111,3 +111,20 @@ complete typecheck, lint, test, production-build, and dependency-audit suite.
 Feminine, minimal, editorial, fast on 3G and 360px screens. French copy.
 `prefers-reduced-motion` is respected globally. No placeholder buttons — every
 control must work or not exist.
+
+
+## Mobile and browser compatibility rules
+
+14. **Mobile is a first-class target.** Preserve the 360px–desktop responsive layout and test changes at 360px, 390px, 768px, 1024px, and desktop widths. Do not introduce horizontal overflow, fixed elements hidden behind iOS safe areas, or controls that require hover.
+15. **Support touch and keyboard.** Use `touch-action: manipulation` where appropriate, keep visible `:focus-visible` states, use real buttons/links, and ensure dialogs/drawers trap focus and allow Escape/backdrop close. Never rely solely on hover for a feature.
+16. **Respect mobile viewport behavior.** Use safe-area insets and dynamic/small viewport units for full-screen UI. Keep form controls at least 16px on small screens to prevent iOS Safari auto-zoom. Preserve `prefers-reduced-motion` behavior.
+17. **Keep browser fallbacks.** When using newer CSS such as `:has()`, `backdrop-filter`, or hover-only effects, provide a graceful fallback or explicit state class. Do not assume Chromium-only APIs.
+18. **PWA metadata is part of the shell.** Keep `src/app/manifest.ts`, root `viewport` metadata, iOS web-app metadata, and `/icon.svg` consistent when changing branding or install behavior.
+
+## GitHub/Vercel deployment rules
+
+19. **Repository visibility is deployment-critical.** `omaibeeroo/josefinee` is public because the linked Vercel team is on Hobby; Vercel Hobby blocks Git deployments from private GitHub organization repositories. Do not change visibility without explicitly coordinating the Vercel plan and deployment strategy.
+20. **Verify Vercel after merges.** `main` is the production branch and other branches receive Preview deployments. A blocked deployment caused by repository/account configuration cannot be redeployed directly; after correcting configuration, push a fresh commit to create a new deployment. Confirm the new deployment reaches `READY` before calling it live.
+21. **Public-repository hygiene is mandatory.** Never commit secrets, `.env`, customer data, database dumps, private URLs, or credentials. Treat all Git history as public. Rotate any credential that appears in a commit, even if the file is later deleted.
+
+For responsive changes, run `npm run typecheck`, `npm run lint`, `npm test`, `npx prettier --check` on changed files, and `npm run build` before opening or merging a pull request.

@@ -299,3 +299,18 @@ optional check as skipped while still running the public safety checks.
 ## Safe database deployment
 
 For existing databases, use `npm run db:deploy` rather than invoking `prisma migrate deploy` directly. It verifies and creates the FK lookup indexes with `CREATE INDEX CONCURRENTLY` before Prisma applies migrations; the migration itself uses `IF NOT EXISTS` as a safe fallback. If `DATABASE_URL` points through a transaction pooler, set `DIRECT_URL` to the provider's direct PostgreSQL connection for the online-index step. On a fresh database, the runner skips tables/columns that do not exist yet, and the migration creates the indexes after the schema is established.
+
+
+## Cross-browser and mobile support
+
+The storefront is designed mobile-first for narrow 360px screens through desktop layouts and is validated for current Chromium, Safari/WebKit, and Firefox browsers on Android, iPhone/iPad, tablets, and desktop. Compatibility safeguards include Android/iOS web-app metadata and `/manifest.webmanifest`, safe viewport handling for browser URL bars and iOS standalone mode, touch and coarse-pointer fallbacks, narrow-screen overflow protection, mobile-safe modal and cart-drawer scrolling, readable fallbacks when `backdrop-filter` is unavailable, a checkout selected-state fallback for browsers without CSS `:has()`, and global `prefers-reduced-motion` support.
+
+When changing mobile UI, preserve keyboard access, visible focus, minimum touch targets, readable form text (at least 16px on small screens to prevent iOS auto-zoom), and French copy. Validate at minimum at 360px, 390px, 768px, 1024px, and desktop widths.
+
+## GitHub and Vercel deployment constraint
+
+The repository is intentionally **public** because the linked Vercel team uses the Hobby plan. Vercel Hobby blocks automatic Git deployments from private GitHub organization repositories. Do not make this repository private again unless the Vercel team is upgraded to a plan that supports private organization-repository deployments, or automatic Git deployment will be blocked.
+
+The linked Vercel project is `josefinee-store`. Pushes to `main` trigger production deployment; non-production branches receive Preview deployments. Check the Vercel deployment state after merging. A fresh commit is required to retry a deployment that was previously blocked; blocked deployment objects cannot be redeployed directly.
+
+Because the repository is public, never commit credentials, private customer data, database dumps, `.env` files, or secret-bearing fixtures. If a secret is ever exposed in Git history, rotate it immediately and remove it through the repository's documented history-rewrite process.
