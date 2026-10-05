@@ -1,6 +1,15 @@
 "use client";
 
-import { createContext, useContext, useEffect, useId, useRef, useState, type ReactNode, type RefObject } from "react";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from "react";
 import { cn } from "@/lib/utils";
 import { formatDA } from "@/lib/money";
 import { Star, StarHalf, Minus, Plus, X, ChevronDown } from "lucide-react";
@@ -27,7 +36,7 @@ export function Button({
   return (
     <button
       className={cn(
-        "btn",
+        "btn btn-interactive",
         variant === "primary" && "btn-primary",
         variant === "gold" && "btn-gold",
         variant === "outline" && "btn-outline",
@@ -87,7 +96,11 @@ export function Field({
           {required && <span aria-hidden="true"> *</span>}
         </label>
         <div data-field={id}>{children}</div>
-        {hint && <p id={hintId} className="mt-1.5 text-sm text-ink-muted">{hint}</p>}
+        {hint && (
+          <p id={hintId} className="mt-1.5 text-sm text-ink-muted">
+            {hint}
+          </p>
+        )}
         {error && (
           <p id={errorId} className="mt-1.5 text-sm text-[#9e342e]" role="alert">
             {error}
@@ -252,12 +265,16 @@ export function useDialogFocus(
     if (!active) return;
     const container = containerRef.current;
     if (!container) return;
-    const previouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const previouslyFocused =
+      document.activeElement instanceof HTMLElement ? document.activeElement : null;
     const previousOverflow = document.body.style.overflow;
     const dialogRoot = container.closest<HTMLElement>('[role="dialog"]') ?? container;
     const parent = dialogRoot.parentElement;
     const backgroundSiblings = parent
-      ? Array.from(parent.children).filter((element): element is HTMLElement => element !== dialogRoot && element instanceof HTMLElement)
+      ? Array.from(parent.children).filter(
+          (element): element is HTMLElement =>
+            element !== dialogRoot && element instanceof HTMLElement,
+        )
       : [];
     const previousBackgroundState = backgroundSiblings.map((element) => ({
       element,
@@ -278,7 +295,8 @@ export function useDialogFocus(
     const preferredFocus = initialFocusRef?.current;
     (preferredFocus && preferredFocus.offsetParent !== null
       ? preferredFocus
-      : focusables()[0] ?? container).focus();
+      : (focusables()[0] ?? container)
+    ).focus();
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         event.preventDefault();
@@ -340,9 +358,18 @@ export function Modal({
   if (!open) return null;
   const headingId = labelledBy ?? `modal-${title.replace(/\s+/g, "-").toLowerCase()}`;
   return (
-    <div className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center" role="dialog" aria-modal="true" aria-labelledby={headingId}>
+    <div
+      className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={headingId}
+    >
       <button aria-label="Close" onClick={onClose} className="absolute inset-0 bg-ink/50" />
-      <div ref={panelRef} tabIndex={-1} className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto bg-ivory p-6 shadow-card animate-slide-up sm:p-8">
+      <div
+        ref={panelRef}
+        tabIndex={-1}
+        className="relative max-h-[90vh] w-full max-w-lg overflow-y-auto bg-ivory p-6 shadow-card animate-slide-up sm:p-8"
+      >
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 id={headingId} className="font-display text-2xl">
             {title}
@@ -365,12 +392,14 @@ export function Drawer({
   title,
   children,
   labelledBy,
+  className,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   labelledBy?: string;
+  className?: string;
 }) {
   const panelRef = useRef<HTMLElement>(null);
   useDialogFocus(open, panelRef, onClose);
@@ -378,9 +407,25 @@ export function Drawer({
   if (!open) return null;
   const headingId = labelledBy ?? `drawer-${title.replace(/\s+/g, "-").toLowerCase()}`;
   return (
-    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-labelledby={headingId}>
-      <button aria-label="Close" onClick={onClose} className="absolute inset-0 bg-ink/50 animate-fade-in" />
-      <aside ref={panelRef} tabIndex={-1} className="absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-ivory shadow-drawer animate-slide-in-right">
+    <div
+      className="fixed inset-0 z-[60]"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={headingId}
+    >
+      <button
+        aria-label="Close"
+        onClick={onClose}
+        className="absolute inset-0 bg-ink/50 animate-fade-in"
+      />
+      <aside
+        ref={panelRef}
+        tabIndex={-1}
+        className={cn(
+          "absolute right-0 top-0 flex h-full w-full max-w-md flex-col bg-ivory shadow-drawer animate-slide-in-right",
+          className,
+        )}
+      >
         <div className="flex items-center justify-between border-b hairline px-5 py-4">
           <h2 id={headingId} className="text-xs font-medium uppercase tracking-[0.2em]">
             {title}
@@ -420,7 +465,10 @@ export function Accordion({
               className="flex w-full items-center justify-between gap-4 py-4 text-left"
             >
               <span className="text-sm font-medium uppercase tracking-[0.1em]">{item.title}</span>
-              <ChevronDown size={16} className={cn("transition-transform", isOpen && "rotate-180")} />
+              <ChevronDown
+                size={16}
+                className={cn("transition-transform", isOpen && "rotate-180")}
+              />
             </button>
             {isOpen && <div className="motion-expand pb-5">{item.content}</div>}
           </div>
