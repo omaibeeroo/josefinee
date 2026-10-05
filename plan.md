@@ -14,6 +14,7 @@
 - **Brand voice:** concise French copy with a confident, invitational tone. Example lines: “Les essentiels, en mieux.” and “Choisissez votre prochaine pièce signature.”
 - **Wordmark concept:** preserve the settings-driven Josefinee wordmark, presented with wider tracking and a compact silver monogram treatment where no logo asset is configured.
 - **Signature brand color:** cool metallic blue-gray `#8794a3`.
+- **Feminine interaction accent:** soft rose-lilac `#c6a7b8` appears only in hover sheen, sale states, focus halos, and selected controls so the storefront stays silver-white rather than becoming pink-heavy.
 
 ## Architecture
 

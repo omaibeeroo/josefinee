@@ -877,3 +877,194 @@
     transform: scaleX(1);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Tactile feminine interaction layer
+--------------------------------------------------------------------------- */
+@layer components {
+  .btn,
+  .btn-interactive {
+    position: relative;
+    isolation: isolate;
+    overflow: hidden;
+    transition:
+      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      box-shadow 0.28s ease,
+      background 0.28s ease,
+      border-color 0.28s ease,
+      color 0.28s ease;
+  }
+
+  .btn::before,
+  .btn-interactive::before {
+    position: absolute;
+    inset: -40% auto -40% -65%;
+    z-index: -1;
+    width: 42%;
+    content: "";
+    background: linear-gradient(105deg, transparent, rgb(255 255 255 / 0.38), transparent);
+    transform: skewX(-18deg);
+    transition: left 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .btn:hover:not(:disabled),
+  .btn-interactive:hover:not(:disabled) {
+    transform: translateY(-3px) scale(1.015);
+    box-shadow:
+      0 16px 28px -20px rgb(29 35 43 / 0.72),
+      0 0 0 4px rgb(198 167 184 / 0.12);
+  }
+
+  .btn:hover:not(:disabled)::before,
+  .btn:focus-visible:not(:disabled)::before,
+  .btn-interactive:hover:not(:disabled)::before,
+  .btn-interactive:focus-visible:not(:disabled)::before {
+    left: 130%;
+  }
+
+  .btn:active:not(:disabled),
+  .btn-interactive:active:not(:disabled) {
+    transform: translateY(-1px) scale(0.99);
+    transition-duration: 0.1s;
+  }
+
+  .btn-primary,
+  .btn-gold {
+    background: linear-gradient(135deg, #1d232b 0%, #3c4854 58%, #8794a3 100%);
+  }
+
+  .btn-primary:hover:not(:disabled),
+  .btn-gold:hover:not(:disabled) {
+    background: linear-gradient(135deg, #303b47 0%, #667584 58%, #c6a7b8 100%);
+  }
+
+  .btn-outline:hover:not(:disabled) {
+    border-color: #c6a7b8;
+    background: linear-gradient(135deg, #f9f5f8, #eaf0f4);
+    color: #1d232b;
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    border-color: #c6a7b8;
+    background: linear-gradient(135deg, #ffffff, #f4eef3);
+    box-shadow: 0 12px 24px -20px rgb(135 148 163 / 0.8);
+  }
+
+  button:not(:disabled):not(.absolute),
+  [role="button"]:not([aria-disabled="true"]) {
+    transition:
+      transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
+      color 0.24s ease,
+      background-color 0.24s ease,
+      border-color 0.24s ease,
+      box-shadow 0.24s ease;
+  }
+
+  button:not(:disabled):not(.absolute):hover,
+  button:not(:disabled):not(.absolute):focus-visible,
+  [role="button"]:not([aria-disabled="true"]):hover,
+  [role="button"]:not([aria-disabled="true"]):focus-visible {
+    color: #667584;
+  }
+
+  .icon-button {
+    border-radius: 999px;
+    transition:
+      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      color 0.2s ease,
+      background-color 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+
+  .icon-button:hover,
+  .icon-button:focus-visible {
+    background: linear-gradient(135deg, #f6f2f6, #e9eef3);
+    color: #667584;
+    box-shadow: 0 8px 18px -16px rgb(29 35 43 / 0.9);
+    transform: translateY(-3px) rotate(-4deg);
+  }
+
+  .product-card button[aria-label*="wishlist"],
+  .product-card button[aria-label*="Wishlist"] {
+    border: 1px solid rgb(255 255 255 / 0.75);
+    background: rgb(251 252 253 / 0.88);
+    backdrop-filter: blur(10px);
+    transition:
+      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+      color 0.2s ease,
+      background 0.2s ease;
+  }
+
+  .product-card button[aria-label*="wishlist"]:hover,
+  .product-card button[aria-label*="Wishlist"]:hover {
+    background: #f4eaf1;
+    color: #a76785;
+    transform: scale(1.12) rotate(-8deg);
+  }
+
+  .product-card-media button:not(:disabled):hover {
+    color: #fff;
+    background: linear-gradient(90deg, #1d232b, #8794a3, #c6a7b8, #1d232b);
+    background-size: 240% 100%;
+    animation: metallic-button-flow 1.4s ease both;
+  }
+
+  .field,
+  select,
+  textarea,
+  input {
+    transition:
+      border-color 0.24s ease,
+      box-shadow 0.24s ease,
+      transform 0.24s ease,
+      background-color 0.24s ease;
+  }
+
+  .field:hover,
+  select:hover,
+  textarea:hover,
+  input:hover {
+    border-color: #b9c3cc;
+    background-color: #fff;
+  }
+
+  .field:focus,
+  select:focus,
+  textarea:focus,
+  input:focus {
+    border-color: #c6a7b8;
+    box-shadow:
+      0 0 0 4px rgb(198 167 184 / 0.14),
+      0 8px 20px -18px rgb(29 35 43 / 0.8);
+    transform: translateY(-1px);
+  }
+
+  .accordion-trigger,
+  [aria-expanded="false"],
+  [aria-expanded="true"] {
+    transition:
+      color 0.24s ease,
+      background-color 0.24s ease,
+      padding-left 0.24s ease;
+  }
+
+  [aria-expanded="false"]:hover,
+  [aria-expanded="true"]:hover {
+    background: linear-gradient(90deg, rgb(244 234 241 / 0.55), transparent);
+    padding-left: 0.35rem;
+  }
+
+  .badge,
+  [class*="bg-sale"] {
+    box-shadow: 0 5px 14px -12px rgb(167 103 133 / 0.9);
+  }
+}
+
+@keyframes metallic-button-flow {
+  from {
+    background-position: 0% 50%;
+  }
+  to {
+    background-position: 100% 50%;
+  }
+}
