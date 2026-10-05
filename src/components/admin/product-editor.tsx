@@ -8,10 +8,10 @@ import { Button, Field, Input, Select, Textarea } from "@/components/ui";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-export type EditorImage = { id?: string; url: string; storageKey?: string; alt?: string };
-export type EditorOptionValue = { value: string; hexColor?: string };
-export type EditorOption = { name: string; values: EditorOptionValue[] };
-export type EditorVariant = {
+type EditorImage = { id?: string; url: string; storageKey?: string; alt?: string };
+type EditorOptionValue = { value: string; hexColor?: string };
+type EditorOption = { name: string; values: EditorOptionValue[] };
+type EditorVariant = {
   id?: string;
   sku: string;
   barcode?: string;

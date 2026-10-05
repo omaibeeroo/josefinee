@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { BRAND_CONFIG } from "@/config/brand";
 import { z } from "zod";
 
-export type GeneralSettings = {
+type GeneralSettings = {
   name: string;
   legalName: string;
   tagline: string;
@@ -37,7 +37,7 @@ export type HomepageSettings = {
   pillars: Array<{ title: string; text: string }>;
 };
 
-export type CommerceSettings = {
+type CommerceSettings = {
   currency: string;
   currencySymbol: string;
   codEnabled: boolean;
@@ -47,26 +47,26 @@ export type CommerceSettings = {
   defaultDeliveryMethod: "HOME" | "STOPDESK" | "EXPRESS" | "STANDARD";
 };
 
-export type SeoSettings = {
+type SeoSettings = {
   titleSuffix: string;
   defaultDescription: string;
   defaultOgImage: string;
 };
 
-export type SocialSettings = {
+type SocialSettings = {
   instagram: string;
   tiktok: string;
   facebook: string;
   whatsapp: string;
 };
 
-export type AnalyticsSettings = {
+type AnalyticsSettings = {
   gaId: string;
   metaPixelId: string;
   tiktokPixelId: string;
 };
 
-export type NotificationSettings = {
+type NotificationSettings = {
   orderEmailEnabled: boolean;
   orderSmsEnabled: boolean;
   orderWhatsappEnabled: boolean;

@@ -36,7 +36,6 @@ function safeExtension(mime: string): string {
  */
 export async function storeImage(file: {
   buffer: Buffer;
-  filename: string;
   declaredMime: string;
 }): Promise<StoredImage> {
   if (file.buffer.byteLength > UPLOAD_MAX_BYTES) {

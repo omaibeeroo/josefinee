@@ -103,7 +103,7 @@ export async function getCartSummary(): Promise<CartSummary> {
 
     return { cartId: cart.id, items, subtotal, count };
   } catch (error) {
-    console.error("[cart] summary failed", error);
+    console.error("[cart] summary failed", error instanceof Error ? error.name : "unknown");
     return { cartId: null, items: [], subtotal: 0, count: 0 };
   }
 }

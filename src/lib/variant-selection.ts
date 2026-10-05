@@ -9,7 +9,7 @@ export type VariantSelectionVariant = {
   optionValueIds: ReadonlyArray<string>;
 };
 
-export function selectionForVariant(
+function selectionForVariant(
   options: ReadonlyArray<VariantSelectionOption>,
   variant: VariantSelectionVariant,
 ): Record<string, string> {

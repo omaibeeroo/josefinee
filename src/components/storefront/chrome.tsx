@@ -21,7 +21,7 @@ import { Honeypot, useDialogFocus } from "@/components/ui";
 import { openCookieSettings } from "@/components/cookie-consent";
 import { cn } from "@/lib/utils";
 
-export type NavCategory = {
+type NavCategory = {
   name: string;
   slug: string;
   children: Array<{ name: string; slug: string }>;

@@ -32,7 +32,7 @@ export async function generateSitemaps(): Promise<Array<{ id: SitemapId }>> {
       ...pageIds("pages", pages),
     ];
   } catch (error) {
-    console.warn("[sitemap] dynamic partition discovery unavailable; serving fixed sitemap only", error);
+    console.warn("[sitemap] dynamic partition discovery unavailable; serving fixed sitemap only", error instanceof Error ? error.name : "unknown");
     return fixedSitemap;
   }
 }

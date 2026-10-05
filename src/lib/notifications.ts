@@ -56,16 +56,8 @@ type OrderEmailData = {
   trackingNote?: string;
 };
 
-function redactRecipient(recipient: string): string {
-  if (recipient.includes("@")) {
-    const [local, domain] = recipient.split("@", 2);
-    return `${local?.slice(0, 1) ?? "*"}***@${domain ?? "unknown"}`;
-  }
-  return `***${recipient.slice(-2)}`;
-}
-
-async function consoleSend(channel: NotificationChannel, message: NotificationMessage) {
-  console.info(`[notify:${channel.toLowerCase()}] -> ${redactRecipient(message.to)} :: ${message.subject}`);
+async function consoleSend(channel: NotificationChannel) {
+  console.info(`[notify:${channel.toLowerCase()}] console provider selected`);
 }
 
 function providerSignal(): AbortSignal {
@@ -98,7 +90,7 @@ const emailProvider: NotificationProvider = {
       }
       return;
     }
-    await consoleSend("EMAIL", message);
+    await consoleSend("EMAIL");
   },
 };
 
@@ -130,7 +122,7 @@ const smsProvider: NotificationProvider = {
       if (!response.ok) throw new Error(`SMS provider failed with ${response.status}`);
       return;
     }
-    await consoleSend("SMS", message);
+    await consoleSend("SMS");
   },
 };
 
@@ -175,7 +167,7 @@ const whatsappProvider: NotificationProvider = {
       if (!response.ok) throw new Error(`WhatsApp provider failed with ${response.status}`);
       return;
     }
-    await consoleSend("WHATSAPP", message);
+    await consoleSend("WHATSAPP");
   },
 };
 

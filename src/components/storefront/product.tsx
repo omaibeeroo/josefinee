@@ -39,7 +39,7 @@ export function clearGuestWishlist(): void {
 const RECENT_KEY = "nur-recently-viewed";
 const RECENT_MAX = 12;
 
-export function recordRecentlyViewed(productId: string): void {
+function recordRecentlyViewed(productId: string): void {
   if (typeof window === "undefined") return;
   try {
     const raw = window.localStorage.getItem(RECENT_KEY);
@@ -233,7 +233,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
 
 /* -------------------------------------------------------- Quick add modal */
 
-export function QuickAddModal({
+function QuickAddModal({
   product,
   open,
   onClose,
@@ -604,7 +604,7 @@ export function ProductGallery({
 
 /* -------------------------------------------------------- Variant picker */
 
-export function VariantPicker({
+function VariantPicker({
   product,
   selectedVariantId,
   onChange,
@@ -816,7 +816,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
 
 /* ------------------------------------------------------- Wishlist button */
 
-export function WishlistButton({
+function WishlistButton({
   productId,
   className,
   bordered,

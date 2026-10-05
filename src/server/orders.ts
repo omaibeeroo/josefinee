@@ -579,7 +579,7 @@ export async function getOrderConfirmation(orderNumber: string): Promise<OrderCo
       })),
     };
   } catch (error) {
-    console.error("[orders] confirmation lookup failed", error);
+    console.error("[orders] confirmation lookup failed", error instanceof Error ? error.name : "unknown");
     return null;
   }
 }

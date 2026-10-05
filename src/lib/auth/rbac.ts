@@ -1,7 +1,7 @@
 import "server-only";
 import { AppError } from "@/lib/errors";
 import { getAdminSession, type AdminSessionUser } from "./session";
-import { PERMISSIONS, type PermissionCode } from "./permissions";
+import type { PermissionCode } from "./permissions";
 
 export function permissionCodes(user: AdminSessionUser): string[] {
   return user.role.permissions.map((entry) => entry.permission.code);
@@ -15,7 +15,7 @@ export function can(user: AdminSessionUser, code: PermissionCode): boolean {
   return permissionCodes(user).includes(code);
 }
 
-export async function requireAdmin(): Promise<AdminSessionUser> {
+async function requireAdmin(): Promise<AdminSessionUser> {
   const session = await getAdminSession();
   if (!session) {
     throw new AppError("UNAUTHORIZED", "Please sign in to continue.", 401);
@@ -34,5 +34,4 @@ export async function requirePermission(code: PermissionCode): Promise<AdminSess
   return user;
 }
 
-export { PERMISSIONS };
 export type { PermissionCode };

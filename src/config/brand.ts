@@ -42,7 +42,6 @@ export const BRAND_CONFIG = {
   freeDeliveryThreshold: Number(env("NEXT_PUBLIC_FREE_DELIVERY_THRESHOLD", "0")) || 0,
 } as const;
 
-export type BrandConfig = typeof BRAND_CONFIG;
 
 export const isS3Configured = (): boolean =>
   process.env.STORAGE_DRIVER === "s3" &&

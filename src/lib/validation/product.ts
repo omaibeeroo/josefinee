@@ -1,21 +1,21 @@
 import { z } from "zod";
 import { zId, zOptionalString, zPrice, zSlug } from "./common";
 
-export const productOptionValueSchema = z.object({
+const productOptionValueSchema = z.object({
   id: zId.optional(),
   value: z.string().trim().min(1).max(60),
   hexColor: z.string().trim().max(9).optional(),
   position: z.coerce.number().int().min(0).default(0),
 });
 
-export const productOptionSchema = z.object({
+const productOptionSchema = z.object({
   id: zId.optional(),
   name: z.string().trim().min(1).max(60),
   position: z.coerce.number().int().min(0).default(0),
   values: z.array(productOptionValueSchema).min(1),
 });
 
-export const variantSchema = z.object({
+const variantSchema = z.object({
   id: zId.optional(),
   sku: z.string().trim().min(1).max(80),
   barcode: zOptionalString(80),

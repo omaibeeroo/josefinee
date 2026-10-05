@@ -31,7 +31,7 @@ export type FilterState = {
   sort?: string;
 };
 
-export function parseFilters(params: URLSearchParams): FilterState {
+function parseFilters(params: URLSearchParams): FilterState {
   return {
     inStock: params.get("inStock") === "1" ? true : undefined,
     onSale: params.get("onSale") === "1" ? true : undefined,

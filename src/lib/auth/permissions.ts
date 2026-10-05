@@ -49,18 +49,15 @@ export const PERMISSIONS = {
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
-export const ALL_PERMISSIONS: PermissionCode[] = Object.values(PERMISSIONS);
+const ALL_PERMISSIONS: PermissionCode[] = Object.values(PERMISSIONS);
 
-export const ROLE_NAMES = [
-  "SUPER_ADMIN",
-  "ADMIN",
-  "ORDER_MANAGER",
-  "PRODUCT_MANAGER",
-  "CUSTOMER_SUPPORT",
-  "ANALYST",
-] as const;
-
-export type RoleNameValue = (typeof ROLE_NAMES)[number];
+export type RoleNameValue =
+  | "SUPER_ADMIN"
+  | "ADMIN"
+  | "ORDER_MANAGER"
+  | "PRODUCT_MANAGER"
+  | "CUSTOMER_SUPPORT"
+  | "ANALYST";
 
 export const ROLES: Array<{ name: RoleNameValue; label: string; description: string }> = [
   {

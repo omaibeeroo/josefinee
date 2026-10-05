@@ -24,7 +24,7 @@ export type ResolvedPromotion = {
  * promotions never stack, which keeps totals predictable and auditable.
  * Evaluated with the server clock; the client can never invent a discount.
  */
-export async function getActivePromotions(now = new Date(), db: DbClient = prisma) {
+async function getActivePromotions(now = new Date(), db: DbClient = prisma) {
   return db.promotion.findMany({
     where: { isActive: true, startsAt: { lte: now }, endsAt: { gte: now } },
     include: {

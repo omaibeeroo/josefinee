@@ -5,7 +5,7 @@ import Script from "next/script";
 import { usePathname } from "next/navigation";
 import { serializeForInlineJsonScript, validatedPixelId } from "@/lib/script-data";
 
-export function consentGiven(): boolean {
+function consentGiven(): boolean {
   // Default-off: marketing pixels load only after an explicit opt-in
   // through cookie preferences. No banner ever interrupts shopping.
   if (typeof window === "undefined") return false;
