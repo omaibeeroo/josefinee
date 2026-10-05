@@ -1,7 +1,7 @@
 import type { OrderStatus } from "@prisma/client";
 
 /** Legal status transitions. Cancellations/returns restore stock. */
-export const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
+const ALLOWED_TRANSITIONS: Record<OrderStatus, OrderStatus[]> = {
   PENDING: ["CONFIRMED", "CANCELLED"],
   CONFIRMED: ["PROCESSING", "CANCELLED"],
   PROCESSING: ["PACKED", "CANCELLED"],

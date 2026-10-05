@@ -219,7 +219,7 @@ export async function changeOrderStatusAction(
     revalidatePath(`/admin/orders/${orderId}`);
     return { ok: true as const };
   } catch (error) {
-    console.error("[admin] status change failed", error);
+    console.error("[admin] status change failed", error instanceof Error ? error.name : "unknown");
     return { ok: false as const, error: toUserMessage(error) };
   }
 }

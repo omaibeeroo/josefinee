@@ -449,7 +449,7 @@ export async function saveProductAction(input: ProductInput) {
     revalidatePath("/shop");
     return { ok: true as const, id: saved.id, slug: saved.slug };
   } catch (error) {
-    console.error("[admin] save product failed", error);
+    console.error("[admin] save product failed", error instanceof Error ? error.name : "unknown");
     return { ok: false as const, error: toUserMessage(error) };
   }
 }

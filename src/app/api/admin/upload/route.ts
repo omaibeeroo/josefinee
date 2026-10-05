@@ -38,19 +38,18 @@ export async function POST(request: Request) {
     const buffer = Buffer.from(await file.arrayBuffer());
     const stored = await storeImage({
       buffer,
-      filename: file.name,
       declaredMime: file.type,
     });
     await recordAudit({
       actorUserId: session.user.id,
       action: "PRODUCT_IMAGE_UPLOADED",
       resource: "ProductImage",
-      metadata: { filename: file.name, size: file.size },
+      metadata: { size: file.size, mimeType: stored.mimeType },
     });
 
     return Response.json({ ok: true, ...stored });
   } catch (error) {
-    console.error("[upload] failed", error);
+    console.error("[upload] failed", error instanceof Error ? error.name : "unknown");
     return Response.json(
       { ok: false, error: toUserMessage(error) },
       { status: isAppError(error) ? error.status : 500 },

@@ -57,7 +57,7 @@ export async function subscribeNewsletterAction(email: string, source?: string, 
     });
     return { ok: true as const, message: "Thank you for subscribing." };
   } catch (error) {
-    console.error("[newsletter] failed", error);
+    console.error("[newsletter] failed", error instanceof Error ? error.name : "unknown");
     return { ok: false as const, error: "Something went wrong. Please try again." };
   }
 }
@@ -109,7 +109,7 @@ export async function submitContactAction(input: {
     await prisma.contactMessage.create({ data: { ...message, ip } });
     return { ok: true as const, message: "Thank you — we will get back to you soon." };
   } catch (error) {
-    console.error("[contact] failed", error);
+    console.error("[contact] failed", error instanceof Error ? error.name : "unknown");
     return { ok: false as const, error: "Something went wrong. Please try again." };
   }
 }

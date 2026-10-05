@@ -4,7 +4,7 @@ import { AppError } from "@/lib/errors";
 import { prisma } from "@/lib/prisma";
 import { extractClientIp } from "@/lib/request-ip";
 
-export type RateLimitResult = {
+type RateLimitResult = {
   success: boolean;
   limit: number;
   remaining: number;
@@ -126,7 +126,7 @@ async function databaseLimit(options: RateLimitOptions): Promise<RateLimitResult
   };
 }
 
-export async function rateLimit(options: RateLimitOptions): Promise<RateLimitResult> {
+async function rateLimit(options: RateLimitOptions): Promise<RateLimitResult> {
   const distributed = await upstashLimit(options);
   if (distributed) return distributed;
 

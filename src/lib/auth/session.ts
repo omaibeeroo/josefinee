@@ -5,8 +5,8 @@ import { prisma } from "@/lib/prisma";
 import { extractClientIp } from "@/lib/request-ip";
 import { generateToken, hashToken } from "./tokens";
 
-export const ADMIN_COOKIE = "nur_admin_session";
-export const CUSTOMER_COOKIE = "nur_customer_session";
+const ADMIN_COOKIE = "nur_admin_session";
+const CUSTOMER_COOKIE = "nur_customer_session";
 export const CART_COOKIE = "nur_cart";
 
 const ADMIN_SESSION_DAYS = 7;

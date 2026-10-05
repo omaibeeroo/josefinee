@@ -67,7 +67,7 @@ export async function getDeliveryFloor(): Promise<{ minHome: number } | null> {
     });
     return cheapest ? { minHome: cheapest.price } : null;
   } catch (error) {
-    console.error("[delivery] floor failed", error);
+    console.error("[delivery] floor failed", error instanceof Error ? error.name : "unknown");
     return null;
   }
 }

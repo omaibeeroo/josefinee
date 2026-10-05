@@ -104,7 +104,7 @@ async function mapProductCards(products: ProductWithCardRelations[]): Promise<St
   return products.map((product) => mapProductCard(product, availability.get(product.id)));
 }
 
-export function mapProductCard(
+function mapProductCard(
   product: ProductWithCardRelations,
   availability?: CardAvailability,
 ): StoreProductCard {
@@ -165,7 +165,7 @@ function orderByFor(sort: ProductSort | undefined): Prisma.ProductOrderByWithRel
   }
 }
 
-export function buildWhere(query: CatalogQuery): Prisma.ProductWhereInput {
+function buildWhere(query: CatalogQuery): Prisma.ProductWhereInput {
   const and: Prisma.ProductWhereInput[] = [storefrontProductWhere()];
 
   if (query.ids?.length) {
@@ -248,7 +248,7 @@ export async function getStorefrontProducts(query: CatalogQuery): Promise<{
       totalPages: Math.max(1, Math.ceil(total / pageSize)),
     };
   } catch (error) {
-    console.error("[catalog] list failed", error);
+    console.error("[catalog] list failed", error instanceof Error ? error.name : "unknown");
     return { items: [], total: 0, page, pageSize, totalPages: 1 };
   }
 }
@@ -418,7 +418,7 @@ export async function getQuickAddData(productId: string): Promise<QuickAddData |
       })),
     };
   } catch (error) {
-    console.error("[catalog] quick-add failed", error);
+    console.error("[catalog] quick-add failed", error instanceof Error ? error.name : "unknown");
     return null;
   }
 }
@@ -447,7 +447,7 @@ export async function getFeaturedProducts(take = 10) {
     });
     return await mapProductCards(rows);
   } catch (error) {
-    console.error("[catalog] featured failed", error);
+    console.error("[catalog] featured failed", error instanceof Error ? error.name : "unknown");
     return [];
   }
 }
@@ -462,7 +462,7 @@ export async function getNewInProducts(take = 10) {
     });
     return await mapProductCards(rows);
   } catch (error) {
-    console.error("[catalog] new-in failed", error);
+    console.error("[catalog] new-in failed", error instanceof Error ? error.name : "unknown");
     return [];
   }
 }
@@ -477,7 +477,7 @@ export async function getBestSellers(take = 10) {
     });
     return await mapProductCards(rows);
   } catch (error) {
-    console.error("[catalog] best sellers failed", error);
+    console.error("[catalog] best sellers failed", error instanceof Error ? error.name : "unknown");
     return [];
   }
 }

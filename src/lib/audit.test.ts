@@ -61,7 +61,7 @@ describe("recordAudit", () => {
     const errorSpy = vi.spyOn(console, "error").mockImplementation(() => undefined);
 
     await expect(recordAudit({ action: "TEST", resource: "Test" })).resolves.toBeUndefined();
-    expect(errorSpy).toHaveBeenCalledWith("[audit] failed to record", "TEST", error);
+    expect(errorSpy).toHaveBeenCalledWith("[audit] failed to record", "TEST", "Error");
 
     errorSpy.mockRestore();
   });

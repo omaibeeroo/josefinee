@@ -86,7 +86,7 @@ async function getHomeData() {
       : delivered;
     faqs = faqItems;
   } catch (error) {
-    console.error("[home] data failed", error);
+    console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
   }
 
   return { settings, featured, newIn, bestSellers, catalogError, categoryTiles, featuredCollection, deliveredCount, faqs };

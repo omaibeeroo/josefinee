@@ -32,6 +32,6 @@ export async function recordAudit(input: AuditInput): Promise<void> {
       },
     });
   } catch (error) {
-    console.error("[audit] failed to record", input.action, error);
+    console.error("[audit] failed to record", input.action, error instanceof Error ? error.name : "unknown");
   }
 }

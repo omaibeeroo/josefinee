@@ -65,7 +65,7 @@ export async function submitOrderAction(input: CheckoutInput): Promise<SubmitOrd
         orderNumber: (error.meta?.orderNumber as string | undefined) ?? undefined,
       };
     }
-    console.error("[checkout] failed", error);
+    console.error("[checkout] failed", error instanceof Error ? error.name : "unknown");
     return { ok: false, error: "Something went wrong. Please try again." };
   }
 }
@@ -141,7 +141,7 @@ export async function lookupOrderAction(orderNumber: string, phoneRaw: string) {
     const trackingToken = signOrderToken(order.orderNumber, 24 * 60 * 60_000);
     return { ok: true as const, orderNumber: order.orderNumber, trackingToken };
   } catch (error) {
-    console.error("[track] lookup failed", error);
+    console.error("[track] lookup failed", error instanceof Error ? error.name : "unknown");
     return { ok: false as const, error: "Something went wrong. Please try again." };
   }
 }

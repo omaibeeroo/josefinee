@@ -16,9 +16,6 @@ import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
 import { getCustomerSession } from "@/lib/auth/session";
 import { clientIp, enforceRateLimit, LIMITS } from "@/lib/rate-limit";
 
-export type ActionResult<T = Record<string, unknown>> =
-  ({ ok: true } & T) | { ok: false; error: string; code?: string; fields?: Record<string, string> };
-
 async function enforceCartMutationLimit(operation: string): Promise<void> {
   const ip = await clientIp();
   await enforceRateLimit({ ...LIMITS.cartMutation, key: `cart:${operation}:${ip}` });

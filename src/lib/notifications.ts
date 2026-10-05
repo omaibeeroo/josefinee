@@ -17,13 +17,13 @@ const PROVIDER_TIMEOUT_MS = 8_000;
  *   WHATSAPP_PROVIDER=meta|console
  */
 
-export type NotificationMessage = {
+type NotificationMessage = {
   to: string;
   subject: string;
   body: string;
 };
 
-export interface NotificationProvider {
+interface NotificationProvider {
   readonly channel: NotificationChannel;
   readonly name: string;
   send(message: NotificationMessage): Promise<void>;
@@ -37,8 +37,8 @@ type OrderEmailData = {
   trackingNote?: string;
 };
 
-async function consoleSend(channel: NotificationChannel, message: NotificationMessage) {
-  console.info(`[notify:${channel.toLowerCase()}] -> ${message.to} :: ${message.subject}`);
+async function consoleSend(channel: NotificationChannel) {
+  console.info(`[notify:${channel.toLowerCase()}] console provider selected`);
 }
 
 function providerSignal(): AbortSignal {
@@ -70,7 +70,7 @@ const emailProvider: NotificationProvider = {
       }
       return;
     }
-    await consoleSend("EMAIL", message);
+    await consoleSend("EMAIL");
   },
 };
 
@@ -102,7 +102,7 @@ const smsProvider: NotificationProvider = {
       if (!response.ok) throw new Error(`SMS provider failed with ${response.status}`);
       return;
     }
-    await consoleSend("SMS", message);
+    await consoleSend("SMS");
   },
 };
 
@@ -134,7 +134,7 @@ const whatsappProvider: NotificationProvider = {
       if (!response.ok) throw new Error(`WhatsApp provider failed with ${response.status}`);
       return;
     }
-    await consoleSend("WHATSAPP", message);
+    await consoleSend("WHATSAPP");
   },
 };
 

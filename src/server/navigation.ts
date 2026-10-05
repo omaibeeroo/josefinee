@@ -37,7 +37,7 @@ export async function getNavigation(): Promise<{
     ]);
     return { categories, collections };
   } catch (error) {
-    console.error("[navigation] failed", error);
+    console.error("[navigation] failed", error instanceof Error ? error.name : "unknown");
     return { categories: [], collections: [] };
   }
 }

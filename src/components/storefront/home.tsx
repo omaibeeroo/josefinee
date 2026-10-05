@@ -7,7 +7,6 @@ import { ArrowRight, Headset, PackageCheck, Truck } from "lucide-react";
 import { subscribeNewsletterAction } from "@/server/actions/engagement";
 import { Accordion, Honeypot, Reveal } from "@/components/ui";
 import type { HomepageSettings } from "@/lib/settings";
-import type { StoreProductCard } from "@/server/catalog";
 
 /* ------------------------------------------------------------------ Hero */
 
@@ -250,52 +249,6 @@ export function Pillars({ items }: { items: Array<{ title: string; text: string 
   );
 }
 
-/* ------------------------------------------------------- Editorial block */
-
-export function Editorial({
-  image,
-  eyebrow,
-  title,
-  text,
-  href,
-  cta,
-}: {
-  image: string | null;
-  eyebrow: string;
-  title: string;
-  text: string;
-  href: string;
-  cta: string;
-}) {
-  return (
-    <section className="container-luxe" aria-label={title}>
-      <div className="grid items-center gap-8 md:grid-cols-2 md:gap-14">
-        <Reveal>
-        <div className="relative aspect-[4/5] overflow-hidden bg-cream">
-          {image ? (
-            <Image src={image} alt={title} fill sizes="(max-width: 768px) 100vw, 50vw" className="editorial-image object-cover" />
-          ) : (
-            <span className="flex h-full w-full items-center justify-center font-display text-8xl text-ink-muted/50">
-              {title.charAt(0)}
-            </span>
-          )}
-        </div>
-        </Reveal>
-        <Reveal delay={120}>
-        <div>
-          <p className="eyebrow">{eyebrow}</p>
-          <h2 className="mt-3 font-display text-3xl font-medium md:text-5xl">{title}</h2>
-          <p className="mt-4 leading-relaxed text-ink-soft">{text}</p>
-          <Link href={href} className="btn btn-outline mt-7">
-            {cta}
-          </Link>
-        </div>
-        </Reveal>
-      </div>
-    </section>
-  );
-}
-
 /* ------------------------------------------------------------ FAQ teaser */
 
 export function FaqTeaser({ items }: { items: Array<{ question: string; answer: string }> }) {
@@ -375,5 +328,3 @@ export function NewsletterSection() {
     </section>
   );
 }
-
-export type { StoreProductCard };

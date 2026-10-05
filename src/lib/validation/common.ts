@@ -42,7 +42,6 @@ export const zOptionalString = (max = 300) =>
     .optional()
     .or(z.literal("").transform(() => undefined));
 
-export const zInt = z.coerce.number().int();
 export const zPrice = z.coerce.number().int().min(0).max(100_000_000);
 
 export function flattenZodErrors(error: z.ZodError): Record<string, string> {
