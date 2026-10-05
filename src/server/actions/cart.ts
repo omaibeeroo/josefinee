@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { toUserMessage } from "@/lib/errors";
+import { zId } from "@/lib/validation/common";
 import {
   addToCart,
   clearCart,
@@ -26,8 +27,10 @@ export async function fetchCart() {
 }
 
 export async function getQuickAddAction(productId: string) {
+  const parsedId = zId.safeParse(productId);
+  if (!parsedId.success) return null;
   const { getQuickAddData } = await import("@/server/catalog");
-  return getQuickAddData(productId);
+  return getQuickAddData(parsedId.data);
 }
 
 export async function getDeliveryFloorAction() {
@@ -37,7 +40,9 @@ export async function getDeliveryFloorAction() {
 
 /** Storefront cards for an explicit id list, in the requested order. */
 export async function getProductsByIdsAction(productIds: string[]) {
-  const ids = [...new Set(productIds)].slice(0, 12);
+  const parsedIds = z.array(zId).max(12).safeParse(productIds);
+  if (!parsedIds.success) return [];
+  const ids = [...new Set(parsedIds.data)];
   if (ids.length === 0) return [];
   const { getStorefrontProducts } = await import("@/server/catalog");
   const result = await getStorefrontProducts({ ids, pageSize: 12 });

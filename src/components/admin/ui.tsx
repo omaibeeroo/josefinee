@@ -14,7 +14,7 @@ export function PageHeader({
   action?: ReactNode;
 }) {
   return (
-    <div className="mb-6 flex flex-wrap items-start justify-between gap-4">
+    <div className="admin-surface mb-6 flex flex-wrap items-start justify-between gap-4">
       <div>
         <h1 className="font-display text-3xl font-medium">{title}</h1>
         {description && <p className="mt-1 text-sm text-ink-soft">{description}</p>}
@@ -36,7 +36,7 @@ export function StatCard({
   href?: string;
 }) {
   const content = (
-    <div className="border hairline bg-white p-5">
+    <div className="admin-card border hairline bg-white p-5">
       <p className="text-xs font-medium uppercase tracking-[0.16em] text-ink-muted">{label}</p>
       <p className="mt-2 font-display text-3xl">{value}</p>
       {hint && <p className="mt-1 text-xs text-ink-muted">{hint}</p>}
@@ -91,7 +91,7 @@ export function RiskBadge({ level }: { level: "LOW" | "MEDIUM" | "HIGH" }) {
 }
 
 export function Card({ children, className }: { children: ReactNode; className?: string }) {
-  return <div className={cn("border hairline bg-white p-5", className)}>{children}</div>;
+  return <div className={cn("admin-card border hairline bg-white p-5", className)}>{children}</div>;
 }
 
 export function LineChart({ data }: { data: Array<{ date: string; value: number }> }) {

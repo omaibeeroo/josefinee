@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Heart, Plus } from "lucide-react";
@@ -15,7 +15,9 @@ export function readGuestWishlist(): string[] {
   try {
     const raw = window.localStorage.getItem(GUEST_WISHLIST_KEY);
     const parsed: unknown = raw ? JSON.parse(raw) : [];
-    return Array.isArray(parsed) ? parsed.filter((entry): entry is string => typeof entry === "string") : [];
+    return Array.isArray(parsed)
+      ? parsed.filter((entry): entry is string => typeof entry === "string")
+      : [];
   } catch {
     return [];
   }
@@ -87,7 +89,10 @@ export function RecentlyViewed({ productId }: { productId: string }) {
 }
 import { discountPercent, formatPrice } from "@/lib/money";
 import { pixelEvent } from "@/components/pixels";
-import { isOptionValueAvailableForSelection, resolveVariantSelection } from "@/lib/variant-selection";
+import {
+  isOptionValueAvailableForSelection,
+  resolveVariantSelection,
+} from "@/lib/variant-selection";
 import { cn } from "@/lib/utils";
 import type { QuickAddData, StoreProduct, StoreProductCard } from "@/server/catalog";
 import { getProductsByIdsAction, getQuickAddAction } from "@/server/actions/cart";
@@ -151,7 +156,11 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
   return (
     <article className="product-card group flex flex-col">
       <div className="product-card-media relative overflow-hidden bg-cream">
-        <Link href={`/products/${product.slug}`} aria-label={product.name} className="block aspect-[3/4]">
+        <Link
+          href={`/products/${product.slug}`}
+          aria-label={product.name}
+          className="block aspect-[3/4]"
+        >
           <div className="absolute inset-0 transition-all duration-500 ease-out group-hover:scale-[1.04] group-hover:opacity-0">
             <ProductImage url={main?.url ?? null} alt={product.name} />
           </div>
@@ -187,7 +196,11 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
           <button
             type="button"
             disabled={pending}
-            aria-label={product.hasVariants ? `Choisir les options pour ${product.name}` : `Ajouter ${product.name} au panier`}
+            aria-label={
+              product.hasVariants
+                ? `Choisir les options pour ${product.name}`
+                : `Ajouter ${product.name} au panier`
+            }
             onClick={() => (product.hasVariants ? setQuickOpen(true) : void quickAdd())}
             className="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-ivory shadow-card md:hidden"
           >
@@ -196,7 +209,10 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
         )}
       </div>
       <div className="flex flex-1 flex-col pt-3">
-        <Link href={`/products/${product.slug}`} className="text-[0.9375rem] font-medium leading-snug hover:underline">
+        <Link
+          href={`/products/${product.slug}`}
+          className="text-[0.9375rem] font-medium leading-snug hover:underline"
+        >
           {product.name}
         </Link>
         <div className="mt-1">
@@ -262,7 +278,9 @@ function QuickAddModal({
     );
   }, [data, selected]);
 
-  const activeVariant = data ? (matched ?? (data.options.length === 0 ? data.variants[0] ?? null : null)) : null;
+  const activeVariant = data
+    ? (matched ?? (data.options.length === 0 ? (data.variants[0] ?? null) : null))
+    : null;
   const maxQuantity = Math.min(10, activeVariant?.available ?? 0);
 
   useEffect(() => {
@@ -291,7 +309,11 @@ function QuickAddModal({
     <Modal open={open} onClose={onClose} title={product.name}>
       <div className="flex gap-4">
         <div className="relative h-28 w-24 shrink-0 overflow-hidden bg-cream">
-          <ProductImage url={data?.image?.url ?? product.images[0]?.url ?? null} alt={product.name} sizes="96px" />
+          <ProductImage
+            url={data?.image?.url ?? product.images[0]?.url ?? null}
+            alt={product.name}
+            sizes="96px"
+          />
         </div>
         <div>
           <Price
@@ -319,7 +341,13 @@ function QuickAddModal({
               <div className="flex flex-wrap gap-2" role="group" aria-label={option.name}>
                 {option.values.map((value) => {
                   const isActive = selected[option.name] === value.id;
-                  const available = isOptionValueAvailableForSelection(data.options, data.variants, selected, option.name, value.id);
+                  const available = isOptionValueAvailableForSelection(
+                    data.options,
+                    data.variants,
+                    selected,
+                    option.name,
+                    value.id,
+                  );
                   return (
                     <button
                       key={value.id}
@@ -328,8 +356,15 @@ function QuickAddModal({
                       disabled={!available}
                       onClick={() => {
                         setError(null);
-                        setSelected((previous) =>
-                          resolveVariantSelection(data.options, data.variants, previous, option.name, value.id).selection,
+                        setSelected(
+                          (previous) =>
+                            resolveVariantSelection(
+                              data.options,
+                              data.variants,
+                              previous,
+                              option.name,
+                              value.id,
+                            ).selection,
                         );
                       }}
                       className={cn(
@@ -357,7 +392,11 @@ function QuickAddModal({
 
       {product.hasVariants && (
         <div className="mt-4 flex items-center gap-3">
-          <QuantitySelector value={quantity} onChange={setQuantity} max={Math.max(1, maxQuantity)} />
+          <QuantitySelector
+            value={quantity}
+            onChange={setQuantity}
+            max={Math.max(1, maxQuantity)}
+          />
           <span className="text-xs text-ink-muted">Select options to see availability</span>
         </div>
       )}
@@ -370,12 +409,18 @@ function QuickAddModal({
       <div className="mt-5 flex gap-2">
         <Button
           onClick={() => void submit()}
-          disabled={pending || loading || !product.inStock || (product.hasVariants && !activeVariant)}
+          disabled={
+            pending || loading || !product.inStock || (product.hasVariants && !activeVariant)
+          }
           className="flex-1"
         >
           {pending ? "Adding…" : "Add to bag"}
         </Button>
-        <Link href={`/products/${product.slug}`} onClick={onClose} className="btn btn-ghost flex-1 text-center">
+        <Link
+          href={`/products/${product.slug}`}
+          onClick={onClose}
+          className="btn btn-ghost flex-1 text-center"
+        >
           Full details
         </Link>
       </div>
@@ -415,24 +460,34 @@ export function ProductCarousel({
         </div>
         <div className="flex items-center gap-2">
           {viewAllHref && (
-            <Link href={viewAllHref} className="mr-2 hidden text-xs font-medium uppercase tracking-[0.18em] underline underline-offset-4 sm:inline">
+            <Link
+              href={viewAllHref}
+              className="mr-2 hidden text-xs font-medium uppercase tracking-[0.18em] underline underline-offset-4 sm:inline"
+            >
               Voir tout
             </Link>
           )}
-          <button type="button" aria-label="Faire défiler vers la gauche" onClick={() => scrollBy(-1)} className="flex h-10 w-10 items-center justify-center border hairline bg-white">
+          <button
+            type="button"
+            aria-label="Faire défiler vers la gauche"
+            onClick={() => scrollBy(-1)}
+            className="flex h-10 w-10 items-center justify-center border hairline bg-white"
+          >
             <ChevronLeft size={18} />
           </button>
-          <button type="button" aria-label="Faire défiler vers la droite" onClick={() => scrollBy(1)} className="flex h-10 w-10 items-center justify-center border hairline bg-white">
+          <button
+            type="button"
+            aria-label="Faire défiler vers la droite"
+            onClick={() => scrollBy(1)}
+            className="flex h-10 w-10 items-center justify-center border hairline bg-white"
+          >
             <ChevronRight size={18} />
           </button>
         </div>
       </div>
-      <div
-        ref={trackRef}
-        className="no-scrollbar -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-2 md:mx-0 md:grid md:grid-cols-4 md:overflow-visible md:px-0 lg:grid-cols-5"
-      >
+      <div ref={trackRef} className="shopify-rail motion-stagger -mx-4 px-4 md:mx-0 md:px-0">
         {products.map((product) => (
-          <div key={product.id} className="w-[46%] shrink-0 snap-start md:w-auto">
+          <div key={product.id} className="w-[46%] shrink-0 md:w-[18rem]">
             <ProductCard product={product} />
           </div>
         ))}
@@ -452,6 +507,7 @@ export function ProductGallery({
 }) {
   const [active, setActive] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
+  const [zoomPoint, setZoomPoint] = useState({ x: 50, y: 50 });
   const current = images[Math.min(active, images.length - 1)];
 
   return (
@@ -459,14 +515,35 @@ export function ProductGallery({
       <button
         type="button"
         onClick={() => setFullscreen(true)}
-        className="relative block aspect-[3/4] w-full overflow-hidden bg-cream"
+        onMouseMove={(event) => {
+          const rect = event.currentTarget.getBoundingClientRect();
+          setZoomPoint({
+            x: ((event.clientX - rect.left) / rect.width) * 100,
+            y: ((event.clientY - rect.top) / rect.height) * 100,
+          });
+        }}
+        className="product-gallery-hero group relative block aspect-[3/4] w-full overflow-hidden bg-cream"
         aria-label="Open fullscreen gallery"
       >
-        {current ? (
-          <ProductImage url={current.url} alt={current.alt || name} sizes="(max-width: 768px) 100vw, 50vw" priority />
-        ) : (
-          <ProductImage url={null} alt={name} />
-        )}
+        <div
+          className="product-zoom-frame absolute inset-0"
+          style={{ "--zoom-x": `${zoomPoint.x}%`, "--zoom-y": `${zoomPoint.y}%` } as CSSProperties}
+        >
+          {current ? (
+            <ProductImage
+              url={current.url}
+              alt={current.alt || name}
+              sizes="(max-width: 768px) 100vw, 50vw"
+              priority
+              className="product-zoom-image"
+            />
+          ) : (
+            <ProductImage url={null} alt={name} />
+          )}
+        </div>
+        <span className="product-zoom-hint pointer-events-none absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-white/85 px-3 py-2 text-[0.625rem] font-medium uppercase tracking-[0.18em] text-ink-soft opacity-0 backdrop-blur transition-opacity duration-300 group-hover:opacity-100">
+          Survoler pour agrandir
+        </span>
       </button>
       {images.length > 1 && (
         <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
@@ -478,8 +555,8 @@ export function ProductGallery({
               aria-label={`View image ${index + 1}`}
               aria-current={index === active}
               className={cn(
-                "relative h-20 w-16 shrink-0 overflow-hidden bg-cream",
-                index === active && "ring-2 ring-gold ring-offset-2",
+                "product-gallery-thumb relative h-20 w-16 shrink-0 overflow-hidden bg-cream",
+                index === active && "product-gallery-thumb-active ring-2 ring-gold ring-offset-2",
               )}
             >
               <ProductImage url={image.url} alt={image.alt || name} sizes="64px" />
@@ -489,7 +566,13 @@ export function ProductGallery({
       )}
       <Modal open={fullscreen} onClose={() => setFullscreen(false)} title={name}>
         <div className="relative aspect-[3/4] w-full overflow-hidden bg-cream">
-          {current && <ProductImage url={current.url} alt={current.alt || name} sizes="(max-width: 640px) 100vw, 480px" />}
+          {current && (
+            <ProductImage
+              url={current.url}
+              alt={current.alt || name}
+              sizes="(max-width: 640px) 100vw, 480px"
+            />
+          )}
         </div>
         {images.length > 1 && (
           <div className="mt-4 flex items-center justify-center gap-3">
@@ -553,12 +636,22 @@ function VariantPicker({
             <div className="flex flex-wrap gap-2" role="group" aria-label={option.name}>
               {option.values.map((value) => {
                 const currentSelection = selected
-                  ? Object.fromEntries(product.options.map((entry) => [
-                      entry.name,
-                      selected.optionValueIds.find((id) => entry.values.some((candidate) => candidate.id === id)) ?? "",
-                    ]))
+                  ? Object.fromEntries(
+                      product.options.map((entry) => [
+                        entry.name,
+                        selected.optionValueIds.find((id) =>
+                          entry.values.some((candidate) => candidate.id === id),
+                        ) ?? "",
+                      ]),
+                    )
                   : {};
-                const available = isOptionValueAvailableForSelection(product.options, product.variants, currentSelection, option.name, value.id);
+                const available = isOptionValueAvailableForSelection(
+                  product.options,
+                  product.variants,
+                  currentSelection,
+                  option.name,
+                  value.id,
+                );
                 const isActive = activeValueId === value.id;
                 return (
                   <button
@@ -570,18 +663,24 @@ function VariantPicker({
                       const result = resolveVariantSelection(
                         product.options,
                         product.variants,
-                        selected ? Object.fromEntries(product.options.map((entry) => [
-                          entry.name,
-                          selected.optionValueIds.find((id) => entry.values.some((candidate) => candidate.id === id)) ?? "",
-                        ])) : {},
+                        selected
+                          ? Object.fromEntries(
+                              product.options.map((entry) => [
+                                entry.name,
+                                selected.optionValueIds.find((id) =>
+                                  entry.values.some((candidate) => candidate.id === id),
+                                ) ?? "",
+                              ]),
+                            )
+                          : {},
                         option.name,
                         value.id,
                       );
                       if (result.variantId) onChange(result.variantId);
                     }}
                     className={cn(
-                      "flex min-h-10 items-center gap-2 border px-4 text-sm transition-colors",
-                      isActive ? "border-ink bg-ink text-ivory" : "hairline bg-white",
+                      "variant-option flex min-h-10 items-center gap-2 border px-4 text-sm",
+                      isActive ? "variant-option-active" : "hairline bg-white",
                       !available && "opacity-40 line-through",
                     )}
                   >
@@ -608,7 +707,9 @@ function VariantPicker({
 
 export function AddToBagPanel({ product }: { product: StoreProduct }) {
   const { add } = useCart();
-  const [variantId, setVariantId] = useState(product.defaultVariantId ?? product.variants[0]?.id ?? "");
+  const [variantId, setVariantId] = useState(
+    product.defaultVariantId ?? product.variants[0]?.id ?? "",
+  );
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -694,7 +795,9 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
             <p className="truncate text-sm font-medium">{product.name}</p>
             <p className="text-sm text-ink-soft">
               {selected ? formatPrice(selected.price) : formatPrice(product.price)}
-              {selected?.optionLabel && <span className="text-ink-muted"> · {selected.optionLabel}</span>}
+              {selected?.optionLabel && (
+                <span className="text-ink-muted"> · {selected.optionLabel}</span>
+              )}
             </p>
           </div>
           <Button
@@ -730,7 +833,9 @@ function WishlistButton({
     void getWishlistIdsAction()
       .then((state) => {
         if (cancelled) return;
-        setSaved(state.loggedIn ? state.ids.includes(productId) : readGuestWishlist().includes(productId));
+        setSaved(
+          state.loggedIn ? state.ids.includes(productId) : readGuestWishlist().includes(productId),
+        );
       })
       .catch(() => {
         if (!cancelled) setSaved(readGuestWishlist().includes(productId));
@@ -752,7 +857,9 @@ function WishlistButton({
     if (result.code === "NEED_LOGIN") {
       // Guests keep a local wishlist, merged into their account on login.
       const ids = readGuestWishlist();
-      const next = ids.includes(productId) ? ids.filter((id) => id !== productId) : [...ids, productId];
+      const next = ids.includes(productId)
+        ? ids.filter((id) => id !== productId)
+        : [...ids, productId];
       writeGuestWishlist(next);
       setSaved(next.includes(productId));
       if (next.includes(productId)) pixelEvent("AddToWishlist", { content_ids: [productId] });

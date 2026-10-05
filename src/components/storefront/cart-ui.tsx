@@ -119,7 +119,12 @@ function CartDrawer() {
   }
 
   return (
-    <Drawer open={open} onClose={() => setOpen(false)} title={`Your bag (${count})`}>
+    <Drawer
+      open={open}
+      onClose={() => setOpen(false)}
+      title={`Your bag (${count})`}
+      className="cart-drawer"
+    >
       <div className="flex h-full flex-col">
         {(error || loadError) && (
           <p className="border-b hairline px-5 py-3 text-sm text-[#9e342e]" role="alert">
@@ -129,14 +134,14 @@ function CartDrawer() {
         {loadError ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
             <p className="font-display text-2xl">Panier indisponible</p>
-            <Button variant="outline" size="sm" onClick={() => void refresh()}>Réessayer</Button>
+            <Button variant="outline" size="sm" onClick={() => void refresh()}>
+              Réessayer
+            </Button>
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
             <p className="font-display text-2xl">Your bag is empty</p>
-            <p className="text-sm text-ink-soft">
-              Discover pieces made to be worn on repeat.
-            </p>
+            <p className="text-sm text-ink-soft">Découvrez des pièces à porter jour après jour.</p>
             <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
               Continue shopping
             </Button>
@@ -213,7 +218,11 @@ function CartDrawer() {
                 Exact fee calculated at checkout. Cash on delivery.
               </p>
               <div className="flex flex-col gap-2">
-                <Link href="/checkout" onClick={() => setOpen(false)} className="btn btn-primary w-full">
+                <Link
+                  href="/checkout"
+                  onClick={() => setOpen(false)}
+                  className="btn btn-primary w-full"
+                >
                   Checkout
                 </Link>
                 <Link href="/cart" onClick={() => setOpen(false)} className="btn btn-ghost w-full">
