@@ -59,4 +59,29 @@ describe("productionEnvironmentIssues", () => {
     expect(issues).toContain("APP_URL must be a canonical HTTPS origin, not localhost");
     expect(issues).toContain("TRUSTED_CLIENT_IP_HEADER must name a header overwritten by the trusted reverse proxy");
   });
+
+  it("requires credentials when a real notification provider is enabled", () => {
+    const issues = productionEnvironmentIssues({
+      ...validProductionEnv,
+      EMAIL_PROVIDER: "resend",
+      SMS_PROVIDER: "twilio",
+      WHATSAPP_PROVIDER: "meta",
+    });
+    expect(issues).toContain("EMAIL_API_KEY must be configured when EMAIL_PROVIDER is resend");
+    expect(issues).toContain("EMAIL_FROM must be configured when EMAIL_PROVIDER is resend");
+    expect(issues).toContain("SMS_ACCOUNT_SID must be configured when SMS_PROVIDER is twilio");
+    expect(issues).toContain("WHATSAPP_API_KEY must be configured when WHATSAPP_PROVIDER is meta");
+  });
+
+  it("rejects unknown notification providers", () => {
+    const issues = productionEnvironmentIssues({
+      ...validProductionEnv,
+      EMAIL_PROVIDER: "unknown",
+      SMS_PROVIDER: "unknown",
+      WHATSAPP_PROVIDER: "unknown",
+    });
+    expect(issues).toContain("EMAIL_PROVIDER must be resend or console");
+    expect(issues).toContain("SMS_PROVIDER must be twilio or console");
+    expect(issues).toContain("WHATSAPP_PROVIDER must be meta or console");
+  });
 });

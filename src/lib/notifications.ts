@@ -56,8 +56,16 @@ type OrderEmailData = {
   trackingNote?: string;
 };
 
+function redactRecipient(recipient: string): string {
+  if (recipient.includes("@")) {
+    const [local, domain] = recipient.split("@", 2);
+    return `${local?.slice(0, 1) ?? "*"}***@${domain ?? "unknown"}`;
+  }
+  return `***${recipient.slice(-2)}`;
+}
+
 async function consoleSend(channel: NotificationChannel, message: NotificationMessage) {
-  console.info(`[notify:${channel.toLowerCase()}] -> ${message.to} :: ${message.subject}`);
+  console.info(`[notify:${channel.toLowerCase()}] -> ${redactRecipient(message.to)} :: ${message.subject}`);
 }
 
 function providerSignal(): AbortSignal {
