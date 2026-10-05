@@ -7,6 +7,7 @@ import { toUserMessage, isAppError } from "@/lib/errors";
 import { recordAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
+const NO_STORE = { "Cache-Control": "no-store" };
 
 /**
  * Admin product-image upload. Accepts a single `file` field (multipart).
@@ -16,10 +17,10 @@ export const dynamic = "force-dynamic";
 export async function POST(request: Request) {
   const session = await getAdminSession();
   if (!session) {
-    return Response.json({ ok: false, error: "Please sign in." }, { status: 401 });
+    return Response.json({ ok: false, error: "Please sign in." }, { status: 401, headers: NO_STORE });
   }
   if (!can(session.user, "products:write")) {
-    return Response.json({ ok: false, error: "Forbidden." }, { status: 403 });
+    return Response.json({ ok: false, error: "Forbidden." }, { status: 403, headers: NO_STORE });
   }
 
   try {
@@ -29,10 +30,10 @@ export async function POST(request: Request) {
     const form = await request.formData();
     const file = form.get("file");
     if (!(file instanceof File)) {
-      return Response.json({ ok: false, error: "No file provided." }, { status: 400 });
+      return Response.json({ ok: false, error: "No file provided." }, { status: 400, headers: NO_STORE });
     }
     if (file.size > 8 * 1024 * 1024) {
-      return Response.json({ ok: false, error: "Image is too large." }, { status: 413 });
+      return Response.json({ ok: false, error: "Image is too large." }, { status: 413, headers: NO_STORE });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -47,12 +48,12 @@ export async function POST(request: Request) {
       metadata: { size: file.size, mimeType: stored.mimeType },
     });
 
-    return Response.json({ ok: true, ...stored });
+    return Response.json({ ok: true, ...stored }, { headers: NO_STORE });
   } catch (error) {
     console.error("[upload] failed", error instanceof Error ? error.name : "unknown");
     return Response.json(
       { ok: false, error: toUserMessage(error) },
-      { status: isAppError(error) ? error.status : 500 },
+      { status: isAppError(error) ? error.status : 500, headers: NO_STORE },
     );
   }
 }

@@ -24,9 +24,6 @@ import {
 import { getSettings } from "@/lib/settings";
 import { z } from "zod";
 
-const MAX_FAILED = 5;
-const LOCKOUT_MS = 15 * 60_000;
-
 function redirectIfPasswordChangeRequired(mustChangePassword: boolean): void {
   if (mustChangePassword) redirect("/admin/first-login");
 }
@@ -40,6 +37,7 @@ export async function adminLoginAction(input: { email: string; password: string;
   const ip = await clientIp();
   try {
     await enforceRateLimit({ ...LIMITS.adminLogin, key: `admin-login:${ip}` });
+    await enforceRateLimit({ ...LIMITS.adminLogin, key: `admin-login-account:${parsed.data.email}` });
   } catch {
     return { ok: false as const, error: "Too many attempts. Please try again later." };
   }
@@ -70,14 +68,9 @@ export async function adminLoginAction(input: { email: string; password: string;
     : false;
 
   if (!valid) {
-    const failed = user.failedLoginCount + 1;
     await prisma.user.update({
       where: { id: user.id },
-      data: {
-        failedLoginCount: failed,
-        lockedUntil: failed >= MAX_FAILED ? new Date(Date.now() + LOCKOUT_MS) : null,
-        status: failed >= MAX_FAILED ? "LOCKED" : undefined,
-      },
+      data: { failedLoginCount: { increment: 1 } },
     });
     await recordAudit({
       actorType: "SYSTEM",

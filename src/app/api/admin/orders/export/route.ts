@@ -3,6 +3,7 @@ import { exportOrdersCsv } from "@/server/actions/admin-orders";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
+const NO_STORE = { "Cache-Control": "no-store" };
 
 export async function GET(request: Request) {
   try {
@@ -10,9 +11,9 @@ export async function GET(request: Request) {
   } catch (error) {
     const { isAppError } = await import("@/lib/errors");
     if (isAppError(error)) {
-      return Response.json({ ok: false, error: error.userMessage }, { status: error.status });
+      return Response.json({ ok: false, error: error.userMessage }, { status: error.status, headers: NO_STORE });
     }
-    return Response.json({ ok: false, error: "Something went wrong." }, { status: 500 });
+    return Response.json({ ok: false, error: "Something went wrong." }, { status: 500, headers: NO_STORE });
   }
   const { searchParams } = new URL(request.url);
   const parsed = z
@@ -42,7 +43,7 @@ export async function GET(request: Request) {
     !parsed.success ||
     (parsed.data.from && parsed.data.to && new Date(parsed.data.from) > new Date(parsed.data.to))
   ) {
-    return Response.json({ ok: false, error: "Invalid export filters." }, { status: 400 });
+    return Response.json({ ok: false, error: "Invalid export filters." }, { status: 400, headers: NO_STORE });
   }
   const csv = await exportOrdersCsv({
     ...parsed.data,
@@ -52,6 +53,7 @@ export async function GET(request: Request) {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
       "Content-Disposition": `attachment; filename="orders-${new Date().toISOString().slice(0, 10)}.csv"`,
+      ...NO_STORE,
     },
   });
 }

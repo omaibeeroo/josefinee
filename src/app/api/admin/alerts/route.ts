@@ -1,10 +1,12 @@
 import { requirePermission } from "@/lib/auth/rbac";
 
+const NO_STORE = { "Cache-Control": "no-store" };
+
 export async function GET() {
   try {
     await requirePermission("orders:read");
   } catch {
-    return Response.json({ error: "Forbidden" }, { status: 403 });
+    return Response.json({ error: "Forbidden" }, { status: 403, headers: NO_STORE });
   }
 
   const { prisma } = await import("@/lib/prisma");
@@ -19,8 +21,11 @@ export async function GET() {
       .catch(() => null),
   ]);
 
-  return Response.json({
-    pendingCount,
-    latestOrderNumber: latest?.orderNumber ?? null,
-  });
+  return Response.json(
+    {
+      pendingCount,
+      latestOrderNumber: latest?.orderNumber ?? null,
+    },
+    { headers: NO_STORE },
+  );
 }
