@@ -3,17 +3,7 @@ import type { Metadata } from "next";
 import { getSettings } from "@/lib/settings";
 import { getBestSellers, getFeaturedProducts, getNewInProducts } from "@/server/catalog";
 import { prisma } from "@/lib/prisma";
-import {
-  CategoryGrid,
-  DiscoveryStrip,
-  FaqTeaser,
-  FeaturedCollection,
-  Hero,
-  NewsletterSection,
-  Pillars,
-  SocialProof,
-  TrustBar,
-} from "@/components/storefront/home";
+import { DiscoveryStrip, Hero, TrustBar } from "@/components/storefront/home";
 import { ProductCarousel } from "@/components/storefront/product";
 
 export const revalidate = 60;
@@ -107,17 +97,7 @@ async function getHomeData() {
 }
 
 export default async function HomePage() {
-  const {
-    settings,
-    featured,
-    newIn,
-    bestSellers,
-    catalogError,
-    categoryTiles,
-    featuredCollection,
-    deliveredCount,
-    faqs,
-  } = await getHomeData();
+  const { settings, featured, newIn, bestSellers, catalogError } = await getHomeData();
 
   return (
     <div className="product-first-home flex flex-col gap-0">
@@ -173,45 +153,6 @@ export default async function HomePage() {
       <DiscoveryStrip />
 
       <TrustBar />
-
-      {featuredCollection && (
-        <div className="section-space">
-          <FeaturedCollection
-            title={featuredCollection.name}
-            description={featuredCollection.description ?? ""}
-            image={featuredCollection.image}
-            href={`/collections/${featuredCollection.slug}`}
-            cta="Découvrir"
-          />
-        </div>
-      )}
-
-      <div className="section-space pt-0">
-        <CategoryGrid categories={categoryTiles} />
-      </div>
-
-      {settings.homepage.showSocialProof && <SocialProof deliveredCount={deliveredCount} />}
-
-      <div className="section-space">
-        <Pillars items={settings.homepage.pillars} />
-      </div>
-
-      <div className="section-space pt-0">
-        <FaqTeaser items={faqs} />
-      </div>
-
-      <div className="section-space pt-0">
-        <NewsletterSection />
-      </div>
-
-      <section className="container-luxe pb-4 text-center">
-        <Link
-          href="/shop"
-          className="text-xs font-medium uppercase tracking-[0.24em] underline underline-offset-8"
-        >
-          Découvrir tous les produits
-        </Link>
-      </section>
     </div>
   );
 }

@@ -2034,3 +2034,166 @@
 .product-first-home h1 {
   letter-spacing: 0;
 }
+
+/* ---------------------------------------------------------------------------
+   Honest catalog reset: real product content first, no decorative placeholders.
+--------------------------------------------------------------------------- */
+.product-first-home .catalog-intro {
+  border-bottom: 1px solid #e5e7e8;
+  background: #fff;
+  padding: 2.5rem 0 2.25rem;
+  text-align: center;
+}
+
+.product-first-home .catalog-intro .container-luxe {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.product-first-home .catalog-intro h1 {
+  max-width: 38rem;
+  margin: 0.65rem auto 0;
+  font-family: var(--font-display);
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 400;
+  line-height: 1.08;
+  letter-spacing: 0;
+}
+
+.product-first-home .catalog-intro-copy {
+  max-width: 32rem;
+  margin: 0.8rem auto 0;
+  color: #68737e;
+  font-size: 0.9rem;
+  line-height: 1.55;
+}
+
+.product-first-home .catalog-intro-link {
+  margin-top: 1rem;
+  color: #1d232b;
+  font-size: 0.85rem;
+  text-decoration: underline;
+  text-underline-offset: 0.25em;
+}
+
+.product-first-home .section-space {
+  padding-block: 2.75rem;
+}
+
+@media (min-width: 768px) {
+  .product-first-home .section-space {
+    padding-block: 3.5rem;
+  }
+}
+
+.product-first-home .product-shelf .shopify-rail {
+  overflow: visible;
+  padding-bottom: 0;
+}
+
+.product-first-home .product-card {
+  border-bottom: 1px solid #e5e7e8;
+  padding-bottom: 0.9rem;
+  transition: none;
+}
+
+.product-first-home .product-card:hover,
+.product-first-home .product-card:focus-within {
+  transform: none;
+}
+
+.product-first-home .product-card-media {
+  border: 0;
+  border-radius: 0;
+  background: #f7f7f6;
+  box-shadow: none;
+  transition: none;
+}
+
+.product-first-home .product-card:hover .product-card-media,
+.product-first-home .product-card:focus-within .product-card-media {
+  transform: none;
+  box-shadow: none;
+}
+
+.product-first-home .product-card-media::before,
+.product-first-home .product-card-media::after,
+.product-first-home .product-card--empty .product-card-media > .absolute,
+.product-first-home .product-card--empty .product-card-media > button {
+  display: none;
+}
+
+.product-first-home .product-image-empty {
+  height: 2.25rem;
+  border-bottom: 1px solid #e5e7e8;
+  background: transparent;
+}
+
+.product-first-home .product-card--empty .product-card-copy {
+  padding-top: 0.65rem;
+}
+
+.product-first-home .product-card--empty .product-card-copy > a {
+  font-size: 0.9rem;
+}
+
+.product-first-home .product-card-copy {
+  padding-top: 0.7rem;
+}
+
+.product-first-home .product-shelf > div:first-child {
+  margin-bottom: 1.25rem;
+  padding-bottom: 0;
+}
+
+.product-first-home .product-shelf > div:first-child h2 {
+  font-size: 1.35rem;
+}
+
+.product-first-home .product-shelf .shopify-rail > * {
+  width: min(15rem, 18vw);
+  min-width: min(15rem, 18vw);
+}
+
+.product-first-home .motion-stagger > *,
+.product-first-home .page-enter,
+.product-first-home .product-card * {
+  animation: none !important;
+}
+
+.product-first-home .discovery-strip,
+.product-first-home .trust-bar {
+  font-size: 0.85rem;
+}
+
+@media (min-width: 1024px) {
+  .product-first-home .product-shelf .shopify-rail {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .product-first-home .product-shelf .shopify-rail > * {
+    width: auto;
+    min-width: 0;
+  }
+}
+
+.product-first-home .product-card--empty .product-card-media {
+  display: none;
+}
+
+.product-first-home .product-card--empty .product-card-copy {
+  padding-top: 0.15rem;
+}
+
+@media (max-width: 1023px) {
+  .product-first-home .product-shelf .shopify-rail {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: auto;
+    overflow-y: visible;
+    justify-content: flex-start;
+  }
+}

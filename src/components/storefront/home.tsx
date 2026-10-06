@@ -25,7 +25,10 @@ export function DiscoveryStrip() {
   ];
 
   return (
-    <section className="border-b hairline bg-white" aria-label="Découvrir Josefinee">
+    <section
+      className="discovery-strip border-b hairline bg-white"
+      aria-label="Découvrir Josefinee"
+    >
       <div className="container-luxe grid divide-y hairline sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {items.map((item, index) => (
           <Link
@@ -51,105 +54,16 @@ export function DiscoveryStrip() {
 }
 
 export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
-  const hasImage = Boolean(hero.imageDesktop);
   return (
-    <section className="relative overflow-hidden bg-cream" aria-label="Featured">
-      {hasImage ? (
-        <>
-          <div className="relative hidden aspect-[21/9] w-full md:block">
-            <Image
-              src={hero.imageDesktop}
-              alt={hero.headline}
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover motion-safe:animate-hero-image"
-            />
-          </div>
-          <div className="relative aspect-[4/5] w-full sm:aspect-[16/10] md:hidden">
-            <Image
-              src={hero.imageMobile || hero.imageDesktop}
-              alt={hero.headline}
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover motion-safe:animate-hero-image"
-            />
-          </div>
-          <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/15 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 pb-10 md:pb-16">
-            <div className="container-luxe text-ivory">
-              <p
-                className="eyebrow !text-ivory/80 motion-safe:animate-hero-enter opacity-0"
-                style={{ animationDelay: "120ms" }}
-              >
-                {naturalCase(hero.eyebrow)}
-              </p>
-              <h1
-                className="mt-3 max-w-2xl font-display text-4xl font-medium leading-[1.05] motion-safe:animate-hero-enter opacity-0 md:text-6xl"
-                style={{ animationDelay: "220ms" }}
-              >
-                {naturalCase(hero.headline)}
-              </h1>
-              <p
-                className="mt-4 max-w-xl text-[0.9375rem] leading-relaxed text-ivory/85 motion-safe:animate-hero-enter opacity-0"
-                style={{ animationDelay: "320ms" }}
-              >
-                {hero.subheading}
-              </p>
-              <div
-                className="mt-6 flex flex-wrap gap-3 motion-safe:animate-hero-enter opacity-0"
-                style={{ animationDelay: "420ms" }}
-              >
-                <Link
-                  href={hero.primaryHref}
-                  className="btn btn-shine bg-ivory text-ink hover:bg-white"
-                >
-                  {naturalCase(hero.primaryLabel)}
-                </Link>
-                <Link
-                  href={hero.secondaryHref}
-                  className="btn border border-ivory/70 text-ivory hover:bg-ivory hover:text-ink"
-                >
-                  {naturalCase(hero.secondaryLabel)}
-                </Link>
-              </div>
-            </div>
-          </div>
-        </>
-      ) : (
-        <div className="container-luxe py-16 text-center md:py-28">
-          <p
-            className="eyebrow motion-safe:animate-hero-enter opacity-0"
-            style={{ animationDelay: "120ms" }}
-          >
-            {naturalCase(hero.eyebrow)}
-          </p>
-          <h1
-            className="mx-auto mt-4 max-w-3xl font-display text-5xl font-medium leading-[1.05] motion-safe:animate-hero-enter opacity-0 md:text-7xl"
-            style={{ animationDelay: "220ms" }}
-          >
-            {naturalCase(hero.headline)}
-          </h1>
-          <p
-            className="mx-auto mt-5 max-w-xl text-ink-soft motion-safe:animate-hero-enter opacity-0"
-            style={{ animationDelay: "320ms" }}
-          >
-            {hero.subheading}
-          </p>
-          <div
-            className="mt-8 flex flex-wrap justify-center gap-3 motion-safe:animate-hero-enter opacity-0"
-            style={{ animationDelay: "420ms" }}
-          >
-            <Link href={hero.primaryHref} className="btn btn-primary btn-shine">
-              {naturalCase(hero.primaryLabel)}
-            </Link>
-            <Link href={hero.secondaryHref} className="btn btn-outline">
-              {naturalCase(hero.secondaryLabel)}
-            </Link>
-          </div>
-        </div>
-      )}
+    <section className="catalog-intro" aria-label="Présentation de la boutique">
+      <div className="container-luxe">
+        <p className="eyebrow">{naturalCase(hero.eyebrow)}</p>
+        <h1>{naturalCase(hero.headline)}</h1>
+        <p className="catalog-intro-copy">{hero.subheading}</p>
+        <Link href={hero.primaryHref} className="catalog-intro-link">
+          {naturalCase(hero.primaryLabel)}
+        </Link>
+      </div>
     </section>
   );
 }
@@ -274,7 +188,10 @@ const TRUST_ITEMS = [
 
 export function TrustBar() {
   return (
-    <section className="border-y hairline bg-white" aria-label="Pourquoi choisir notre boutique">
+    <section
+      className="trust-bar border-y hairline bg-white"
+      aria-label="Pourquoi choisir notre boutique"
+    >
       <div className="motion-stagger container-luxe grid grid-cols-1 gap-6 py-8 sm:grid-cols-3">
         {TRUST_ITEMS.map((item) => (
           <div key={item.title} className="group flex items-center gap-4">

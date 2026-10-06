@@ -154,16 +154,18 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
   }
 
   return (
-    <article className="product-card group flex flex-col">
+    <article className={cn("product-card group flex flex-col", !main && "product-card--empty")}>
       <div className="product-card-media relative overflow-hidden bg-cream">
         <Link
           href={`/products/${product.slug}`}
           aria-label={product.name}
-          className="block aspect-[3/4]"
+          className={cn("block", main ? "aspect-[3/4]" : "product-image-empty")}
         >
-          <div className="absolute inset-0 transition-all duration-500 ease-out group-hover:scale-[1.04] group-hover:opacity-0">
-            <ProductImage url={main?.url ?? null} alt={product.name} />
-          </div>
+          {main && (
+            <div className="absolute inset-0 transition-all duration-500 ease-out group-hover:scale-[1.04] group-hover:opacity-0">
+              <ProductImage url={main.url} alt={product.name} />
+            </div>
+          )}
           {hover && (
             <div className="absolute inset-0 scale-[1.04] opacity-0 transition-all duration-500 ease-out group-hover:scale-100 group-hover:opacity-100">
               <ProductImage url={hover.url} alt={product.name} />
