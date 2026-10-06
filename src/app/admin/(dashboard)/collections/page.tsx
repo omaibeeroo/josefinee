@@ -25,7 +25,7 @@ export default async function AdminCollectionsPage() {
 
   return (
     <div>
-      <PageHeader title="Collections" description="Manual edits and automatic merchandising (New In, Best Sellers, Sale)." />
+      <PageHeader title="Collections" description="Sélections manuelles et automatiques (Nouveautés, Meilleures ventes, Promotions)." />
       <CollectionManager
         collections={collections.map((collection) => ({
           ...collection,

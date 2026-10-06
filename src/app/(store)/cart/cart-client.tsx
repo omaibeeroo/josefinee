@@ -63,11 +63,11 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
   if (items.length === 0) {
     return (
       <EmptyState
-        title="Your bag is empty"
-        message="Beautiful pieces are waiting for you."
+        title="Votre panier est vide"
+        message="De belles pièces vous attendent."
         action={
           <Link href="/shop" className="btn btn-primary">
-            Start shopping
+            Découvrir la boutique
           </Link>
         }
       />
@@ -103,11 +103,11 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
                     {item.productName}
                   </Link>
                   {item.variantLabel && <p className="mt-0.5 text-sm text-ink-muted">{item.variantLabel}</p>}
-                  <p className="mt-1 text-sm text-ink-soft">{formatDA(item.unitPrice)} each</p>
+                  <p className="mt-1 text-sm text-ink-soft">{formatDA(item.unitPrice)} / pièce</p>
                 </div>
                 <button
                   type="button"
-                  aria-label={`Remove ${item.productName}`}
+                  aria-label={`Retirer ${item.productName}`}
                   disabled={pending === item.id}
                   onClick={() => void remove(item.id)}
                   className="p-1 text-ink-muted hover:text-ink disabled:opacity-40"
@@ -130,21 +130,21 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
 
       <aside className="lg:sticky lg:top-32 lg:self-start">
         <div className="border hairline bg-white p-6">
-          <h2 className="text-xs font-medium uppercase tracking-[0.2em]">Order summary</h2>
+          <h2 className="text-xs font-medium uppercase tracking-[0.2em]">Résumé de commande</h2>
           <div className="mt-4 flex items-center justify-between">
-            <span className="text-sm text-ink-soft">Subtotal</span>
+            <span className="text-sm text-ink-soft">Sous-total</span>
             <span className="font-medium">{formatDA(subtotal)}</span>
           </div>
           <p className="mt-2 text-xs text-ink-muted">
-            {floor ? `Delivery from ${formatDA(floor.minHome)} · ` : ""}
-            Exact fee calculated at checkout. Cash on delivery.
+            {floor ? `Livraison dès ${formatDA(floor.minHome)} · ` : ""}
+            Frais exacts calculés à la commande. Paiement à la livraison.
           </p>
           <Link href="/checkout" className="btn btn-primary mt-5 w-full">
-            Checkout
+            Commander
           </Link>
           <div className="mt-2 flex justify-between">
             <Link href="/shop" className="btn btn-ghost flex-1">
-              Continue shopping
+              Continuer mes achats
             </Link>
             <button
               type="button"
@@ -152,7 +152,7 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
               disabled={pending === "clear"}
               className="ml-2 px-2 text-xs uppercase tracking-[0.14em] text-ink-muted underline underline-offset-2 disabled:opacity-40"
             >
-              Clear
+              Vider
             </button>
           </div>
         </div>

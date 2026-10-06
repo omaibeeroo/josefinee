@@ -14,7 +14,7 @@ export default async function AdminContentPage() {
   ]);
   return (
     <div className="space-y-10">
-      <PageHeader title="Content" description="Legal pages, FAQ and the announcement bar." />
+      <PageHeader title="Contenu" description="Pages légales, FAQ et bandeau d’annonce." />
       <AnnouncementsManager items={announcements} />
       <FaqManager items={faq} />
       <PagesManager pages={pages} />

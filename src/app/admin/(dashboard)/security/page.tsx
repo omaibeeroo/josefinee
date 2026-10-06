@@ -10,7 +10,7 @@ export default async function AdminSecurityPage() {
   if (!session) redirect("/admin/login");
   return (
     <div>
-      <PageHeader title="My security" description="Protect your admin account with a strong password and 2FA." />
+      <PageHeader title="Ma sécurité" description="Protégez votre compte admin avec un mot de passe fort et la 2FA." />
       <SecurityManager twoFactorEnabled={session.user.twoFactorEnabled} />
     </div>
   );

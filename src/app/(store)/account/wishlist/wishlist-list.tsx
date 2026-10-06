@@ -41,10 +41,10 @@ export function WishlistList({ initial }: { initial: WishlistRow[] }) {
   if (items.length === 0) {
     return (
       <div className="py-10 text-center">
-        <p className="font-display text-2xl">Nothing saved yet</p>
-        <p className="mt-2 text-ink-soft">Tap the heart on any product to keep it here.</p>
+        <p className="font-display text-2xl">Rien de sauvegardé pour l’instant</p>
+        <p className="mt-2 text-ink-soft">Touchez le cœur sur un article pour le garder ici.</p>
         <Link href="/shop" className="btn btn-primary mt-6">
-          Discover pieces
+          Découvrir nos pièces
         </Link>
       </div>
     );
@@ -62,7 +62,7 @@ export function WishlistList({ initial }: { initial: WishlistRow[] }) {
               <Link href={`/products/${item.slug}`} className="text-sm font-medium hover:underline">
                 {item.name}
               </Link>
-              <button type="button" aria-label={`Remove ${item.name}`} onClick={() => void remove(item.productId)} className="p-1 text-ink-muted hover:text-ink">
+              <button type="button" aria-label={`Retirer ${item.name}`} onClick={() => void remove(item.productId)} className="p-1 text-ink-muted hover:text-ink">
                 <X size={16} />
               </button>
             </div>
@@ -72,10 +72,10 @@ export function WishlistList({ initial }: { initial: WishlistRow[] }) {
             <div className="mt-auto pt-2">
               {item.inStock && item.defaultVariantId ? (
                 <Button size="sm" variant="outline" onClick={() => void moveToBag(item)}>
-                  Move to bag
+                  Ajouter au panier
                 </Button>
               ) : (
-                <p className="text-xs uppercase tracking-[0.14em] text-ink-muted">Out of stock</p>
+                <p className="text-xs uppercase tracking-[0.14em] text-ink-muted">Épuisé</p>
               )}
             </div>
           </div>

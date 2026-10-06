@@ -84,13 +84,13 @@ export function AddressesManager({
     <div>
       <div className="mb-4 flex justify-end">
         <Button size="sm" variant="outline" onClick={() => void startEdit()}>
-          Add address
+          Ajouter une adresse
         </Button>
       </div>
 
       {initial.length === 0 && !editing && (
         <p className="border hairline bg-white p-6 text-center text-ink-soft">
-          No saved addresses yet. Add one to check out faster.
+          Aucune adresse enregistrée. Ajoutez-en une pour commander plus vite.
         </p>
       )}
 
@@ -101,7 +101,7 @@ export function AddressesManager({
               <p className="font-medium">
                 {address.label || `${address.firstName} ${address.lastName}`}
                 {address.isDefault && (
-                  <span className="ml-2 text-[0.6875rem] uppercase tracking-[0.14em] text-gold-dark">Default</span>
+                  <span className="ml-2 text-[0.6875rem] uppercase tracking-[0.14em] text-gold-dark">Par défaut</span>
                 )}
               </p>
             </div>
@@ -113,10 +113,10 @@ export function AddressesManager({
             </p>
             <div className="mt-3 flex gap-3 text-xs uppercase tracking-[0.14em]">
               <button type="button" onClick={() => void startEdit(address)} className="underline underline-offset-2">
-                Edit
+                Modifier
               </button>
               <button type="button" onClick={() => void remove(address.id)} className="text-ink-muted underline underline-offset-2">
-                Delete
+                Supprimer
               </button>
             </div>
           </li>
@@ -125,25 +125,25 @@ export function AddressesManager({
 
       {editing && (
         <form onSubmit={submit} className="mt-6 space-y-4 border hairline bg-white p-6">
-          <h2 className="font-display text-2xl">{editing.id ? "Edit address" : "New address"}</h2>
-          <Field label="Label (optional)">
-            <Input value={editing.label ?? ""} onChange={(event) => setEditing({ ...editing, label: event.target.value })} placeholder="Home, work…" />
+          <h2 className="font-display text-2xl">{editing.id ? "Modifier l’adresse" : "Nouvelle adresse"}</h2>
+          <Field label="Libellé (optionnel)">
+            <Input value={editing.label ?? ""} onChange={(event) => setEditing({ ...editing, label: event.target.value })} placeholder="Domicile, travail…" />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="First name">
+            <Field label="Prénom">
               <Input value={editing.firstName ?? ""} onChange={(event) => setEditing({ ...editing, firstName: event.target.value })} required />
             </Field>
-            <Field label="Last name">
+            <Field label="Nom">
               <Input value={editing.lastName ?? ""} onChange={(event) => setEditing({ ...editing, lastName: event.target.value })} required />
             </Field>
           </div>
-          <Field label="Phone">
+          <Field label="Téléphone">
             <Input value={editing.phone ?? ""} onChange={(event) => setEditing({ ...editing, phone: event.target.value })} inputMode="tel" required />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Wilaya">
               <Select value={editing.wilayaId ?? ""} onChange={(event) => void onWilayaChange(event.target.value)} required>
-                <option value="">Select…</option>
+                <option value="">Choisir…</option>
                 {wilayas.map((wilaya) => (
                   <option key={wilaya.id} value={wilaya.id}>
                     {String(wilaya.code).padStart(2, "0")} — {wilaya.name}
@@ -153,7 +153,7 @@ export function AddressesManager({
             </Field>
             <Field label="Commune">
               <Select value={editing.communeId ?? ""} onChange={(event) => setEditing({ ...editing, communeId: event.target.value })} required>
-                <option value="">Select…</option>
+                <option value="">Choisir…</option>
                 {communes.map((commune) => (
                   <option key={commune.id} value={commune.id}>
                     {commune.name}
@@ -162,7 +162,7 @@ export function AddressesManager({
               </Select>
             </Field>
           </div>
-          <Field label="Address">
+          <Field label="Adresse">
             <Textarea value={editing.address ?? ""} onChange={(event) => setEditing({ ...editing, address: event.target.value })} required rows={2} />
           </Field>
           <label className="flex items-center gap-2 text-sm">
@@ -172,7 +172,7 @@ export function AddressesManager({
               onChange={(event) => setEditing({ ...editing, isDefault: event.target.checked })}
               className="h-4 w-4 accent-[#1c1a17]"
             />
-            Set as default
+            Définir par défaut
           </label>
           {error && (
             <p className="text-sm text-[#9e342e]" role="alert">
@@ -181,10 +181,10 @@ export function AddressesManager({
           )}
           <div className="flex gap-2">
             <Button type="submit" disabled={pending}>
-              {pending ? "Saving…" : "Save address"}
+              {pending ? "Enregistrement…" : "Enregistrer"}
             </Button>
             <Button type="button" variant="ghost" onClick={() => setEditing(null)}>
-              Cancel
+              Annuler
             </Button>
           </div>
         </form>

@@ -59,20 +59,20 @@ export default async function ConfirmationPage({
       />
       <div className="text-center">
         <CheckCircle2 size={44} strokeWidth={1.25} className="mx-auto text-success" />
-        <p className="eyebrow mt-4">Order confirmed ♡</p>
+        <p className="eyebrow mt-4">Commande confirmée ♡</p>
         <h1 className="mt-2 font-display text-4xl font-medium md:text-5xl">
-          Thank you, {order.firstName}.
+          Merci, {order.firstName}.
         </h1>
         <p className="mx-auto mt-3 max-w-md text-ink-soft">
-          We will prepare your order carefully and call {formatPhoneDisplay(order.phone)} before
-          delivery.
+          Nous préparerons votre commande avec soin et appellerons le{" "}
+          {formatPhoneDisplay(order.phone)} avant la livraison.
         </p>
         <p className="mt-4 inline-block border hairline bg-white px-5 py-2.5 text-sm tracking-[0.12em]">
-          Order <span className="font-semibold">{order.orderNumber}</span>
+          Commande <span className="font-semibold">{order.orderNumber}</span>
         </p>
       </div>
 
-      <ol className="mt-10" aria-label="Order progress">
+      <ol className="mt-10" aria-label="Suivi de commande">
         {CUSTOMER_ORDER_FLOW.map((status, index) => {
           const done = index <= activeIndex;
           return (
@@ -93,7 +93,7 @@ export default async function ConfirmationPage({
               </div>
               <p className={cn("pb-6 text-sm", done ? "font-medium" : "text-ink-muted")}>
                 {ORDER_STATUS_LABELS[status].customerLabel}
-                {index === activeIndex && <span className="ml-2 text-xs text-gold-dark">· current</span>}
+                {index === activeIndex && <span className="ml-2 text-xs text-gold-dark">· en cours</span>}
               </p>
             </li>
           );
@@ -101,7 +101,7 @@ export default async function ConfirmationPage({
       </ol>
 
       <div className="border hairline bg-white p-6">
-        <h2 className="text-xs font-medium uppercase tracking-[0.2em]">Order summary</h2>
+        <h2 className="text-xs font-medium uppercase tracking-[0.2em]">Résumé de commande</h2>
         <ul className="mt-4 space-y-3">
           {order.items.map((item, index) => (
             <li key={`${item.productName}-${index}`} className="flex items-center gap-3">
@@ -113,7 +113,7 @@ export default async function ConfirmationPage({
               <div className="flex-1">
                 <p className="text-sm font-medium">{item.productName}</p>
                 <p className="text-xs text-ink-muted">
-                  {item.variantLabel ? `${item.variantLabel} · ` : ""}Qty {item.quantity}
+                  {item.variantLabel ? `${item.variantLabel} · ` : ""}Qté {item.quantity}
                 </p>
               </div>
               <p className="text-sm font-medium">{formatDA(item.lineTotal)}</p>
@@ -122,7 +122,7 @@ export default async function ConfirmationPage({
         </ul>
         <dl className="mt-4 space-y-1.5 border-t hairline pt-4 text-sm">
           <div className="flex justify-between">
-            <dt className="text-ink-soft">Subtotal</dt>
+            <dt className="text-ink-soft">Sous-total</dt>
             <dd>{formatDA(order.subtotal)}</dd>
           </div>
           {order.promotionDiscount > 0 && (
@@ -133,16 +133,16 @@ export default async function ConfirmationPage({
           )}
           {order.discount > 0 && (
             <div className="flex justify-between">
-              <dt className="text-ink-soft">Discount</dt>
+              <dt className="text-ink-soft">Réduction</dt>
               <dd>−{formatDA(order.discount)}</dd>
             </div>
           )}
           <div className="flex justify-between">
-            <dt className="text-ink-soft">Delivery ({DELIVERY_METHOD_LABELS[order.deliveryMethod]})</dt>
+            <dt className="text-ink-soft">Livraison ({DELIVERY_METHOD_LABELS[order.deliveryMethod]})</dt>
             <dd>{formatDA(order.shipping)}</dd>
           </div>
           <div className="flex justify-between text-base font-medium">
-            <dt>Total (cash on delivery)</dt>
+            <dt>Total (paiement à la livraison)</dt>
             <dd>{formatDA(order.total)}</dd>
           </div>
         </dl>

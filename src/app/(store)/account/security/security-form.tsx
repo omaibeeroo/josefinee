@@ -24,11 +24,11 @@ export function SecurityForm() {
 
   return (
     <form onSubmit={submit} className="max-w-md space-y-4 border hairline bg-white p-6">
-      <h2 className="font-display text-2xl">Change password</h2>
-      <Field label="Current password">
+      <h2 className="font-display text-2xl">Changer le mot de passe</h2>
+      <Field label="Mot de passe actuel">
         <Input type="password" value={current} onChange={(event) => setCurrent(event.target.value)} autoComplete="current-password" required />
       </Field>
-      <Field label="New password" hint="10+ characters, upper & lower case, a number">
+      <Field label="Nouveau mot de passe" hint="10+ caractères, majuscules et minuscules, un chiffre">
         <Input type="password" value={next} onChange={(event) => setNext(event.target.value)} autoComplete="new-password" required />
       </Field>
       {state && (
@@ -37,7 +37,7 @@ export function SecurityForm() {
         </p>
       )}
       <Button type="submit" disabled={pending}>
-        {pending ? "Updating…" : "Update password"}
+        {pending ? "Mise à jour…" : "Mettre à jour"}
       </Button>
     </form>
   );

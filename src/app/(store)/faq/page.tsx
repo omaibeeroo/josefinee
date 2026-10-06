@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "FAQ",
-  description: "Ordering, delivery, cash on delivery and returns — answers to common questions.",
+  description: "Commande, livraison, paiement à la livraison et retours — réponses aux questions fréquentes.",
 };
 
 export default async function FaqPage() {
@@ -28,8 +28,8 @@ export default async function FaqPage() {
   return (
     <div className="container-luxe max-w-3xl py-12 md:py-16">
       <div className="mb-10 text-center">
-        <p className="eyebrow mb-2">Help</p>
-        <h1 className="font-display text-4xl font-medium md:text-5xl">Frequently asked questions</h1>
+        <p className="eyebrow mb-2">Aide</p>
+        <h1 className="font-display text-4xl font-medium md:text-5xl">Questions fréquentes</h1>
       </div>
       {[...groups.entries()].map(([category, list]) => (
         <section key={category} className="mb-10" aria-label={category}>
@@ -43,7 +43,7 @@ export default async function FaqPage() {
         </section>
       ))}
       {items.length === 0 && (
-        <p className="text-center text-ink-soft">No questions yet — please contact us directly.</p>
+        <p className="text-center text-ink-soft">Aucune question pour l’instant — contactez-nous directement.</p>
       )}
     </div>
   );

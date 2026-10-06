@@ -27,7 +27,7 @@ export function TrackForm() {
 
   return (
     <form onSubmit={submit} className="mx-auto mt-8 max-w-md space-y-4 border hairline bg-white p-6">
-      <Field label="Order number" required>
+      <Field label="Numéro de commande" required>
         <Input
           value={orderNumber}
           onChange={(event) => setOrderNumber(event.target.value)}
@@ -36,7 +36,7 @@ export function TrackForm() {
           required
         />
       </Field>
-      <Field label="Phone number" required hint="The number you used when ordering">
+      <Field label="Numéro de téléphone" required hint="Celui utilisé lors de la commande">
         <Input
           value={phone}
           onChange={(event) => setPhone(event.target.value)}
@@ -52,7 +52,7 @@ export function TrackForm() {
         </p>
       )}
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Looking up…" : "Track my order"}
+        {pending ? "Recherche…" : "Suivre ma commande"}
       </Button>
     </form>
   );

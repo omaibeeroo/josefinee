@@ -122,7 +122,7 @@ function CartDrawer() {
     <Drawer
       open={open}
       onClose={() => setOpen(false)}
-      title={`Your bag (${count})`}
+      title={`Votre panier (${count})`}
       className="cart-drawer"
     >
       <div className="flex h-full flex-col">
@@ -140,10 +140,10 @@ function CartDrawer() {
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-            <p className="font-display text-2xl">Your bag is empty</p>
+            <p className="font-display text-2xl">Votre panier est vide</p>
             <p className="text-sm text-ink-soft">Découvrez des pièces à porter jour après jour.</p>
             <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
-              Continue shopping
+              Continuer mes achats
             </Button>
           </div>
         ) : (
@@ -187,7 +187,7 @@ function CartDrawer() {
                       </div>
                       <button
                         type="button"
-                        aria-label={`Remove ${item.productName}`}
+                        aria-label={`Retirer ${item.productName}`}
                         disabled={pending === item.id}
                         onClick={() => void removeItem(item.id)}
                         className="p-1 text-ink-muted hover:text-ink disabled:opacity-40"
@@ -210,12 +210,12 @@ function CartDrawer() {
             </ul>
             <div className="border-t hairline bg-white px-5 py-5">
               <div className="mb-1 flex items-center justify-between">
-                <span className="text-sm text-ink-soft">Subtotal</span>
+                <span className="text-sm text-ink-soft">Sous-total</span>
                 <span className="text-base font-medium">{formatDA(subtotal)}</span>
               </div>
               <p className="mb-4 text-xs text-ink-muted">
-                {floor ? `Delivery from ${formatDA(floor.minHome)} · ` : ""}
-                Exact fee calculated at checkout. Cash on delivery.
+                {floor ? `Livraison dès ${formatDA(floor.minHome)} · ` : ""}
+                Frais exacts calculés à la commande. Paiement à la livraison.
               </p>
               <div className="flex flex-col gap-2">
                 <Link
@@ -223,10 +223,10 @@ function CartDrawer() {
                   onClick={() => setOpen(false)}
                   className="btn btn-primary w-full"
                 >
-                  Checkout
+                  Commander
                 </Link>
                 <Link href="/cart" onClick={() => setOpen(false)} className="btn btn-ghost w-full">
-                  View bag
+                  Voir le panier
                 </Link>
               </div>
             </div>

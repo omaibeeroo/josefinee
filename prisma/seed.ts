@@ -232,73 +232,73 @@ const PRODUCTS: SeedProduct[] = [
 ];
 
 const CATEGORIES: Array<{ slug: string; name: string; parent?: string }> = [
-  { slug: "jewelry", name: "Jewelry" },
-  { slug: "necklaces", name: "Necklaces", parent: "jewelry" },
+  { slug: "jewelry", name: "Bijoux" },
+  { slug: "necklaces", name: "Colliers", parent: "jewelry" },
   { slug: "bracelets", name: "Bracelets", parent: "jewelry" },
-  { slug: "earrings", name: "Earrings", parent: "jewelry" },
-  { slug: "rings", name: "Rings", parent: "jewelry" },
-  { slug: "sets", name: "Sets", parent: "jewelry" },
-  { slug: "bags-wallets", name: "Bags & Wallets" },
-  { slug: "bags", name: "Bags", parent: "bags-wallets" },
-  { slug: "wallets", name: "Wallets", parent: "bags-wallets" },
-  { slug: "accessories", name: "Accessories" },
-  { slug: "watches", name: "Watches", parent: "accessories" },
-  { slug: "belts", name: "Belts", parent: "accessories" },
-  { slug: "scarves", name: "Scarves", parent: "accessories" },
-  { slug: "clothes", name: "Clothes" },
+  { slug: "earrings", name: "Boucles d’oreilles", parent: "jewelry" },
+  { slug: "rings", name: "Bagues", parent: "jewelry" },
+  { slug: "sets", name: "Ensembles", parent: "jewelry" },
+  { slug: "bags-wallets", name: "Sacs & Portefeuilles" },
+  { slug: "bags", name: "Sacs", parent: "bags-wallets" },
+  { slug: "wallets", name: "Portefeuilles", parent: "bags-wallets" },
+  { slug: "accessories", name: "Accessoires" },
+  { slug: "watches", name: "Montres", parent: "accessories" },
+  { slug: "belts", name: "Ceintures", parent: "accessories" },
+  { slug: "scarves", name: "Foulards", parent: "accessories" },
+  { slug: "clothes", name: "Vêtements" },
 ];
 
 const COLLECTIONS: Array<{ slug: string; name: string; type: "MANUAL" | "NEW_IN" | "BEST_SELLERS" | "SALE"; description: string }> = [
-  { slug: "jewelry", name: "Jewelry", type: "MANUAL", description: "Necklaces, bracelets, earrings and rings." },
-  { slug: "bags", name: "Bags", type: "MANUAL", description: "Mini bags, totes and everyday carry." },
-  { slug: "accessories", name: "Accessories", type: "MANUAL", description: "Scarves and finishing touches." },
-  { slug: "new-in", name: "New In", type: "NEW_IN", description: "The latest arrivals." },
-  { slug: "best-sellers", name: "Best Sellers", type: "BEST_SELLERS", description: "Loved and reordered the most." },
-  { slug: "sale", name: "Sale", type: "SALE", description: "Limited-time offers." },
-  { slug: "shop-all", name: "Shop All", type: "MANUAL", description: "Everything, in one place." },
+  { slug: "jewelry", name: "Bijoux", type: "MANUAL", description: "Colliers, bracelets, boucles d’oreilles et bagues." },
+  { slug: "bags", name: "Sacs", type: "MANUAL", description: "Mini sacs, cabas et compagnons du quotidien." },
+  { slug: "accessories", name: "Accessoires", type: "MANUAL", description: "Foulards et touches finales." },
+  { slug: "new-in", name: "Nouveautés", type: "NEW_IN", description: "Les dernières arrivées." },
+  { slug: "best-sellers", name: "Meilleures ventes", type: "BEST_SELLERS", description: "Les plus aimées, les plus recommandées." },
+  { slug: "sale", name: "Promotions", type: "SALE", description: "Offres à durée limitée." },
+  { slug: "shop-all", name: "Toute la boutique", type: "MANUAL", description: "Tout, au même endroit." },
 ];
 
 const PAGES: Array<{ slug: string; title: string; content: string }> = [
   {
     slug: "privacy-policy",
-    title: "Privacy Policy",
+    title: "Politique de confidentialité",
     content:
-      "<p>We collect only the information needed to process and deliver your order: your name, phone number, delivery address and order details.</p><h3>How we use your data</h3><ul><li>To prepare, deliver and confirm your orders</li><li>To contact you about your order status</li><li>To improve our store (anonymous statistics)</li></ul><p>We never sell your personal data. You can request access or deletion of your data at any time by contacting support.</p>",
+      "<p>Nous collectons uniquement les informations nécessaires pour traiter et livrer votre commande : vos nom, numéro de téléphone, adresse de livraison et détails de commande.</p><h3>Utilisation de vos données</h3><ul><li>Préparer, livrer et confirmer vos commandes</li><li>Vous contacter au sujet de vos commandes</li><li>Améliorer notre boutique (statistiques anonymes)</li></ul><p>Nous ne vendons jamais vos données personnelles. Vous pouvez demander l’accès ou la suppression de vos données à tout moment via le service client.</p>",
   },
   {
     slug: "terms",
-    title: "Terms & Conditions",
+    title: "Conditions générales",
     content:
-      "<p>By placing an order, you agree to provide accurate contact and delivery information. Orders are paid in cash upon delivery. We reserve the right to cancel orders with invalid contact information or suspected fraud, and to confirm every order by phone before shipping.</p>",
+      "<p>En passant commande, vous acceptez de fournir des coordonnées et une adresse de livraison exactes. Les commandes se paient en espèces à la livraison. Nous nous réservons le droit d’annuler les commandes aux coordonnées invalides ou suspectes, et de confirmer chaque commande par téléphone avant expédition.</p>",
   },
   {
     slug: "shipping",
-    title: "Delivery Information",
+    title: "Informations de livraison",
     content:
-      "<p>We deliver to all 58 wilayas in Algeria, to your home or a stopdesk pickup point. Delivery fees and estimated times are shown at checkout before you confirm — the price you see is the price you pay, in cash, when your order arrives.</p>",
+      "<p>Nous livrons dans les 58 wilayas d’Algérie, à domicile ou en point de retrait. Frais et délais estimés affichés avant confirmation — le prix affiché est celui payé en espèces à la réception.</p>",
   },
   {
     slug: "returns",
-    title: "Returns & Exchanges",
+    title: "Retours & échanges",
     content:
-      "<p>Changed your mind? Contact us within 7 days of delivery. Items must be unworn, unwashed and in their original packaging. Jewelry for hygiene reasons can only be returned if defective. Delivery fees are non-refundable.</p>",
+      "<p>Changement d’avis ? Contactez-nous sous 7 jours après livraison. Les articles doivent être non portés, non lavés, dans leur emballage d’origine. Les bijoux ne peuvent être retournés que s’ils sont défectueux, pour des raisons d’hygiène. Les frais de livraison ne sont pas remboursables.</p>",
   },
   {
     slug: "cookies",
-    title: "Cookie Policy",
+    title: "Politique cookies",
     content:
-      "<p>We use strictly necessary cookies (cart, security) and, with your consent, analytics cookies to understand visits. You can accept or reject non-essential cookies at any time.</p>",
+      "<p>Nous utilisons des cookies strictement nécessaires (panier, sécurité) et, avec votre consentement, des cookies d’analyse pour comprendre les visites. Vous pouvez accepter ou refuser les cookies non essentiels à tout moment.</p>",
   },
 ];
 
 const FAQS: Array<{ category: string; question: string; answer: string }> = [
-  { category: "Ordering", question: "How do I place an order?", answer: "Add items to your bag, go to checkout, fill in your name, phone, wilaya, commune and address, then confirm. We will call you to confirm before shipping." },
-  { category: "Ordering", question: "Do I need an account to order?", answer: "No. You can order as a guest. Creating an account simply keeps your history and wishlist." },
-  { category: "Delivery", question: "How much is delivery?", answer: "Delivery fees depend on your wilaya and delivery method, and are shown at checkout before you confirm. There are no hidden fees." },
-  { category: "Delivery", question: "How long does delivery take?", answer: "Usually 24–72 hours for the center and north, and 3–7 days for the south. The estimate for your wilaya is shown at checkout." },
-  { category: "COD", question: "How do I pay?", answer: "Cash on delivery. You pay in Algerian dinars when you receive your order." },
-  { category: "Returns", question: "Can I return or exchange an item?", answer: "Yes, within 7 days of delivery for unworn items in original packaging. Contact support to arrange it." },
-  { category: "Products", question: "Will the jewelry tarnish?", answer: "Our pieces are tarnish-resistant, but like all fashion jewelry they last longest kept dry and stored in their pouch." },
+  { category: "Commande", question: "Comment passer commande ?", answer: "Ajoutez vos articles au panier, finalisez la commande avec vos nom, téléphone, wilaya, commune et adresse, puis confirmez. Nous vous appellerons pour confirmer avant l’expédition." },
+  { category: "Commande", question: "Faut-il un compte pour commander ?", answer: "Non. Vous pouvez commander sans compte. Un compte garde simplement votre historique et vos favoris." },
+  { category: "Livraison", question: "Combien coûte la livraison ?", answer: "Les frais dépendent de votre wilaya et du mode de livraison, et s’affichent avant confirmation. Aucun frais caché." },
+  { category: "Livraison", question: "Quels sont les délais de livraison ?", answer: "Généralement 24 à 72 heures pour le centre et le nord, et 3 à 7 jours pour le sud. L’estimation pour votre wilaya s’affiche à la commande." },
+  { category: "Paiement", question: "Comment payer ?", answer: "Paiement à la livraison. Vous payez en dinars algériens à la réception de votre commande." },
+  { category: "Retours", question: "Puis-je retourner ou échanger un article ?", answer: "Oui, sous 7 jours après livraison pour les articles non portés dans leur emballage d’origine. Contactez le service client pour organiser cela." },
+  { category: "Produits", question: "Les bijoux ternissent-ils ?", answer: "Nos pièces résistent au ternissement, mais comme tous les bijoux fantaisie, elles durent plus longtemps gardées au sec et rangées dans leur pochette." },
 ];
 
 async function main() {
@@ -606,7 +606,7 @@ async function main() {
     where: { id: "seed_default_announcement" },
     create: {
       id: "seed_default_announcement",
-      text: "Express delivery across Algeria — Cash on delivery available",
+      text: "Livraison express partout en Algérie — Paiement à la livraison",
       href: "/collections/new-in",
       isActive: true,
       sortOrder: 0,

@@ -10,7 +10,6 @@ import {
   FeaturedCollection,
   Hero,
   NewsletterSection,
-  Pillars,
   ProductSpotlight,
   SocialProof,
   TrustBar,
@@ -27,37 +26,32 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function getHomeData() {
-  const settings = await getSettings();
-  const [featuredResult, newInResult, bestSellersResult] = await Promise.allSettled([
-    getFeaturedProducts(10),
-    getNewInProducts(10),
-    getBestSellers(10),
-  ]);
-  const featured = featuredResult.status === "fulfilled" ? featuredResult.value : [];
-  const newIn = newInResult.status === "fulfilled" ? newInResult.value : [];
-  const bestSellers = bestSellersResult.status === "fulfilled" ? bestSellersResult.value : [];
-  const catalogError = [featuredResult, newInResult, bestSellersResult].some(
-    (result) => result.status === "rejected",
-  );
-
-  if (catalogError) {
-    console.error("[home] product data failed");
-  }
-
-  let categoryTiles: Array<{ name: string; slug: string; image: string | null; count: number }> =
-    [];
-  let featuredCollection: {
-    name: string;
-    slug: string;
-    description: string | null;
-    image: string | null;
-  } | null = null;
-  let deliveredCount = 0;
-  let faqs: Array<{ question: string; answer: string }> = [];
-
-  try {
-    const [categories, collection, delivered, faqItems] = await Promise.all([
-      prisma.category.findMany({
+  // One wave: settings, catalog trio, and every settings-independent Prisma read
+  // launch together. Only the featured-collection lookup waits on settings.
+  const [
+    settings,
+    featuredResult,
+    newInResult,
+    bestSellersResult,
+    categoriesResult,
+    deliveredResult,
+    faqResult,
+  ] = await Promise.all([
+    getSettings(),
+    getFeaturedProducts(10).then(
+      (value) => ({ status: "fulfilled" as const, value }),
+      () => ({ status: "rejected" as const, value: [] }),
+    ),
+    getNewInProducts(10).then(
+      (value) => ({ status: "fulfilled" as const, value }),
+      () => ({ status: "rejected" as const, value: [] }),
+    ),
+    getBestSellers(10).then(
+      (value) => ({ status: "fulfilled" as const, value }),
+      () => ({ status: "rejected" as const, value: [] }),
+    ),
+    prisma.category
+      .findMany({
         where: { isActive: true, parentId: null },
         orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
         select: {
@@ -67,32 +61,78 @@ async function getHomeData() {
           _count: { select: { products: { where: { status: "ACTIVE" } } } },
         },
         take: 6,
-      }),
-      prisma.collection.findFirst({
-        where: { slug: settings.homepage.featuredCollectionSlug, isActive: true },
-        select: { name: true, slug: true, description: true, image: true },
-      }),
-      prisma.order.count({ where: { status: "DELIVERED" } }),
-      prisma.faqItem.findMany({
+      })
+      .then(
+        (value) => ({ status: "fulfilled" as const, value }),
+        (error: unknown) => {
+          console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
+          return { status: "rejected" as const, value: [] as Array<{ name: string; slug: string; image: string | null; _count: { products: number } }> };
+        },
+      ),
+    prisma.order
+      .count({ where: { status: "DELIVERED" } })
+      .then(
+        (value) => ({ status: "fulfilled" as const, value }),
+        (error: unknown) => {
+          console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
+          return { status: "rejected" as const, value: 0 };
+        },
+      ),
+    prisma.faqItem
+      .findMany({
         where: { isPublished: true },
         orderBy: [{ sortOrder: "asc" }],
         select: { question: true, answer: true },
         take: 5,
-      }),
-    ]);
-    categoryTiles = categories.map((category) => ({
-      name: category.name,
-      slug: category.slug,
-      image: category.image,
-      count: category._count.products,
-    }));
-    featuredCollection = collection;
-    deliveredCount =
-      settings.homepage.socialProofOverride > 0 ? settings.homepage.socialProofOverride : delivered;
-    faqs = faqItems;
+      })
+      .then(
+        (value) => ({ status: "fulfilled" as const, value }),
+        (error: unknown) => {
+          console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
+          return { status: "rejected" as const, value: [] as Array<{ question: string; answer: string }> };
+        },
+      ),
+  ]);
+  const featured = featuredResult.value;
+  const newIn = newInResult.value;
+  const bestSellers = bestSellersResult.value;
+  const catalogError =
+    featuredResult.status === "rejected" ||
+    newInResult.status === "rejected" ||
+    bestSellersResult.status === "rejected";
+
+  if (catalogError) {
+    console.error("[home] product data failed");
+  }
+
+  const categoryTiles: Array<{ name: string; slug: string; image: string | null; count: number }> =
+    categoriesResult.status === "fulfilled"
+      ? categoriesResult.value.map((category) => ({
+          name: category.name,
+          slug: category.slug,
+          image: category.image,
+          count: category._count.products,
+        }))
+      : [];
+  let featuredCollection: {
+    name: string;
+    slug: string;
+    description: string | null;
+    image: string | null;
+  } | null = null;
+  try {
+    featuredCollection = await prisma.collection.findFirst({
+      where: { slug: settings.homepage.featuredCollectionSlug, isActive: true },
+      select: { name: true, slug: true, description: true, image: true },
+    });
   } catch (error) {
     console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
   }
+  const deliveredCount =
+    settings.homepage.socialProofOverride > 0
+      ? settings.homepage.socialProofOverride
+      : deliveredResult.value;
+  const faqs = faqResult.value;
 
   return {
     settings,
@@ -210,11 +250,7 @@ export default async function HomePage() {
 
       {settings.homepage.showSocialProof && <SocialProof deliveredCount={deliveredCount} />}
 
-      <div className="section-space">
-        <Pillars items={settings.homepage.pillars} />
-      </div>
-
-      <div className="section-space pt-0">
+      <div className="section-space pb-4 pt-0 md:pb-6">
         <FaqTeaser items={faqs} />
       </div>
 

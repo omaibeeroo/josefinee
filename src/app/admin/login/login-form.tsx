@@ -31,14 +31,14 @@ export function AdminLoginForm() {
 
   return (
     <form onSubmit={submit} className="mt-8 space-y-4 border hairline bg-white p-6 md:p-8">
-      <Field label="Email" required>
+      <Field label="E-mail" required>
         <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" required />
       </Field>
-      <Field label="Password" required>
+      <Field label="Mot de passe" required>
         <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required />
       </Field>
       {(needsTotp || totp) && (
-        <Field label="Authenticator code" required hint="6-digit code from your authenticator app">
+        <Field label="Code d’authentification" required hint="Code à 6 chiffres de votre application">
           <Input value={totp} onChange={(event) => setTotp(event.target.value)} inputMode="numeric" autoComplete="one-time-code" maxLength={6} />
         </Field>
       )}
@@ -48,7 +48,7 @@ export function AdminLoginForm() {
         </p>
       )}
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? "Connexion…" : "Se connecter"}
       </Button>
     </form>
   );

@@ -13,8 +13,8 @@ import { parseCatalogParams, withPage } from "../catalog-helpers";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Search",
-  description: "Search jewelry, bags and accessories.",
+  title: "Recherche",
+  description: "Recherchez bijoux, sacs et accessoires.",
   robots: { index: false, follow: true },
 };
 
@@ -45,19 +45,19 @@ export default async function SearchPage({
     <div className="container-luxe py-10 md:py-14">
       {term && <PixelEvent name="Search" params={{ search_string: term }} />}
       <div className="mb-8 text-center">
-        <p className="eyebrow mb-2">Search</p>
+        <p className="eyebrow mb-2">Recherche</p>
         <h1 className="font-display text-4xl font-medium md:text-5xl">
-          {term ? `Results for “${term}”` : "Search the store"}
+          {term ? `Résultats pour « ${term} »` : "Rechercher dans la boutique"}
         </h1>
       </div>
 
       {!term ? (
         <EmptyState
-          title="What are you looking for?"
-          message="Try “necklace”, “tote” or “gold hoops”."
+          title="Que cherchez-vous ?"
+          message="Essayez « collier », « sac » ou « créoles dorées »."
           action={
             <Link href="/shop" className="btn btn-outline">
-              Browse everything
+              Tout parcourir
             </Link>
           }
         />
@@ -69,11 +69,11 @@ export default async function SearchPage({
             <div className="min-w-0 flex-1">
               {result.items.length === 0 ? (
                 <EmptyState
-                  title="No matches"
-                  message="Try a different word, or browse the full collection."
+                  title="Aucun résultat"
+                  message="Essayez un autre mot, ou parcourez toute la collection."
                   action={
                     <Link href="/shop" className="btn btn-outline">
-                      Shop all
+                      Toute la boutique
                     </Link>
                   }
                 />

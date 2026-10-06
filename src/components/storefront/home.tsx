@@ -3,7 +3,7 @@
 import { useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowRight, Headset, PackageCheck, Truck } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { subscribeNewsletterAction } from "@/server/actions/engagement";
 import { Accordion, Honeypot, Price, Reveal } from "@/components/ui";
 import type { HomepageSettings } from "@/lib/settings";
@@ -24,24 +24,24 @@ export function DiscoveryStrip() {
   ];
 
   return (
-    <section className="border-b hairline bg-white" aria-label="Découvrir Hanadi Store">
-      <div className="container-luxe grid divide-y hairline sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+    <section aria-label="Découvrir Hanadi Store">
+      <div className="container-luxe grid gap-6 py-2 text-center sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-[var(--color-line)]">
         {items.map((item, index) => (
           <Link
             key={item.label}
             href={item.href}
-            className="group flex items-center justify-between gap-4 py-5 sm:px-6 md:py-6 first:sm:pl-0 last:sm:pr-0"
+            className="group block sm:px-6"
           >
-            <span>
-              <span className="block text-sm font-medium tracking-wide text-ink">{item.label}</span>
-              <span className="mt-1 block text-xs text-ink-muted">{item.detail}</span>
-            </span>
             <span
-              className="font-display text-2xl text-gold transition-transform duration-300 group-hover:translate-x-1"
+              className="text-[0.65rem] font-medium uppercase tracking-[0.24em] text-ink-muted"
               aria-hidden="true"
             >
               0{index + 1}
             </span>
+            <span className="mt-1.5 block text-[0.7rem] font-medium uppercase tracking-[0.2em] group-hover:text-gold-dark">
+              {item.label}
+            </span>
+            <span className="mt-1 block text-sm text-ink-soft">{item.detail}</span>
           </Link>
         ))}
       </div>
@@ -52,25 +52,16 @@ export function DiscoveryStrip() {
 export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
   const hasImage = Boolean(hero.imageDesktop);
   return (
-    <section className="relative overflow-hidden bg-cream" aria-label="Featured">
+    <section className="relative overflow-hidden bg-cream" aria-label="En vedette">
       {hasImage ? (
         <>
-          <div className="relative hidden aspect-[21/9] w-full md:block">
-            <Image
-              src={hero.imageDesktop}
-              alt={hero.headline}
-              fill
-              priority
-              sizes="100vw"
-              className="object-cover motion-safe:animate-hero-image"
-            />
-          </div>
-          <div className="relative aspect-[4/5] w-full sm:aspect-[16/10] md:hidden">
+          <div className="relative aspect-[4/5] w-full sm:aspect-[16/10] md:aspect-[21/9]">
             <Image
               src={hero.imageMobile || hero.imageDesktop}
               alt={hero.headline}
               fill
               priority
+              fetchPriority="high"
               sizes="100vw"
               className="object-cover motion-safe:animate-hero-image"
             />
@@ -80,25 +71,25 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
             <div className="container-luxe text-ivory">
               <p
                 className="eyebrow !text-ivory/80 motion-safe:animate-hero-enter opacity-0"
-                style={{ animationDelay: "120ms" }}
+                style={{ animationDelay: "60ms" }}
               >
                 {hero.eyebrow}
               </p>
               <h1
                 className="mt-3 max-w-2xl font-display text-4xl font-medium leading-[1.05] motion-safe:animate-hero-enter opacity-0 md:text-6xl"
-                style={{ animationDelay: "220ms" }}
+                style={{ animationDelay: "120ms" }}
               >
                 {hero.headline}
               </h1>
               <p
                 className="mt-4 max-w-xl text-[0.9375rem] leading-relaxed text-ivory/85 motion-safe:animate-hero-enter opacity-0"
-                style={{ animationDelay: "320ms" }}
+                style={{ animationDelay: "180ms" }}
               >
                 {hero.subheading}
               </p>
               <div
                 className="mt-6 flex flex-wrap gap-3 motion-safe:animate-hero-enter opacity-0"
-                style={{ animationDelay: "420ms" }}
+                style={{ animationDelay: "240ms" }}
               >
                 <Link
                   href={hero.primaryHref}
@@ -120,25 +111,25 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
         <div className="container-luxe py-16 text-center md:py-28">
           <p
             className="eyebrow motion-safe:animate-hero-enter opacity-0"
-            style={{ animationDelay: "120ms" }}
+            style={{ animationDelay: "60ms" }}
           >
             {hero.eyebrow}
           </p>
           <h1
             className="mx-auto mt-4 max-w-3xl font-display text-5xl font-medium leading-[1.05] motion-safe:animate-hero-enter opacity-0 md:text-7xl"
-            style={{ animationDelay: "220ms" }}
+            style={{ animationDelay: "120ms" }}
           >
             {hero.headline}
           </h1>
           <p
             className="mx-auto mt-5 max-w-xl text-ink-soft motion-safe:animate-hero-enter opacity-0"
-            style={{ animationDelay: "320ms" }}
+            style={{ animationDelay: "180ms" }}
           >
             {hero.subheading}
           </p>
           <div
             className="mt-8 flex flex-wrap justify-center gap-3 motion-safe:animate-hero-enter opacity-0"
-            style={{ animationDelay: "420ms" }}
+            style={{ animationDelay: "240ms" }}
           >
             <Link href={hero.primaryHref} className="btn btn-primary btn-shine">
               {hero.primaryLabel}
@@ -220,7 +211,6 @@ export function ProductSpotlight({ product }: { product: StoreProductCard }) {
             url={image?.url ?? null}
             alt={product.name}
             sizes="(max-width: 768px) 100vw, 55vw"
-            priority
             className="reference-spotlight-image"
           />
         </div>
@@ -257,13 +247,13 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
   return (
     <section className="container-luxe" aria-label="Acheter par catégorie">
       <Reveal>
-        <div className="mb-6 flex items-end justify-between gap-6 md:mb-8">
+        <div className="mb-4 flex items-end justify-between gap-6 md:mb-6">
           <div>
             <p className="eyebrow mb-2">Pour vous</p>
             <h2 className="font-display text-3xl font-medium md:text-4xl">Acheter par catégorie</h2>
           </div>
           <span className="hidden text-xs uppercase tracking-[0.18em] text-ink-muted sm:block">
-            The Hanadi Store wardrobe
+            La garde-robe Hanadi Store
           </span>
         </div>
       </Reveal>
@@ -307,24 +297,19 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
 /* ------------------------------------------------------------ Trust bar */
 
 const TRUST_ITEMS = [
-  { icon: Truck, title: "Livraison rapide", text: "Dans les 58 wilayas" },
-  { icon: PackageCheck, title: "Paiement à la livraison", text: "Réglez à la réception" },
-  { icon: Headset, title: "Emballage soigné", text: "Vérifié et préparé à la main" },
+  { title: "Livraison rapide", text: "Dans les 58 wilayas" },
+  { title: "Paiement à la livraison", text: "Réglez à la réception" },
+  { title: "Emballage soigné", text: "Vérifié et préparé à la main" },
 ];
 
 export function TrustBar() {
   return (
-    <section className="border-y hairline bg-white" aria-label="Pourquoi choisir notre boutique">
-      <div className="motion-stagger container-luxe grid grid-cols-1 gap-6 py-8 sm:grid-cols-3">
+    <section aria-label="Pourquoi choisir notre boutique">
+      <div className="container-luxe grid grid-cols-1 gap-6 py-2 text-center sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-[var(--color-line)]">
         {TRUST_ITEMS.map((item) => (
-          <div key={item.title} className="group flex items-center gap-4">
-            <span className="trust-icon flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-cream">
-              <item.icon size={20} strokeWidth={1.5} />
-            </span>
-            <div>
-              <p className="text-sm font-medium uppercase tracking-[0.1em]">{item.title}</p>
-              <p className="text-sm text-ink-soft">{item.text}</p>
-            </div>
+          <div key={item.title} className="sm:px-6">
+            <p className="text-[0.7rem] font-medium uppercase tracking-[0.2em]">{item.title}</p>
+            <p className="mt-1 text-sm text-ink-soft">{item.text}</p>
           </div>
         ))}
       </div>
@@ -336,7 +321,7 @@ export function SocialProof({ deliveredCount }: { deliveredCount: number }) {
   if (deliveredCount <= 0) return null;
   return (
     <section className="bg-ink text-ivory" aria-label="La confiance de nos clientes">
-      <div className="container-luxe flex flex-col items-center gap-2 py-10 text-center md:py-14">
+      <div className="container-luxe flex flex-col items-center gap-2 py-8 text-center md:py-10">
         <p className="font-display text-5xl font-medium md:text-6xl">
           +{deliveredCount.toLocaleString("fr-FR")}
         </p>
@@ -354,23 +339,26 @@ export function Pillars({ items }: { items: Array<{ title: string; text: string 
   if (items.length === 0) return null;
   return (
     <section className="container-luxe" aria-label="L’expérience Hanadi Store">
-      <div className="mb-10 max-w-xl">
+      <div className="mx-auto mb-10 max-w-xl text-center md:mb-12">
         <p className="eyebrow">Pour nos clientes</p>
-        <h2 className="mt-3 font-display text-4xl font-medium leading-tight md:text-5xl">
+        <h2 className="mt-3 font-display text-3xl font-medium leading-tight md:text-4xl">
           L’expérience Hanadi Store
         </h2>
-        <p className="mt-4 text-[0.9375rem] leading-relaxed text-ink-soft">
-          De votre première pièce préférée au moment où elle arrive chez vous, chaque détail est
-          pensé avec attention.
+        <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink-soft">
+          De votre première pièce préférée au moment où elle arrive chez vous.
         </p>
       </div>
-      <div className="grid gap-8 md:grid-cols-3">
+      <div className="mx-auto grid max-w-4xl gap-8 text-center md:grid-cols-3 md:gap-12">
         {items.map((item, index) => (
           <Reveal key={item.title} delay={index * 90}>
-            <div className="border-t-2 border-gold pt-5">
-              <p className="font-display text-lg text-gold-dark">0{index + 1}</p>
-              <h3 className="mt-2 font-display text-2xl">{item.title}</h3>
-              <p className="mt-2 text-[0.9375rem] leading-relaxed text-ink-soft">{item.text}</p>
+            <div>
+              <p className="text-[0.65rem] font-medium uppercase tracking-[0.24em] text-ink-muted">
+                0{index + 1}
+              </p>
+              <h3 className="mt-2 font-display text-xl font-medium">{item.title}</h3>
+              <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-ink-soft">
+                {item.text}
+              </p>
             </div>
           </Reveal>
         ))}
@@ -433,28 +421,37 @@ export function NewsletterSection() {
   return (
     <section className="container-luxe" aria-label="Newsletter">
       <Reveal>
-        <div className="border-y hairline bg-cream/60 px-6 py-14 text-center md:py-20">
-          <p className="eyebrow">Restez informée</p>
-          <h2 className="mx-auto mt-2 max-w-xl font-display text-3xl font-medium md:text-4xl">
-            Nouveautés, ventes privées et inspirations
+        <div className="mx-auto max-w-xl px-6 pb-10 pt-6 text-center md:pb-14 md:pt-8">
+          <p className="eyebrow">Newsletter</p>
+          <h2 className="mt-3 font-display text-3xl font-medium md:text-4xl">
+            Recevez nos nouveautés
           </h2>
-          <form
-            onSubmit={submit}
-            className="relative mx-auto mt-6 flex max-w-md flex-col gap-2 sm:flex-row"
-          >
+          <p className="mx-auto mt-3 max-w-md text-[0.9375rem] leading-relaxed text-ink-soft">
+            Nouvelles collections et offres privées, directement dans votre boîte e-mail.
+          </p>
+          <form onSubmit={submit} className="relative mx-auto mt-8 max-w-md">
             <Honeypot value={website} onChange={setWebsite} />
-            <input
-              type="email"
-              required
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              placeholder="Votre adresse e-mail"
-              aria-label="Adresse e-mail"
-              className="field"
-            />
-            <button type="submit" disabled={pending} className="btn btn-primary btn-shine shrink-0">
-              {pending ? "…" : "S’inscrire"}
-            </button>
+            <label htmlFor="homepage-newsletter" className="sr-only">
+              Adresse e-mail
+            </label>
+            <div className="flex items-center gap-3 border-b hairline pb-2 transition-colors focus-within:border-ink">
+              <input
+                id="homepage-newsletter"
+                type="email"
+                required
+                value={email}
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="Votre adresse e-mail"
+                className="w-full bg-transparent text-center text-sm text-ink outline-none placeholder:text-ink-muted"
+              />
+              <button
+                type="submit"
+                disabled={pending}
+                className="shrink-0 text-[0.7rem] font-medium uppercase tracking-[0.22em] text-ink underline underline-offset-8 hover:text-gold-dark disabled:opacity-50"
+              >
+                OK
+              </button>
+            </div>
           </form>
           {state && (
             <p className={`mt-3 text-sm ${state.ok ? "text-ink-soft" : "text-sale"}`} role="status">

@@ -111,6 +111,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [headerHidden, setHeaderHidden] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -119,11 +120,36 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
+    let lastY = window.scrollY;
+    let ticking = false;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const onScroll = () => {
+      if (ticking) return;
+      ticking = true;
+      requestAnimationFrame(() => {
+        ticking = false;
+        const y = window.scrollY;
+        const goingDown = y > lastY + 4;
+        const goingUp = y < lastY - 2;
+        lastY = y;
+        setScrolled(y > 8);
+        // Slide the header away on scroll-down, back on scroll-up — like the
+        // reference shop. Transform-only so layout never shifts. Always
+        // visible near the top, while overlays are open, or under
+        // reduced-motion.
+        if (menuOpen || searchOpen || reduceMotion.matches || y <= 240) {
+          setHeaderHidden(false);
+        } else if (goingDown) {
+          setHeaderHidden(true);
+        } else if (goingUp) {
+          setHeaderHidden(false);
+        }
+      });
+    };
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, []);
+  }, [menuOpen, searchOpen]);
 
   return (
     <>
@@ -139,8 +165,9 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
       )}
 
       <header
+        style={headerHidden ? { transform: "translateY(-100%)" } : undefined}
         className={cn(
-          "sticky top-0 z-50 border-b bg-white/95 backdrop-blur transition-shadow",
+          "sticky top-0 z-50 border-b bg-white/95 backdrop-blur transition-shadow motion-safe:transition-transform motion-safe:duration-300",
           scrolled ? "hairline shadow-[0_8px_30px_-18px_rgba(28,26,23,0.4)]" : "border-transparent",
         )}
       >
@@ -555,53 +582,54 @@ function SearchOverlay({
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="absolute inset-x-0 top-0 bg-ivory px-4 py-6 shadow-card animate-slide-up md:px-8 md:py-10"
+        className="absolute inset-x-0 top-0 border-b hairline bg-ivory px-4 py-5 md:px-8 md:py-7"
       >
         <div className="mx-auto max-w-2xl">
-          <div className="mb-5 flex items-center justify-between">
-            <p className="eyebrow">Rechercher dans la boutique</p>
+          <div className="mb-4 flex items-center justify-between">
+            <p className="eyebrow">Rechercher</p>
             <button
               type="button"
               onClick={onClose}
               aria-label="Fermer la recherche"
-              className="p-1"
+              className="p-1 text-ink-soft hover:text-ink"
             >
-              <X size={22} />
+              <X size={20} />
             </button>
           </div>
           <form onSubmit={submit} role="search">
-            <div className="flex gap-2">
+            <div className="flex items-center gap-3 border-b hairline pb-2 transition-colors focus-within:border-ink">
+              <Search size={17} className="shrink-0 text-ink-muted" aria-hidden="true" />
               <input
                 ref={searchInputRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="Collier, sac, boucles d’oreilles…"
                 aria-label="Rechercher des produits"
-                className="field"
+                className="w-full bg-transparent text-[0.9375rem] text-ink outline-none placeholder:text-ink-muted"
               />
-              <button type="submit" className="btn btn-primary shrink-0">
-                <Search size={16} />
-                <span className="hidden sm:inline">Rechercher</span>
+              <button
+                type="submit"
+                className="shrink-0 text-[0.7rem] font-medium uppercase tracking-[0.22em] text-ink underline underline-offset-8 hover:text-gold-dark"
+              >
+                OK
               </button>
             </div>
           </form>
           {popularSearches.length > 0 && (
-            <div className="mt-5">
-              <p className="mb-2 text-xs uppercase tracking-[0.16em] text-ink-muted">
-                Recherches populaires
+            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5">
+              <p className="text-[0.65rem] uppercase tracking-[0.18em] text-ink-muted">
+                Populaires :
               </p>
-              <div className="flex flex-wrap gap-2">
-                {popularSearches.map((term) => (
-                  <Link
-                    key={term}
-                    href={`/search?q=${encodeURIComponent(term)}`}
-                    onClick={onClose}
-                    className="border hairline bg-white px-3 py-1.5 text-sm text-ink-soft hover:border-ink hover:text-ink"
-                  >
-                    {term}
-                  </Link>
-                ))}
-              </div>
+              {popularSearches.map((term) => (
+                <Link
+                  key={term}
+                  href={`/search?q=${encodeURIComponent(term)}`}
+                  onClick={onClose}
+                  className="text-sm text-ink-soft underline decoration-line underline-offset-4 hover:text-ink"
+                >
+                  {term}
+                </Link>
+              ))}
             </div>
           )}
         </div>
@@ -636,9 +664,9 @@ function NewsletterMini() {
     <form onSubmit={submit} className="relative mt-0">
       <Honeypot value={website} onChange={setWebsite} />
       <label htmlFor="footer-newsletter" className="sr-only">
-        Newsletter
+        Adresse e-mail
       </label>
-      <div className="flex gap-2">
+      <div className="flex items-center gap-3 border-b hairline pb-2 transition-colors focus-within:border-ink">
         <input
           id="footer-newsletter"
           type="email"
@@ -646,14 +674,18 @@ function NewsletterMini() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder="Votre adresse e-mail"
-          className="field !border-white/20 !bg-transparent !text-ivory placeholder:text-ivory/40"
+          className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-muted"
         />
-        <button type="submit" disabled={pending} className="btn btn-gold shrink-0">
-          S’inscrire
+        <button
+          type="submit"
+          disabled={pending}
+          className="shrink-0 text-[0.7rem] font-medium uppercase tracking-[0.22em] text-ink underline underline-offset-8 hover:text-gold-dark disabled:opacity-50"
+        >
+          OK
         </button>
       </div>
       {state && (
-        <p className={`mt-2 text-sm ${state.ok ? "text-ivory/80" : "text-blush"}`} role="status">
+        <p className={`mt-2 text-sm ${state.ok ? "text-ink-soft" : "text-sale"}`} role="status">
           {state.message}
         </p>
       )}
@@ -668,115 +700,125 @@ function SiteFooter(props: ChromeProps) {
     { label: "TikTok", href: props.social.tiktok },
     { label: "Facebook", href: props.social.facebook },
   ].filter(({ href }) => /^https:\/\/[^/]+\/.+/.test(href));
+  const whatsappHref = props.social.whatsapp
+    ? `https://wa.me/${props.social.whatsapp.replace(/\D/g, "")}`
+    : null;
   return (
-    <footer className="site-footer mt-16 bg-ink text-ivory">
-      <div className="container-luxe grid gap-8 py-10 md:grid-cols-[1.25fr_0.8fr_1.35fr] md:gap-12 md:py-12">
-        <div>
-          <p className="font-display text-xl tracking-[0.3em]">{props.brandName}</p>
-          <p className="mt-2 max-w-xs text-sm leading-relaxed text-ivory/65">
-            Des pièces à porter encore et encore.
-          </p>
-          {socialLinks.length > 0 && (
-            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[0.68rem] uppercase tracking-[0.16em]">
-              {socialLinks.map((social) => (
-                <a
-                  key={social.label}
-                  href={social.href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-ivory/80 hover:text-ivory"
-                >
-                  {social.label}
-                </a>
-              ))}
-              {props.social.whatsapp && (
-                <a
-                  href={`https://wa.me/${props.social.whatsapp.replace(/\D/g, "")}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-ivory/80 hover:text-ivory"
-                >
-                  WhatsApp
-                </a>
-              )}
-            </div>
-          )}
-        </div>
-        <nav aria-label="Liens rapides">
-          <p className="mb-3 text-[0.65rem] font-medium uppercase tracking-[0.2em] text-ivory/55">
-            Explorer
-          </p>
-          <ul className="grid grid-cols-2 gap-x-5 gap-y-2 text-sm">
-            <li>
-              <Link href="/shop" className="text-ivory/85 hover:text-ivory">
-                Boutique
-              </Link>
-            </li>
-            <li>
-              <Link href="/collections/new-in" className="text-ivory/85 hover:text-ivory">
-                Nouveautés
-              </Link>
-            </li>
-            <li>
-              <Link href="/collections/best-sellers" className="text-ivory/85 hover:text-ivory">
-                Meilleures ventes
-              </Link>
-            </li>
-            <li>
-              <Link href="/pages/shipping" className="text-ivory/85 hover:text-ivory">
-                Livraison
-              </Link>
-            </li>
-            <li>
-              <Link href="/faq" className="text-ivory/85 hover:text-ivory">
-                FAQ
-              </Link>
-            </li>
-            <li>
-              <Link href="/contact" className="text-ivory/85 hover:text-ivory">
-                Contact
-              </Link>
-            </li>
-          </ul>
-        </nav>
-        <div>
-          <p className="mb-3 text-[0.65rem] font-medium uppercase tracking-[0.2em] text-ivory/55">
-            Recevez nos nouveautés
-          </p>
-          <NewsletterMini />
-          {(props.supportEmail || props.supportPhone) && (
-            <p className="mt-3 text-xs text-ivory/55">
-              {props.supportEmail && (
-                <a href={`mailto:${props.supportEmail}`} className="hover:text-ivory">
-                  {props.supportEmail}
-                </a>
-              )}
-              {props.supportEmail && props.supportPhone && <span className="px-2">·</span>}
-              {props.supportPhone && (
-                <a
-                  href={`tel:${props.supportPhone.replace(/\s/g, "")}`}
-                  className="hover:text-ivory"
-                >
-                  {props.supportPhone}
-                </a>
-              )}
+    <footer className="site-footer mt-8 border-t hairline bg-white">
+      <div className="container-luxe py-8 text-center md:py-10">
+        <p className="font-display text-2xl tracking-[0.28em]">{props.brandName}</p>
+        <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-ink-soft">
+          Des pièces à porter encore et encore.
+        </p>
+        {(socialLinks.length > 0 || whatsappHref) && (
+          <div className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[0.68rem] uppercase tracking-[0.18em]">
+            {socialLinks.map((social) => (
+              <a
+                key={social.label}
+                href={social.href}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-ink-soft hover:text-ink"
+              >
+                {social.label}
+              </a>
+            ))}
+            {whatsappHref && (
+              <a
+                href={whatsappHref}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-ink-soft hover:text-ink"
+              >
+                WhatsApp
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+      <div className="border-t hairline">
+        <div className="container-luxe grid gap-8 py-8 text-left sm:grid-cols-2 md:grid-cols-3">
+          <nav aria-label="Boutique">
+            <p className="mb-4 text-[0.65rem] font-medium uppercase tracking-[0.2em] text-ink-muted">
+              Boutique
             </p>
-          )}
+            <ul className="space-y-2.5 text-sm">
+              <li>
+                <Link href="/shop" className="text-ink-soft hover:text-ink">
+                  Toute la boutique
+                </Link>
+              </li>
+              <li>
+                <Link href="/collections/new-in" className="text-ink-soft hover:text-ink">
+                  Nouveautés
+                </Link>
+              </li>
+              <li>
+                <Link href="/collections/best-sellers" className="text-ink-soft hover:text-ink">
+                  Meilleures ventes
+                </Link>
+              </li>
+            </ul>
+          </nav>
+          <nav aria-label="Aide">
+            <p className="mb-4 text-[0.65rem] font-medium uppercase tracking-[0.2em] text-ink-muted">
+              Aide
+            </p>
+            <ul className="space-y-2.5 text-sm">
+              <li>
+                <Link href="/pages/shipping" className="text-ink-soft hover:text-ink">
+                  Livraison
+                </Link>
+              </li>
+              <li>
+                <Link href="/faq" className="text-ink-soft hover:text-ink">
+                  FAQ
+                </Link>
+              </li>
+              <li>
+                <Link href="/contact" className="text-ink-soft hover:text-ink">
+                  Nous contacter
+                </Link>
+              </li>
+            </ul>
+          </nav>
+          <div>
+            <p className="mb-4 text-[0.65rem] font-medium uppercase tracking-[0.2em] text-ink-muted">
+              Restez informée
+            </p>
+            <NewsletterMini />
+            {(props.supportEmail || props.supportPhone) && (
+              <p className="mt-4 text-xs leading-relaxed text-ink-muted">
+                {props.supportEmail && (
+                  <a href={`mailto:${props.supportEmail}`} className="hover:text-ink">
+                    {props.supportEmail}
+                  </a>
+                )}
+                {props.supportEmail && props.supportPhone && <span className="px-2">·</span>}
+                {props.supportPhone && (
+                  <a
+                    href={`tel:${props.supportPhone.replace(/\s/g, "")}`}
+                    className="hover:text-ink"
+                  >
+                    {props.supportPhone}
+                  </a>
+                )}
+              </p>
+            )}
+          </div>
         </div>
       </div>
-      <div className="border-t border-white/10">
-        <div className="container-luxe flex flex-col gap-3 py-4 text-[0.68rem] text-ivory/55 sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            © {year} {props.brandName}
-          </p>
-          <div className="flex gap-4">
-            <Link href="/pages/privacy-policy" className="hover:text-ivory">
+      <div className="border-t hairline">
+        <div className="container-luxe flex flex-col gap-2 py-4 text-center text-[0.68rem] text-ink-muted sm:flex-row sm:items-center sm:justify-between sm:text-left">
+          <p>© {year} {props.brandName}</p>
+          <div className="flex flex-wrap justify-center gap-x-5 gap-y-1">
+            <Link href="/pages/privacy-policy" className="hover:text-ink">
               Confidentialité
             </Link>
-            <Link href="/pages/terms" className="hover:text-ivory">
+            <Link href="/pages/terms" className="hover:text-ink">
               Conditions
             </Link>
-            <button type="button" onClick={openCookieSettings} className="hover:text-ivory">
+            <button type="button" onClick={openCookieSettings} className="hover:text-ink">
               Cookies
             </button>
           </div>

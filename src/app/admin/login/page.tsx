@@ -4,7 +4,7 @@ import { getAdminSession } from "@/lib/auth/session";
 import { AdminLoginForm } from "./login-form";
 
 export const metadata: Metadata = {
-  title: "Admin sign in",
+  title: "Connexion admin",
   robots: { index: false, follow: false },
 };
 
@@ -17,11 +17,11 @@ export default async function AdminLoginPage() {
       <div className="w-full max-w-md">
         <p className="text-center font-display text-3xl tracking-[0.12em]">Hanadi Store</p>
         <p className="mt-2 text-center text-xs uppercase tracking-[0.24em] text-ink-muted">
-          Store administration
+          Administration de la boutique
         </p>
         <AdminLoginForm />
         <p className="mt-4 text-center text-xs text-ink-muted">
-          Protected area. All sign-in attempts are logged.
+          Zone protégée. Toutes les tentatives de connexion sont enregistrées.
         </p>
       </div>
     </div>

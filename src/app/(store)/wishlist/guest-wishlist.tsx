@@ -63,31 +63,31 @@ export function GuestWishlist() {
     try {
       const result = await add(item.defaultVariantId, 1);
       if (result.ok) remove(item.productId);
-      else setMoveErrors((current) => ({ ...current, [item.productId]: result.error || "We could not add this item. Please retry." }));
+      else setMoveErrors((current) => ({ ...current, [item.productId]: result.error || "Impossible d’ajouter cet article. Réessayez." }));
     } catch {
-      setMoveErrors((current) => ({ ...current, [item.productId]: "We could not add this item. Please retry." }));
+      setMoveErrors((current) => ({ ...current, [item.productId]: "Impossible d’ajouter cet article. Réessayez." }));
     } finally {
       setMovingProductIds((current) => current.filter((productId) => productId !== item.productId));
     }
   }
 
   if (items === null) {
-    return <p className="py-10 text-center text-ink-soft">Loading your wishlist…</p>;
+    return <p className="py-10 text-center text-ink-soft">Chargement de vos favoris…</p>;
   }
 
   if (items.length === 0) {
     return (
       <div className="py-10 text-center">
-        <p className="font-display text-2xl">Nothing saved yet</p>
+        <p className="font-display text-2xl">Rien de sauvegardé pour l’instant</p>
         <p className="mt-2 text-ink-soft">
-          Tap the heart on any product to keep it here — sign in to sync it across devices.
+          Touchez le cœur sur un article pour le garder ici — connectez-vous pour le synchroniser.
         </p>
         <div className="mt-6 flex justify-center gap-3">
           <Link href="/shop" className="btn btn-primary">
-            Discover pieces
+            Découvrir nos pièces
           </Link>
           <Link href="/login" className="btn btn-ghost">
-            Sign in
+            Se connecter
           </Link>
         </div>
       </div>
@@ -106,7 +106,7 @@ export function GuestWishlist() {
               <Link href={`/products/${item.slug}`} className="text-sm font-medium hover:underline">
                 {item.name}
               </Link>
-              <button type="button" aria-label={`Remove ${item.name}`} onClick={() => remove(item.productId)} className="p-1 text-ink-muted hover:text-ink">
+              <button type="button" aria-label={`Retirer ${item.name}`} onClick={() => remove(item.productId)} className="p-1 text-ink-muted hover:text-ink">
                 <X size={16} />
               </button>
             </div>
@@ -116,10 +116,10 @@ export function GuestWishlist() {
           <div className="mt-auto pt-2">
               {item.inStock && item.defaultVariantId ? (
                 <Button size="sm" variant="outline" disabled={movingProductIds.includes(item.productId)} onClick={() => void moveToBag(item)}>
-                  {movingProductIds.includes(item.productId) ? "Adding…" : "Move to bag"}
+                  {movingProductIds.includes(item.productId) ? "Ajout…" : "Ajouter au panier"}
                 </Button>
               ) : (
-                <p className="text-xs uppercase tracking-[0.14em] text-ink-muted">Out of stock</p>
+                <p className="text-xs uppercase tracking-[0.14em] text-ink-muted">Épuisé</p>
               )}
               {moveErrors[item.productId] && <p className="mt-2 text-xs text-sale" role="alert">{moveErrors[item.productId]}</p>}
             </div>

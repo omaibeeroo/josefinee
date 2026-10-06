@@ -10,7 +10,7 @@ export default async function AdminUsersPage() {
   const users = await listUsersAction();
   return (
     <div>
-      <PageHeader title="Staff" description="Role-based access. New accounts must change their password on first login." />
+      <PageHeader title="Équipe" description="Accès par rôles. Les nouveaux comptes doivent changer leur mot de passe à la première connexion." />
       <StaffManager users={users} />
     </div>
   );

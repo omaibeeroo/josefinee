@@ -88,7 +88,7 @@ function FiltersForm({
   return (
     <div className="space-y-6">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">Availability</p>
+        <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">Disponibilité</p>
         <label className="flex cursor-pointer items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -96,7 +96,7 @@ function FiltersForm({
             onChange={(event) => setState({ ...state, inStock: event.target.checked || undefined })}
             className="h-4 w-4 accent-[#1c1a17]"
           />
-          In stock only
+          En stock uniquement
         </label>
         <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm">
           <input
@@ -105,20 +105,20 @@ function FiltersForm({
             onChange={(event) => setState({ ...state, onSale: event.target.checked || undefined })}
             className="h-4 w-4 accent-[#1c1a17]"
           />
-          On sale
+          En promotion
         </label>
       </div>
 
       {facets.maxPrice > 0 && (
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">Price (DA)</p>
+          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">Prix (DA)</p>
           <div className="flex items-center gap-2">
             <input
               inputMode="numeric"
               value={minInput}
               onChange={(event) => setMinInput(event.target.value.replace(/[^0-9]/g, ""))}
               placeholder={String(facets.minPrice)}
-              aria-label="Minimum price"
+              aria-label="Prix minimum"
               className="field min-h-10"
             />
             <span className="text-ink-muted">–</span>
@@ -127,7 +127,7 @@ function FiltersForm({
               value={maxInput}
               onChange={(event) => setMaxInput(event.target.value.replace(/[^0-9]/g, ""))}
               placeholder={String(facets.maxPrice)}
-              aria-label="Maximum price"
+              aria-label="Prix maximum"
               className="field min-h-10"
             />
           </div>
@@ -136,7 +136,7 @@ function FiltersForm({
 
       {facets.colors.length > 0 && (
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">Color</p>
+          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">Couleur</p>
           <div className="flex flex-wrap gap-2">
             {facets.colors.map((color) => (
               <button
@@ -158,7 +158,7 @@ function FiltersForm({
 
       {facets.sizes.length > 0 && (
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">Size</p>
+          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">Taille</p>
           <div className="flex flex-wrap gap-2">
             {facets.sizes.map((size) => (
               <button
@@ -184,7 +184,7 @@ function FiltersForm({
           onClick={apply}
           className="flex-1"
         >
-          Apply filters
+          Appliquer les filtres
         </Button>
         <Button
           size="sm"
@@ -197,7 +197,7 @@ function FiltersForm({
             onApply(cleared);
           }}
         >
-          Clear
+          Effacer
         </Button>
       </div>
     </div>
@@ -244,7 +244,7 @@ export function CatalogToolbar({
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
       <p className="text-sm text-ink-soft" aria-live="polite">
         {title ? `${title} · ` : ""}
-        {total} {total === 1 ? "product" : "products"}
+        {total} {total === 1 ? "article" : "articles"}
       </p>
       <div className="flex items-center gap-2">
         <button
@@ -252,15 +252,15 @@ export function CatalogToolbar({
           onClick={() => setFiltersOpen(true)}
           className="btn btn-ghost min-h-10 px-4 text-xs lg:hidden"
         >
-          <SlidersHorizontal size={15} /> Filters{activeCount > 0 ? ` (${activeCount})` : ""}
+          <SlidersHorizontal size={15} /> Filtres{activeCount > 0 ? ` (${activeCount})` : ""}
         </button>
         <label className="flex items-center gap-2 text-sm">
-          <span className="hidden sm:inline">Sort</span>
+          <span className="hidden sm:inline">Trier</span>
           <select
             value={initial.sort ?? "featured"}
             onChange={(event) => setSort(event.target.value)}
             className="field min-h-10 w-auto"
-            aria-label="Sort products"
+            aria-label="Trier les articles"
           >
             {PRODUCT_SORT_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -275,9 +275,9 @@ export function CatalogToolbar({
         <aside className="hidden" aria-hidden="true" />
       </div>
 
-      <Modal open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filters">
+      <Modal open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filtres">
         <div className="flex items-center justify-between">
-          <button type="button" onClick={() => setFiltersOpen(false)} className="p-1" aria-label="Close filters">
+          <button type="button" onClick={() => setFiltersOpen(false)} className="p-1" aria-label="Fermer les filtres">
             <X size={18} className="hidden" />
           </button>
         </div>
@@ -299,9 +299,9 @@ export function DesktopFilters({ facets }: { facets: Facets }) {
   }
 
   return (
-    <aside className="hidden w-60 shrink-0 lg:block" aria-label="Filters">
+    <aside className="hidden w-60 shrink-0 lg:block" aria-label="Filtres">
       <div className="sticky top-32 border hairline bg-white p-5">
-        <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em]">Filters</p>
+        <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em]">Filtres</p>
         <FiltersForm facets={facets} initial={initial} onApply={apply} />
       </div>
     </aside>

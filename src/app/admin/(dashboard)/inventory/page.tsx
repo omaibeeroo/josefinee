@@ -25,7 +25,7 @@ export default async function AdminInventoryPage({
 
   return (
     <div>
-      <PageHeader title="Inventory" description={`${result.total} variants tracked. Stock changes are logged with a reason.`} />
+      <PageHeader title="Stock" description={`${result.total} variantes suivies. Chaque mouvement de stock est journalisé avec un motif.`} />
 
       <form method="get" className="mb-4 flex flex-col gap-2 border hairline bg-white p-4 sm:flex-row sm:items-center">
         <input name="search" defaultValue={filters.search} placeholder="SKU or product…" className="field min-h-10 flex-1" aria-label="Search inventory" />
