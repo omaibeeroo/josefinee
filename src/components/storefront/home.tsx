@@ -11,6 +11,12 @@ import type { StoreProductCard } from "@/server/catalog";
 
 /* ------------------------------------------------------------------ Hero */
 
+function naturalCase(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed || trimmed !== trimmed.toUpperCase()) return value;
+  return `${trimmed.charAt(0)}${trimmed.slice(1).toLowerCase()}`;
+}
+
 export function DiscoveryStrip() {
   const items = [
     { label: "Nouveautés", detail: "Les dernières pièces", href: "/collections/new-in" },
@@ -77,13 +83,13 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
                 className="eyebrow !text-ivory/80 motion-safe:animate-hero-enter opacity-0"
                 style={{ animationDelay: "120ms" }}
               >
-                {hero.eyebrow}
+                {naturalCase(hero.eyebrow)}
               </p>
               <h1
                 className="mt-3 max-w-2xl font-display text-4xl font-medium leading-[1.05] motion-safe:animate-hero-enter opacity-0 md:text-6xl"
                 style={{ animationDelay: "220ms" }}
               >
-                {hero.headline}
+                {naturalCase(hero.headline)}
               </h1>
               <p
                 className="mt-4 max-w-xl text-[0.9375rem] leading-relaxed text-ivory/85 motion-safe:animate-hero-enter opacity-0"
@@ -99,13 +105,13 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
                   href={hero.primaryHref}
                   className="btn btn-shine bg-ivory text-ink hover:bg-white"
                 >
-                  {hero.primaryLabel}
+                  {naturalCase(hero.primaryLabel)}
                 </Link>
                 <Link
                   href={hero.secondaryHref}
                   className="btn border border-ivory/70 text-ivory hover:bg-ivory hover:text-ink"
                 >
-                  {hero.secondaryLabel}
+                  {naturalCase(hero.secondaryLabel)}
                 </Link>
               </div>
             </div>
@@ -117,13 +123,13 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
             className="eyebrow motion-safe:animate-hero-enter opacity-0"
             style={{ animationDelay: "120ms" }}
           >
-            {hero.eyebrow}
+            {naturalCase(hero.eyebrow)}
           </p>
           <h1
             className="mx-auto mt-4 max-w-3xl font-display text-5xl font-medium leading-[1.05] motion-safe:animate-hero-enter opacity-0 md:text-7xl"
             style={{ animationDelay: "220ms" }}
           >
-            {hero.headline}
+            {naturalCase(hero.headline)}
           </h1>
           <p
             className="mx-auto mt-5 max-w-xl text-ink-soft motion-safe:animate-hero-enter opacity-0"
@@ -136,10 +142,10 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
             style={{ animationDelay: "420ms" }}
           >
             <Link href={hero.primaryHref} className="btn btn-primary btn-shine">
-              {hero.primaryLabel}
+              {naturalCase(hero.primaryLabel)}
             </Link>
             <Link href={hero.secondaryHref} className="btn btn-outline">
-              {hero.secondaryLabel}
+              {naturalCase(hero.secondaryLabel)}
             </Link>
           </div>
         </div>

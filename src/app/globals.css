@@ -2021,3 +2021,16 @@
     min-width: min(17rem, 72vw);
   }
 }
+
+.product-first-home .btn,
+.product-first-home .eyebrow,
+.product-first-home .product-shelf a,
+.product-first-home .product-shelf button {
+  text-transform: none;
+  letter-spacing: 0.03em;
+}
+
+.product-first-home .hero-copy,
+.product-first-home h1 {
+  letter-spacing: 0;
+}
