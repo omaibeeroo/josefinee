@@ -11,6 +11,7 @@ import {
   Hero,
   NewsletterSection,
   Pillars,
+  ProductSpotlight,
   SocialProof,
   TrustBar,
 } from "@/components/storefront/home";
@@ -125,20 +126,6 @@ export default async function HomePage() {
 
       <DiscoveryStrip />
 
-      <TrustBar />
-
-      {featuredCollection && (
-        <div className="section-space">
-          <FeaturedCollection
-            title={featuredCollection.name}
-            description={featuredCollection.description ?? ""}
-            image={featuredCollection.image}
-            href={`/collections/${featuredCollection.slug}`}
-            cta={`Découvrir ${featuredCollection.name}`}
-          />
-        </div>
-      )}
-
       {featured.length === 0 && newIn.length === 0 && bestSellers.length === 0 ? (
         <section
           className="container-luxe section-space pt-0 text-center"
@@ -171,10 +158,28 @@ export default async function HomePage() {
       ) : (
         <div className="section-space pt-0">
           <ProductCarousel
-            eyebrow="Sélection choisie"
-            title="Nos bijoux"
+            eyebrow="Choisissez votre prochaine pièce"
+            title="La sélection Josefinee"
             products={featured}
             viewAllHref="/shop"
+          />
+        </div>
+      )}
+
+      {featured[0] && (
+        <div className="section-space pt-0">
+          <ProductSpotlight product={featured[0]} />
+        </div>
+      )}
+
+      {featuredCollection && (
+        <div className="section-space pt-0">
+          <FeaturedCollection
+            title={featuredCollection.name}
+            description={featuredCollection.description ?? ""}
+            image={featuredCollection.image}
+            href={`/collections/${featuredCollection.slug}`}
+            cta={`Découvrir ${featuredCollection.name}`}
           />
         </div>
       )}
@@ -200,6 +205,8 @@ export default async function HomePage() {
       <div className="section-space pt-0">
         <CategoryGrid categories={categoryTiles} />
       </div>
+
+      <TrustBar />
 
       {settings.homepage.showSocialProof && <SocialProof deliveredCount={deliveredCount} />}
 

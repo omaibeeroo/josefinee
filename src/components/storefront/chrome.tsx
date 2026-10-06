@@ -145,16 +145,24 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
 
       <header
         className={cn(
-          "sticky top-0 z-50 border-b bg-ivory/95 backdrop-blur transition-shadow",
+          "sticky top-0 z-50 border-b bg-white/95 backdrop-blur transition-shadow",
           scrolled ? "hairline shadow-[0_8px_30px_-18px_rgba(28,26,23,0.4)]" : "border-transparent",
         )}
       >
         {/* Desktop */}
-        <div className="container-luxe hidden items-center justify-between gap-6 lg:grid lg:grid-cols-[1fr_auto_1fr]">
-          <BrandMark brandName={brandName} logoUrl={props.logoUrl} />
-          <nav aria-label="Navigation principale" className="flex items-center gap-7">
+        <div className="container-luxe hidden items-center gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+          <nav
+            aria-label="Navigation principale"
+            className="flex min-w-0 items-center gap-4 overflow-x-auto"
+          >
             <Link
-              className="nav-link py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark"
+              className="nav-link shrink-0 py-5 text-[0.68rem] font-medium uppercase tracking-[0.14em] hover:text-gold-dark"
+              href="/"
+            >
+              Accueil
+            </Link>
+            <Link
+              className="nav-link shrink-0 py-5 text-[0.68rem] font-medium uppercase tracking-[0.14em] hover:text-gold-dark"
               href="/shop"
             >
               Boutique
@@ -204,23 +212,24 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             </DesktopDropdown>
             <Link
               href="/collections/new-in"
-              className="nav-link py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark"
+              className="nav-link shrink-0 py-5 text-[0.68rem] font-medium uppercase tracking-[0.14em] hover:text-gold-dark"
             >
               Nouveautés
             </Link>
             <Link
               href="/collections/best-sellers"
-              className="nav-link py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark"
+              className="nav-link shrink-0 py-5 text-[0.68rem] font-medium uppercase tracking-[0.14em] hover:text-gold-dark"
             >
               Meilleures ventes
             </Link>
             <Link
               href="/collections/sale"
-              className="py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] text-sale"
+              className="shrink-0 py-5 text-[0.68rem] font-medium uppercase tracking-[0.14em] text-sale"
             >
               Promotions
             </Link>
           </nav>
+          <BrandMark brandName={brandName} logoUrl={props.logoUrl} />
           <div className="flex items-center justify-end gap-1">
             <button
               type="button"
@@ -651,9 +660,9 @@ function NewsletterMini() {
   }
 
   return (
-    <form onSubmit={submit} className="relative mt-4">
+    <form onSubmit={submit} className="relative mt-0">
       <Honeypot value={website} onChange={setWebsite} />
-      <label htmlFor="footer-newsletter" className="field-label !text-ivory/70">
+      <label htmlFor="footer-newsletter" className="sr-only">
         Newsletter
       </label>
       <div className="flex gap-2">
@@ -687,13 +696,15 @@ function SiteFooter(props: ChromeProps) {
     { label: "Facebook", href: props.social.facebook },
   ].filter(({ href }) => /^https:\/\/[^/]+\/.+/.test(href));
   return (
-    <footer className="mt-20 bg-ink text-ivory">
-      <div className="container-luxe grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
+    <footer className="site-footer mt-16 bg-ink text-ivory">
+      <div className="container-luxe grid gap-8 py-10 md:grid-cols-[1.25fr_0.8fr_1.35fr] md:gap-12 md:py-12">
         <div>
-          <p className="font-display text-2xl tracking-[0.3em]">{props.brandName}</p>
-          <p className="mt-3 max-w-xs text-sm leading-relaxed text-ivory/70">{props.tagline}</p>
+          <p className="font-display text-xl tracking-[0.3em]">{props.brandName}</p>
+          <p className="mt-2 max-w-xs text-sm leading-relaxed text-ivory/65">
+            Des pièces à porter encore et encore.
+          </p>
           {socialLinks.length > 0 && (
-            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm uppercase tracking-[0.14em]">
+            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[0.68rem] uppercase tracking-[0.16em]">
               {socialLinks.map((social) => (
                 <a
                   key={social.label}
@@ -718,41 +729,24 @@ function SiteFooter(props: ChromeProps) {
             </div>
           )}
         </div>
-        <nav aria-label="Boutique">
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">
-            Boutique
+        <nav aria-label="Liens rapides">
+          <p className="mb-3 text-[0.65rem] font-medium uppercase tracking-[0.2em] text-ivory/55">
+            Explorer
           </p>
-          <ul className="space-y-2.5 text-[0.9375rem]">
+          <ul className="grid grid-cols-2 gap-x-5 gap-y-2 text-sm">
             <li>
               <Link href="/shop" className="text-ivory/85 hover:text-ivory">
-                Voir la boutique
+                Boutique
               </Link>
             </li>
-            {props.categories.slice(0, 4).map((category) => (
-              <li key={category.slug}>
-                <Link
-                  href={`/categories/${category.slug}`}
-                  className="text-ivory/85 hover:text-ivory"
-                >
-                  {category.name}
-                </Link>
-              </li>
-            ))}
             <li>
               <Link href="/collections/new-in" className="text-ivory/85 hover:text-ivory">
                 Nouveautés
               </Link>
             </li>
-          </ul>
-        </nav>
-        <nav aria-label="Service client">
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">
-            Service client
-          </p>
-          <ul className="space-y-2.5 text-[0.9375rem]">
             <li>
-              <Link href="/contact" className="text-ivory/85 hover:text-ivory">
-                Contact
+              <Link href="/collections/best-sellers" className="text-ivory/85 hover:text-ivory">
+                Meilleures ventes
               </Link>
             </li>
             <li>
@@ -761,34 +755,30 @@ function SiteFooter(props: ChromeProps) {
               </Link>
             </li>
             <li>
-              <Link href="/track" className="text-ivory/85 hover:text-ivory">
-                Suivre une commande
-              </Link>
-            </li>
-            <li>
               <Link href="/faq" className="text-ivory/85 hover:text-ivory">
-                Questions fréquentes
+                FAQ
               </Link>
             </li>
             <li>
-              <Link href="/pages/returns" className="text-ivory/85 hover:text-ivory">
-                Retours
+              <Link href="/contact" className="text-ivory/85 hover:text-ivory">
+                Contact
               </Link>
             </li>
           </ul>
         </nav>
         <div>
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">
-            Restons en contact
+          <p className="mb-3 text-[0.65rem] font-medium uppercase tracking-[0.2em] text-ivory/55">
+            Recevez nos nouveautés
           </p>
+          <NewsletterMini />
           {(props.supportEmail || props.supportPhone) && (
-            <p className="text-sm text-ivory/70">
+            <p className="mt-3 text-xs text-ivory/55">
               {props.supportEmail && (
                 <a href={`mailto:${props.supportEmail}`} className="hover:text-ivory">
                   {props.supportEmail}
                 </a>
               )}
-              {props.supportEmail && props.supportPhone && <br />}
+              {props.supportEmail && props.supportPhone && <span className="px-2">·</span>}
               {props.supportPhone && (
                 <a
                   href={`tel:${props.supportPhone.replace(/\s/g, "")}`}
@@ -799,22 +789,13 @@ function SiteFooter(props: ChromeProps) {
               )}
             </p>
           )}
-          {(props.legalName || props.address) && (
-            <p className="mt-3 text-sm text-ivory/60">
-              {props.legalName}
-              {props.legalName && props.address && <br />}
-              {props.address}
-            </p>
-          )}
-          <NewsletterMini />
         </div>
       </div>
       <div className="border-t border-white/10">
-        <div className="container-luxe flex flex-col items-center justify-between gap-3 py-5 text-xs text-ivory/60 md:flex-row">
+        <div className="container-luxe flex flex-col gap-3 py-4 text-[0.68rem] text-ivory/55 sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © {year} {props.brandName}. Tous droits réservés.
+            © {year} {props.brandName}
           </p>
-          <p className="uppercase tracking-[0.16em]">Paiement à la livraison · 58 wilayas</p>
           <div className="flex gap-4">
             <Link href="/pages/privacy-policy" className="hover:text-ivory">
               Confidentialité

@@ -5,16 +5,21 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Headset, PackageCheck, Truck } from "lucide-react";
 import { subscribeNewsletterAction } from "@/server/actions/engagement";
-import { Accordion, Honeypot, Reveal } from "@/components/ui";
+import { Accordion, Honeypot, Price, Reveal } from "@/components/ui";
 import type { HomepageSettings } from "@/lib/settings";
 import type { StoreProductCard } from "@/server/catalog";
+import { ProductImage } from "@/components/storefront/product";
 
 /* ------------------------------------------------------------------ Hero */
 
 export function DiscoveryStrip() {
   const items = [
     { label: "Nouveautés", detail: "Les dernières pièces", href: "/collections/new-in" },
-    { label: "Meilleures ventes", detail: "Les favoris du moment", href: "/collections/best-sellers" },
+    {
+      label: "Meilleures ventes",
+      detail: "Les favoris du moment",
+      href: "/collections/best-sellers",
+    },
     { label: "Livraison", detail: "Partout en Algérie", href: "/pages/shipping" },
   ];
 
@@ -202,6 +207,47 @@ export function FeaturedCollection({
   );
 }
 
+/* ------------------------------------------------------ Product spotlight */
+
+export function ProductSpotlight({ product }: { product: StoreProductCard }) {
+  const image = product.images[0];
+
+  return (
+    <section className="container-luxe" aria-label={`Produit à la une : ${product.name}`}>
+      <div className="reference-spotlight grid overflow-hidden border hairline bg-white md:grid-cols-[1.08fr_0.92fr]">
+        <div className="relative aspect-[4/5] bg-cream md:aspect-auto md:min-h-[34rem]">
+          <ProductImage
+            url={image?.url ?? null}
+            alt={product.name}
+            sizes="(max-width: 768px) 100vw, 55vw"
+            priority
+            className="reference-spotlight-image"
+          />
+        </div>
+        <div className="flex flex-col justify-center px-6 py-10 sm:px-10 md:px-14 md:py-14">
+          <p className="eyebrow">La pièce signature</p>
+          <p className="mt-7 text-[0.625rem] uppercase tracking-[0.28em] text-ink-muted">
+            Josefinee / sélection
+          </p>
+          <h2 className="mt-3 max-w-md font-display text-4xl font-medium leading-[1.02] md:text-5xl">
+            {product.name}
+          </h2>
+          <div className="mt-5 text-base text-ink-soft">
+            <Price price={product.price} compareAt={product.compareAtPrice} />
+          </div>
+          <p className="mt-5 max-w-sm text-[0.9375rem] leading-relaxed text-ink-soft">
+            Une pièce choisie pour accompagner les moments qui comptent, avec la douceur et la
+            présence propres à Josefinee.
+          </p>
+          <Link href={`/products/${product.slug}`} className="btn btn-primary btn-shine mt-8 w-fit">
+            Découvrir la pièce <ArrowRight size={15} />
+          </Link>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 /* -------------------------------------------------------- Category grid */
 
 export type CategoryTile = { name: string; slug: string; image: string | null; count: number };
@@ -307,7 +353,17 @@ export function SocialProof({ deliveredCount }: { deliveredCount: number }) {
 export function Pillars({ items }: { items: Array<{ title: string; text: string }> }) {
   if (items.length === 0) return null;
   return (
-    <section className="container-luxe" aria-label="Nos engagements">
+    <section className="container-luxe" aria-label="L’expérience Josefinee">
+      <div className="mb-10 max-w-xl">
+        <p className="eyebrow">Pour nos clientes</p>
+        <h2 className="mt-3 font-display text-4xl font-medium leading-tight md:text-5xl">
+          L’expérience Josefinee
+        </h2>
+        <p className="mt-4 text-[0.9375rem] leading-relaxed text-ink-soft">
+          De votre première pièce préférée au moment où elle arrive chez vous, chaque détail est
+          pensé avec attention.
+        </p>
+      </div>
       <div className="grid gap-8 md:grid-cols-3">
         {items.map((item, index) => (
           <Reveal key={item.title} delay={index * 90}>

@@ -23,3 +23,9 @@
 - Keep `SiteChrome`, `HomePage`, `ProductCard`, `ProductCarousel`, and catalog filters as reusable primitives; update their styling and composition rather than duplicating commerce logic.
 - Centralize visual behavior in `globals.css` tokens/utilities so admin and storefront components remain compatible with settings-driven accent variables.
 - Add no new client-side price or order logic; all redesign work is presentation-only.
+
+## Love Mary reference adaptation
+
+- **Reference patterns applied:** centered wordmark, compact left-side category navigation, quiet white header chrome, generous editorial spacing, horizontal product rails, image-led collection blocks, a split product spotlight, and a three-step experience section.
+- **Josefinee boundaries:** keep Josefinee products, French copy, settings-driven logo/colors, server-rendered catalog data, wishlist/cart behavior, checkout, accessibility labels, and all existing security controls. Do not copy Love Mary product names, imagery, logo, or private implementation details.
+- **Responsive behavior:** retain the existing Android/iOS and desktop browser safeguards, with the split spotlight collapsing to a stacked mobile layout and product rails remaining touch-scrollable.
