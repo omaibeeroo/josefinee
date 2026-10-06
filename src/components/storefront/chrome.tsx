@@ -79,15 +79,15 @@ function DesktopDropdown({
   children: ReactNode;
 }) {
   return (
-    <div className="group relative">
+    <div className="group relative shrink-0">
       <Link
         href={href}
-        className="nav-link flex items-center gap-1 py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] text-ink transition-colors hover:text-gold-dark"
+        className="nav-link flex items-center gap-1 whitespace-nowrap py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:text-gold-dark"
       >
         {label}
         <ChevronDown size={12} className="transition-transform group-hover:rotate-180" />
       </Link>
-      <div className="invisible absolute left-1/2 top-full z-50 w-60 -translate-x-1/2 translate-y-1 border hairline bg-white opacity-0 shadow-card transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100">
+      <div className="invisible absolute left-1/2 top-full z-50 max-h-[70vh] w-60 -translate-x-1/2 translate-y-1 overflow-y-auto overscroll-contain border hairline bg-white opacity-0 shadow-card transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 no-scrollbar">
         <div className="flex flex-col p-2">{children}</div>
       </div>
     </div>
@@ -125,11 +125,6 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
-  const jewelry = props.categories.find((c) => c.slug === "jewelry");
-  const bags = props.categories.find((c) => c.slug === "bags-wallets");
-  const accessories = props.categories.find((c) => c.slug === "accessories");
-  const clothes = props.categories.find((c) => c.slug === "clothes");
-
   return (
     <>
       {announcement && (
@@ -150,59 +145,75 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         )}
       >
         {/* Desktop */}
-        <div className="container-luxe hidden items-center gap-5 lg:grid lg:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]">
+        <div className="container-luxe hidden lg:block">
+          <div className="relative flex h-16 items-center justify-center">
+            <BrandMark brandName={brandName} logoUrl={props.logoUrl} />
+            <div className="absolute right-0 flex items-center justify-end gap-1">
+              <button
+                type="button"
+                onClick={() => setSearchOpen(true)}
+                aria-label="Rechercher"
+                className="icon-button p-2.5 hover:text-gold-dark"
+              >
+                <Search size={19} strokeWidth={1.75} />
+              </button>
+              <Link
+                href="/account"
+                aria-label="Mon compte"
+                className="icon-button p-2.5 hover:text-gold-dark"
+              >
+                <User size={19} strokeWidth={1.75} />
+              </Link>
+              <Link
+                href="/wishlist"
+                aria-label="Liste d’envies"
+                className="icon-button p-2.5 hover:text-gold-dark"
+              >
+                <Heart size={19} strokeWidth={1.75} />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setOpen(true)}
+                aria-label={`Ouvrir le panier, ${count} article${count > 1 ? "s" : ""}`}
+                className="icon-button relative p-2.5 hover:text-gold-dark"
+              >
+                <ShoppingBag size={19} strokeWidth={1.75} />
+                {count > 0 && (
+                  <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.625rem] font-semibold text-ivory">
+                    {count}
+                  </span>
+                )}
+              </button>
+            </div>
+          </div>
           <nav
             aria-label="Navigation principale"
-            className="flex min-w-0 items-center gap-4 overflow-x-auto"
+            className="flex flex-wrap items-center justify-center gap-x-3 border-t hairline px-2 py-1 xl:gap-x-6"
           >
             <Link
-              className="nav-link shrink-0 py-5 text-[0.68rem] font-medium uppercase tracking-[0.14em] hover:text-gold-dark"
+              className="nav-link whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
               href="/"
             >
               Accueil
             </Link>
             <Link
-              className="nav-link shrink-0 py-5 text-[0.68rem] font-medium uppercase tracking-[0.14em] hover:text-gold-dark"
+              className="nav-link whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
               href="/shop"
             >
               Boutique
             </Link>
-            {jewelry && (
-              <DesktopDropdown label={jewelry.name} href={`/categories/${jewelry.slug}`}>
-                {jewelry.children.map((child) => (
-                  <DropdownLink key={child.slug} href={`/categories/${child.slug}`}>
-                    {child.name}
-                  </DropdownLink>
-                ))}
-                <DropdownLink href="/collections/jewelry">Tous les bijoux</DropdownLink>
-              </DesktopDropdown>
-            )}
-            {bags && (
-              <DesktopDropdown label={bags.name} href={`/categories/${bags.slug}`}>
-                {bags.children.map((child) => (
-                  <DropdownLink key={child.slug} href={`/categories/${child.slug}`}>
-                    {child.name}
-                  </DropdownLink>
-                ))}
-              </DesktopDropdown>
-            )}
-            {accessories && (
-              <DesktopDropdown label={accessories.name} href={`/categories/${accessories.slug}`}>
-                {accessories.children.map((child) => (
-                  <DropdownLink key={child.slug} href={`/categories/${child.slug}`}>
-                    {child.name}
-                  </DropdownLink>
-                ))}
-              </DesktopDropdown>
-            )}
-            {clothes && (
-              <Link
-                className="nav-link py-5 text-[0.72rem] font-medium uppercase tracking-[0.18em] hover:text-gold-dark"
-                href={`/categories/${clothes.slug}`}
-              >
-                {clothes.name}
-              </Link>
-            )}
+            <DesktopDropdown label="Catégories" href="/shop">
+              {props.categories.map((category) => (
+                <div key={category.slug}>
+                  <DropdownLink href={`/categories/${category.slug}`}>{category.name}</DropdownLink>
+                  {category.children.map((child) => (
+                    <DropdownLink key={child.slug} href={`/categories/${child.slug}`}>
+                      <span className="pl-3 text-xs">{child.name}</span>
+                    </DropdownLink>
+                  ))}
+                </div>
+              ))}
+            </DesktopDropdown>
             <DesktopDropdown label="Collections" href="/collections">
               {props.collections.map((collection) => (
                 <DropdownLink key={collection.slug} href={`/collections/${collection.slug}`}>
@@ -212,61 +223,23 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             </DesktopDropdown>
             <Link
               href="/collections/new-in"
-              className="nav-link shrink-0 py-5 text-[0.68rem] font-medium uppercase tracking-[0.14em] hover:text-gold-dark"
+              className="nav-link whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
             >
               Nouveautés
             </Link>
             <Link
               href="/collections/best-sellers"
-              className="nav-link shrink-0 py-5 text-[0.68rem] font-medium uppercase tracking-[0.14em] hover:text-gold-dark"
+              className="nav-link whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
             >
               Meilleures ventes
             </Link>
             <Link
               href="/collections/sale"
-              className="shrink-0 py-5 text-[0.68rem] font-medium uppercase tracking-[0.14em] text-sale"
+              className="whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-sale"
             >
               Promotions
             </Link>
           </nav>
-          <BrandMark brandName={brandName} logoUrl={props.logoUrl} />
-          <div className="flex items-center justify-end gap-1">
-            <button
-              type="button"
-              onClick={() => setSearchOpen(true)}
-              aria-label="Rechercher"
-              className="icon-button p-2.5 hover:text-gold-dark"
-            >
-              <Search size={19} strokeWidth={1.75} />
-            </button>
-            <Link
-              href="/account"
-              aria-label="Mon compte"
-              className="icon-button p-2.5 hover:text-gold-dark"
-            >
-              <User size={19} strokeWidth={1.75} />
-            </Link>
-            <Link
-              href="/wishlist"
-              aria-label="Liste d’envies"
-              className="icon-button p-2.5 hover:text-gold-dark"
-            >
-              <Heart size={19} strokeWidth={1.75} />
-            </Link>
-            <button
-              type="button"
-              onClick={() => setOpen(true)}
-              aria-label={`Ouvrir le panier, ${count} article${count > 1 ? "s" : ""}`}
-              className="icon-button relative p-2.5 hover:text-gold-dark"
-            >
-              <ShoppingBag size={19} strokeWidth={1.75} />
-              {count > 0 && (
-                <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.625rem] font-semibold text-ivory">
-                  {count}
-                </span>
-              )}
-            </button>
-          </div>
         </div>
 
         {/* Mobile */}
