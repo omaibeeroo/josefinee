@@ -1,5 +1,5 @@
 // ---------------------------------------------------------------------------
-// Josefinee — database schema (PostgreSQL + Prisma)
+// Hanadi Store — database schema (PostgreSQL + Prisma)
 //
 // Conventions:
 //  - IDs are cuid strings; sequential DB ids are never exposed to customers.

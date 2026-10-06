@@ -159,7 +159,7 @@ export default async function HomePage() {
         <div className="section-space pt-0">
           <ProductCarousel
             eyebrow="Choisissez votre prochaine pièce"
-            title="La sélection Josefinee"
+            title="La sélection Hanadi Store"
             products={featured}
             viewAllHref="/shop"
           />

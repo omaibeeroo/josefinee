@@ -1,10 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
-  <title id="title">Josefinee — Bijoux et accessoires</title>
+  <title id="title">Hanadi Store — Bijoux et accessoires</title>
   <desc id="desc">Bijoux et accessoires modernes, livrés partout en Algérie.</desc>
   <rect width="1200" height="630" fill="#faf8f4"/>
   <path d="M0 0h1200v18H0z" fill="#b08d57"/>
   <path d="M0 612h1200v18H0z" fill="#b08d57"/>
-  <text x="600" y="275" text-anchor="middle" fill="#1c1a17" font-family="Georgia, serif" font-size="92" letter-spacing="12">Josefinee</text>
+  <text x="600" y="275" text-anchor="middle" fill="#1c1a17" font-family="Georgia, serif" font-size="92" letter-spacing="12">Hanadi Store</text>
   <text x="600" y="365" text-anchor="middle" fill="#665f56" font-family="Arial, sans-serif" font-size="24" letter-spacing="5">BIJOUX · SACS · ACCESSOIRES</text>
   <text x="600" y="425" text-anchor="middle" fill="#665f56" font-family="Arial, sans-serif" font-size="21">Paiement à la livraison · Algérie</text>
 </svg>

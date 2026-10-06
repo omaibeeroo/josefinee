@@ -1,4 +1,4 @@
-# AGENTS.md — Working on Josefinee
+# AGENTS.md — Working on Hanadi Store
 
 This file orients AI coding agents. Humans: see `README.md`.
 

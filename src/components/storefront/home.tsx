@@ -24,7 +24,7 @@ export function DiscoveryStrip() {
   ];
 
   return (
-    <section className="border-b hairline bg-white" aria-label="Découvrir Josefinee">
+    <section className="border-b hairline bg-white" aria-label="Découvrir Hanadi Store">
       <div className="container-luxe grid divide-y hairline sm:grid-cols-3 sm:divide-x sm:divide-y-0">
         {items.map((item, index) => (
           <Link
@@ -227,7 +227,7 @@ export function ProductSpotlight({ product }: { product: StoreProductCard }) {
         <div className="flex flex-col justify-center px-6 py-10 sm:px-10 md:px-14 md:py-14">
           <p className="eyebrow">La pièce signature</p>
           <p className="mt-7 text-[0.625rem] uppercase tracking-[0.28em] text-ink-muted">
-            Josefinee / sélection
+            Hanadi Store / sélection
           </p>
           <h2 className="mt-3 max-w-md font-display text-4xl font-medium leading-[1.02] md:text-5xl">
             {product.name}
@@ -237,7 +237,7 @@ export function ProductSpotlight({ product }: { product: StoreProductCard }) {
           </div>
           <p className="mt-5 max-w-sm text-[0.9375rem] leading-relaxed text-ink-soft">
             Une pièce choisie pour accompagner les moments qui comptent, avec la douceur et la
-            présence propres à Josefinee.
+            présence propres à Hanadi Store.
           </p>
           <Link href={`/products/${product.slug}`} className="btn btn-primary btn-shine mt-8 w-fit">
             Découvrir la pièce <ArrowRight size={15} />
@@ -263,7 +263,7 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
             <h2 className="font-display text-3xl font-medium md:text-4xl">Acheter par catégorie</h2>
           </div>
           <span className="hidden text-xs uppercase tracking-[0.18em] text-ink-muted sm:block">
-            The Josefinee wardrobe
+            The Hanadi Store wardrobe
           </span>
         </div>
       </Reveal>
@@ -353,11 +353,11 @@ export function SocialProof({ deliveredCount }: { deliveredCount: number }) {
 export function Pillars({ items }: { items: Array<{ title: string; text: string }> }) {
   if (items.length === 0) return null;
   return (
-    <section className="container-luxe" aria-label="L’expérience Josefinee">
+    <section className="container-luxe" aria-label="L’expérience Hanadi Store">
       <div className="mb-10 max-w-xl">
         <p className="eyebrow">Pour nos clientes</p>
         <h2 className="mt-3 font-display text-4xl font-medium leading-tight md:text-5xl">
-          L’expérience Josefinee
+          L’expérience Hanadi Store
         </h2>
         <p className="mt-4 text-[0.9375rem] leading-relaxed text-ink-soft">
           De votre première pièce préférée au moment où elle arrive chez vous, chaque détail est

@@ -39,11 +39,16 @@ export function AdminShell({
       <div className="sticky top-0 z-40 border-b hairline bg-ivory print:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-6">
           <div className="flex items-center gap-3">
-            <button type="button" onClick={() => setMenuOpen(true)} aria-label="Open navigation" className="p-2 lg:hidden">
+            <button
+              type="button"
+              onClick={() => setMenuOpen(true)}
+              aria-label="Open navigation"
+              className="p-2 lg:hidden"
+            >
               <Menu size={20} />
             </button>
             <Link href="/admin" className="font-display text-lg tracking-[0.28em]">
-              Josefinee <span className="text-xs tracking-[0.2em] text-ink-muted">ADMIN</span>
+              Hanadi Store <span className="text-xs tracking-[0.2em] text-ink-muted">ADMIN</span>
             </Link>
           </div>
           <div className="flex items-center gap-3">
@@ -60,14 +65,21 @@ export function AdminShell({
                 </span>
               )}
             </Link>
-            <Link href="/" target="_blank" className="hidden text-xs uppercase tracking-[0.14em] underline underline-offset-2 sm:inline">
+            <Link
+              href="/"
+              target="_blank"
+              className="hidden text-xs uppercase tracking-[0.14em] underline underline-offset-2 sm:inline"
+            >
               View store
             </Link>
             <span className="hidden text-xs text-ink-muted md:inline">
               {name} · {roleLabel}
             </span>
             <form action={adminLogoutAction}>
-              <button type="submit" className="text-xs uppercase tracking-[0.14em] underline underline-offset-2">
+              <button
+                type="submit"
+                className="text-xs uppercase tracking-[0.14em] underline underline-offset-2"
+              >
                 Sign out
               </button>
             </form>
@@ -77,7 +89,10 @@ export function AdminShell({
 
       <div className="flex">
         {/* Sidebar (desktop) */}
-        <aside className="hidden w-64 shrink-0 border-r hairline bg-ivory lg:block print:hidden" aria-label="Admin navigation">
+        <aside
+          className="hidden w-64 shrink-0 border-r hairline bg-ivory lg:block print:hidden"
+          aria-label="Admin navigation"
+        >
           <nav className="sticky top-[57px] max-h-[calc(100vh-57px)] overflow-y-auto p-4">
             <SidebarNav sections={sections} pathname={pathname} />
           </nav>
@@ -85,12 +100,30 @@ export function AdminShell({
 
         {/* Sidebar (mobile drawer) */}
         {menuOpen && (
-          <div className="fixed inset-0 z-50 lg:hidden print:hidden" role="dialog" aria-modal="true" aria-label="Admin navigation">
-            <button aria-label="Close navigation" onClick={() => setMenuOpen(false)} className="absolute inset-0 bg-ink/50" />
-            <aside ref={menuPanelRef} tabIndex={-1} className="absolute left-0 top-0 h-full w-72 overflow-y-auto bg-ivory p-4">
+          <div
+            className="fixed inset-0 z-50 lg:hidden print:hidden"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Admin navigation"
+          >
+            <button
+              aria-label="Close navigation"
+              onClick={() => setMenuOpen(false)}
+              className="absolute inset-0 bg-ink/50"
+            />
+            <aside
+              ref={menuPanelRef}
+              tabIndex={-1}
+              className="absolute left-0 top-0 h-full w-72 overflow-y-auto bg-ivory p-4"
+            >
               <div className="mb-3 flex items-center justify-between">
-                <span className="font-display text-lg tracking-[0.12em]">Josefinee</span>
-                <button type="button" onClick={() => setMenuOpen(false)} aria-label="Close navigation" className="p-2">
+                <span className="font-display text-lg tracking-[0.12em]">Hanadi Store</span>
+                <button
+                  type="button"
+                  onClick={() => setMenuOpen(false)}
+                  aria-label="Close navigation"
+                  className="p-2"
+                >
                   <X size={20} />
                 </button>
               </div>
@@ -108,7 +141,13 @@ export function AdminShell({
   );
 }
 
-function SidebarNav({ sections, pathname }: { sections: Array<{ title: string; items: NavItem[] }>; pathname: string }) {
+function SidebarNav({
+  sections,
+  pathname,
+}: {
+  sections: Array<{ title: string; items: NavItem[] }>;
+  pathname: string;
+}) {
   return (
     <div className="space-y-5">
       {sections.map((section) => (
@@ -118,7 +157,8 @@ function SidebarNav({ sections, pathname }: { sections: Array<{ title: string; i
           </p>
           <ul className="space-y-0.5">
             {section.items.map((item) => {
-              const active = item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+              const active =
+                item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
               return (
                 <li key={item.href}>
                   <Link
@@ -126,12 +166,19 @@ function SidebarNav({ sections, pathname }: { sections: Array<{ title: string; i
                     aria-current={active ? "page" : undefined}
                     className={cn(
                       "admin-nav-link flex items-center justify-between rounded-sm px-2 py-2 text-sm",
-                      active ? "bg-ink font-medium text-ivory" : "text-ink-soft hover:bg-cream hover:text-ink",
+                      active
+                        ? "bg-ink font-medium text-ivory"
+                        : "text-ink-soft hover:bg-cream hover:text-ink",
                     )}
                   >
                     {item.label}
                     {item.badge !== undefined && item.badge > 0 && (
-                      <span className={cn("rounded-full px-1.5 text-[0.6875rem] font-bold", active ? "bg-ivory text-ink" : "bg-sale text-white")}>
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 text-[0.6875rem] font-bold",
+                          active ? "bg-ivory text-ink" : "bg-sale text-white",
+                        )}
+                      >
                         {item.badge}
                       </span>
                     )}
@@ -156,7 +203,10 @@ function NewOrderAlerts({ initialPending }: { initialPending: number }) {
       try {
         const response = await fetch("/api/admin/alerts", { cache: "no-store" });
         if (!response.ok) return;
-        const data = (await response.json()) as { pendingCount: number; latestOrderNumber: string | null };
+        const data = (await response.json()) as {
+          pendingCount: number;
+          latestOrderNumber: string | null;
+        };
         if (cancelled) return;
         setKnown((previous) => {
           if (data.pendingCount > previous) {
@@ -191,14 +241,24 @@ function NewOrderAlerts({ initialPending }: { initialPending: number }) {
 
   if (!notice) return null;
   return (
-    <div className="fixed bottom-4 right-4 z-[70] max-w-sm animate-slide-up border hairline bg-ink p-4 text-ivory shadow-card print:hidden" role="alert">
+    <div
+      className="fixed bottom-4 right-4 z-[70] max-w-sm animate-slide-up border hairline bg-ink p-4 text-ivory shadow-card print:hidden"
+      role="alert"
+    >
       <p className="text-sm font-medium">New order received</p>
       <p className="mt-1 text-sm text-ivory/80">{notice}</p>
       <div className="mt-3 flex gap-2">
-        <Link href="/admin/orders?status=PENDING" className="btn btn-gold min-h-9 px-4 text-[0.6875rem]">
+        <Link
+          href="/admin/orders?status=PENDING"
+          className="btn btn-gold min-h-9 px-4 text-[0.6875rem]"
+        >
           View orders
         </Link>
-        <button type="button" onClick={() => setNotice(null)} className="btn min-h-9 border border-ivory/30 px-4 text-[0.6875rem] text-ivory">
+        <button
+          type="button"
+          onClick={() => setNotice(null)}
+          className="btn min-h-9 border border-ivory/30 px-4 text-[0.6875rem] text-ivory"
+        >
           Dismiss
         </button>
       </div>

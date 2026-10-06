@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
-   Josefinee — design tokens
+   Hanadi Store — design tokens
    All storefront colors/typography flow from these tokens. The admin can
    override accent colors at runtime through settings -> CSS variables.
 --------------------------------------------------------------------------- */
@@ -1603,7 +1603,7 @@
 
 /* ---------------------------------------------------------------------------
    Love Mary-inspired storefront layer
-   Visual direction only: preserve Josefinee data, commerce logic, and brand
+   Visual direction only: preserve Hanadi Store data, commerce logic, and brand
    settings while adopting the reference shop's quiet editorial rhythm.
 --------------------------------------------------------------------------- */
 @layer components {

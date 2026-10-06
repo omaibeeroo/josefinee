@@ -2,8 +2,8 @@ import type { MetadataRoute } from "next";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Josefinee — Bijoux et accessoires modernes",
-    short_name: "Josefinee",
+    name: "Hanadi Store — Bijoux et accessoires modernes",
+    short_name: "Hanadi Store",
     description: "Bijoux et accessoires intemporels livrés partout en Algérie.",
     start_url: "/",
     display: "standalone",

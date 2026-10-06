@@ -1,4 +1,4 @@
-# Josefinee Silver-White Storefront Overhaul
+# Hanadi Store Silver-White Storefront Overhaul
 
 ## Design direction
 
@@ -12,7 +12,7 @@
 - **Typography system:** Inter for utility/navigation and Cormorant Garamond for editorial headlines, with smaller uppercase labels and restrained tracking.
 - **Brand essence:** modern Algerian accessories for women building a considered everyday wardrobe; **polished, calm, magnetic**.
 - **Brand voice:** concise French copy with a confident, invitational tone. Example lines: “Les essentiels, en mieux.” and “Choisissez votre prochaine pièce signature.”
-- **Wordmark concept:** preserve the settings-driven Josefinee wordmark, presented with wider tracking and a compact silver monogram treatment where no logo asset is configured.
+- **Wordmark concept:** preserve the settings-driven Hanadi Store wordmark, presented with wider tracking and a compact silver monogram treatment where no logo asset is configured.
 - **Signature brand color:** cool metallic blue-gray `#8794a3`.
 - **Feminine interaction accent:** soft rose-lilac `#c6a7b8` appears only in hover sheen, sale states, focus halos, and selected controls so the storefront stays silver-white rather than becoming pink-heavy.
 - **Product detail signature:** an editorial two-column product stage with pointer-aware gallery zoom, fullscreen media viewing, pill-shaped animated finish selectors, a silver purchase rail, and a mobile sticky buy shortcut.
@@ -27,5 +27,5 @@
 ## Love Mary reference adaptation
 
 - **Reference patterns applied:** centered wordmark, compact left-side category navigation, quiet white header chrome, generous editorial spacing, horizontal product rails, image-led collection blocks, a split product spotlight, and a three-step experience section.
-- **Josefinee boundaries:** keep Josefinee products, French copy, settings-driven logo/colors, server-rendered catalog data, wishlist/cart behavior, checkout, accessibility labels, and all existing security controls. Do not copy Love Mary product names, imagery, logo, or private implementation details.
+- **Hanadi Store boundaries:** keep Hanadi Store products, French copy, settings-driven logo/colors, server-rendered catalog data, wishlist/cart behavior, checkout, accessibility labels, and all existing security controls. Do not copy Love Mary product names, imagery, logo, or private implementation details.
 - **Responsive behavior:** retain the existing Android/iOS and desktop browser safeguards, with the split spotlight collapsing to a stacked mobile layout and product rails remaining touch-scrollable.

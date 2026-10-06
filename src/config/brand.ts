@@ -15,7 +15,7 @@ const env = (key: string, fallback: string): string => {
 };
 
 export const BRAND_CONFIG = {
-  name: env("NEXT_PUBLIC_BRAND_NAME", "Josefinee"),
+  name: env("NEXT_PUBLIC_BRAND_NAME", "Hanadi Store"),
   legalName: env("NEXT_PUBLIC_BRAND_LEGAL_NAME", ""),
   tagline: env("NEXT_PUBLIC_BRAND_TAGLINE", "Des pièces à porter encore et encore"),
   description: env(
@@ -42,13 +42,10 @@ export const BRAND_CONFIG = {
   freeDeliveryThreshold: Number(env("NEXT_PUBLIC_FREE_DELIVERY_THRESHOLD", "0")) || 0,
 } as const;
 
-
 export const isS3Configured = (): boolean =>
   process.env.STORAGE_DRIVER === "s3" &&
   Boolean(
-    process.env.STORAGE_BUCKET &&
-      process.env.STORAGE_ACCESS_KEY &&
-      process.env.STORAGE_SECRET_KEY,
+    process.env.STORAGE_BUCKET && process.env.STORAGE_ACCESS_KEY && process.env.STORAGE_SECRET_KEY,
   );
 
 /** Public canonical application origin; production must configure APP_URL explicitly. */
