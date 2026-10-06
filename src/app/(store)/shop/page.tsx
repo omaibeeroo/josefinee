@@ -8,8 +8,8 @@ import { parseCatalogParams, withPage } from "../catalog-helpers";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Shop all",
-  description: "Browse the full collection — jewelry, bags and accessories delivered across Algeria.",
+  title: "Toute la boutique",
+  description: "Parcourez toute la collection — bijoux, sacs et accessoires livrés partout en Algérie.",
   alternates: { canonical: "/shop" },
 };
 
@@ -28,8 +28,8 @@ export default async function ShopPage({
   return (
     <div className="container-luxe py-10 md:py-14">
       <div className="mb-8 text-center">
-        <p className="eyebrow mb-2">The edit</p>
-        <h1 className="font-display text-4xl font-medium md:text-5xl">Shop all</h1>
+        <p className="eyebrow mb-2">La sélection</p>
+        <h1 className="font-display text-4xl font-medium md:text-5xl">Toute la boutique</h1>
       </div>
 
       <CatalogToolbar facets={facets} total={result.total} />
@@ -39,8 +39,8 @@ export default async function ShopPage({
         <div className="min-w-0 flex-1">
           {result.items.length === 0 ? (
             <EmptyState
-              title="No products found"
-              message="Try removing some filters to see more pieces."
+              title="Aucun article trouvé"
+              message="Essayez de retirer certains filtres pour voir plus de pièces."
             />
           ) : (
             <>

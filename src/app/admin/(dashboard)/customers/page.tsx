@@ -21,7 +21,7 @@ export default async function AdminCustomersPage({
 
   return (
     <div>
-      <PageHeader title="Customers" description={`${result.total} customers. Personal data is only visible to authorized staff.`} />
+      <PageHeader title="Clientes" description={`${result.total} clientes. Les données personnelles ne sont visibles que par le personnel autorisé.`} />
       <form method="get" className="mb-4 flex gap-2 border hairline bg-white p-4">
         <input name="search" defaultValue={filters.search} placeholder="Phone, email, name…" className="field min-h-10 flex-1" aria-label="Search customers" />
         <button type="submit" className="btn btn-primary min-h-10 px-6 text-xs">

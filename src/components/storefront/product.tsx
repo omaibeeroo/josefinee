@@ -290,7 +290,7 @@ function QuickAddModal({
   async function submit() {
     const variantId = product.hasVariants ? activeVariant?.id : product.defaultVariantId;
     if (!variantId) {
-      setError("Please choose your options first.");
+      setError("Veuillez d’abord choisir vos options.");
       return;
     }
     setPending(true);
@@ -301,7 +301,7 @@ function QuickAddModal({
       pixelEvent("AddToCart", { content_ids: [product.id], currency: "DZD" });
       onClose();
     } else {
-      setError(result.error ?? "Could not add to bag.");
+      setError(result.error ?? "Impossible d’ajouter au panier.");
     }
   }
 
@@ -320,16 +320,16 @@ function QuickAddModal({
             price={activeVariant?.price ?? product.price}
             compareAt={activeVariant?.compareAtPrice ?? product.compareAtPrice}
           />
-          {!product.inStock && <p className="mt-1 text-sm text-sale">Out of stock</p>}
+          {!product.inStock && <p className="mt-1 text-sm text-sale">Rupture de stock</p>}
           {activeVariant && activeVariant.available <= 3 && activeVariant.available > 0 && (
             <p className="mt-1 text-sm font-medium text-sale" role="status">
-              Only {activeVariant.available} left
+              Plus que {activeVariant.available} disponible{activeVariant.available > 1 ? "s" : ""}
             </p>
           )}
         </div>
       </div>
 
-      {loading && <p className="mt-4 text-sm text-ink-soft">Loading options…</p>}
+      {loading && <p className="mt-4 text-sm text-ink-soft">Chargement des options…</p>}
 
       {data && data.options.length > 0 && (
         <div className="mt-4 space-y-3">
@@ -397,7 +397,7 @@ function QuickAddModal({
             onChange={setQuantity}
             max={Math.max(1, maxQuantity)}
           />
-          <span className="text-xs text-ink-muted">Select options to see availability</span>
+          <span className="text-xs text-ink-muted">Choisissez vos options pour voir la disponibilité</span>
         </div>
       )}
 
@@ -414,14 +414,14 @@ function QuickAddModal({
           }
           className="flex-1"
         >
-          {pending ? "Adding…" : "Add to bag"}
+          {pending ? "Ajout…" : "Ajouter au panier"}
         </Button>
         <Link
           href={`/products/${product.slug}`}
           onClick={onClose}
           className="btn btn-ghost flex-1 text-center"
         >
-          Full details
+          Détails complets
         </Link>
       </div>
     </Modal>
@@ -453,7 +453,7 @@ export function ProductCarousel({
 
   return (
     <section className="container-luxe" aria-label={title}>
-      <div className="mb-6 flex items-end justify-between gap-4 border-b hairline pb-5 md:mb-8">
+      <div className="mb-4 flex items-end justify-between gap-4 border-b hairline pb-4 md:mb-6">
         <div>
           {eyebrow && <p className="eyebrow mb-2">{eyebrow}</p>}
           <h2 className="font-display text-3xl font-medium md:text-4xl">{title}</h2>
@@ -523,7 +523,7 @@ export function ProductGallery({
           });
         }}
         className="product-gallery-hero group relative block aspect-[3/4] w-full overflow-hidden bg-cream"
-        aria-label="Open fullscreen gallery"
+        aria-label="Ouvrir la galerie en plein écran"
       >
         <div
           className="product-zoom-frame absolute inset-0"
@@ -552,7 +552,7 @@ export function ProductGallery({
               key={image.url}
               type="button"
               onClick={() => setActive(index)}
-              aria-label={`View image ${index + 1}`}
+              aria-label={`Voir l’image ${index + 1}`}
               aria-current={index === active}
               className={cn(
                 "product-gallery-thumb relative h-20 w-16 shrink-0 overflow-hidden bg-cream",
@@ -578,7 +578,7 @@ export function ProductGallery({
           <div className="mt-4 flex items-center justify-center gap-3">
             <button
               type="button"
-              aria-label="Previous image"
+              aria-label="Image précédente"
               onClick={() => setActive((active - 1 + images.length) % images.length)}
               className="flex h-10 w-10 items-center justify-center border hairline"
             >
@@ -589,7 +589,7 @@ export function ProductGallery({
             </span>
             <button
               type="button"
-              aria-label="Next image"
+              aria-label="Image suivante"
               onClick={() => setActive((active + 1) % images.length)}
               className="flex h-10 w-10 items-center justify-center border hairline"
             >
@@ -726,7 +726,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
 
   async function submit(buyNow: boolean) {
     if (!selected || selected.available <= 0) {
-      setError("This option is out of stock.");
+      setError("Cette option est en rupture de stock.");
       return;
     }
     setPending(true);
@@ -734,7 +734,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
     const result = await add(selected.id, quantity);
     setPending(false);
     if (!result.ok) {
-      setError(result.error ?? "Could not add to bag.");
+      setError(result.error ?? "Impossible d’ajouter au panier.");
       return;
     }
     pixelEvent("AddToCart", {
@@ -759,7 +759,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
       </div>
       {selected?.available !== undefined && selected.available <= 3 && selected.available > 0 && (
         <p className="mt-3 text-sm font-medium text-sale" role="status">
-          Only {selected.available} left in stock
+          Plus que {selected.available} disponible{selected.available > 1 ? "s" : ""}
         </p>
       )}
       <div className="mt-5 flex gap-3">
@@ -769,7 +769,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
           disabled={pending || maxQuantity <= 0}
           className="flex-1"
         >
-          {pending ? "Adding…" : "Add to bag"}
+          {pending ? "Ajout…" : "Ajouter au panier"}
         </Button>
         <WishlistButton productId={product.id} bordered />
       </div>
@@ -779,7 +779,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
         disabled={pending || maxQuantity <= 0}
         className="mt-3 w-full"
       >
-        Buy now — cash on delivery
+        Acheter — paiement à la livraison
       </Button>
       {error && (
         <p className="mt-3 text-sm text-[#9e342e]" role="alert">
@@ -806,7 +806,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
             size="sm"
             className="shrink-0 px-6"
           >
-            {pending ? "Adding…" : maxQuantity <= 0 ? "Sold out" : "Add to bag"}
+            {pending ? "Ajout…" : maxQuantity <= 0 ? "Épuisé" : "Ajouter"}
           </Button>
         </div>
       </div>
@@ -871,7 +871,7 @@ function WishlistButton({
       type="button"
       disabled={pending}
       onClick={() => void toggle()}
-      aria-label={saved ? "Remove from wishlist" : "Add to wishlist"}
+      aria-label={saved ? "Retirer des favoris" : "Ajouter aux favoris"}
       aria-pressed={saved ?? false}
       className={cn(
         "flex h-9 w-9 items-center justify-center bg-ivory/90 shadow-card transition-colors hover:bg-ivory disabled:opacity-50",

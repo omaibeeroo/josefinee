@@ -11,11 +11,11 @@ export default async function AccountOrdersPage() {
   if (orders.length === 0) {
     return (
       <EmptyState
-        title="No orders yet"
-        message="Your orders will appear here once you place your first one."
+        title="Aucune commande pour l’instant"
+        message="Vos commandes apparaîtront ici après votre première commande."
         action={
           <Link href="/shop" className="btn btn-primary">
-            Start shopping
+            Découvrir la boutique
           </Link>
         }
       />

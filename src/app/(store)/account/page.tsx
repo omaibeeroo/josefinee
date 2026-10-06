@@ -9,21 +9,21 @@ export default async function AccountOverviewPage() {
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <div className="border hairline bg-white p-6">
-        <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">Orders</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">Commandes</p>
         <p className="mt-2 font-display text-4xl">{overview.orderCount}</p>
         <Link href="/account/orders" className="mt-3 inline-block text-xs uppercase tracking-[0.16em] underline underline-offset-4">
-          View all
+          Tout voir
         </Link>
       </div>
       <div className="border hairline bg-white p-6">
-        <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">Wishlist</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">Favoris</p>
         <p className="mt-2 font-display text-4xl">{overview.wishlistCount}</p>
         <Link href="/account/wishlist" className="mt-3 inline-block text-xs uppercase tracking-[0.16em] underline underline-offset-4">
-          View saved
+          Voir mes favoris
         </Link>
       </div>
       <div className="border hairline bg-white p-6">
-        <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">Profile</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">Profil</p>
         <p className="mt-2 font-medium">
           {overview.customer.firstName} {overview.customer.lastName}
         </p>
@@ -33,7 +33,7 @@ export default async function AccountOverviewPage() {
 
       {overview.latestOrders.length > 0 && (
         <div className="border hairline bg-white p-6 md:col-span-3">
-          <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">Recent orders</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">Commandes récentes</p>
           <ul className="mt-4 divide-y divide-line">
             {overview.latestOrders.map((order) => (
               <li key={order.orderNumber} className="flex flex-wrap items-center justify-between gap-2 py-3">

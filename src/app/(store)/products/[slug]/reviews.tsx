@@ -28,17 +28,17 @@ export function ReviewForm({ productId }: { productId: string }) {
   return (
     <form onSubmit={submit} className="relative mt-6 max-w-xl space-y-4 border hairline bg-white p-5 md:p-6">
       <Honeypot value={website} onChange={setWebsite} />
-      <h3 className="font-display text-2xl">Write a review</h3>
+      <h3 className="font-display text-2xl">Donnez votre avis</h3>
       <div>
-        <span className="field-label">Your rating *</span>
-        <div className="flex gap-1" role="radiogroup" aria-label="Rating">
+        <span className="field-label">Votre note *</span>
+        <div className="flex gap-1" role="radiogroup" aria-label="Note">
           {[1, 2, 3, 4, 5].map((value) => (
             <button
               key={value}
               type="button"
               role="radio"
               aria-checked={rating === value}
-              aria-label={`${value} star${value > 1 ? "s" : ""}`}
+              aria-label={`${value} étoile${value > 1 ? "s" : ""}`}
               onClick={() => setRating(value)}
               className="p-1"
             >
@@ -49,13 +49,13 @@ export function ReviewForm({ productId }: { productId: string }) {
           ))}
         </div>
       </div>
-      <Field label="Your name" required>
+      <Field label="Votre nom" required>
         <Input value={authorName} onChange={(event) => setAuthorName(event.target.value)} required maxLength={80} />
       </Field>
-      <Field label="Title">
+      <Field label="Titre">
         <Input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} />
       </Field>
-      <Field label="Review" required>
+      <Field label="Avis" required>
         <Textarea value={body} onChange={(event) => setBody(event.target.value)} required maxLength={2000} />
       </Field>
       {state && (
@@ -64,7 +64,7 @@ export function ReviewForm({ productId }: { productId: string }) {
         </p>
       )}
       <Button type="submit" disabled={pending}>
-        {pending ? "Sending…" : "Submit review"}
+        {pending ? "Envoi…" : "Publier mon avis"}
       </Button>
     </form>
   );

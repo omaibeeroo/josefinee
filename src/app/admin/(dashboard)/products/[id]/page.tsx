@@ -70,7 +70,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 
   return (
     <div>
-      <PageHeader title={`Edit — ${product.name}`} description={`/${product.slug}`} />
+      <PageHeader title={`Modifier — ${product.name}`} description={`/${product.slug}`} />
       <ProductEditor initial={initial} categories={categories} />
     </div>
   );

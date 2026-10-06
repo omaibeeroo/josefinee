@@ -1,21 +1,30 @@
 import type { Metadata } from "next";
 import { getSettings } from "@/lib/settings";
+import { BRAND_CONFIG } from "@/config/brand";
 import { ContactForm } from "./contact-form";
 
 export const metadata: Metadata = {
-  title: "Contact us",
-  description: "Contact our customer support team.",
+  title: "Nous contacter",
+  description: "Contactez notre service client pour toute question sur une commande ou une livraison.",
 };
 
 export default async function ContactPage() {
   const settings = await getSettings();
   return (
-    <div className="container-luxe py-12 md:py-16">
-      <div className="mb-10 text-center">
-        <p className="eyebrow mb-2">Support</p>
-        <h1 className="font-display text-4xl font-medium md:text-5xl">Contact us</h1>
+    <div className="container-luxe max-w-4xl py-10 md:py-14">
+      <div className="mb-8 text-center md:mb-10">
+        <p className="eyebrow mb-3">Service client</p>
+        <h1 className="font-display text-4xl font-medium md:text-5xl">Contactez-nous</h1>
+        <p className="mx-auto mt-4 max-w-md text-[0.9375rem] leading-relaxed text-ink-soft">
+          Une question sur une commande, une pièce ou une livraison ? Écrivez-nous, nous vous
+          répondons sous un jour ouvré.
+        </p>
       </div>
-      <ContactForm supportEmail={settings.general.email} supportPhone={settings.general.phone} />
+      <ContactForm
+        supportEmail={settings.general.email}
+        supportPhone={settings.general.phone}
+        supportHours={BRAND_CONFIG.supportHours}
+      />
     </div>
   );
 }

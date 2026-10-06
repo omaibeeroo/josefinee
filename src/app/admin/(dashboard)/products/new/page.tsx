@@ -13,7 +13,7 @@ export default async function NewProductPage() {
 
   return (
     <div>
-      <PageHeader title="New product" description="Create a product. It stays a draft until you publish it." />
+      <PageHeader title="Nouveau produit" description="Créez un produit. Il reste en brouillon jusqu’à publication." />
       <ProductEditor initial={EMPTY_EDITOR} categories={categories} />
     </div>
   );

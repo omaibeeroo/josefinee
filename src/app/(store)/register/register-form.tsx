@@ -42,20 +42,20 @@ export function RegisterForm() {
   return (
     <form onSubmit={submit} noValidate className="mx-auto mt-8 max-w-md space-y-4 border hairline bg-white p-6 md:p-8">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="First name" required error={fields.firstName}>
+        <Field label="Prénom" required error={fields.firstName}>
           <Input value={form.firstName} onChange={(event) => set("firstName", event.target.value)} autoComplete="given-name" />
         </Field>
-        <Field label="Last name" required error={fields.lastName}>
+        <Field label="Nom" required error={fields.lastName}>
           <Input value={form.lastName} onChange={(event) => set("lastName", event.target.value)} autoComplete="family-name" />
         </Field>
       </div>
-      <Field label="Email" required error={fields.email}>
+      <Field label="E-mail" required error={fields.email}>
         <Input type="email" value={form.email} onChange={(event) => set("email", event.target.value)} autoComplete="email" />
       </Field>
-      <Field label="Phone" required error={fields.phone} hint="Algerian mobile, e.g. 0550 12 34 56">
+      <Field label="Téléphone" required error={fields.phone} hint="Mobile algérien, ex. 0550 12 34 56">
         <Input value={form.phone} onChange={(event) => set("phone", event.target.value)} inputMode="tel" autoComplete="tel" />
       </Field>
-      <Field label="Password" required error={fields.password} hint="10+ characters, upper & lower case, a number">
+      <Field label="Mot de passe" required error={fields.password} hint="10+ caractères, majuscules et minuscules, un chiffre">
         <Input type="password" value={form.password} onChange={(event) => set("password", event.target.value)} autoComplete="new-password" />
       </Field>
       {error && (
@@ -64,12 +64,12 @@ export function RegisterForm() {
         </p>
       )}
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Creating…" : "Create account"}
+        {pending ? "Création…" : "Créer mon compte"}
       </Button>
       <p className="text-center text-sm text-ink-soft">
-        Already have an account?{" "}
+        Déjà un compte ?{" "}
         <Link href="/login" className="underline underline-offset-2">
-          Sign in
+          Se connecter
         </Link>
       </p>
     </form>

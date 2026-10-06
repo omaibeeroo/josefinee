@@ -24,41 +24,41 @@ export default async function DashboardLayout({ children }: { children: React.Re
   }
 
   const sections: Section[] = [];
-  const dashboard: Section = { title: "Overview", items: [] };
-  if (has("dashboard:read")) dashboard.items.push({ href: "/admin", label: "Dashboard" });
-  if (has("analytics:read")) dashboard.items.push({ href: "/admin/analytics", label: "Analytics" });
+  const dashboard: Section = { title: "Aperçu", items: [] };
+  if (has("dashboard:read")) dashboard.items.push({ href: "/admin", label: "Tableau de bord" });
+  if (has("analytics:read")) dashboard.items.push({ href: "/admin/analytics", label: "Analyses" });
   if (dashboard.items.length > 0) sections.push(dashboard);
 
-  const sales: Section = { title: "Sales", items: [] };
+  const sales: Section = { title: "Ventes", items: [] };
   if (has("orders:read"))
-    sales.items.push({ href: "/admin/orders", label: "Orders", badge: pendingOrders });
-  if (has("customers:read")) sales.items.push({ href: "/admin/customers", label: "Customers" });
+    sales.items.push({ href: "/admin/orders", label: "Commandes", badge: pendingOrders });
+  if (has("customers:read")) sales.items.push({ href: "/admin/customers", label: "Clientes" });
   if (has("coupons:read")) sales.items.push({ href: "/admin/coupons", label: "Coupons" });
   if (has("promotions:read")) sales.items.push({ href: "/admin/promotions", label: "Promotions" });
-  if (has("reviews:moderate")) sales.items.push({ href: "/admin/reviews", label: "Reviews" });
+  if (has("reviews:moderate")) sales.items.push({ href: "/admin/reviews", label: "Avis" });
   if (sales.items.length > 0) sections.push(sales);
 
-  const catalog: Section = { title: "Catalog", items: [] };
-  if (has("products:read")) catalog.items.push({ href: "/admin/products", label: "Products" });
+  const catalog: Section = { title: "Catalogue", items: [] };
+  if (has("products:read")) catalog.items.push({ href: "/admin/products", label: "Produits" });
   if (has("catalog:write")) {
-    catalog.items.push({ href: "/admin/categories", label: "Categories" });
+    catalog.items.push({ href: "/admin/categories", label: "Catégories" });
     catalog.items.push({ href: "/admin/collections", label: "Collections" });
   }
-  if (has("inventory:read")) catalog.items.push({ href: "/admin/inventory", label: "Inventory" });
+  if (has("inventory:read")) catalog.items.push({ href: "/admin/inventory", label: "Stock" });
   if (catalog.items.length > 0) sections.push(catalog);
 
-  const ops: Section = { title: "Operations", items: [] };
-  if (has("delivery:read")) ops.items.push({ href: "/admin/delivery", label: "Delivery" });
+  const ops: Section = { title: "Opérations", items: [] };
+  if (has("delivery:read")) ops.items.push({ href: "/admin/delivery", label: "Livraison" });
   if (has("messages:read")) ops.items.push({ href: "/admin/messages", label: "Messages" });
   if (has("newsletter:read")) ops.items.push({ href: "/admin/newsletter", label: "Newsletter" });
-  if (has("content:write")) ops.items.push({ href: "/admin/content", label: "Content" });
+  if (has("content:write")) ops.items.push({ href: "/admin/content", label: "Contenu" });
   if (ops.items.length > 0) sections.push(ops);
 
-  const system: Section = { title: "System", items: [] };
-  if (has("settings:read")) system.items.push({ href: "/admin/settings", label: "Settings" });
-  if (has("users:manage")) system.items.push({ href: "/admin/users", label: "Staff" });
-  if (has("audit:read")) system.items.push({ href: "/admin/audit", label: "Audit trail" });
-  system.items.push({ href: "/admin/security", label: "My security" });
+  const system: Section = { title: "Système", items: [] };
+  if (has("settings:read")) system.items.push({ href: "/admin/settings", label: "Réglages" });
+  if (has("users:manage")) system.items.push({ href: "/admin/users", label: "Équipe" });
+  if (has("audit:read")) system.items.push({ href: "/admin/audit", label: "Journal d’audit" });
+  system.items.push({ href: "/admin/security", label: "Ma sécurité" });
   sections.push(system);
 
   return (

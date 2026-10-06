@@ -149,6 +149,36 @@ are set, a server-side `Purchase` event fires after each order (PII hashed).
 It shares `event_id` with the browser pixel (`purchase-<orderNumber>`) so Meta
 deduplicates instead of double-counting.
 
+## Storefront refresh (October 2026)
+
+Minimal, editorial direction across the whole shop (inspired by the
+lovemary.store reference, original execution — no copied assets or copy):
+
+- Light minimal footer (centered brand, Boutique / Aide columns, underline
+  newsletter) on every page via `SiteChrome`; French contact page
+  (`/contact`) with e-mail / téléphone / horaires; slim underline newsletter
+  block on the homepage.
+- Slim search overlay (underline field + OK), flat minimal buttons
+  site-wide (no gradients, shine sweeps, or lift-and-glow hovers; sharp
+  corners everywhere).
+- Hide-on-scroll header: slides away scrolling down past 240px, returns on
+  scroll-up. Transform-only (no layout shift), always visible near the top,
+  while the menu/search overlays are open, and under
+  `prefers-reduced-motion`.
+- Tighter vertical rhythm via the shared `.section-space` token (1.5rem
+  mobile / 1.75rem desktop). The announcement bar is off (Admin → Réglages)
+  and the homepage experience-pillars block was removed.
+- Fully French customer-facing copy: cart, filters/sort, product,
+  checkout, tracking, auth, wishlist, account, order confirmation, FAQ,
+  categories/collections/legal content (slugs unchanged), order statuses,
+  plus admin nav, login, and page headers.
+- Performance: single hero image download (was desktop + mobile), no
+  below-fold `priority` preloads, full font weights (no faux-bold),
+  homepage data in one parallel wave, snappier animations (~30% shorter,
+  motion-gated).
+- Seed data is French (re-runnable). Product names/descriptions remain
+  merchandising content, editable per product under Admin → Produits.
+
 ## Admin guide
 
 | Area | Path |

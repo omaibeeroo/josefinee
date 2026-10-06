@@ -10,7 +10,7 @@ export default async function AdminCouponsPage() {
   const [coupons, options] = await Promise.all([listCouponsAdmin(), listCouponOptions()]);
   return (
     <div>
-      <PageHeader title="Coupons" description="Discount codes are validated server-side — the client can never dictate a discount." />
+      <PageHeader title="Coupons" description="Les codes sont validés côté serveur — le client ne décide jamais d’une remise." />
       <CouponManager
         coupons={coupons.map((coupon) => ({
           ...coupon,

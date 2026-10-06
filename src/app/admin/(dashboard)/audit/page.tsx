@@ -22,7 +22,7 @@ export default async function AdminAuditPage({
 
   return (
     <div>
-      <PageHeader title="Audit trail" description="Immutable record of important admin actions. Entries are never edited or deleted." />
+      <PageHeader title="Journal d’audit" description="Registre immuable des actions admin importantes. Les entrées ne sont ni modifiées ni supprimées." />
       <form method="get" className="mb-4 flex flex-col gap-2 border hairline bg-white p-4 sm:flex-row">
         <input name="search" defaultValue={filters.search} placeholder="Action or resource ID…" className="field min-h-10 flex-1" aria-label="Search audit log" />
         <button type="submit" className="btn btn-primary min-h-10 px-6 text-xs">

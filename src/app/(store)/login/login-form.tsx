@@ -37,10 +37,10 @@ export function LoginForm() {
 
   return (
     <form onSubmit={submit} className="mx-auto mt-8 max-w-md space-y-4 border hairline bg-white p-6 md:p-8">
-      <Field label="Email" required>
+      <Field label="E-mail" required>
         <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required />
       </Field>
-      <Field label="Password" required>
+      <Field label="Mot de passe" required>
         <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required />
       </Field>
       {error && (
@@ -49,12 +49,12 @@ export function LoginForm() {
         </p>
       )}
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Signing in…" : "Sign in"}
+        {pending ? "Connexion…" : "Se connecter"}
       </Button>
       <p className="text-center text-sm text-ink-soft">
-        No account yet?{" "}
+        Pas encore de compte ?{" "}
         <Link href="/register" className="underline underline-offset-2">
-          Create one
+          Créez-en un
         </Link>
       </p>
     </form>

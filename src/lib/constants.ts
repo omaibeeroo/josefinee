@@ -4,16 +4,16 @@ export const ORDER_STATUS_LABELS: Record<
   OrderStatus,
   { label: string; customerLabel: string; tone: string }
 > = {
-  PENDING: { label: "Pending", customerLabel: "Order received", tone: "amber" },
-  CONFIRMED: { label: "Confirmed", customerLabel: "Confirmed", tone: "blue" },
-  PROCESSING: { label: "Processing", customerLabel: "Preparing your order", tone: "blue" },
-  PACKED: { label: "Packed", customerLabel: "Packaged", tone: "indigo" },
-  SHIPPED: { label: "Shipped", customerLabel: "Shipped", tone: "indigo" },
-  OUT_FOR_DELIVERY: { label: "Out for delivery", customerLabel: "Out for delivery", tone: "violet" },
-  DELIVERED: { label: "Delivered", customerLabel: "Delivered", tone: "green" },
-  CANCELLED: { label: "Cancelled", customerLabel: "Cancelled", tone: "red" },
-  RETURNED: { label: "Returned", customerLabel: "Returned", tone: "orange" },
-  FAILED_DELIVERY: { label: "Failed delivery", customerLabel: "Delivery attempt failed", tone: "red" },
+  PENDING: { label: "En attente", customerLabel: "Commande reçue", tone: "amber" },
+  CONFIRMED: { label: "Confirmée", customerLabel: "Confirmée", tone: "blue" },
+  PROCESSING: { label: "En préparation", customerLabel: "Préparation de votre commande", tone: "blue" },
+  PACKED: { label: "Emballée", customerLabel: "Emballée", tone: "indigo" },
+  SHIPPED: { label: "Expédiée", customerLabel: "Expédiée", tone: "indigo" },
+  OUT_FOR_DELIVERY: { label: "En livraison", customerLabel: "En cours de livraison", tone: "violet" },
+  DELIVERED: { label: "Livrée", customerLabel: "Livrée", tone: "green" },
+  CANCELLED: { label: "Annulée", customerLabel: "Annulée", tone: "red" },
+  RETURNED: { label: "Retournée", customerLabel: "Retournée", tone: "orange" },
+  FAILED_DELIVERY: { label: "Livraison échouée", customerLabel: "Tentative de livraison échouée", tone: "red" },
 };
 
 /** The happy-path sequence shown to customers on the order timeline. */
@@ -35,11 +35,11 @@ export const DELIVERY_METHOD_LABELS: Record<DeliveryMethod, string> = {
 };
 
 export const PRODUCT_SORT_OPTIONS = [
-  { value: "featured", label: "Featured" },
-  { value: "newest", label: "Newest" },
-  { value: "price-asc", label: "Price: low to high" },
-  { value: "price-desc", label: "Price: high to low" },
-  { value: "best-selling", label: "Best selling" },
+  { value: "featured", label: "Notre sélection" },
+  { value: "newest", label: "Nouveautés" },
+  { value: "price-asc", label: "Prix croissant" },
+  { value: "price-desc", label: "Prix décroissant" },
+  { value: "best-selling", label: "Meilleures ventes" },
 ] as const;
 
 export type ProductSort = (typeof PRODUCT_SORT_OPTIONS)[number]["value"];

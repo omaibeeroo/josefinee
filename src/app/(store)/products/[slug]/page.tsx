@@ -128,10 +128,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   };
 
   const detailRows: Array<[string, string | null]> = [
-    ["Material", product.material],
-    ["Color", product.color],
+    ["Matière", product.material],
+    ["Couleur", product.color],
     ["Dimensions", product.dimensions],
-    ["Weight", product.weight ? `${product.weight} g` : null],
+    ["Poids", product.weight ? `${product.weight} g` : null],
   ];
 
   return (
@@ -152,11 +152,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       />
 
       <nav
-        aria-label="Breadcrumb"
+        aria-label="Fil d’Ariane"
         className="mb-6 text-xs uppercase tracking-[0.14em] text-ink-muted"
       >
         <Link href="/" className="hover:text-ink">
-          Home
+          Accueil
         </Link>
         <span aria-hidden="true"> / </span>
         {product.category ? (
@@ -191,12 +191,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             {product.inStock ? (
               <>
                 <span className="h-2 w-2 rounded-full bg-success" aria-hidden="true" />
-                <span className="font-medium">In stock, ready to ship</span>
+                <span className="font-medium">En stock, prêt à partir</span>
               </>
             ) : (
               <>
                 <span className="h-2 w-2 rounded-full bg-sale" aria-hidden="true" />
-                <span className="font-medium text-sale">Sold out — check back soon</span>
+                <span className="font-medium text-sale">Épuisé — revenez bientôt</span>
               </>
             )}
           </p>
@@ -228,8 +228,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 aria-hidden="true"
               />
               <div>
-                <dt className="font-medium">Cash on delivery</dt>
-                <dd className="text-ink-soft">Pay when your order arrives.</dd>
+                <dt className="font-medium">Paiement à la livraison</dt>
+                <dd className="text-ink-soft">Payez à la réception de votre commande.</dd>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -241,7 +241,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               />
               <div>
                 <dt className="font-medium">58 wilayas</dt>
-                <dd className="text-ink-soft">Delivery calculated at checkout.</dd>
+                <dd className="text-ink-soft">Frais calculés à la commande.</dd>
               </div>
             </div>
           </dl>
@@ -253,6 +253,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                   ? [
                       {
                         title: "Description",
+
                         defaultOpen: true,
                         content: (
                           <div
@@ -266,7 +267,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 ...(detailRows.some(([, value]) => value)
                   ? [
                       {
-                        title: "Details",
+                        title: "Détails",
                         content: (
                           <dl className="space-y-2 text-sm">
                             {detailRows
@@ -287,24 +288,24 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 ...(product.careInstructions
                   ? [
                       {
-                        title: "Care",
+                        title: "Entretien",
                         content: <p className="rich-text">{product.careInstructions}</p>,
                       },
                     ]
                   : []),
                 {
-                  title: "Shipping & returns",
+                  title: "Livraison & retours",
                   content: (
                     <div className="rich-text">
                       <p>
                         {product.shippingInfo ??
-                          "We deliver to all 58 wilayas. Fees and timing are shown at checkout."}{" "}
+                          "Nous livrons dans les 58 wilayas. Frais et délais affichés à la commande."}{" "}
                         <Link href="/pages/shipping" className="underline underline-offset-2">
-                          Delivery information
+                          Informations de livraison
                         </Link>
                         {" · "}
                         <Link href="/pages/returns" className="underline underline-offset-2">
-                          Returns within 7 days
+                          Retours sous 7 jours
                         </Link>
                       </p>
                     </div>
@@ -317,10 +318,10 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </div>
 
       <section className="mt-16 md:mt-24" aria-label="Reviews">
-        <h2 className="font-display text-3xl font-medium">Reviews</h2>
+        <h2 className="font-display text-3xl font-medium">Avis</h2>
         {reviews.length === 0 ? (
           <p className="mt-3 text-ink-soft">
-            No reviews yet — be the first to share your thoughts.
+            Aucun avis pour le moment — partagez la première votre expérience.
           </p>
         ) : (
           <ul className="mt-6 grid gap-4 md:grid-cols-2">
@@ -331,7 +332,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 <p className="mt-1 text-[0.9375rem] text-ink-soft">{review.body}</p>
                 <p className="mt-3 text-xs uppercase tracking-[0.12em] text-ink-muted">
                   {review.authorName}
-                  {review.isVerifiedPurchase ? " · Verified purchase" : ""}
+                  {review.isVerifiedPurchase ? " · Achat vérifié" : ""}
                 </p>
               </li>
             ))}
@@ -341,7 +342,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </section>
 
       <div className="mt-16 md:mt-24">
-        <ProductCarousel title="You may also like" products={related} viewAllHref="/shop" />
+        <ProductCarousel title="Vous aimerez aussi" products={related} viewAllHref="/shop" />
       </div>
 
       <div className="mt-12 md:mt-16">

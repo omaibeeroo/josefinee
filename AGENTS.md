@@ -112,6 +112,26 @@ Feminine, minimal, editorial, fast on 3G and 360px screens. French copy.
 `prefers-reduced-motion` is respected globally. No placeholder buttons — every
 control must work or not exist.
 
+Minimal direction (October 2026 refresh, do not regress):
+
+- **Buttons stay flat.** No gradients, shine sweeps, lift/scale/glow hovers,
+  or global hover recoloring. Sharp corners (`border-radius: 0`) everywhere,
+  including product-detail overrides. Variants: ink primary, gold accent,
+  ink-fill outline, border-only ghost.
+- **Header hides on scroll.** Transform-only (`translateY(-100%)` via inline
+  style, never a bare utility that can fail silent), past 240px down / back
+  on scroll-up; always visible near the top, while menu/search overlays are
+  open, and under reduced-motion. Sticky positioning is load-bearing — keep it.
+- **Vertical rhythm lives in `.section-space`** (currently 1.5rem mobile /
+  1.75rem desktop, bottom-weighted via `pt-0` siblings). Tighten/loosen the
+  token, never individual sections, unless a seam needs a local override.
+- **French everywhere customer-facing,** including admin nav/headers, order
+  statuses, seed data, and DB content (FAQ, categories, collections, legal
+  pages). URL slugs stay English-stable — translate names only. Product
+  names/descriptions are merchandising content, edited in Admin → Produits.
+- **Announcement bar is settings-driven** (`homepage.announcement.isActive`).
+  Never hard-remove it from `SiteChrome`; toggle it in Admin → Réglages.
+
 
 ## Mobile and browser compatibility rules
 

@@ -10,7 +10,7 @@ export default async function AdminSettingsPage() {
   const settings = await getSettings();
   return (
     <div>
-      <PageHeader title="Settings" description="Brand, storefront, commerce and integrations. Changes apply immediately." />
+      <PageHeader title="Réglages" description="Marque, boutique, commerce et intégrations. Les changements s’appliquent aussitôt." />
       <SettingsEditor initial={settings} />
     </div>
   );

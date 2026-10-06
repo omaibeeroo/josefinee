@@ -3,7 +3,7 @@ import { getDeliveryFloor } from "@/server/delivery";
 import { CartLines } from "./cart-client";
 
 export const metadata: Metadata = {
-  title: "Your bag",
+  title: "Panier",
   robots: { index: false, follow: false },
 };
 
@@ -12,8 +12,8 @@ export default async function CartPage() {
   return (
     <div className="cart-page container-luxe py-10 md:py-14">
       <div className="mb-8 text-center">
-        <p className="eyebrow mb-2">Your selection</p>
-        <h1 className="font-display text-4xl font-medium md:text-5xl">Shopping bag</h1>
+        <p className="eyebrow mb-2">Votre sélection</p>
+        <h1 className="font-display text-4xl font-medium md:text-5xl">Panier</h1>
       </div>
       <CartLines floor={floor} />
     </div>

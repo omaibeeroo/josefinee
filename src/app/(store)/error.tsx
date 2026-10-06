@@ -10,17 +10,17 @@ export default function StoreError({
 }) {
   return (
     <div className="container-luxe py-24 text-center">
-      <p className="eyebrow">Something went wrong</p>
-      <h1 className="mt-3 font-display text-4xl">Please try again</h1>
+      <p className="eyebrow">Un problème est survenu</p>
+      <h1 className="mt-3 font-display text-4xl">Veuillez réessayer</h1>
       <p className="mx-auto mt-4 max-w-md text-ink-soft">
-        An unexpected error occurred. Your bag is safe — try reloading this page.
+        Une erreur inattendue s’est produite. Votre panier est en sécurité — rechargez cette page.
       </p>
       <div className="mt-8 flex justify-center gap-3">
         <button type="button" onClick={() => reset()} className="btn btn-primary">
-          Try again
+          Réessayer
         </button>
         <Link href="/" className="btn btn-ghost">
-          Back to home
+          Retour à l’accueil
         </Link>
       </div>
     </div>

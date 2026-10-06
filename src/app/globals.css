@@ -34,14 +34,14 @@
   --animate-slide-in-left: slide-in-left 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-menu-item: menu-item 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-marquee: marquee 28s linear infinite;
-  --animate-hero-image: hero-image 1.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-hero-enter: hero-enter 0.85s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-hero-image: hero-image 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-hero-enter: hero-enter 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
   --animate-soft-float: soft-float 6s ease-in-out infinite;
-  --animate-page-enter: page-enter 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-reveal-scale: reveal-scale 0.8s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-shimmer: shimmer 1.25s ease-in-out both;
-  --animate-expand: expand 0.32s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-fade-up: fade-up 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-page-enter: page-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-reveal-scale: reveal-scale 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-shimmer: shimmer 1s ease-in-out both;
+  --animate-expand: expand 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-up: fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
 
   @keyframes fade-in {
     from {
@@ -301,34 +301,15 @@
   }
 
   .btn:hover:not(:disabled) {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 22px -18px rgb(23 21 19 / 0.65);
+    box-shadow: 0 8px 20px -16px rgb(23 21 19 / 0.5);
   }
 
   .btn:active:not(:disabled) {
-    transform: translateY(0);
-  }
-
-  .btn-shine {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
+    opacity: 0.85;
   }
 
   .btn-shine::after {
-    position: absolute;
-    inset: 0 auto 0 -75%;
-    width: 45%;
-    content: "";
-    background: linear-gradient(105deg, transparent, rgb(255 255 255 / 0.22), transparent);
-    transform: skewX(-18deg);
-    transition: left 0.65s cubic-bezier(0.22, 1, 0.36, 1);
-    z-index: -1;
-  }
-
-  .btn-shine:hover::after,
-  .btn-shine:focus-visible::after {
-    left: 130%;
+    display: none;
   }
 
   .editorial-link {
@@ -435,15 +416,8 @@
     transform: scale(1.035);
   }
 
-  .trust-icon {
-    transition:
-      background-color 0.3s ease,
-      color 0.3s ease,
-      transform 0.3s ease;
-  }
-
   .page-enter {
-    animation: page-enter 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: page-enter 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
 
   .admin-surface {
@@ -475,13 +449,6 @@
     border-color: color-mix(in srgb, var(--color-gold) 45%, var(--color-line));
     box-shadow: var(--shadow-card);
     transform: translateY(-2px);
-  }
-
-  .group:hover .trust-icon,
-  .group:focus-within .trust-icon {
-    background-color: var(--color-ink);
-    color: var(--color-ivory);
-    transform: rotate(-6deg) translateY(-2px);
   }
 
   .btn:disabled {
@@ -801,11 +768,11 @@
   }
 
   .page-enter {
-    animation-duration: 0.8s;
+    animation-duration: 0.45s;
   }
 
   .motion-stagger > * {
-    animation-duration: 0.75s;
+    animation-duration: 0.55s;
   }
 
   .silver-panel {
@@ -893,104 +860,63 @@
 @layer components {
   .btn,
   .btn-interactive {
-    position: relative;
-    isolation: isolate;
-    overflow: hidden;
     transition:
-      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-      box-shadow 0.28s ease,
-      background 0.28s ease,
-      border-color 0.28s ease,
-      color 0.28s ease;
+      background-color 0.2s ease,
+      border-color 0.2s ease,
+      color 0.2s ease,
+      opacity 0.2s ease,
+      box-shadow 0.2s ease;
   }
 
   .btn::before,
   .btn-interactive::before {
-    position: absolute;
-    inset: -40% auto -40% -65%;
-    z-index: -1;
-    width: 42%;
-    content: "";
-    background: linear-gradient(105deg, transparent, rgb(255 255 255 / 0.38), transparent);
-    transform: skewX(-18deg);
-    transition: left 0.7s cubic-bezier(0.22, 1, 0.36, 1);
+    display: none;
   }
 
   .btn:hover:not(:disabled),
   .btn-interactive:hover:not(:disabled) {
-    transform: translateY(-3px) scale(1.015);
-    box-shadow:
-      0 16px 28px -20px rgb(29 35 43 / 0.72),
-      0 0 0 4px rgb(198 167 184 / 0.12);
-  }
-
-  .btn:hover:not(:disabled)::before,
-  .btn:focus-visible:not(:disabled)::before,
-  .btn-interactive:hover:not(:disabled)::before,
-  .btn-interactive:focus-visible:not(:disabled)::before {
-    left: 130%;
+    box-shadow: 0 8px 20px -16px rgb(29 35 43 / 0.5);
   }
 
   .btn:active:not(:disabled),
   .btn-interactive:active:not(:disabled) {
-    transform: translateY(-1px) scale(0.99);
-    transition-duration: 0.1s;
+    opacity: 0.85;
   }
 
-  .btn-primary,
+  .btn-primary {
+    background-color: #1d232b;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    background-color: #3b4651;
+  }
+
   .btn-gold {
-    background: linear-gradient(135deg, #1d232b 0%, #3c4854 58%, #8794a3 100%);
+    background-color: var(--color-gold-dark);
   }
 
-  .btn-primary:hover:not(:disabled),
   .btn-gold:hover:not(:disabled) {
-    background: linear-gradient(135deg, #303b47 0%, #667584 58%, #c6a7b8 100%);
+    background-color: var(--color-gold);
   }
 
   .btn-outline:hover:not(:disabled) {
-    border-color: #c6a7b8;
-    background: linear-gradient(135deg, #f9f5f8, #eaf0f4);
-    color: #1d232b;
+    border-color: #1d232b;
   }
 
   .btn-ghost:hover:not(:disabled) {
-    border-color: #c6a7b8;
-    background: linear-gradient(135deg, #ffffff, #f4eef3);
-    box-shadow: 0 12px 24px -20px rgb(135 148 163 / 0.8);
-  }
-
-  button:not(:disabled):not(.absolute),
-  [role="button"]:not([aria-disabled="true"]) {
-    transition:
-      transform 0.24s cubic-bezier(0.22, 1, 0.36, 1),
-      color 0.24s ease,
-      background-color 0.24s ease,
-      border-color 0.24s ease,
-      box-shadow 0.24s ease;
-  }
-
-  button:not(:disabled):not(.absolute):hover,
-  button:not(:disabled):not(.absolute):focus-visible,
-  [role="button"]:not([aria-disabled="true"]):hover,
-  [role="button"]:not([aria-disabled="true"]):focus-visible {
-    color: #667584;
+    border-color: #1d232b;
   }
 
   .icon-button {
     border-radius: 999px;
     transition:
-      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
       color 0.2s ease,
-      background-color 0.2s ease,
-      box-shadow 0.2s ease;
+      background-color 0.2s ease;
   }
 
   .icon-button:hover,
   .icon-button:focus-visible {
-    background: linear-gradient(135deg, #f6f2f6, #e9eef3);
-    color: #667584;
-    box-shadow: 0 8px 18px -16px rgb(29 35 43 / 0.9);
-    transform: translateY(-3px) rotate(-4deg);
+    background-color: #f1f3f5;
   }
 
   .product-card button[aria-label*="wishlist"],
@@ -999,23 +925,19 @@
     background: rgb(251 252 253 / 0.88);
     backdrop-filter: blur(10px);
     transition:
-      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
       color 0.2s ease,
-      background 0.2s ease;
+      background-color 0.2s ease;
   }
 
   .product-card button[aria-label*="wishlist"]:hover,
   .product-card button[aria-label*="Wishlist"]:hover {
-    background: #f4eaf1;
+    background: #fff;
     color: #a76785;
-    transform: scale(1.12) rotate(-8deg);
   }
 
   .product-card-media button:not(:disabled):hover {
     color: #fff;
-    background: linear-gradient(90deg, #1d232b, #8794a3, #c6a7b8, #1d232b);
-    background-size: 240% 100%;
-    animation: metallic-button-flow 1.4s ease both;
+    background-color: #1d232b;
   }
 
   .field,
@@ -1294,7 +1216,7 @@
   }
 
   .product-detail-page .btn {
-    border-radius: 0.65rem;
+    border-radius: 0;
     box-shadow: none;
   }
 
@@ -1636,13 +1558,13 @@
 
   @media (min-width: 768px) {
     .section-space {
-      padding-block: 5.5rem;
+      padding-block: 1.75rem;
     }
   }
 
   @media (max-width: 767px) {
     .section-space {
-      padding-block: 3.5rem;
+      padding-block: 1.5rem;
     }
 
     .reference-spotlight {

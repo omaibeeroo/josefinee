@@ -5,17 +5,17 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
 const TABS = [
-  { href: "/account", label: "Overview", exact: true },
-  { href: "/account/orders", label: "Orders" },
-  { href: "/account/wishlist", label: "Wishlist" },
-  { href: "/account/addresses", label: "Addresses" },
-  { href: "/account/security", label: "Security" },
+  { href: "/account", label: "Aperçu", exact: true },
+  { href: "/account/orders", label: "Commandes" },
+  { href: "/account/wishlist", label: "Favoris" },
+  { href: "/account/addresses", label: "Adresses" },
+  { href: "/account/security", label: "Sécurité" },
 ];
 
 export function AccountTabs() {
   const pathname = usePathname();
   return (
-    <nav aria-label="Account" className="flex gap-1 overflow-x-auto border-b hairline">
+    <nav aria-label="Compte" className="flex gap-1 overflow-x-auto border-b hairline">
       {TABS.map((tab) => {
         const active = tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
         return (

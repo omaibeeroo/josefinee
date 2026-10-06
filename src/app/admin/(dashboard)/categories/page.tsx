@@ -10,7 +10,7 @@ export default async function AdminCategoriesPage() {
   const categories = await listCategoriesAdmin();
   return (
     <div>
-      <PageHeader title="Categories" description="Navigation and product grouping. Deleting is only possible when empty." />
+      <PageHeader title="Catégories" description="Navigation et regroupement des produits. Suppression possible uniquement si vide." />
       <CategoryManager categories={categories} />
     </div>
   );
