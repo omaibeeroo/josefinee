@@ -1906,3 +1906,118 @@
     min-width: min(18rem, 72vw);
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Natural typography and exact centered product geometry.
+--------------------------------------------------------------------------- */
+.product-first-home .product-shelf .shopify-rail {
+  gap: 1rem;
+}
+
+.product-first-home .product-shelf .shopify-rail > * {
+  width: min(15rem, 18vw);
+  min-width: min(15rem, 18vw);
+}
+
+.product-first-home .product-card-copy,
+.product-first-home .product-card-copy > a,
+.product-first-home .product-card-copy > p,
+.product-first-home .product-card-copy > div {
+  text-align: center;
+}
+
+.product-first-home .product-card-copy > a {
+  font-size: 0.875rem;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-decoration: none;
+}
+
+.product-first-home .product-card-copy > a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.product-first-home .product-card-copy > p {
+  width: 100%;
+  justify-content: center;
+  gap: 0.45rem;
+  font-size: 0.8125rem;
+}
+
+.product-first-home .product-card-copy > p span {
+  letter-spacing: 0;
+}
+
+.product-first-home .product-card .badge,
+.product-first-home .product-card-media [class*="uppercase"] {
+  text-transform: none;
+  letter-spacing: 0.03em;
+}
+
+.product-first-home .product-card-media > button {
+  text-transform: none;
+  letter-spacing: 0.02em;
+  font-size: 0.75rem;
+}
+
+.product-first-home .product-shelf > div:first-child {
+  border-bottom: 0;
+}
+
+.product-first-home .product-shelf > div:first-child h2 {
+  font-size: 1.65rem;
+  font-weight: 400;
+  letter-spacing: 0;
+}
+
+.product-first-home .product-shelf > div:first-child a {
+  text-transform: none;
+  letter-spacing: 0.03em;
+  font-size: 0.75rem;
+}
+
+.store-header nav a,
+.store-header nav button {
+  text-transform: none;
+  letter-spacing: 0.03em;
+  font-size: 0.75rem;
+  font-weight: 400;
+}
+
+.store-header .store-brand {
+  letter-spacing: 0.24em;
+}
+
+.announcement-bar a {
+  text-transform: none;
+  letter-spacing: 0.08em;
+}
+
+.site-footer,
+.site-footer p,
+.site-footer a,
+.site-footer button {
+  text-transform: none;
+  letter-spacing: 0.01em;
+}
+
+.site-footer nav > p,
+.site-footer > .site-footer-main > div > p:first-child {
+  letter-spacing: 0.08em;
+  font-size: 0.6875rem;
+}
+
+.site-footer .site-footer-bottom p,
+.site-footer .site-footer-bottom a,
+.site-footer .site-footer-bottom button {
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+@media (max-width: 1023px) {
+  .product-first-home .product-shelf .shopify-rail > * {
+    width: min(17rem, 72vw);
+    min-width: min(17rem, 72vw);
+  }
+}
