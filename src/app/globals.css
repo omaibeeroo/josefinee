@@ -1560,3 +1560,179 @@
     border-radius: 0.65rem;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   Quiet storefront controls + compact footer
+   Buttons should feel like typography with a clear action—not decorative chrome.
+--------------------------------------------------------------------------- */
+@layer components {
+  .btn,
+  .btn-interactive {
+    border-radius: 0.2rem;
+    box-shadow: none;
+    isolation: auto;
+    overflow: visible;
+    transition:
+      background-color 0.18s ease,
+      border-color 0.18s ease,
+      color 0.18s ease,
+      transform 0.18s ease;
+  }
+
+  .btn::before,
+  .btn-interactive::before,
+  .btn-shine::after {
+    display: none;
+  }
+
+  .btn:hover:not(:disabled),
+  .btn-interactive:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: none;
+  }
+
+  .btn:active:not(:disabled),
+  .btn-interactive:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  .btn-primary,
+  .btn-gold {
+    background: #1d232b;
+    color: #fbfcfd;
+  }
+
+  .btn-primary:hover:not(:disabled),
+  .btn-gold:hover:not(:disabled) {
+    background: #3b4651;
+    color: #fbfcfd;
+  }
+
+  .btn-outline:hover:not(:disabled) {
+    border-color: #8794a3;
+    background: #f1f3f5;
+    color: #1d232b;
+  }
+
+  .btn-ghost:hover:not(:disabled) {
+    border-color: #8794a3;
+    background: #f5f7f8;
+    color: #1d232b;
+    box-shadow: none;
+  }
+
+  button:not(:disabled):not(.absolute):not(.btn):not(.icon-button):hover,
+  button:not(:disabled):not(.absolute):not(.btn):not(.icon-button):focus-visible,
+  [role="button"]:not([aria-disabled="true"]):not(.btn):hover,
+  [role="button"]:not([aria-disabled="true"]):not(.btn):focus-visible {
+    color: inherit;
+  }
+
+  .icon-button,
+  .icon-button:hover,
+  .icon-button:focus-visible {
+    border-radius: 0.2rem;
+    background: transparent;
+    box-shadow: none;
+    transform: none;
+  }
+
+  .product-card button[aria-label*="wishlist"]:hover,
+  .product-card button[aria-label*="Wishlist"]:hover {
+    background: #f4eaf1;
+    color: #a76785;
+    transform: none;
+  }
+
+  .product-card-media button:not(:disabled):hover {
+    background: #1d232b;
+    animation: none;
+  }
+
+  .product-detail-page .btn-primary,
+  .cart-drawer .btn-primary,
+  .cart-page .btn-primary,
+  .checkout-page .btn-primary {
+    background: #1d232b;
+  }
+
+  .product-detail-page .btn-primary:hover:not(:disabled),
+  .cart-drawer .btn-primary:hover:not(:disabled),
+  .cart-page .btn-primary:hover:not(:disabled),
+  .checkout-page .btn-primary:hover:not(:disabled) {
+    background: #3b4651;
+  }
+
+  .product-detail-page .btn-gold,
+  .checkout-page .btn-gold {
+    border: 1px solid #cfd6dc;
+    background: #f1f3f5;
+    color: #1d232b;
+  }
+
+  .product-detail-page .btn-gold:hover:not(:disabled),
+  .checkout-page .btn-gold:hover:not(:disabled) {
+    border-color: #aeb8c2;
+    background: #e6ebef;
+    color: #1d232b;
+  }
+
+  .site-footer {
+    border-top: 1px solid rgb(255 255 255 / 0.08);
+    background: #20252b;
+  }
+
+  .site-footer-main {
+    row-gap: 2rem;
+  }
+
+  .site-footer a,
+  .site-footer button {
+    transition: color 0.18s ease;
+  }
+
+  .site-footer a:hover,
+  .site-footer a:focus-visible,
+  .site-footer button:hover,
+  .site-footer button:focus-visible {
+    color: #fff;
+  }
+
+  .site-footer .field {
+    min-height: 2.5rem;
+    border-radius: 0.2rem;
+    box-shadow: none;
+  }
+
+  .site-footer .btn-gold {
+    min-height: 2.5rem;
+    border: 1px solid rgb(255 255 255 / 0.32);
+    border-radius: 0.2rem;
+    background: transparent;
+    color: #fbfcfd;
+    padding-inline: 1rem;
+  }
+
+  .site-footer .btn-gold:hover:not(:disabled) {
+    border-color: #fbfcfd;
+    background: #fbfcfd;
+    color: #1d232b;
+  }
+}
+
+@media (max-width: 767px) {
+  .site-footer-main {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 1.25rem;
+    row-gap: 2rem;
+  }
+
+  .site-footer-main > :first-child,
+  .site-footer-main > :last-child {
+    grid-column: 1 / -1;
+  }
+
+  .site-footer-bottom .container-luxe {
+    align-items: flex-start;
+  }
+}

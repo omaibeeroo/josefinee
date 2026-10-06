@@ -687,13 +687,13 @@ function SiteFooter(props: ChromeProps) {
     { label: "Facebook", href: props.social.facebook },
   ].filter(({ href }) => /^https:\/\/[^/]+\/.+/.test(href));
   return (
-    <footer className="mt-20 bg-ink text-ivory">
-      <div className="container-luxe grid gap-10 py-14 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
+    <footer className="site-footer mt-16 bg-ink text-ivory">
+      <div className="site-footer-main container-luxe grid gap-8 py-10 md:grid-cols-2 lg:grid-cols-[1.4fr_1fr_1fr_1.2fr]">
         <div>
-          <p className="font-display text-2xl tracking-[0.3em]">{props.brandName}</p>
-          <p className="mt-3 max-w-xs text-sm leading-relaxed text-ivory/70">{props.tagline}</p>
+          <p className="font-display text-xl tracking-[0.3em]">{props.brandName}</p>
+          <p className="mt-2 max-w-xs text-sm leading-relaxed text-ivory/70">{props.tagline}</p>
           {socialLinks.length > 0 && (
-            <div className="mt-5 flex flex-wrap gap-x-5 gap-y-2 text-sm uppercase tracking-[0.14em]">
+            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-xs uppercase tracking-[0.14em]">
               {socialLinks.map((social) => (
                 <a
                   key={social.label}
@@ -719,10 +719,10 @@ function SiteFooter(props: ChromeProps) {
           )}
         </div>
         <nav aria-label="Boutique">
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">
+          <p className="mb-3 text-[0.6875rem] font-medium uppercase tracking-[0.2em] text-ivory/60">
             Boutique
           </p>
-          <ul className="space-y-2.5 text-[0.9375rem]">
+          <ul className="space-y-2 text-sm">
             <li>
               <Link href="/shop" className="text-ivory/85 hover:text-ivory">
                 Voir la boutique
@@ -746,10 +746,10 @@ function SiteFooter(props: ChromeProps) {
           </ul>
         </nav>
         <nav aria-label="Service client">
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">
+          <p className="mb-3 text-[0.6875rem] font-medium uppercase tracking-[0.2em] text-ivory/60">
             Service client
           </p>
-          <ul className="space-y-2.5 text-[0.9375rem]">
+          <ul className="space-y-2 text-sm">
             <li>
               <Link href="/contact" className="text-ivory/85 hover:text-ivory">
                 Contact
@@ -778,7 +778,7 @@ function SiteFooter(props: ChromeProps) {
           </ul>
         </nav>
         <div>
-          <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em] text-ivory/60">
+          <p className="mb-3 text-[0.6875rem] font-medium uppercase tracking-[0.2em] text-ivory/60">
             Restons en contact
           </p>
           {(props.supportEmail || props.supportPhone) && (
@@ -809,8 +809,8 @@ function SiteFooter(props: ChromeProps) {
           <NewsletterMini />
         </div>
       </div>
-      <div className="border-t border-white/10">
-        <div className="container-luxe flex flex-col items-center justify-between gap-3 py-5 text-xs text-ivory/60 md:flex-row">
+      <div className="site-footer-bottom border-t border-white/10">
+        <div className="container-luxe flex flex-col items-center justify-between gap-3 py-4 text-xs text-ivory/60 md:flex-row">
           <p>
             © {year} {props.brandName}. Tous droits réservés.
           </p>
