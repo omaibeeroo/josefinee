@@ -120,24 +120,8 @@ export default async function HomePage() {
   } = await getHomeData();
 
   return (
-    <div className="flex flex-col gap-0">
+    <div className="product-first-home flex flex-col gap-0">
       <Hero hero={settings.homepage.hero} />
-
-      <DiscoveryStrip />
-
-      <TrustBar />
-
-      {featuredCollection && (
-        <div className="section-space">
-          <FeaturedCollection
-            title={featuredCollection.name}
-            description={featuredCollection.description ?? ""}
-            image={featuredCollection.image}
-            href={`/collections/${featuredCollection.slug}`}
-            cta={`Découvrir ${featuredCollection.name}`}
-          />
-        </div>
-      )}
 
       {featured.length === 0 && newIn.length === 0 && bestSellers.length === 0 ? (
         <section
@@ -170,32 +154,37 @@ export default async function HomePage() {
         </section>
       ) : (
         <div className="section-space pt-0">
-          <ProductCarousel
-            eyebrow="Sélection choisie"
-            title="Nos bijoux"
-            products={featured}
-            viewAllHref="/shop"
-          />
+          <ProductCarousel title="Sélection" products={featured} viewAllHref="/shop" />
         </div>
       )}
 
       <div className="section-space pt-0">
         <ProductCarousel
-          eyebrow="Plébiscités par nos clientes"
-          title="Meilleures ventes"
+          title="Bestsellers"
           products={bestSellers}
           viewAllHref="/collections/best-sellers"
         />
       </div>
 
       <div className="section-space pt-0">
-        <ProductCarousel
-          eyebrow="Tout juste arrivés"
-          title="Nouveautés"
-          products={newIn}
-          viewAllHref="/collections/new-in"
-        />
+        <ProductCarousel title="Nouveautés" products={newIn} viewAllHref="/collections/new-in" />
       </div>
+
+      <DiscoveryStrip />
+
+      <TrustBar />
+
+      {featuredCollection && (
+        <div className="section-space">
+          <FeaturedCollection
+            title={featuredCollection.name}
+            description={featuredCollection.description ?? ""}
+            image={featuredCollection.image}
+            href={`/collections/${featuredCollection.slug}`}
+            cta="Découvrir"
+          />
+        </div>
+      )}
 
       <div className="section-space pt-0">
         <CategoryGrid categories={categoryTiles} />

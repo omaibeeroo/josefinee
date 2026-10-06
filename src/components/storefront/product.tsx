@@ -208,7 +208,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
           </button>
         )}
       </div>
-      <div className="flex flex-1 flex-col pt-3">
+      <div className="product-card-copy flex flex-1 flex-col items-center pt-3 text-center">
         <Link
           href={`/products/${product.slug}`}
           className="text-[0.9375rem] font-medium leading-snug hover:underline"
@@ -452,7 +452,7 @@ export function ProductCarousel({
   if (products.length === 0) return null;
 
   return (
-    <section className="container-luxe" aria-label={title}>
+    <section className="product-shelf container-luxe" aria-label={title}>
       <div className="mb-6 flex items-end justify-between gap-4 border-b hairline pb-5 md:mb-8">
         <div>
           {eyebrow && <p className="eyebrow mb-2">{eyebrow}</p>}

@@ -55,7 +55,7 @@ function BrandMark({
     <Link
       href="/"
       onClick={onClick}
-      className="inline-flex items-center gap-2 transition-transform duration-300 hover:scale-[1.02]"
+      className="store-brand inline-flex items-center justify-center gap-2 transition-transform duration-300 hover:scale-[1.02]"
       aria-label={`Accueil ${brandName}`}
     >
       {logoUrl ? (
@@ -145,7 +145,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
 
       <header
         className={cn(
-          "sticky top-0 z-50 border-b bg-ivory/95 backdrop-blur transition-shadow",
+          "store-header sticky top-0 z-50 border-b bg-ivory/95 backdrop-blur transition-shadow",
           scrolled ? "hairline shadow-[0_8px_30px_-18px_rgba(28,26,23,0.4)]" : "border-transparent",
         )}
       >
