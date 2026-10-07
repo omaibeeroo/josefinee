@@ -142,6 +142,13 @@ Minimal direction (October 2026 refresh, do not regress):
   `formatDateTimeFR` in `src/lib/money.ts`), never `Intl.*`/`toLocale*` in
   rendered output — ICU differences between server and browser break
   hydration.
+- **Dark mode is variable-driven.** All surfaces flow from theme variables;
+  `[data-theme="dark"]` in `globals.css` only remaps them (plus a few named
+  hardcode overrides). Never add per-component dark classes; never use
+  `text-white` (use `text-[#fff]` for text that must stay white on colored
+  badges). Theme cookie `hanadi-theme`, `setThemeAction`, `<html data-theme>`
+  from the root layout. Light is the default; admin brand colors apply in
+  light mode only.
 - **Announcement bar is settings-driven** (`homepage.announcement.isActive`).
   Never hard-remove it from `SiteChrome`; toggle it in Admin → Réglages.
 - **Homepage order is admin data, not code.** Blocks render from

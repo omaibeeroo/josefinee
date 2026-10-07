@@ -186,9 +186,9 @@ export function Badge({
       className={cn(
         "inline-flex items-center px-2 py-1 text-[0.625rem] font-medium uppercase tracking-[0.14em]",
         tone === "ink" && "bg-ink text-ivory",
-        tone === "sale" && "bg-sale text-white",
-        tone === "gold" && "bg-gold-dark text-white",
-        tone === "green" && "bg-success text-white",
+        tone === "sale" && "bg-sale text-[#fff]",
+        tone === "gold" && "bg-gold-dark text-[#fff]",
+        tone === "green" && "bg-success text-[#fff]",
         tone === "muted" && "bg-cream text-ink-soft",
         className,
       )}
