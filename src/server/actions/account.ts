@@ -56,10 +56,29 @@ export async function getCustomerOrders() {
       status: true,
       total: true,
       createdAt: true,
-      items: { select: { productName: true, imageUrl: true, quantity: true } },
+      items: {
+        select: {
+          productName: true,
+          imageUrl: true,
+          quantity: true,
+          product: {
+            select: {
+              images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
+            },
+          },
+        },
+      },
     },
   });
-  return orders.map((order) => ({ ...order, trackingToken: signOrderToken(order.orderNumber) }));
+  return orders.map((order) => ({
+    ...order,
+    items: order.items.map((item) => ({
+      productName: item.productName,
+      quantity: item.quantity,
+      imageUrl: item.imageUrl ?? item.product?.images[0]?.url ?? null,
+    })),
+    trackingToken: signOrderToken(order.orderNumber),
+  }));
 }
 
 export async function getWishlistItems() {

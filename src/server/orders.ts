@@ -555,7 +555,15 @@ export async function getOrderConfirmation(orderNumber: string): Promise<OrderCo
     const order = await prisma.order.findUnique({
       where: { orderNumber },
       include: {
-        items: true,
+        items: {
+          include: {
+            product: {
+              select: {
+                images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
+              },
+            },
+          },
+        },
         promotion: { select: { name: true } },
         statusHistory: {
           where: { isCustomerVisible: true },
@@ -581,7 +589,17 @@ export async function getOrderConfirmation(orderNumber: string): Promise<OrderCo
       shipping: order.shipping,
       total: order.total,
       placedAt: order.placedAt,
-      items: order.items,
+      // Snapshot fields stay frozen; only the display image falls back to the
+      // product's current primary photo when the snapshot has none (e.g.
+      // orders placed before product photos existed).
+      items: order.items.map((item) => ({
+        productName: item.productName,
+        variantLabel: item.variantLabel,
+        imageUrl: item.imageUrl ?? item.product?.images[0]?.url ?? null,
+        unitPrice: item.unitPrice,
+        quantity: item.quantity,
+        lineTotal: item.lineTotal,
+      })),
       history: order.statusHistory.map((entry) => ({
         status: entry.status,
         note: entry.note,
