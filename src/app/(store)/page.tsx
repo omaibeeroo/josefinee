@@ -1,7 +1,9 @@
 import Link from "next/link";
 import type { Metadata } from "next";
+import { Fragment } from "react";
 import { getSettings } from "@/lib/settings";
-import { getBestSellers, getFeaturedProducts, getNewInProducts } from "@/server/catalog";
+import { getBestSellers, getFeaturedProducts, getNewInProducts, getStorefrontProducts } from "@/server/catalog";
+import { getDictionary } from "@/lib/i18n/server";
 import { prisma } from "@/lib/prisma";
 import {
   CategoryGrid,
@@ -132,6 +134,19 @@ async function getHomeData() {
       ? settings.homepage.socialProofOverride
       : deliveredResult.value;
   const faqs = faqResult.value;
+  const t = await getDictionary();
+
+  // Hand-picked spotlight product from Admin → Vitrine, else first featured.
+  let spotlight = featured[0] ?? null;
+  const spotlightId = settings.homepage.spotlightProductId;
+  if (spotlightId) {
+    try {
+      const picked = await getStorefrontProducts({ ids: [spotlightId], pageSize: 1 });
+      if (picked.items[0]) spotlight = picked.items[0];
+    } catch (error) {
+      console.error("[home] spotlight failed", error instanceof Error ? error.name : "unknown");
+    }
+  }
 
   return {
     settings,
@@ -143,6 +158,8 @@ async function getHomeData() {
     featuredCollection,
     deliveredCount,
     faqs,
+    spotlight,
+    t,
   };
 }
 
@@ -157,108 +174,116 @@ export default async function HomePage() {
     featuredCollection,
     deliveredCount,
     faqs,
+    spotlight,
+    t,
   } = await getHomeData();
+  const hasCatalog = featured.length > 0 || newIn.length > 0 || bestSellers.length > 0;
+
+  const blocks: Record<string, React.ReactNode> = {
+    discovery: <DiscoveryStrip />,
+    featured: hasCatalog ? (
+      <div className="section-space pt-0">
+        <ProductCarousel
+          eyebrow={t.home.featuredEyebrow}
+          title={t.home.featuredTitle}
+          products={featured}
+          viewAllHref="/shop"
+        />
+      </div>
+    ) : null,
+    spotlight: spotlight ? (
+      <div className="section-space pt-0">
+        <ProductSpotlight product={spotlight} />
+      </div>
+    ) : null,
+    featuredCollection: featuredCollection ? (
+      <div className="section-space pt-0">
+        <FeaturedCollection
+          title={featuredCollection.name}
+          description={featuredCollection.description ?? ""}
+          image={featuredCollection.image}
+          href={`/collections/${featuredCollection.slug}`}
+          cta={`${t.home.collectionCta} ${featuredCollection.name}`}
+        />
+      </div>
+    ) : null,
+    bestSellers: (
+      <div className="section-space pt-0">
+        <ProductCarousel
+          eyebrow={t.home.bestSellersEyebrow}
+          title={t.home.bestSellersTitle}
+          products={bestSellers}
+          viewAllHref="/collections/best-sellers"
+        />
+      </div>
+    ),
+    newIn: (
+      <div className="section-space pt-0">
+        <ProductCarousel
+          eyebrow={t.home.newInEyebrow}
+          title={t.home.newInTitle}
+          products={newIn}
+          viewAllHref="/collections/new-in"
+        />
+      </div>
+    ),
+    categories: (
+      <div className="section-space pt-0">
+        <CategoryGrid categories={categoryTiles} />
+      </div>
+    ),
+    trust: <TrustBar />,
+    socialProof:
+      settings.homepage.showSocialProof ? <SocialProof deliveredCount={deliveredCount} /> : null,
+    faq: (
+      <div className="section-space pb-0 pt-0">
+        <FaqTeaser items={faqs} />
+      </div>
+    ),
+  };
+  const visibleSections = settings.homepage.sections.filter((entry) => entry.visible);
 
   return (
     <div className="flex flex-col gap-0">
       <Hero hero={settings.homepage.hero} />
 
-      <DiscoveryStrip />
-
-      {featured.length === 0 && newIn.length === 0 && bestSellers.length === 0 ? (
+      {!hasCatalog ? (
         <section
           className="container-luxe section-space pt-0 text-center"
           aria-labelledby="catalog-empty-title"
         >
           <div className="border-y hairline bg-cream/60 px-6 py-14 md:py-20">
-            <p className="eyebrow">
-              {catalogError ? "Service momentanément indisponible" : "Bientôt disponible"}
-            </p>
+            <p className="eyebrow">{catalogError ? t.home.emptyErrorEyebrow : t.home.emptyEyebrow}</p>
             <h2
               id="catalog-empty-title"
               className="mt-3 font-display text-3xl font-medium md:text-4xl"
             >
-              {catalogError
-                ? "Impossible de charger la sélection"
-                : "Nos nouveautés arrivent bientôt"}
+              {catalogError ? t.home.emptyErrorTitle : t.home.emptyTitle}
             </h2>
             <p className="mx-auto mt-3 max-w-lg text-ink-soft">
-              {catalogError
-                ? "Un problème temporaire empêche l’affichage des produits. Veuillez réessayer dans quelques instants."
-                : "La boutique prépare actuellement sa première sélection. Inscrivez-vous pour être informée des nouveautés."}
+              {catalogError ? t.home.emptyErrorHint : t.home.emptyHint}
             </p>
             {catalogError && (
               <Link href="/" className="btn btn-outline mt-6">
-                Réessayer
+                {t.common.retry}
               </Link>
             )}
           </div>
         </section>
       ) : (
-        <div className="section-space pt-0">
-          <ProductCarousel
-            eyebrow="Choisissez votre prochaine pièce"
-            title="La sélection Hanadi Store"
-            products={featured}
-            viewAllHref="/shop"
-          />
-        </div>
+        <>
+          {visibleSections.map((entry) => (
+            <Fragment key={entry.id}>{blocks[entry.id]}</Fragment>
+          ))}
+        </>
       )}
-
-      {featured[0] && (
-        <div className="section-space pt-0">
-          <ProductSpotlight product={featured[0]} />
-        </div>
-      )}
-
-      {featuredCollection && (
-        <div className="section-space pt-0">
-          <FeaturedCollection
-            title={featuredCollection.name}
-            description={featuredCollection.description ?? ""}
-            image={featuredCollection.image}
-            href={`/collections/${featuredCollection.slug}`}
-            cta={`Découvrir ${featuredCollection.name}`}
-          />
-        </div>
-      )}
-
-      <div className="section-space pt-0">
-        <ProductCarousel
-          eyebrow="Plébiscités par nos clientes"
-          title="Meilleures ventes"
-          products={bestSellers}
-          viewAllHref="/collections/best-sellers"
-        />
-      </div>
-
-      <div className="section-space pt-0">
-        <ProductCarousel
-          eyebrow="Tout juste arrivés"
-          title="Nouveautés"
-          products={newIn}
-          viewAllHref="/collections/new-in"
-        />
-      </div>
-
-      <div className="section-space pt-0">
-        <CategoryGrid categories={categoryTiles} />
-      </div>
-
-      <TrustBar />
-
-      {settings.homepage.showSocialProof && <SocialProof deliveredCount={deliveredCount} />}
-
-      <div className="section-space pb-0 pt-0">
-        <FaqTeaser items={faqs} />
-      </div>
 
       <section className="container-luxe pb-3 pt-4 text-center">
         <Link
           href="/shop"
           className="text-xs font-medium uppercase tracking-[0.24em] underline underline-offset-8"
         >
-          Découvrir tous les produits
+          {t.home.shopAllLink}
         </Link>
       </section>
     </div>

@@ -42,6 +42,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
 
   const catalog: Section = { title: t.admin.catalog, items: [] };
   if (has("products:read")) catalog.items.push({ href: "/admin/products", label: t.admin.products });
+  if (has("products:read")) catalog.items.push({ href: "/admin/vitrine", label: t.admin.vitrine });
   if (has("catalog:write")) {
     catalog.items.push({ href: "/admin/categories", label: t.admin.categories });
     catalog.items.push({ href: "/admin/collections", label: t.admin.collections });

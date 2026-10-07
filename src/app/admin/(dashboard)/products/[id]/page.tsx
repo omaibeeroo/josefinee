@@ -35,6 +35,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
     categoryId: product.categoryId ?? "",
     tags: product.tags.join(", "),
     status: product.status,
+    sortOrder: String(product.sortOrder ?? 0),
     isFeatured: product.isFeatured,
     isBestseller: product.isBestseller,
     isNew: product.isNew,

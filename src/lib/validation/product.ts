@@ -51,6 +51,7 @@ export const productSchema = z.object({
   categoryId: zId.optional(),
   tags: z.array(z.string().trim().min(1).max(50)).max(30).default([]),
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
+  sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
   isFeatured: z.coerce.boolean().default(false),
   isBestseller: z.coerce.boolean().default(false),
   isNew: z.coerce.boolean().default(false),
