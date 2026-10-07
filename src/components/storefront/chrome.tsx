@@ -16,6 +16,7 @@ import {
   X,
 } from "lucide-react";
 import { useCart } from "@/components/storefront/cart-ui";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { LocaleToggle } from "@/components/locale-toggle";
 import { useLocale } from "@/lib/i18n/provider";
 import { subscribeNewsletterAction } from "@/server/actions/engagement";
@@ -158,6 +159,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             <BrandMark brandName={brandName} logoUrl={props.logoUrl} compact={scrolled} />
             <div className="absolute right-0 flex items-center justify-end gap-1">
               <LocaleToggle className="mr-1 hidden xl:flex" />
+              <ThemeToggle className="hidden lg:block" />
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
@@ -283,6 +285,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             <BrandMark brandName={brandName} logoUrl={props.logoUrl} compact={scrolled} />
           </div>
           <div className="flex items-center">
+            <ThemeToggle className="lg:hidden" />
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
@@ -587,7 +590,7 @@ function SearchOverlay({
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="absolute inset-x-0 top-0 border-b border-[#e3e5e7] bg-gradient-to-b from-white to-[#f4f6f8] px-4 py-4 md:px-8 md:py-5"
+        className="absolute inset-x-0 top-0 border-b hairline bg-gradient-to-b from-white to-cream px-4 py-4 md:px-8 md:py-5"
       >
         <div className="mx-auto max-w-xl">
           <div className="mb-3 flex items-center justify-between">
@@ -604,7 +607,7 @@ function SearchOverlay({
             </button>
           </div>
           <form onSubmit={submit} role="search">
-            <div className="flex items-center gap-2.5 border-b border-[#d5dbe1] pb-1.5 transition-colors focus-within:border-ink">
+            <div className="flex items-center gap-2.5 border-b hairline pb-1.5 transition-colors focus-within:border-ink">
               <Search size={15} className="shrink-0 text-ink-muted" aria-hidden="true" />
               <input
                 ref={searchInputRef}
@@ -632,7 +635,7 @@ function SearchOverlay({
                   key={term}
                   href={`/search?q=${encodeURIComponent(term)}`}
                   onClick={onClose}
-                  className="text-[13px] text-ink-soft underline decoration-[#d5dbe1] underline-offset-4 hover:text-ink"
+                  className="text-[13px] text-ink-soft underline decoration-line underline-offset-4 hover:text-ink"
                 >
                   {term}
                 </Link>

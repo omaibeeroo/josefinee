@@ -63,6 +63,11 @@ const fr = {
     viewAll: "Tout voir",
     currencyNote: "Paiement à la livraison",
   },
+  theme: {
+    toggle: "Basculer mode clair / sombre",
+    light: "Clair",
+    dark: "Sombre",
+  },
   header: {
     home: "Accueil",
     shop: "Boutique",

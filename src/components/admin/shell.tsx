@@ -39,9 +39,9 @@ export function AdminShell({
   }, [pathname]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white to-[#f4f6f8]">
+    <div className="min-h-screen bg-gradient-to-b from-white to-cream">
       {/* Topbar */}
-      <div className="sticky top-0 z-40 border-b border-[#e3e5e7] bg-white/95 backdrop-blur print:hidden">
+      <div className="sticky top-0 z-40 border-b hairline bg-white/95 backdrop-blur print:hidden">
         <div className="flex items-center justify-between gap-3 px-4 py-2.5 lg:px-6">
           <div className="flex items-center gap-3">
             <button
@@ -65,7 +65,7 @@ export function AdminShell({
             >
               <Bell size={16} />
               {pendingOrders > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center bg-sale px-1.5 text-[0.6875rem] font-bold text-white">
+                <span className="flex h-5 min-w-5 items-center justify-center bg-sale px-1.5 text-[0.6875rem] font-bold text-[#fff]">
                   {pendingOrders}
                 </span>
               )}
@@ -96,7 +96,7 @@ export function AdminShell({
       <div className="flex">
         {/* Sidebar (desktop) */}
         <aside
-          className="hidden w-60 shrink-0 border-r border-[#e3e5e7] bg-white lg:block print:hidden"
+          className="hidden w-60 shrink-0 border-r hairline bg-white lg:block print:hidden"
           aria-label="Admin navigation"
         >
           <nav className="sticky top-[53px] max-h-[calc(100vh-53px)] overflow-y-auto p-3">
@@ -120,7 +120,7 @@ export function AdminShell({
             <aside
               ref={menuPanelRef}
               tabIndex={-1}
-              className="absolute left-0 top-0 h-full w-72 overflow-y-auto border-r border-[#e3e5e7] bg-white p-3"
+              className="absolute left-0 top-0 h-full w-72 overflow-y-auto border-r hairline bg-white p-3"
             >
               <div className="mb-2 flex items-center justify-between px-1">
                 <span className="font-display text-base tracking-[0.12em]">Hanadi Store</span>
@@ -170,16 +170,16 @@ function SidebarNav({
                   <Link
                     href={item.href}
                     aria-current={active ? "page" : undefined}
-                    className={cn(
-                      "admin-nav-link flex items-center justify-between border-l-2 px-2 py-[0.45rem] text-[13px]",
-                      active
-                        ? "border-ink bg-[#eef1f4] font-medium text-ink"
-                        : "border-transparent text-ink-soft hover:bg-[#f4f6f8] hover:text-ink",
-                    )}
+                      className={cn(
+                        "admin-nav-link flex items-center justify-between border-l-2 px-2 py-[0.45rem] text-[13px]",
+                        active
+                          ? "border-ink bg-cream font-medium text-ink"
+                          : "border-transparent text-ink-soft hover:bg-cream/60 hover:text-ink",
+                      )}
                   >
                     {item.label}
                     {item.badge !== undefined && item.badge > 0 && (
-                      <span className="bg-sale px-1.5 text-[0.6875rem] font-bold text-white">
+                      <span className="bg-sale px-1.5 text-[0.6875rem] font-bold text-[#fff]">
                         {item.badge}
                       </span>
                     )}

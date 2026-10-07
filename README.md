@@ -172,6 +172,10 @@ third-party assets or copy):
   enforced by `dictionaries.test.ts`). Covers storefront, admin, statuses,
   and server-action messages. DB merchandising content (product names, FAQ,
   category/collection/legal texts) stays French; URL slugs stay stable.
+- Dark mode ("sombre"): light by default, visitor-toggled (moon/sun in the
+  header, `hanadi-theme` cookie, `<html data-theme>` rendered server-side so
+  there is no flash). Implemented as a pure theme-variable swap — no
+  per-component dark classes. Print stays light.
 - Performance: single hero image download (was desktop + mobile), no
   below-fold `priority` preloads, full font weights (no faux-bold),
   homepage data in one parallel wave, snappier animations (~30% shorter,

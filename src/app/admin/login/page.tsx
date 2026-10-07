@@ -15,7 +15,7 @@ export default async function AdminLoginPage() {
   const t = await getDictionary();
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white to-[#eef1f4] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white to-cream px-4">
       <div className="w-full max-w-md">
         <p className="text-center font-display text-3xl tracking-[0.12em]">Hanadi Store</p>
         <p className="mt-2 text-center text-xs uppercase tracking-[0.24em] text-ink-muted">

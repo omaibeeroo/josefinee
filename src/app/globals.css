@@ -1,6 +1,100 @@
 @import "tailwindcss";
 
 /* ---------------------------------------------------------------------------
+   Dark theme ("sombre"): light by default, switched per visitor.
+   Every surface and text color flows from theme variables, so dark mode is
+   a pure variable swap — components need no per-theme classes. The theme is
+   stored in the `hanadi-theme` cookie and rendered on `<html data-theme>`.
+--------------------------------------------------------------------------- */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --color-ink: #eceff2;
+  --color-ink-soft: #a7b1bc;
+  --color-ink-muted: #7e8894;
+  --color-ivory: #14181d;
+  --color-cream: #1b2127;
+  --color-sand: #242c34;
+  --color-blush: #2a333c;
+  --color-gold: #9fb0c0;
+  --color-gold-dark: #c3ccd5;
+  --color-sale: #d08a94;
+  --color-success: #82ad8f;
+  --color-line: #2c3540;
+  --color-white: #1a2129;
+}
+
+[data-theme="dark"] body {
+  background: linear-gradient(180deg, #14181d 0%, #10141a 48%, #14181d 100%);
+}
+
+[data-theme="dark"] .field {
+  background-color: transparent;
+  color: var(--color-ink);
+}
+
+[data-theme="dark"] .product-card-media {
+  border-color: #2c3540;
+  background: #1b2127;
+}
+
+[data-theme="dark"] .silver-panel,
+[data-theme="dark"] .product-gallery-hero {
+  border-color: #2c3540;
+  background: linear-gradient(145deg, #1b2127, #161c22);
+}
+
+[data-theme="dark"] .cart-drawer ul li > a:first-child,
+[data-theme="dark"] .cart-page li > a:first-child,
+[data-theme="dark"] .checkout-summary li > div:first-child {
+  background: linear-gradient(145deg, #1b2127, #161c22);
+}
+
+[data-theme="dark"] .icon-button:hover,
+[data-theme="dark"] .icon-button:focus-visible {
+  background-color: #242c34;
+}
+
+[data-theme="dark"] .product-card button[aria-label*="wishlist"],
+[data-theme="dark"] .product-card button[aria-label*="Wishlist"] {
+  border-color: rgb(255 255 255 / 0.16);
+  background: rgb(20 24 29 / 0.88);
+}
+
+[data-theme="dark"] .product-detail-page .btn-gold {
+  border-color: #2c3540;
+  background: #2a333c;
+  color: var(--color-ink);
+}
+
+[data-theme="dark"] .product-detail-page .btn-gold:hover:not(:disabled) {
+  border-color: #3a4450;
+  background: #333d47;
+  color: var(--color-ink);
+}
+
+[data-theme="dark"] .product-detail-page .variant-option {
+  background: #1a2129;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-theme="dark"] header {
+    background: #14181d;
+  }
+
+  [data-theme="dark"] .cart-drawer > div:first-child {
+    background: #1a2129;
+  }
+}
+
+@media print {
+  [data-theme="dark"] {
+    --color-white: #fff;
+    --color-ivory: #fff;
+    --color-ink: #000;
+  }
+}
+
+/* ---------------------------------------------------------------------------
    Hanadi Store — design tokens
    All storefront colors/typography flow from these tokens. The admin can
    override accent colors at runtime through settings -> CSS variables.

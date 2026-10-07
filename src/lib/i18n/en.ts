@@ -65,6 +65,11 @@ const en: FrDictionary = {
     viewAll: "View all",
     currencyNote: "Cash on delivery",
   },
+  theme: {
+    toggle: "Toggle light / dark mode",
+    light: "Light",
+    dark: "Dark",
+  },
   header: {
     home: "Home",
     shop: "Shop",

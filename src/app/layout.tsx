@@ -1,8 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
+import { cookies } from "next/headers";
 import { getSettings } from "@/lib/settings";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
+import { THEME_COOKIE, parseTheme } from "@/lib/i18n/theme";
 import { LocaleProvider } from "@/lib/i18n/provider";
 import { BRAND_CONFIG, appUrl } from "@/config/brand";
 import { CartProvider } from "@/components/storefront/cart-ui";
@@ -71,21 +73,29 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [settings, requestHeaders, locale, dictionary] = await Promise.all([
+  const [settings, requestHeaders, locale, dictionary, cookieStore] = await Promise.all([
     getSettings(),
     headers(),
     getLocale(),
     getDictionary(),
+    cookies(),
   ]);
+  const theme = parseTheme(cookieStore.get(THEME_COOKIE)?.value);
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
-  const style = {
-    "--color-gold": settings.general.colors.accent,
-    "--color-ink": settings.general.colors.ink,
-    "--color-ivory": settings.general.colors.background,
-  } as React.CSSProperties;
+  // Admin brand colors apply in light mode only; dark mode uses its own
+  // fixed palette so text stays readable on dark surfaces.
+  const style = (
+    theme === "dark"
+      ? undefined
+      : {
+          "--color-gold": settings.general.colors.accent,
+          "--color-ink": settings.general.colors.ink,
+          "--color-ivory": settings.general.colors.background,
+        }
+  ) as React.CSSProperties | undefined;
 
   return (
-    <html lang={locale} className={`${display.variable} ${sans.variable}`}>
+    <html lang={locale} data-theme={theme} className={`${display.variable} ${sans.variable}`}>
       <body style={style} className="min-h-screen">
         <a
           href="#main-content"
@@ -94,7 +104,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           {locale === "en" ? "Skip to content" : "Aller au contenu"}
         </a>
         <NavigationProgress />
-        <LocaleProvider locale={locale} dictionary={dictionary}>
+        <LocaleProvider locale={locale} dictionary={dictionary} theme={theme}>
           <CartProvider>{children}</CartProvider>
           <CookiePreferences />
         </LocaleProvider>
