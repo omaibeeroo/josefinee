@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getProductForEdit } from "@/server/actions/admin-catalog";
 import { ProductEditor, type EditorState } from "@/components/admin/product-editor";
 import { PageHeader } from "@/components/admin/ui";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -13,9 +14,12 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
   const product = await getProductForEdit(id).catch(() => null);
   if (!product) notFound();
 
-  const categories = await prisma.category
-    .findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } })
-    .catch(() => []);
+  const [categories, t] = await Promise.all([
+    prisma.category
+      .findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } })
+      .catch(() => []),
+    getDictionary(),
+  ]);
 
   const initial: EditorState = {
     id: product.id,
@@ -70,7 +74,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
 
   return (
     <div>
-      <PageHeader title={`Modifier — ${product.name}`} description={`/${product.slug}`} />
+      <PageHeader title={`${t.adminPages.productEdit} ${product.name}`} description={`/${product.slug}`} />
       <ProductEditor initial={initial} categories={categories} />
     </div>
   );

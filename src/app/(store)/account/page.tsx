@@ -1,29 +1,29 @@
 import Link from "next/link";
 import { getAccountOverview } from "@/server/actions/account";
-import { ORDER_STATUS_LABELS } from "@/lib/constants";
-import { formatDA } from "@/lib/money";
+import { formatDA, formatDateFR } from "@/lib/money";
+import { getDictionary } from "@/lib/i18n/server";
 
 export default async function AccountOverviewPage() {
-  const overview = await getAccountOverview();
+  const [overview, t] = await Promise.all([getAccountOverview(), getDictionary()]);
 
   return (
     <div className="grid gap-4 md:grid-cols-3">
       <div className="border hairline bg-white p-6">
-        <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">Commandes</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">{t.account.orders}</p>
         <p className="mt-2 font-display text-4xl">{overview.orderCount}</p>
         <Link href="/account/orders" className="mt-3 inline-block text-xs uppercase tracking-[0.16em] underline underline-offset-4">
-          Tout voir
+          {t.common.viewAll}
         </Link>
       </div>
       <div className="border hairline bg-white p-6">
-        <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">Favoris</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">{t.account.wishlist}</p>
         <p className="mt-2 font-display text-4xl">{overview.wishlistCount}</p>
         <Link href="/account/wishlist" className="mt-3 inline-block text-xs uppercase tracking-[0.16em] underline underline-offset-4">
-          Voir mes favoris
+          {t.account.viewSaved}
         </Link>
       </div>
       <div className="border hairline bg-white p-6">
-        <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">Profil</p>
+        <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">{t.account.profile}</p>
         <p className="mt-2 font-medium">
           {overview.customer.firstName} {overview.customer.lastName}
         </p>
@@ -33,7 +33,7 @@ export default async function AccountOverviewPage() {
 
       {overview.latestOrders.length > 0 && (
         <div className="border hairline bg-white p-6 md:col-span-3">
-          <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">Commandes récentes</p>
+          <p className="text-xs uppercase tracking-[0.18em] text-ink-muted">{t.account.recentOrders}</p>
           <ul className="mt-4 divide-y divide-line">
             {overview.latestOrders.map((order) => (
               <li key={order.orderNumber} className="flex flex-wrap items-center justify-between gap-2 py-3">
@@ -45,7 +45,7 @@ export default async function AccountOverviewPage() {
                     {order.orderNumber}
                   </Link>
                   <p className="text-xs text-ink-muted">
-                    {new Date(order.createdAt).toLocaleDateString("fr-DZ")} · {ORDER_STATUS_LABELS[order.status].label}
+                    {formatDateFR(order.createdAt)} · {t.status[order.status]}
                   </p>
                 </div>
                 <p className="font-medium">{formatDA(order.total)}</p>

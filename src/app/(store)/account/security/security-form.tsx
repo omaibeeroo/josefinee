@@ -3,8 +3,10 @@
 import { useState, type FormEvent } from "react";
 import { changePasswordAction } from "@/server/actions/engagement";
 import { Button, Field, Input } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 
 export function SecurityForm() {
+  const { t } = useLocale();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [state, setState] = useState<{ ok: boolean; message: string } | null>(null);
@@ -24,11 +26,11 @@ export function SecurityForm() {
 
   return (
     <form onSubmit={submit} className="max-w-md space-y-4 border hairline bg-white p-6">
-      <h2 className="font-display text-2xl">Changer le mot de passe</h2>
-      <Field label="Mot de passe actuel">
+      <h2 className="font-display text-2xl">{t.account.changePassword}</h2>
+      <Field label={t.account.currentPassword}>
         <Input type="password" value={current} onChange={(event) => setCurrent(event.target.value)} autoComplete="current-password" required />
       </Field>
-      <Field label="Nouveau mot de passe" hint="10+ caractères, majuscules et minuscules, un chiffre">
+      <Field label={t.account.newPassword} hint={t.auth.passwordHint}>
         <Input type="password" value={next} onChange={(event) => setNext(event.target.value)} autoComplete="new-password" required />
       </Field>
       {state && (
@@ -37,7 +39,7 @@ export function SecurityForm() {
         </p>
       )}
       <Button type="submit" disabled={pending}>
-        {pending ? "Mise à jour…" : "Mettre à jour"}
+        {pending ? t.account.updating : t.account.update}
       </Button>
     </form>
   );

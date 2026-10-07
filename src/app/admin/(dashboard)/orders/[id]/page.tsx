@@ -5,8 +5,9 @@ import { requirePermission } from "@/lib/auth/rbac";
 import { getAdminOrder } from "@/server/actions/admin-orders";
 import { allowedNextStatuses } from "@/server/order-transitions";
 import { Card, OrderStatusBadge, PageHeader, RiskBadge } from "@/components/admin/ui";
-import { ORDER_STATUS_LABELS } from "@/lib/constants";
-import { formatDA } from "@/lib/money";
+import { getDictionary } from "@/lib/i18n/server";
+
+import { formatDA, formatDateTimeFR } from "@/lib/money";
 import { formatPhoneDisplay } from "@/lib/phone";
 import { NotesEditor, StatusChanger } from "./order-forms";
 
@@ -19,20 +20,20 @@ export default async function AdminOrderDetailPage({
 }) {
   await requirePermission("orders:read");
   const { id } = await params;
-  const order = await getAdminOrder(id).catch(() => null);
+  const [order, t] = await Promise.all([getAdminOrder(id).catch(() => null), getDictionary()]);
   if (!order) notFound();
 
   return (
     <div>
       <PageHeader
         title={order.orderNumber}
-        description={`Placed ${new Date(order.placedAt).toLocaleString("fr-DZ")} · IP ${order.ip ?? "—"}`}
+        description={`Passée le ${formatDateTimeFR(order.placedAt)} · IP ${order.ip ?? "—"}`}
         action={
           <div className="flex gap-2">
-            <OrderStatusBadge status={order.status} />
+            <OrderStatusBadge status={order.status} label={t.status[order.status]} />
             <RiskBadge level={order.riskLevel} />
             <Link href={`/admin/orders/${order.id}/print`} target="_blank" className="btn btn-ghost min-h-10 px-4 text-xs print:hidden">
-              Print slip
+              {t.admin.printSlip}
             </Link>
           </div>
         }
@@ -67,7 +68,7 @@ export default async function AdminOrderDetailPage({
                     <p className="text-sm font-medium">{item.productName}</p>
                     <p className="text-xs text-ink-muted">
                       {item.variantLabel ? `${item.variantLabel} · ` : ""}
-                      {item.sku ?? "no SKU"} · Qty {item.quantity}
+                      {item.sku ?? t.adminOrderDetail.noSku} · {t.adminOrderDetail.qty} {item.quantity}
                     </p>
                   </div>
                   <div className="text-right text-sm">
@@ -79,38 +80,38 @@ export default async function AdminOrderDetailPage({
             </ul>
             <dl className="mt-4 space-y-1.5 border-t hairline pt-4 text-sm">
               <div className="flex justify-between">
-                <dt className="text-ink-soft">Subtotal</dt>
+                <dt className="text-ink-soft">{t.adminOrderDetail.subtotal}</dt>
                 <dd className="tabular-nums">{formatDA(order.subtotal)}</dd>
               </div>
               {order.promotionDiscount > 0 && (
                 <div className="flex justify-between">
-                  <dt className="text-ink-soft">Promotion{order.promotion ? ` (${order.promotion.name})` : ""}</dt>
+                  <dt className="text-ink-soft">{t.adminOrderDetail.promotion}{order.promotion ? ` (${order.promotion.name})` : ""}</dt>
                   <dd className="tabular-nums">−{formatDA(order.promotionDiscount)}</dd>
                 </div>
               )}
               <div className="flex justify-between">
-                <dt className="text-ink-soft">Discount{order.coupon ? ` (${order.coupon.code})` : ""}</dt>
+                <dt className="text-ink-soft">{t.adminOrderDetail.discount}{order.coupon ? ` (${order.coupon.code})` : ""}</dt>
                 <dd className="tabular-nums">−{formatDA(order.discount)}</dd>
               </div>
               <div className="flex justify-between">
-                <dt className="text-ink-soft">Delivery</dt>
+                <dt className="text-ink-soft">{t.adminOrderDetail.delivery}</dt>
                 <dd className="tabular-nums">{formatDA(order.shipping)}</dd>
               </div>
               <div className="flex justify-between text-base font-medium">
-                <dt>Total</dt>
+                <dt>{t.adminOrderDetail.total}</dt>
                 <dd className="tabular-nums">{formatDA(order.total)}</dd>
               </div>
             </dl>
           </Card>
 
           <Card>
-            <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">Status history</h2>
+            <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminOrderDetail.statusHistory}</h2>
             <ol className="space-y-3">
               {order.statusHistory.map((entry) => (
                 <li key={entry.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-                  <OrderStatusBadge status={entry.status} />
+                  <OrderStatusBadge status={entry.status} label={t.status[entry.status]} />
                   <span className="text-xs text-ink-muted">
-                    {new Date(entry.createdAt).toLocaleString("fr-DZ")}
+                    {formatDateTimeFR(entry.createdAt)}
                     {entry.changedByUser ? ` · ${entry.changedByUser.name}` : ""}
                   </span>
                   {entry.note && <p className="w-full text-ink-soft">{entry.note}</p>}
@@ -120,9 +121,9 @@ export default async function AdminOrderDetailPage({
           </Card>
 
           <Card>
-            <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">Notifications</h2>
+            <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminOrderDetail.notifications}</h2>
             {order.notifications.length === 0 ? (
-              <p className="text-sm text-ink-muted">No notifications recorded for this order.</p>
+              <p className="text-sm text-ink-muted">{t.adminOrderDetail.noNotifications}</p>
             ) : (
               <ul className="space-y-2 text-sm">
                 {order.notifications.map((notification) => (
@@ -133,7 +134,7 @@ export default async function AdminOrderDetailPage({
                       {notification.status}
                     </span>
                     <span className="text-xs text-ink-muted">
-                      {new Date(notification.createdAt).toLocaleString("fr-DZ")}
+                      {formatDateTimeFR(notification.createdAt)}
                     </span>
                   </li>
                 ))}
@@ -144,7 +145,7 @@ export default async function AdminOrderDetailPage({
 
         <div className="space-y-4">
           <Card>
-            <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.14em]">Customer</h2>
+            <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.14em]">{t.adminOrderDetail.customer}</h2>
             <p className="font-medium">
               {order.firstName} {order.lastName}
             </p>
@@ -159,15 +160,15 @@ export default async function AdminOrderDetailPage({
           </Card>
 
           <Card>
-            <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.14em]">Change status</h2>
+            <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.14em]">{t.adminOrderDetail.changeStatus}</h2>
             <StatusChanger orderId={order.id} current={order.status} allowed={allowedNextStatuses(order.status)} />
           </Card>
 
           <Card>
-            <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.14em]">Internal</h2>
+            <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.14em]">{t.adminOrderDetail.internal}</h2>
             <NotesEditor orderId={order.id} initial={order.adminNotes} />
             <p className="mt-3 text-xs text-ink-muted">
-              Current: {ORDER_STATUS_LABELS[order.status].label} · {order.paymentMethod} · {order.deliveryMethod}
+              {t.adminOrderDetail.current}: {t.status[order.status]} · {order.paymentMethod} · {t.delivery[order.deliveryMethod]}
             </p>
           </Card>
         </div>

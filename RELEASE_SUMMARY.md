@@ -1,4 +1,4 @@
-# Josefinee — Historical Release Summary
+# Hanadi Store — Historical Release Summary
 
 > This document records the earlier premium storefront release. Its branch, commit, and seeded-flow metadata are historical snapshots, not the current repository state.
 
@@ -13,7 +13,7 @@
 
 ## Executive summary
 
-This release strengthens Josefinee across the complete commerce lifecycle:
+This release strengthens Hanadi Store across the complete commerce lifecycle:
 
 - Checkout pricing is authoritative, transactionally consistent, and resistant to overselling, duplicate checkout, stale carts, and coupon races.
 - Admin operations now follow least-privilege permission checks, audit logging, validation, and concurrency-safe order transitions.

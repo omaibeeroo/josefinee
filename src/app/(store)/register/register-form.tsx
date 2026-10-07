@@ -6,8 +6,10 @@ import { useRouter } from "next/navigation";
 import { mergeWishlistAction, registerAction } from "@/server/actions/engagement";
 import { clearGuestWishlist, readGuestWishlist } from "@/components/storefront/product";
 import { Button, Field, Input } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 
 export function RegisterForm() {
+  const { t } = useLocale();
   const router = useRouter();
   const [form, setForm] = useState({ firstName: "", lastName: "", email: "", phone: "", password: "" });
   const [error, setError] = useState<string | null>(null);
@@ -42,20 +44,20 @@ export function RegisterForm() {
   return (
     <form onSubmit={submit} noValidate className="mx-auto mt-8 max-w-md space-y-4 border hairline bg-white p-6 md:p-8">
       <div className="grid gap-4 sm:grid-cols-2">
-        <Field label="Prénom" required error={fields.firstName}>
+        <Field label={t.auth.firstName} required error={fields.firstName}>
           <Input value={form.firstName} onChange={(event) => set("firstName", event.target.value)} autoComplete="given-name" />
         </Field>
-        <Field label="Nom" required error={fields.lastName}>
+        <Field label={t.auth.lastName} required error={fields.lastName}>
           <Input value={form.lastName} onChange={(event) => set("lastName", event.target.value)} autoComplete="family-name" />
         </Field>
       </div>
-      <Field label="E-mail" required error={fields.email}>
+      <Field label={t.auth.email} required error={fields.email}>
         <Input type="email" value={form.email} onChange={(event) => set("email", event.target.value)} autoComplete="email" />
       </Field>
-      <Field label="Téléphone" required error={fields.phone} hint="Mobile algérien, ex. 0550 12 34 56">
+      <Field label={t.auth.phone} required error={fields.phone} hint={t.auth.phoneHint}>
         <Input value={form.phone} onChange={(event) => set("phone", event.target.value)} inputMode="tel" autoComplete="tel" />
       </Field>
-      <Field label="Mot de passe" required error={fields.password} hint="10+ caractères, majuscules et minuscules, un chiffre">
+      <Field label={t.auth.password} required error={fields.password} hint={t.auth.passwordHint}>
         <Input type="password" value={form.password} onChange={(event) => set("password", event.target.value)} autoComplete="new-password" />
       </Field>
       {error && (
@@ -64,12 +66,12 @@ export function RegisterForm() {
         </p>
       )}
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Création…" : "Créer mon compte"}
+        {pending ? t.auth.creating : t.auth.createAccount}
       </Button>
       <p className="text-center text-sm text-ink-soft">
-        Déjà un compte ?{" "}
+        {t.auth.hasAccount}{" "}
         <Link href="/login" className="underline underline-offset-2">
-          Se connecter
+          {t.auth.signIn}
         </Link>
       </p>
     </form>

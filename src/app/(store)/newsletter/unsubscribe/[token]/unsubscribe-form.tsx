@@ -2,8 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { unsubscribeAction } from "@/server/actions/engagement";
+import { useLocale } from "@/lib/i18n/provider";
 
 export function UnsubscribeForm({ token }: { token: string }) {
+  const { t } = useLocale();
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
@@ -13,10 +15,10 @@ export function UnsubscribeForm({ token }: { token: string }) {
     startTransition(() => {
       void unsubscribeAction(token)
         .then((result) => {
-          if (result.ok) setMessage("Votre désinscription est confirmée. Vous ne recevrez plus notre newsletter.");
+          if (result.ok) setMessage(t.unsubscribe.confirmed);
           else setError(result.error);
         })
-        .catch(() => setError("La demande n’a pas pu aboutir. Veuillez réessayer."));
+        .catch(() => setError(t.unsubscribe.failed));
     });
   }
 
@@ -25,7 +27,7 @@ export function UnsubscribeForm({ token }: { token: string }) {
   return (
     <div className="mt-8">
       <button type="button" className="btn btn-primary" disabled={pending} onClick={confirmUnsubscribe}>
-        {pending ? "Désinscription…" : "Confirmer ma désinscription"}
+        {pending ? t.unsubscribe.working : t.unsubscribe.confirmCta}
       </button>
       {error && <p className="mt-3 text-sm text-[#9e342e]" role="alert">{error}</p>}
     </div>

@@ -4,11 +4,11 @@ import { cookies, headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { extractClientIp } from "@/lib/request-ip";
 import { generateToken, hashToken } from "./tokens";
+export const ADMIN_COOKIE = "hanadi_admin_session";
 
-export const ADMIN_COOKIE = "nur_admin_session";
-const CUSTOMER_COOKIE = "nur_customer_session";
-export const CART_COOKIE = "nur_cart";
+const CUSTOMER_COOKIE = "hanadi_customer_session";
 
+export const CART_COOKIE = "hanadi_cart";
 const ADMIN_SESSION_DAYS = 7;
 const CUSTOMER_SESSION_DAYS = 30;
 

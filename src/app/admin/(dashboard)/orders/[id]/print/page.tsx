@@ -2,7 +2,8 @@ import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/auth/rbac";
 import { getAdminOrder } from "@/server/actions/admin-orders";
 import { getSettings } from "@/lib/settings";
-import { formatDA } from "@/lib/money";
+import { formatDA, formatDateTimeFR } from "@/lib/money";
+import { getDictionary } from "@/lib/i18n/server";
 import { formatPhoneDisplay } from "@/lib/phone";
 import { headers } from "next/headers";
 
@@ -13,7 +14,7 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const order = await getAdminOrder(id).catch(() => null);
   if (!order) notFound();
-  const [settings, requestHeaders] = await Promise.all([getSettings(), headers()]);
+  const [settings, requestHeaders, t] = await Promise.all([getSettings(), headers(), getDictionary()]);
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
 
   return (
@@ -24,15 +25,15 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
           <p className="text-xs">{settings.general.phone} · {settings.general.email}</p>
         </div>
         <div className="text-right">
-          <p className="text-lg font-bold">PACKING SLIP</p>
+          <p className="text-lg font-bold">{t.adminPrint.packingSlip}</p>
           <p>{order.orderNumber}</p>
-          <p className="text-xs">{new Date(order.placedAt).toLocaleString("fr-DZ")}</p>
+          <p className="text-xs">{formatDateTimeFR(order.placedAt)}</p>
         </div>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-4">
         <div>
-          <p className="font-bold">Deliver to</p>
+          <p className="font-bold">{t.adminPrint.deliverTo}</p>
           <p>
             {order.firstName} {order.lastName}
           </p>
@@ -40,23 +41,23 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
           <p>
             {order.address}, {order.communeName}, {order.wilayaName}
           </p>
-          {order.notes && <p className="mt-1 italic">Note: {order.notes}</p>}
+          {order.notes && <p className="mt-1 italic">{t.adminPrint.note} {order.notes}</p>}
         </div>
         <div className="text-right">
-          <p className="font-bold">Payment</p>
-          <p>Cash on delivery</p>
-          <p className="mt-2 text-xl font-bold">Collect: {formatDA(order.total)}</p>
+          <p className="font-bold">{t.adminPrint.payment}</p>
+          <p>{t.adminPrint.cod}</p>
+          <p className="mt-2 text-xl font-bold">{t.adminPrint.collect} {formatDA(order.total)}</p>
         </div>
       </div>
 
       <table className="mt-6 w-full border-collapse text-sm">
         <thead>
           <tr className="border-b-2 border-black text-left">
-            <th className="py-2">Product</th>
-            <th className="py-2">SKU</th>
-            <th className="py-2 text-right">Qty</th>
-            <th className="py-2 text-right">Unit</th>
-            <th className="py-2 text-right">Line</th>
+            <th className="py-2">{t.adminPrint.product}</th>
+            <th className="py-2">{t.adminPrint.sku}</th>
+            <th className="py-2 text-right">{t.adminPrint.qty}</th>
+            <th className="py-2 text-right">{t.adminPrint.unit}</th>
+            <th className="py-2 text-right">{t.adminPrint.line}</th>
           </tr>
         </thead>
         <tbody>
@@ -76,14 +77,14 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
       </table>
 
       <div className="mt-4 space-y-1 text-right">
-        <p>Subtotal: {formatDA(order.subtotal)}</p>
-        {order.promotionDiscount > 0 && <p>Promotion: −{formatDA(order.promotionDiscount)}</p>}
-        <p>Discount: −{formatDA(order.discount)}</p>
-        <p>Delivery: {formatDA(order.shipping)}</p>
-        <p className="text-lg font-bold">Total: {formatDA(order.total)}</p>
+        <p>{t.adminPrint.subtotal}: {formatDA(order.subtotal)}</p>
+        {order.promotionDiscount > 0 && <p>{t.adminPrint.promotion}: −{formatDA(order.promotionDiscount)}</p>}
+        <p>{t.adminPrint.discount}: −{formatDA(order.discount)}</p>
+        <p>{t.adminPrint.delivery}: {formatDA(order.shipping)}</p>
+        <p className="text-lg font-bold">{t.adminPrint.total}: {formatDA(order.total)}</p>
       </div>
 
-      <p className="mt-8 border-t border-black/20 pt-2 text-xs">☐ Packed &nbsp;&nbsp; ☐ Checked &nbsp;&nbsp; Signature: __________</p>
+      <p className="mt-8 border-t border-black/20 pt-2 text-xs">☐ {t.adminPrint.packed} &nbsp;&nbsp; ☐ {t.adminPrint.checked} &nbsp;&nbsp; {t.adminPrint.signature} __________</p>
 
       <script nonce={nonce} dangerouslySetInnerHTML={{ __html: "window.addEventListener('load', () => window.print());" }} />
     </div>

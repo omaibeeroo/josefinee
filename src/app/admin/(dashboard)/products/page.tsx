@@ -3,6 +3,7 @@ import Image from "next/image";
 import { requirePermission } from "@/lib/auth/rbac";
 import { listAdminProducts } from "@/server/actions/admin-catalog";
 import { PageHeader } from "@/components/admin/ui";
+import { getDictionary } from "@/lib/i18n/server";
 import { formatDA } from "@/lib/money";
 import { ProductRowActions } from "./row-actions";
 
@@ -22,30 +23,30 @@ export default async function AdminProductsPage({
     status: pick(params.status) || undefined,
     page: pick(params.page) ? Number.parseInt(pick(params.page), 10) || 1 : 1,
   };
-  const result = await listAdminProducts(filters);
+  const [result, t] = await Promise.all([listAdminProducts(filters), getDictionary()]);
 
   return (
     <div>
       <PageHeader
-        title="Products"
-        description={`${result.total} products.`}
+        title={t.adminProducts.title}
+        description={t.adminPages.productsDesc.replace("{total}", String(result.total))}
         action={
           <Link href="/admin/products/new" className="btn btn-primary min-h-10 px-5 text-xs">
-            New product
+            {t.adminProducts.newProduct}
           </Link>
         }
       />
 
       <form method="get" className="mb-4 flex flex-col gap-2 border hairline bg-white p-4 sm:flex-row">
-        <input name="search" defaultValue={filters.search} placeholder="Name, SKU, slug…" className="field min-h-10 flex-1" aria-label="Search products" />
-        <select name="status" defaultValue={filters.status ?? ""} className="field min-h-10 sm:w-48" aria-label="Status">
-          <option value="">All statuses</option>
-          <option value="ACTIVE">Active</option>
-          <option value="DRAFT">Draft</option>
-          <option value="ARCHIVED">Archived</option>
+        <input name="search" defaultValue={filters.search} placeholder={t.adminProducts.searchPh} className="field min-h-10 flex-1" aria-label={t.adminProducts.searchLabel} />
+        <select name="status" defaultValue={filters.status ?? ""} className="field min-h-10 sm:w-48" aria-label={t.adminProducts.status}>
+          <option value="">{t.adminProducts.allStatuses}</option>
+          <option value="ACTIVE">{t.adminProducts.active}</option>
+          <option value="DRAFT">{t.adminProducts.draft}</option>
+          <option value="ARCHIVED">{t.adminProducts.archived}</option>
         </select>
         <button type="submit" className="btn btn-primary min-h-10 px-6 text-xs">
-          Search
+          {t.adminProducts.search}
         </button>
       </form>
 
@@ -53,12 +54,12 @@ export default async function AdminProductsPage({
         <table className="w-full min-w-[860px] text-left text-sm">
           <thead>
             <tr className="border-b hairline text-xs uppercase tracking-[0.1em] text-ink-muted">
-              <th className="px-4 py-3">Product</th>
-              <th className="px-4 py-3">Price</th>
-              <th className="px-4 py-3">Stock</th>
-              <th className="px-4 py-3">Sold</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="px-4 py-3">{t.adminProducts.colProduct}</th>
+              <th className="px-4 py-3">{t.adminProducts.colPrice}</th>
+              <th className="px-4 py-3">{t.adminProducts.colStock}</th>
+              <th className="px-4 py-3">{t.adminProducts.colSold}</th>
+              <th className="px-4 py-3">{t.adminProducts.colStatus}</th>
+              <th className="px-4 py-3 text-right">{t.adminProducts.colActions}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -76,7 +77,7 @@ export default async function AdminProductsPage({
                         {product.name}
                       </Link>
                       <p className="text-xs text-ink-muted">
-                        {product.sku ?? "no SKU"} · {product.category?.name ?? "uncategorized"} · {product.variantCount} variants
+                        {product.sku ?? t.adminOrderDetail.noSku} · {product.category?.name ?? t.adminProducts.uncategorized} · {product.variantCount} {t.adminProducts.variants}
                       </p>
                     </div>
                   </div>
@@ -97,7 +98,7 @@ export default async function AdminProductsPage({
           </tbody>
         </table>
         {result.items.length === 0 && (
-          <p className="p-8 text-center text-sm text-ink-muted">No products found.</p>
+          <p className="p-8 text-center text-sm text-ink-muted">{t.adminProducts.empty}</p>
         )}
       </div>
 

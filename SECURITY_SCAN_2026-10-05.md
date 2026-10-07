@@ -1,4 +1,4 @@
-# Josefinee Main-Branch Security Scan
+# Hanadi Store Main-Branch Security Scan
 
 **Repository:** `omaibeeroo/josefinee`  
 **Branch/commit:** `main` / `4e5837e` (`Merge security remediation fixes`)  

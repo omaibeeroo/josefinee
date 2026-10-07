@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useCart } from "@/components/storefront/cart-ui";
 import { toggleWishlistAction } from "@/server/actions/engagement";
 import { Button, Price } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 import { ProductImage } from "@/components/storefront/product";
 import { X } from "lucide-react";
 
@@ -22,6 +23,7 @@ export type WishlistRow = {
 };
 
 export function WishlistList({ initial }: { initial: WishlistRow[] }) {
+  const { t } = useLocale();
   const router = useRouter();
   const { add } = useCart();
   const [items, setItems] = useState(initial);
@@ -41,10 +43,10 @@ export function WishlistList({ initial }: { initial: WishlistRow[] }) {
   if (items.length === 0) {
     return (
       <div className="py-10 text-center">
-        <p className="font-display text-2xl">Rien de sauvegardé pour l’instant</p>
-        <p className="mt-2 text-ink-soft">Touchez le cœur sur un article pour le garder ici.</p>
+        <p className="font-display text-2xl">{t.account.savedEmpty}</p>
+        <p className="mt-2 text-ink-soft">{t.account.savedHint}</p>
         <Link href="/shop" className="btn btn-primary mt-6">
-          Découvrir nos pièces
+          {t.common.discoverShop}
         </Link>
       </div>
     );
@@ -62,7 +64,7 @@ export function WishlistList({ initial }: { initial: WishlistRow[] }) {
               <Link href={`/products/${item.slug}`} className="text-sm font-medium hover:underline">
                 {item.name}
               </Link>
-              <button type="button" aria-label={`Retirer ${item.name}`} onClick={() => void remove(item.productId)} className="p-1 text-ink-muted hover:text-ink">
+              <button type="button" aria-label={`${t.cart.removeItem} ${item.name}`} onClick={() => void remove(item.productId)} className="p-1 text-ink-muted hover:text-ink">
                 <X size={16} />
               </button>
             </div>
@@ -72,10 +74,10 @@ export function WishlistList({ initial }: { initial: WishlistRow[] }) {
             <div className="mt-auto pt-2">
               {item.inStock && item.defaultVariantId ? (
                 <Button size="sm" variant="outline" onClick={() => void moveToBag(item)}>
-                  Ajouter au panier
+                  {t.account.moveToBag}
                 </Button>
               ) : (
-                <p className="text-xs uppercase tracking-[0.14em] text-ink-muted">Épuisé</p>
+                <p className="text-xs uppercase tracking-[0.14em] text-ink-muted">{t.product.soldOut}</p>
               )}
             </div>
           </div>

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requirePermission } from "@/lib/auth/rbac";
 import { listInventory } from "@/server/actions/admin-inventory";
 import { PageHeader } from "@/components/admin/ui";
+import { getDictionary } from "@/lib/i18n/server";
 import { StockAdjuster } from "./stock-adjuster";
 import { cn } from "@/lib/utils";
 
@@ -21,23 +22,23 @@ export default async function AdminInventoryPage({
     lowOnly: pick(params.low) === "1",
     page: pick(params.page) ? Number.parseInt(pick(params.page), 10) || 1 : 1,
   };
-  const result = await listInventory(filters);
+  const [result, t] = await Promise.all([listInventory(filters), getDictionary()]);
 
   return (
     <div>
-      <PageHeader title="Stock" description={`${result.total} variantes suivies. Chaque mouvement de stock est journalisé avec un motif.`} />
+      <PageHeader title={t.adminPages.inventoryTitle} description={t.adminPages.inventoryDesc.replace("{total}", String(result.total))} />
 
       <form method="get" className="mb-4 flex flex-col gap-2 border hairline bg-white p-4 sm:flex-row sm:items-center">
-        <input name="search" defaultValue={filters.search} placeholder="SKU or product…" className="field min-h-10 flex-1" aria-label="Search inventory" />
+        <input name="search" defaultValue={filters.search} placeholder={t.adminInventoryTable.searchPh} className="field min-h-10 flex-1" aria-label={t.adminInventoryTable.searchLabel} />
         <label className="flex items-center gap-2 text-sm">
           <input type="checkbox" name="low" value="1" defaultChecked={filters.lowOnly} className="h-4 w-4 accent-[#1c1a17]" />
-          Low stock only
+          {t.adminInventoryTable.lowOnly}
         </label>
         <button type="submit" className="btn btn-primary min-h-10 px-6 text-xs">
-          Search
+          {t.adminInventoryTable.search}
         </button>
         <Link href="/admin/inventory" className="btn btn-ghost min-h-10 px-4 text-xs">
-          Clear
+          {t.adminInventoryTable.clear}
         </Link>
       </form>
 
@@ -45,11 +46,11 @@ export default async function AdminInventoryPage({
         <table className="w-full min-w-[900px] text-left text-sm">
           <thead>
             <tr className="border-b hairline text-xs uppercase tracking-[0.1em] text-ink-muted">
-              <th className="px-4 py-3">Product</th>
-              <th className="px-4 py-3">SKU</th>
-              <th className="px-4 py-3">Available</th>
-              <th className="px-4 py-3">Stock</th>
-              <th className="px-4 py-3">Adjust</th>
+              <th className="px-4 py-3">{t.adminInventoryTable.colProduct}</th>
+              <th className="px-4 py-3">{t.adminInventoryTable.colSku}</th>
+              <th className="px-4 py-3">{t.adminInventoryTable.colAvailable}</th>
+              <th className="px-4 py-3">{t.adminInventoryTable.colStock}</th>
+              <th className="px-4 py-3">{t.adminInventoryTable.colAdjust}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -59,7 +60,7 @@ export default async function AdminInventoryPage({
                   <Link href={`/admin/products/${item.productId}`} className="font-medium hover:underline">
                     {item.productName}
                   </Link>
-                  <span className="block text-xs text-ink-muted">{item.optionLabel ?? "Default"}</span>
+                  <span className="block text-xs text-ink-muted">{item.optionLabel ?? t.adminInventoryTable.defaultVariant}</span>
                 </td>
                 <td className="px-4 py-3 text-xs">{item.sku}</td>
                 <td className={cn("px-4 py-3 font-semibold tabular-nums", item.available === 0 && "text-[#9e342e]")}>

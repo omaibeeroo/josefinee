@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { deleteAddressAction, saveAddressAction } from "@/server/actions/account";
 import { getCommunesAction } from "@/server/actions/checkout";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 import type { CommuneOption, WilayaOption } from "@/server/delivery";
 
 export type AddressRow = {
@@ -28,6 +29,7 @@ export function AddressesManager({
   initial: AddressRow[];
   wilayas: WilayaOption[];
 }) {
+  const { t } = useLocale();
   const router = useRouter();
   const [editing, setEditing] = useState<Partial<AddressRow> & { id?: string } | null>(null);
   const [communes, setCommunes] = useState<CommuneOption[]>([]);
@@ -84,13 +86,13 @@ export function AddressesManager({
     <div>
       <div className="mb-4 flex justify-end">
         <Button size="sm" variant="outline" onClick={() => void startEdit()}>
-          Ajouter une adresse
+          {t.account.addAddress}
         </Button>
       </div>
 
       {initial.length === 0 && !editing && (
         <p className="border hairline bg-white p-6 text-center text-ink-soft">
-          Aucune adresse enregistrée. Ajoutez-en une pour commander plus vite.
+          {t.account.noAddress}
         </p>
       )}
 
@@ -101,7 +103,7 @@ export function AddressesManager({
               <p className="font-medium">
                 {address.label || `${address.firstName} ${address.lastName}`}
                 {address.isDefault && (
-                  <span className="ml-2 text-[0.6875rem] uppercase tracking-[0.14em] text-gold-dark">Par défaut</span>
+                  <span className="ml-2 text-[0.6875rem] uppercase tracking-[0.14em] text-gold-dark">{t.account.isDefault}</span>
                 )}
               </p>
             </div>
@@ -113,10 +115,10 @@ export function AddressesManager({
             </p>
             <div className="mt-3 flex gap-3 text-xs uppercase tracking-[0.14em]">
               <button type="button" onClick={() => void startEdit(address)} className="underline underline-offset-2">
-                Modifier
+                {t.account.edit}
               </button>
               <button type="button" onClick={() => void remove(address.id)} className="text-ink-muted underline underline-offset-2">
-                Supprimer
+                {t.account.delete}
               </button>
             </div>
           </li>
@@ -125,25 +127,25 @@ export function AddressesManager({
 
       {editing && (
         <form onSubmit={submit} className="mt-6 space-y-4 border hairline bg-white p-6">
-          <h2 className="font-display text-2xl">{editing.id ? "Modifier l’adresse" : "Nouvelle adresse"}</h2>
-          <Field label="Libellé (optionnel)">
-            <Input value={editing.label ?? ""} onChange={(event) => setEditing({ ...editing, label: event.target.value })} placeholder="Domicile, travail…" />
+          <h2 className="font-display text-2xl">{editing.id ? t.account.editAddress : t.account.newAddress}</h2>
+          <Field label={t.account.labelOptional}>
+            <Input value={editing.label ?? ""} onChange={(event) => setEditing({ ...editing, label: event.target.value })} placeholder={t.account.labelHint} />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Prénom">
+            <Field label={t.auth.firstName}>
               <Input value={editing.firstName ?? ""} onChange={(event) => setEditing({ ...editing, firstName: event.target.value })} required />
             </Field>
-            <Field label="Nom">
+            <Field label={t.auth.lastName}>
               <Input value={editing.lastName ?? ""} onChange={(event) => setEditing({ ...editing, lastName: event.target.value })} required />
             </Field>
           </div>
-          <Field label="Téléphone">
+          <Field label={t.auth.phone}>
             <Input value={editing.phone ?? ""} onChange={(event) => setEditing({ ...editing, phone: event.target.value })} inputMode="tel" required />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Wilaya">
+            <Field label={t.account.wilaya}>
               <Select value={editing.wilayaId ?? ""} onChange={(event) => void onWilayaChange(event.target.value)} required>
-                <option value="">Choisir…</option>
+                <option value="">{t.account.choose}</option>
                 {wilayas.map((wilaya) => (
                   <option key={wilaya.id} value={wilaya.id}>
                     {String(wilaya.code).padStart(2, "0")} — {wilaya.name}
@@ -151,9 +153,9 @@ export function AddressesManager({
                 ))}
               </Select>
             </Field>
-            <Field label="Commune">
+            <Field label={t.account.commune}>
               <Select value={editing.communeId ?? ""} onChange={(event) => setEditing({ ...editing, communeId: event.target.value })} required>
-                <option value="">Choisir…</option>
+                <option value="">{t.account.choose}</option>
                 {communes.map((commune) => (
                   <option key={commune.id} value={commune.id}>
                     {commune.name}
@@ -162,7 +164,7 @@ export function AddressesManager({
               </Select>
             </Field>
           </div>
-          <Field label="Adresse">
+          <Field label={t.account.address}>
             <Textarea value={editing.address ?? ""} onChange={(event) => setEditing({ ...editing, address: event.target.value })} required rows={2} />
           </Field>
           <label className="flex items-center gap-2 text-sm">
@@ -172,7 +174,7 @@ export function AddressesManager({
               onChange={(event) => setEditing({ ...editing, isDefault: event.target.checked })}
               className="h-4 w-4 accent-[#1c1a17]"
             />
-            Définir par défaut
+            {t.account.setDefault}
           </label>
           {error && (
             <p className="text-sm text-[#9e342e]" role="alert">
@@ -181,10 +183,10 @@ export function AddressesManager({
           )}
           <div className="flex gap-2">
             <Button type="submit" disabled={pending}>
-              {pending ? "Enregistrement…" : "Enregistrer"}
+              {pending ? t.account.saving : t.account.saveAddress}
             </Button>
             <Button type="button" variant="ghost" onClick={() => setEditing(null)}>
-              Annuler
+              {t.common.cancel}
             </Button>
           </div>
         </form>

@@ -9,14 +9,18 @@ import { CatalogToolbar, DesktopFilters, ProductGrid } from "@/components/storef
 import { EmptyState } from "@/components/ui";
 import { Pagination } from "@/components/pagination";
 import { parseCatalogParams, withPage } from "../catalog-helpers";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Recherche",
-  description: "Recherchez bijoux, sacs et accessoires.",
-  robots: { index: false, follow: true },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getDictionary();
+  return {
+    title: t.search.title,
+    description: t.search.description,
+    robots: { index: false, follow: true },
+  };
+}
 
 export default async function SearchPage({
   searchParams,
@@ -37,27 +41,27 @@ export default async function SearchPage({
   }
 
   const query = parseCatalogParams(params);
-  const [result, facets] = term
-    ? await Promise.all([getStorefrontProducts({ ...query, search: term }), getFilterFacets()])
-    : [{ items: [], total: 0, page: 1, pageSize: 12, totalPages: 1 }, { colors: [], sizes: [], minPrice: 0, maxPrice: 0 }];
+  const [result, facets, t] = term
+    ? await Promise.all([getStorefrontProducts({ ...query, search: term }), getFilterFacets(), getDictionary()])
+    : [{ items: [], total: 0, page: 1, pageSize: 12, totalPages: 1 }, { colors: [], sizes: [], minPrice: 0, maxPrice: 0 }, await getDictionary()];
 
   return (
     <div className="container-luxe py-10 md:py-14">
       {term && <PixelEvent name="Search" params={{ search_string: term }} />}
       <div className="mb-8 text-center">
-        <p className="eyebrow mb-2">Recherche</p>
+        <p className="eyebrow mb-2">{t.search.title}</p>
         <h1 className="font-display text-4xl font-medium md:text-5xl">
-          {term ? `Résultats pour « ${term} »` : "Rechercher dans la boutique"}
+          {term ? t.search.resultsFor.replace("{term}", term) : t.search.searchStore}
         </h1>
       </div>
 
       {!term ? (
         <EmptyState
-          title="Que cherchez-vous ?"
-          message="Essayez « collier », « sac » ou « créoles dorées »."
+          title={t.search.nothingLooking}
+          message={t.search.tryExamples}
           action={
             <Link href="/shop" className="btn btn-outline">
-              Tout parcourir
+              {t.common.browseAll}
             </Link>
           }
         />
@@ -69,11 +73,11 @@ export default async function SearchPage({
             <div className="min-w-0 flex-1">
               {result.items.length === 0 ? (
                 <EmptyState
-                  title="Aucun résultat"
-                  message="Essayez un autre mot, ou parcourez toute la collection."
+                  title={t.search.noMatches}
+                  message={t.search.noMatchesHint}
                   action={
                     <Link href="/shop" className="btn btn-outline">
-                      Toute la boutique
+                      {t.footer.shopAll}
                     </Link>
                   }
                 />
@@ -84,6 +88,8 @@ export default async function SearchPage({
                     page={result.page}
                     totalPages={result.totalPages}
                     href={(page) => `/search${withPage({ ...params, q: term }, page)}`}
+                    prevLabel={t.pagination.previous}
+                    nextLabel={t.pagination.next}
                   />
                 </>
               )}

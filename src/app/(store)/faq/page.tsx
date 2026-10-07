@@ -1,15 +1,17 @@
 import type { Metadata } from "next";
 import { prisma } from "@/lib/prisma";
+import { getDictionary } from "@/lib/i18n/server";
 import { Accordion } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "FAQ",
-  description: "Commande, livraison, paiement à la livraison et retours — réponses aux questions fréquentes.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getDictionary();
+  return { title: t.faq.title, description: t.faq.description };
+}
 
 export default async function FaqPage() {
+  const t = await getDictionary();
   const items = await prisma.faqItem
     .findMany({
       where: { isPublished: true },
@@ -28,8 +30,8 @@ export default async function FaqPage() {
   return (
     <div className="container-luxe max-w-3xl py-12 md:py-16">
       <div className="mb-10 text-center">
-        <p className="eyebrow mb-2">Aide</p>
-        <h1 className="font-display text-4xl font-medium md:text-5xl">Questions fréquentes</h1>
+        <p className="eyebrow mb-2">{t.faq.eyebrow}</p>
+        <h1 className="font-display text-4xl font-medium md:text-5xl">{t.faq.title}</h1>
       </div>
       {[...groups.entries()].map(([category, list]) => (
         <section key={category} className="mb-10" aria-label={category}>
@@ -43,7 +45,7 @@ export default async function FaqPage() {
         </section>
       ))}
       {items.length === 0 && (
-        <p className="text-center text-ink-soft">Aucune question pour l’instant — contactez-nous directement.</p>
+        <p className="text-center text-ink-soft">{t.faq.empty}</p>
       )}
     </div>
   );

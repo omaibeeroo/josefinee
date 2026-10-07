@@ -3,19 +3,20 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-
-const TABS = [
-  { href: "/account", label: "Aperçu", exact: true },
-  { href: "/account/orders", label: "Commandes" },
-  { href: "/account/wishlist", label: "Favoris" },
-  { href: "/account/addresses", label: "Adresses" },
-  { href: "/account/security", label: "Sécurité" },
-];
+import { useLocale } from "@/lib/i18n/provider";
 
 export function AccountTabs() {
+  const { t } = useLocale();
   const pathname = usePathname();
+  const TABS = [
+    { href: "/account", label: t.account.overview, exact: true },
+    { href: "/account/orders", label: t.account.orders },
+    { href: "/account/wishlist", label: t.account.wishlist },
+    { href: "/account/addresses", label: t.account.addresses },
+    { href: "/account/security", label: t.account.security },
+  ];
   return (
-    <nav aria-label="Compte" className="flex gap-1 overflow-x-auto border-b hairline">
+    <nav aria-label={t.account.account} className="flex gap-1 overflow-x-auto border-b hairline">
       {TABS.map((tab) => {
         const active = tab.exact ? pathname === tab.href : pathname.startsWith(tab.href);
         return (

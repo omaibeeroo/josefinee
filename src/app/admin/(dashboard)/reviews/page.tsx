@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requirePermission } from "@/lib/auth/rbac";
 import { listReviewsAdmin } from "@/server/actions/admin-catalog";
 import { PageHeader } from "@/components/admin/ui";
+import { getDictionary } from "@/lib/i18n/server";
+import { formatDateTimeFR } from "@/lib/money";
 import { ReviewActions, Stars } from "./review-actions";
 
 export const dynamic = "force-dynamic";
@@ -15,16 +17,22 @@ export default async function AdminReviewsPage({
   const params = await searchParams;
   const raw = params.status;
   const status = (Array.isArray(raw) ? raw[0] : raw) || "PENDING";
-  const reviews = await listReviewsAdmin(status === "ALL" ? undefined : status);
+  const [reviews, t] = await Promise.all([listReviewsAdmin(status === "ALL" ? undefined : status), getDictionary()]);
+  const tabLabels: Record<string, string> = {
+    PENDING: t.adminPages.tabPending,
+    APPROVED: t.adminPages.tabApproved,
+    REJECTED: t.adminPages.tabRejected,
+    ALL: t.adminPages.tabAll,
+  };
 
   return (
     <div>
       <PageHeader
-        title="Reviews"
-        description="All reviews require moderation before appearing on the store."
+        title={t.adminPages.reviewsTitle}
+        description={t.adminPages.reviewsDesc}
         action={
-          <div className="flex gap-1 border hairline bg-white p-1" role="group" aria-label="Review status">
-            {["PENDING", "APPROVED", "REJECTED", "ALL"].map((option) => (
+          <div className="flex gap-1 border hairline bg-white p-1" role="group" aria-label={t.adminPages.reviewStatus}>
+            {(["PENDING", "APPROVED", "REJECTED", "ALL"] as const).map((option) => (
               <Link
                 key={option}
                 href={`/admin/reviews?status=${option}`}
@@ -33,7 +41,7 @@ export default async function AdminReviewsPage({
                   status === option ? "bg-ink text-ivory" : "text-ink-soft hover:text-ink"
                 }`}
               >
-                {option}
+                {tabLabels[option] ?? option}
               </Link>
             ))}
           </div>
@@ -56,8 +64,8 @@ export default async function AdminReviewsPage({
             </div>
             <p className="mt-2 text-sm text-ink-soft">{review.body}</p>
             <p className="mt-2 text-xs text-ink-muted">
-              {review.authorName} · {new Date(review.createdAt).toLocaleString("fr-DZ")}
-              {review.isVerifiedPurchase ? " · Verified purchase" : ""}
+                  {review.authorName} · {formatDateTimeFR(review.createdAt)}
+                  {review.isVerifiedPurchase ? ` · ${t.product.verified}` : ""}
             </p>
           </li>
         ))}

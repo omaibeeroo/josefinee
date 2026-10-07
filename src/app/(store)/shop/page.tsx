@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getFilterFacets, getStorefrontProducts } from "@/server/catalog";
+import { getDictionary } from "@/lib/i18n/server";
 import { CatalogToolbar, DesktopFilters, ProductGrid } from "@/components/storefront/catalog-ui";
 import { EmptyState } from "@/components/ui";
 import { Pagination } from "@/components/pagination";
@@ -7,11 +8,14 @@ import { parseCatalogParams, withPage } from "../catalog-helpers";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Toute la boutique",
-  description: "Parcourez toute la collection — bijoux, sacs et accessoires livrés partout en Algérie.",
-  alternates: { canonical: "/shop" },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getDictionary();
+  return {
+    title: t.shop.title,
+    description: t.shop.description,
+    alternates: { canonical: "/shop" },
+  };
+}
 
 export default async function ShopPage({
   searchParams,
@@ -20,16 +24,17 @@ export default async function ShopPage({
 }) {
   const params = await searchParams;
   const query = parseCatalogParams(params);
-  const [result, facets] = await Promise.all([
+  const [result, facets, t] = await Promise.all([
     getStorefrontProducts(query),
     getFilterFacets(),
+    getDictionary(),
   ]);
 
   return (
     <div className="container-luxe py-10 md:py-14">
       <div className="mb-8 text-center">
-        <p className="eyebrow mb-2">La sélection</p>
-        <h1 className="font-display text-4xl font-medium md:text-5xl">Toute la boutique</h1>
+        <p className="eyebrow mb-2">{t.shop.eyebrow}</p>
+        <h1 className="font-display text-4xl font-medium md:text-5xl">{t.shop.title}</h1>
       </div>
 
       <CatalogToolbar facets={facets} total={result.total} />
@@ -39,13 +44,13 @@ export default async function ShopPage({
         <div className="min-w-0 flex-1">
           {result.items.length === 0 ? (
             <EmptyState
-              title="Aucun article trouvé"
-              message="Essayez de retirer certains filtres pour voir plus de pièces."
+              title={t.shop.emptyTitle}
+              message={t.shop.emptyHint}
             />
           ) : (
             <>
               <ProductGrid products={result.items} />
-              <Pagination page={result.page} totalPages={result.totalPages} href={(page) => `/shop${withPage(params, page)}`} />
+              <Pagination page={result.page} totalPages={result.totalPages} href={(page) => `/shop${withPage(params, page)}`} prevLabel={t.pagination.previous} nextLabel={t.pagination.next} />
             </>
           )}
         </div>

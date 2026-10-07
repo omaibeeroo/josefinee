@@ -4,8 +4,10 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { lookupOrderAction } from "@/server/actions/checkout";
 import { Button, Field, Input } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 
 export function TrackForm() {
+  const { t } = useLocale();
   const router = useRouter();
   const [orderNumber, setOrderNumber] = useState("");
   const [phone, setPhone] = useState("");
@@ -27,16 +29,16 @@ export function TrackForm() {
 
   return (
     <form onSubmit={submit} className="mx-auto mt-8 max-w-md space-y-4 border hairline bg-white p-6">
-      <Field label="Numéro de commande" required>
+      <Field label={t.track.orderNumber} required>
         <Input
           value={orderNumber}
           onChange={(event) => setOrderNumber(event.target.value)}
-          placeholder="JOS-2026-000123"
+          placeholder="HAN-2026-000123"
           autoComplete="off"
           required
         />
       </Field>
-      <Field label="Numéro de téléphone" required hint="Celui utilisé lors de la commande">
+      <Field label={t.track.phone} required hint={t.track.phoneHint}>
         <Input
           value={phone}
           onChange={(event) => setPhone(event.target.value)}
@@ -52,7 +54,7 @@ export function TrackForm() {
         </p>
       )}
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Recherche…" : "Suivre ma commande"}
+        {pending ? t.track.searching : t.track.submit}
       </Button>
     </form>
   );

@@ -12,14 +12,14 @@ import {
 } from "@/server/actions/checkout";
 import { previewCouponAction } from "@/server/actions/cart";
 import { Button, Field, Honeypot, Input, Select, Textarea } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 import { formatDA } from "@/lib/money";
-import { DELIVERY_METHOD_LABELS } from "@/lib/constants";
 import { pixelEvent } from "@/components/pixels";
 import type { CartLine } from "@/server/cart";
 import type { CommuneOption, DeliveryOption, WilayaOption } from "@/server/delivery";
+const CHECKOUT_DRAFT_KEY = "hanadi.checkout.draft.v1";
 
-const CHECKOUT_DRAFT_KEY = "nur.checkout.draft.v1";
-const CHECKOUT_IDEMPOTENCY_KEY = "nur.checkout.idempotency.v1";
+const CHECKOUT_IDEMPOTENCY_KEY = "hanadi.checkout.idempotency.v1";
 const checkoutDraftSchema = z.object({
   wilayaId: z.string().max(64),
   communeId: z.string().max(64),
@@ -47,6 +47,7 @@ export function CheckoutForm({
   promotion: { name: string; discount: number } | null;
 }) {
   const router = useRouter();
+  const { t } = useLocale();
   const idempotencyKey = useRef<string | null>(null);
 
   const [firstName, setFirstName] = useState("");
@@ -150,9 +151,7 @@ export function CheckoutForm({
           communeList.some((commune) => commune.id === current) ? current : "",
         );
         if (communeList.length === 0 || options.length === 0) {
-          setRegionError(
-            "Les options de livraison ne sont pas disponibles dans cette wilaya. Choisissez-en une autre ou contactez-nous.",
-          );
+          setRegionError(t.checkout.noRates);
         }
         if (options.length > 0 && !options.some((option) => option.method === deliveryMethod)) {
           setDeliveryMethod(options[0]?.method ?? defaultDeliveryMethod);
@@ -162,9 +161,7 @@ export function CheckoutForm({
         if (cancelled) return;
         setCommunes([]);
         setDeliveryOptions([]);
-        setRegionError(
-          "Impossible de charger les options de livraison. Réessayez ou choisissez une autre wilaya.",
-        );
+        setRegionError(t.checkout.ratesFailed);
       })
       .finally(() => {
         if (!cancelled) setLoadingRegion(false);
@@ -314,11 +311,10 @@ export function CheckoutForm({
             role="status"
           >
             <span>
-              Vos choix de livraison et votre code promo ont été restaurés dans cet onglet. Vos
-              coordonnées et votre adresse ne sont jamais enregistrées.
+              {t.checkout.draftRestored}
             </span>
             <Button type="button" variant="outline" size="sm" onClick={clearSavedDraft}>
-              Effacer les choix enregistrés
+              {t.checkout.clearDraft}
             </Button>
           </div>
         )}
@@ -333,11 +329,10 @@ export function CheckoutForm({
         {duplicateOrder && (
           <div className="border border-gold/50 bg-gold/10 px-4 py-3 text-sm" role="alert">
             <p className="font-medium">
-              Nous avons déjà reçu une commande similaire avec ce numéro.
+              {t.checkout.dupTitle}
             </p>
             <p className="mt-1 text-ink-soft">
-              La commande {duplicateOrder} vient d’être passée. Continuez uniquement si vous
-              souhaitez vraiment commander deux fois.
+              {t.checkout.dupBody.replace("{order}", duplicateOrder)}
             </p>
             <Button
               type="button"
@@ -350,17 +345,17 @@ export function CheckoutForm({
                 void doSubmit(true);
               }}
             >
-              Oui, passer une nouvelle commande
+              {t.checkout.dupConfirm}
             </Button>
           </div>
         )}
 
         <section aria-labelledby="contact-heading">
           <h2 id="contact-heading" className="mb-4 font-display text-2xl">
-            1 · Vos coordonnées
+            {t.checkout.stepContact}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Prénom" required error={fields.firstName}>
+            <Field label={t.auth.firstName} required error={fields.firstName}>
               <Input
                 value={firstName}
                 onChange={(event) => setFirstName(event.target.value)}
@@ -369,7 +364,7 @@ export function CheckoutForm({
                 required
               />
             </Field>
-            <Field label="Nom" required error={fields.lastName}>
+            <Field label={t.auth.lastName} required error={fields.lastName}>
               <Input
                 value={lastName}
                 onChange={(event) => setLastName(event.target.value)}
@@ -381,10 +376,10 @@ export function CheckoutForm({
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             <Field
-              label="Numéro de téléphone"
+              label={t.track.phone}
               required
               error={fields.phone}
-              hint="0550 12 34 56 — nous vous appellerons pour confirmer"
+              hint={t.checkout.phoneHint}
             >
               <Input
                 value={phone}
@@ -392,11 +387,11 @@ export function CheckoutForm({
                 invalid={Boolean(fields.phone)}
                 autoComplete="tel"
                 inputMode="tel"
-                placeholder="05 / 06 / 07 …"
+                placeholder={t.checkout.phonePlaceholder}
                 required
               />
             </Field>
-            <Field label="E-mail (facultatif)" error={fields.email}>
+            <Field label={t.checkout.emailOptional} error={fields.email}>
               <Input
                 type="email"
                 value={email}
@@ -410,16 +405,16 @@ export function CheckoutForm({
 
         <section aria-labelledby="delivery-heading" aria-busy={loadingRegion}>
           <h2 id="delivery-heading" className="mb-4 font-display text-2xl">
-            2 · Livraison
+            {t.checkout.stepDelivery}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Wilaya" required error={fields.wilayaId}>
+            <Field label={t.account.wilaya} required error={fields.wilayaId}>
               <Select
                 value={wilayaId}
                 onChange={(event) => setWilayaId(event.target.value)}
                 required
               >
-                <option value="">Choisissez votre wilaya…</option>
+                <option value="">{t.checkout.chooseWilaya}</option>
                 {wilayas.map((wilaya) => (
                   <option key={wilaya.id} value={wilaya.id}>
                     {String(wilaya.code).padStart(2, "0")} — {wilaya.name}
@@ -427,7 +422,7 @@ export function CheckoutForm({
                 ))}
               </Select>
             </Field>
-            <Field label="Commune" required error={fields.communeId}>
+            <Field label={t.account.commune} required error={fields.communeId}>
               <Select
                 value={communeId}
                 onChange={(event) => setCommuneId(event.target.value)}
@@ -436,10 +431,10 @@ export function CheckoutForm({
               >
                 <option value="">
                   {loadingRegion
-                    ? "Chargement…"
+                    ? t.checkout.loading
                     : wilayaId
-                      ? "Choisissez votre commune…"
-                      : "Choisissez d’abord une wilaya"}
+                      ? t.checkout.chooseCommune
+                      : t.checkout.chooseWilayaFirst}
                 </option>
                 {communes.map((commune) => (
                   <option key={commune.id} value={commune.id}>
@@ -463,17 +458,17 @@ export function CheckoutForm({
                   disabled={loadingRegion}
                   onClick={() => setRegionRetryToken((value) => value + 1)}
                 >
-                  {loadingRegion ? "Chargement…" : "Réessayer"}
+                  {loadingRegion ? t.checkout.loading : t.common.retry}
                 </Button>
               )}
             </div>
           )}
           <div className="mt-4">
             <Field
-              label="Adresse complète"
+              label={t.checkout.fullAddress}
               required
               error={fields.address}
-              hint="Rue, repère, immeuble…"
+              hint={t.checkout.addressHint}
             >
               <Textarea
                 value={address}
@@ -486,7 +481,7 @@ export function CheckoutForm({
 
           {deliveryOptions.length > 0 && (
             <fieldset className="mt-5">
-              <legend className="field-label">Mode de livraison</legend>
+              <legend className="field-label">{t.checkout.deliveryMode}</legend>
               <div className="grid gap-2 sm:grid-cols-2">
                 {deliveryOptions.map((option) => (
                   <label
@@ -508,16 +503,16 @@ export function CheckoutForm({
                       />
                       <span>
                         <span className="block font-medium">
-                          {DELIVERY_METHOD_LABELS[option.method]}
+                          {t.delivery[option.method]}
                         </span>
                         <span className="block text-xs text-ink-muted">
-                          {option.etaMinDays}–{option.etaMaxDays} jours
+                          {option.etaMinDays}–{option.etaMaxDays} {t.checkout.days}
                         </span>
                       </span>
                     </span>
-                    <span className="font-medium">
-                      {freeDelivery ? "Offerte" : formatDA(option.price)}
-                    </span>
+                      <span className="font-medium">
+                        {freeDelivery ? t.checkout.free : formatDA(option.price)}
+                      </span>
                   </label>
                 ))}
               </div>
@@ -525,12 +520,12 @@ export function CheckoutForm({
           )}
 
           <div className="mt-4">
-            <Field label="Instructions (facultatif)">
+            <Field label={t.checkout.notes}>
               <Textarea
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 rows={2}
-                placeholder="Une précision à nous communiquer ?"
+                placeholder={t.checkout.notesPlaceholder}
               />
             </Field>
           </div>
@@ -538,7 +533,7 @@ export function CheckoutForm({
 
         <section aria-labelledby="account-heading">
           <h2 id="account-heading" className="mb-4 font-display text-2xl">
-            3 · Dernière étape
+            {t.checkout.stepLast}
           </h2>
           <label className="flex cursor-pointer items-start gap-3 text-sm">
             <input
@@ -548,20 +543,20 @@ export function CheckoutForm({
               className="mt-0.5 h-4 w-4 accent-[#1c1a17]"
             />
             <span>
-              Créer un compte pour commander plus rapidement la prochaine fois
+              {t.checkout.createAccount}
               <span className="block text-xs text-ink-muted">
-                Une adresse e-mail et un mot de passe sont nécessaires.
+                {t.checkout.createAccountHint}
               </span>
             </span>
           </label>
           {createAccount && (
             <div className="mt-3">
-              <Field
-                label="Mot de passe"
-                required
-                error={fields.password}
-                hint="10 caractères minimum, majuscule, minuscule et chiffre"
-              >
+            <Field
+              label={t.auth.password}
+              required
+              error={fields.password}
+              hint={t.auth.passwordHint}
+            >
                 <Input
                   type="password"
                   value={password}
@@ -580,13 +575,13 @@ export function CheckoutForm({
               required
             />
             <span>
-              J’accepte les{" "}
+              {t.checkout.acceptPrefix}{" "}
               <Link href="/pages/terms" target="_blank" className="underline underline-offset-2">
-                conditions générales
+                {t.checkout.termsLink}
               </Link>{" "}
-              et la{" "}
+              {t.checkout.acceptMiddle}{" "}
               <Link href="/pages/returns" target="_blank" className="underline underline-offset-2">
-                politique de retour
+                {t.checkout.returnsLink}
               </Link>
               .
             </span>
@@ -606,12 +601,11 @@ export function CheckoutForm({
           className="w-full"
         >
           {submitting
-            ? "Validation de votre commande…"
-            : `Confirmer la commande · ${formatDA(total)}`}
+            ? t.checkout.submitPending
+            : t.checkout.submit.replace("{total}", formatDA(total))}
         </Button>
         <p className="text-center text-xs text-ink-muted">
-          Paiement à la livraison — vous réglerez {formatDA(total)} à la réception de votre
-          commande.
+          {t.checkout.payNotePrefix} {t.checkout.payNote.replace("{total}", formatDA(total))}
         </p>
       </form>
 
@@ -621,7 +615,7 @@ export function CheckoutForm({
       >
         <div className="checkout-summary border hairline bg-white p-6">
           <h2 className="text-xs font-medium uppercase tracking-[0.2em]">
-            Récapitulatif de la commande
+            {t.checkout.summary}
           </h2>
           <ul className="mt-4 space-y-4">
             {initialCart.items.map((item) => (
@@ -653,7 +647,7 @@ export function CheckoutForm({
 
           <div className="mt-5 border-t hairline pt-4">
             <label htmlFor="coupon" className="field-label">
-              Code promotionnel
+              {t.checkout.coupon}
             </label>
             <div className="flex gap-2">
               <Input
@@ -670,7 +664,7 @@ export function CheckoutForm({
                 disabled={couponPending}
                 onClick={() => void applyCoupon()}
               >
-                {couponPending ? "Vérification…" : "Appliquer"}
+                {couponPending ? t.checkout.checking : t.checkout.apply}
               </Button>
             </div>
             {couponMessage && (
@@ -682,34 +676,33 @@ export function CheckoutForm({
 
           <dl className="mt-4 space-y-1.5 border-t hairline pt-4 text-sm">
             <div className="flex justify-between">
-              <dt className="text-ink-soft">Sous-total</dt>
+              <dt className="text-ink-soft">{t.order.subtotal}</dt>
               <dd>{formatDA(initialCart.subtotal)}</dd>
             </div>
             {promotion && promotion.discount > 0 && (
               <div className="flex justify-between text-success">
-                <dt>Promotion ({promotion.name})</dt>
+                <dt>{t.order.promotion} ({promotion.name})</dt>
                 <dd>−{formatDA(promotion.discount)}</dd>
               </div>
             )}
             {discount > 0 && (
               <div className="flex justify-between text-success">
-                <dt>Remise{coupon ? ` (${coupon.code})` : ""}</dt>
+                <dt>{t.order.discount}{coupon ? ` (${coupon.code})` : ""}</dt>
                 <dd>−{formatDA(discount)}</dd>
               </div>
             )}
             <div className="flex justify-between">
-              <dt className="text-ink-soft">Livraison</dt>
-              <dd>{selectedRate ? (freeDelivery ? "Offerte" : formatDA(shipping)) : "—"}</dd>
+              <dt className="text-ink-soft">{t.order.delivery}</dt>
+              <dd>{selectedRate ? (freeDelivery ? t.checkout.free : formatDA(shipping)) : "—"}</dd>
             </div>
             <div className="flex justify-between border-t hairline pt-2 text-base font-medium">
-              <dt>Total à payer</dt>
+              <dt>{t.checkout.totalToPay}</dt>
               <dd>{formatDA(total)}</dd>
             </div>
           </dl>
           {remainingForFree > 0 && (
             <p className="mt-3 text-xs text-ink-muted">
-              Ajoutez {formatDA(remainingForFree)} à votre panier pour bénéficier de la livraison
-              offerte.
+              {t.checkout.freeShipPrefix} {formatDA(remainingForFree)} {t.checkout.freeShipHint}
             </p>
           )}
         </div>

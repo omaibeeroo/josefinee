@@ -1,16 +1,17 @@
 import { requirePermission } from "@/lib/auth/rbac";
 import { listCouponOptions, listCouponsAdmin } from "@/server/actions/admin-ops";
 import { PageHeader } from "@/components/admin/ui";
+import { getDictionary } from "@/lib/i18n/server";
 import { CouponManager } from "./coupon-manager";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminCouponsPage() {
   await requirePermission("coupons:read");
-  const [coupons, options] = await Promise.all([listCouponsAdmin(), listCouponOptions()]);
+  const [coupons, options, t] = await Promise.all([listCouponsAdmin(), listCouponOptions(), getDictionary()]);
   return (
     <div>
-      <PageHeader title="Coupons" description="Les codes sont validés côté serveur — le client ne décide jamais d’une remise." />
+      <PageHeader title={t.adminPages.couponsTitle} description={t.adminPages.couponsDesc} />
       <CouponManager
         coupons={coupons.map((coupon) => ({
           ...coupon,

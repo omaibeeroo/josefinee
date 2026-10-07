@@ -5,7 +5,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { subscribeNewsletterAction } from "@/server/actions/engagement";
+import { useLocale } from "@/lib/i18n/provider";
 import { Accordion, Honeypot, Price, Reveal } from "@/components/ui";
+import { formatNumber } from "@/lib/money";
 import type { HomepageSettings } from "@/lib/settings";
 import type { StoreProductCard } from "@/server/catalog";
 import { ProductImage } from "@/components/storefront/product";
@@ -13,18 +15,19 @@ import { ProductImage } from "@/components/storefront/product";
 /* ------------------------------------------------------------------ Hero */
 
 export function DiscoveryStrip() {
+  const { t } = useLocale();
   const items = [
-    { label: "Nouveautés", detail: "Les dernières pièces", href: "/collections/new-in" },
+    { label: t.header.newIn, detail: t.home.newInDetail, href: "/collections/new-in" },
     {
-      label: "Meilleures ventes",
-      detail: "Les favoris du moment",
+      label: t.header.bestSellers,
+      detail: t.home.bestSellersDetail,
       href: "/collections/best-sellers",
     },
-    { label: "Livraison", detail: "Partout en Algérie", href: "/pages/shipping" },
+    { label: t.footer.shipping, detail: t.home.shippingDetail, href: "/pages/shipping" },
   ];
 
   return (
-    <section aria-label="Découvrir Hanadi Store">
+    <section aria-label={t.home.discovery}>
       <div className="container-luxe grid gap-6 py-2 text-center sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-[var(--color-line)]">
         {items.map((item, index) => (
           <Link
@@ -164,7 +167,7 @@ export function FeaturedCollection({
       <Reveal>
         <Link
           href={href}
-          className="group relative block overflow-hidden bg-cream transition-transform duration-500 hover:-translate-y-1"
+          className="group relative block overflow-hidden bg-cream transition-[transform,box-shadow] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:shadow-[0_30px_60px_-30px_rgb(29_35_43/0.45)]"
         >
           <div className="relative aspect-[16/10] w-full md:aspect-[21/8]">
             {image ? (
@@ -173,7 +176,7 @@ export function FeaturedCollection({
                 alt={title}
                 fill
                 sizes="(max-width: 768px) 100vw, 1200px"
-                className="editorial-image object-cover transition-transform duration-700 group-hover:scale-[1.03]"
+                className="editorial-image object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
@@ -201,23 +204,24 @@ export function FeaturedCollection({
 /* ------------------------------------------------------ Product spotlight */
 
 export function ProductSpotlight({ product }: { product: StoreProductCard }) {
+  const { t } = useLocale();
   const image = product.images[0];
 
   return (
-    <section className="container-luxe" aria-label={`Produit à la une : ${product.name}`}>
-      <div className="reference-spotlight grid overflow-hidden border hairline bg-white md:grid-cols-[1.08fr_0.92fr]">
+    <section className="container-luxe" aria-label={`${t.home.signatureEyebrow} : ${product.name}`}>
+      <div className="feature-spotlight grid overflow-hidden border hairline bg-white md:grid-cols-[1.08fr_0.92fr]">
         <div className="relative aspect-[4/5] bg-cream md:aspect-auto md:min-h-[34rem]">
           <ProductImage
             url={image?.url ?? null}
             alt={product.name}
             sizes="(max-width: 768px) 100vw, 55vw"
-            className="reference-spotlight-image"
+            className="feature-spotlight-image"
           />
         </div>
         <div className="flex flex-col justify-center px-6 py-10 sm:px-10 md:px-14 md:py-14">
-          <p className="eyebrow">La pièce signature</p>
+          <p className="eyebrow">{t.home.signatureEyebrow}</p>
           <p className="mt-7 text-[0.625rem] uppercase tracking-[0.28em] text-ink-muted">
-            Hanadi Store / sélection
+            Hanadi Store / {t.home.selectionLabel}
           </p>
           <h2 className="mt-3 max-w-md font-display text-4xl font-medium leading-[1.02] md:text-5xl">
             {product.name}
@@ -226,11 +230,10 @@ export function ProductSpotlight({ product }: { product: StoreProductCard }) {
             <Price price={product.price} compareAt={product.compareAtPrice} />
           </div>
           <p className="mt-5 max-w-sm text-[0.9375rem] leading-relaxed text-ink-soft">
-            Une pièce choisie pour accompagner les moments qui comptent, avec la douceur et la
-            présence propres à Hanadi Store.
+            {t.home.spotlightText}
           </p>
           <Link href={`/products/${product.slug}`} className="btn btn-primary btn-shine mt-8 w-fit">
-            Découvrir la pièce <ArrowRight size={15} />
+            {t.home.discoverPiece} <ArrowRight size={15} />
           </Link>
         </div>
       </div>
@@ -243,17 +246,18 @@ export function ProductSpotlight({ product }: { product: StoreProductCard }) {
 export type CategoryTile = { name: string; slug: string; image: string | null; count: number };
 
 export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
+  const { t } = useLocale();
   if (categories.length === 0) return null;
   return (
-    <section className="container-luxe" aria-label="Acheter par catégorie">
+    <section className="container-luxe" aria-label={t.home.shopByCategory}>
       <Reveal>
         <div className="mb-4 flex items-end justify-between gap-6 md:mb-6">
           <div>
-            <p className="eyebrow mb-2">Pour vous</p>
-            <h2 className="font-display text-3xl font-medium md:text-4xl">Acheter par catégorie</h2>
+            <p className="eyebrow mb-2">{t.home.forYou}</p>
+            <h2 className="font-display text-3xl font-medium md:text-4xl">{t.home.shopByCategory}</h2>
           </div>
           <span className="hidden text-xs uppercase tracking-[0.18em] text-ink-muted sm:block">
-            La garde-robe Hanadi Store
+            {t.home.wardobeNote}
           </span>
         </div>
       </Reveal>
@@ -262,7 +266,7 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
           <Reveal key={category.slug} delay={Math.min(index, 5) * 70}>
             <Link
               href={`/categories/${category.slug}`}
-              className="group relative block overflow-hidden bg-cream transition-transform duration-500 hover:-translate-y-1"
+              className="group relative block overflow-hidden bg-cream transition-[transform,box-shadow] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:shadow-[0_30px_60px_-30px_rgb(29_35_43/0.45)]"
             >
               <div className="relative aspect-[3/4] w-full">
                 {category.image ? (
@@ -271,7 +275,7 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
                     alt={category.name}
                     fill
                     sizes="(max-width: 768px) 50vw, 16vw"
-                    className="object-cover transition-transform duration-500 group-hover:scale-105"
+                    className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
                   />
                 ) : (
                   <span className="flex h-full w-full items-center justify-center font-display text-5xl text-ink-muted/60">
@@ -282,7 +286,7 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
                 <div className="absolute inset-x-0 bottom-0 p-3 text-ivory md:p-4">
                   <p className="text-sm font-medium md:text-base">{category.name}</p>
                   <p className="mt-0.5 flex items-center gap-1 text-[0.6875rem] uppercase tracking-[0.16em] text-ivory/80">
-                    Découvrir <ArrowRight size={12} />
+                    {t.home.discover} <ArrowRight size={12} />
                   </p>
                 </div>
               </div>
@@ -296,17 +300,22 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
 
 /* ------------------------------------------------------------ Trust bar */
 
-const TRUST_ITEMS = [
-  { title: "Livraison rapide", text: "Dans les 58 wilayas" },
-  { title: "Paiement à la livraison", text: "Réglez à la réception" },
-  { title: "Emballage soigné", text: "Vérifié et préparé à la main" },
-];
+function useTrustItems() {
+  const { t } = useLocale();
+  return [
+    { title: t.home.trustFast, text: t.home.trustFastDetail },
+    { title: t.home.trustCod, text: t.home.trustCodDetail },
+    { title: t.home.trustPack, text: t.home.trustPackDetail },
+  ];
+}
 
 export function TrustBar() {
+  const { t } = useLocale();
+  const items = useTrustItems();
   return (
-    <section aria-label="Pourquoi choisir notre boutique">
+    <section aria-label={t.home.whyUs}>
       <div className="container-luxe grid grid-cols-1 gap-6 py-2 text-center sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-[var(--color-line)]">
-        {TRUST_ITEMS.map((item) => (
+        {items.map((item) => (
           <div key={item.title} className="sm:px-6">
             <p className="text-[0.7rem] font-medium uppercase tracking-[0.2em]">{item.title}</p>
             <p className="mt-1 text-sm text-ink-soft">{item.text}</p>
@@ -318,15 +327,16 @@ export function TrustBar() {
 }
 
 export function SocialProof({ deliveredCount }: { deliveredCount: number }) {
+  const { t } = useLocale();
   if (deliveredCount <= 0) return null;
   return (
-    <section className="bg-ink text-ivory" aria-label="La confiance de nos clientes">
+    <section className="bg-ink text-ivory" aria-label={t.home.trustTitle}>
       <div className="container-luxe flex flex-col items-center gap-2 py-8 text-center md:py-10">
         <p className="font-display text-5xl font-medium md:text-6xl">
-          +{deliveredCount.toLocaleString("fr-FR")}
+          +{formatNumber(deliveredCount)}
         </p>
         <p className="text-xs uppercase tracking-[0.24em] text-ivory/70">
-          Commandes livrées avec succès
+          {t.home.deliveredCount}
         </p>
       </div>
     </section>
@@ -370,14 +380,15 @@ export function Pillars({ items }: { items: Array<{ title: string; text: string 
 /* ------------------------------------------------------------ FAQ teaser */
 
 export function FaqTeaser({ items }: { items: Array<{ question: string; answer: string }> }) {
+  const { t } = useLocale();
   if (items.length === 0) return null;
   return (
-    <section className="container-luxe max-w-3xl" aria-label="Questions fréquentes">
+    <section className="container-luxe max-w-3xl" aria-label={t.home.faqTitle}>
       <Reveal>
-        <div className="mb-6 text-center">
-          <p className="eyebrow mb-2">À savoir</p>
-          <h2 className="font-display text-3xl font-medium md:text-4xl">
-            Vos questions, nos réponses
+        <div className="mb-5 text-center">
+          <p className="eyebrow mb-2">{t.home.faqEyebrow}</p>
+          <h2 className="font-display text-lg font-medium md:text-xl">
+            {t.home.faqTitle}
           </h2>
         </div>
       </Reveal>
@@ -389,14 +400,6 @@ export function FaqTeaser({ items }: { items: Array<{ question: string; answer: 
           }))}
         />
       </Reveal>
-      <div className="mt-6 text-center">
-        <Link
-          href="/faq"
-          className="text-xs font-medium uppercase tracking-[0.24em] underline underline-offset-8"
-        >
-          Voir toutes les questions
-        </Link>
-      </div>
     </section>
   );
 }
@@ -404,6 +407,7 @@ export function FaqTeaser({ items }: { items: Array<{ question: string; answer: 
 /* ------------------------------------------------------------ Newsletter */
 
 export function NewsletterSection() {
+  const { t } = useLocale();
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState("");
   const [state, setState] = useState<{ ok: boolean; message: string } | null>(null);
@@ -421,18 +425,18 @@ export function NewsletterSection() {
   return (
     <section className="container-luxe" aria-label="Newsletter">
       <Reveal>
-        <div className="mx-auto max-w-xl px-6 pb-10 pt-6 text-center md:pb-14 md:pt-8">
-          <p className="eyebrow">Newsletter</p>
+        <div className="mx-auto max-w-xl px-6 pb-6 pt-6 text-center md:pb-8 md:pt-8">
+          <p className="eyebrow">{t.home.newsletterEyebrow}</p>
           <h2 className="mt-3 font-display text-3xl font-medium md:text-4xl">
-            Recevez nos nouveautés
+            {t.home.newsletterTitle}
           </h2>
           <p className="mx-auto mt-3 max-w-md text-[0.9375rem] leading-relaxed text-ink-soft">
-            Nouvelles collections et offres privées, directement dans votre boîte e-mail.
+            {t.home.newsletterText}
           </p>
           <form onSubmit={submit} className="relative mx-auto mt-8 max-w-md">
             <Honeypot value={website} onChange={setWebsite} />
             <label htmlFor="homepage-newsletter" className="sr-only">
-              Adresse e-mail
+              {t.footer.emailLabel}
             </label>
             <div className="flex items-center gap-3 border-b hairline pb-2 transition-colors focus-within:border-ink">
               <input
@@ -441,8 +445,8 @@ export function NewsletterSection() {
                 required
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
-                placeholder="Votre adresse e-mail"
-                className="w-full bg-transparent text-center text-sm text-ink outline-none placeholder:text-ink-muted"
+                placeholder={t.footer.emailPlaceholder}
+                className="w-full bg-transparent text-center text-[0.9375rem] tracking-wide text-ink outline-none placeholder:text-ink-muted"
               />
               <button
                 type="submit"

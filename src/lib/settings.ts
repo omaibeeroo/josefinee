@@ -246,7 +246,6 @@ function mergeSection<K extends keyof SettingsMap>(key: K, value: unknown): Sett
 
   if (key === "general") {
     const general = merged as unknown as GeneralSettings;
-    if (general.name.trim().toLowerCase() === "josefinee") general.name = BRAND_CONFIG.name;
     if (general.email.toLowerCase().endsWith("@example.com")) general.email = "";
     if (general.phone.replace(/\D/g, "") === "0550000000") general.phone = "";
     general.colors = {

@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Inter } from "next/font/google";
 import "./globals.css";
 import { getSettings } from "@/lib/settings";
+import { getDictionary, getLocale } from "@/lib/i18n/server";
+import { LocaleProvider } from "@/lib/i18n/provider";
 import { BRAND_CONFIG, appUrl } from "@/config/brand";
 import { CartProvider } from "@/components/storefront/cart-ui";
 import { Pixels } from "@/components/pixels";
@@ -69,7 +71,12 @@ export const viewport: Viewport = {
 };
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
-  const [settings, requestHeaders] = await Promise.all([getSettings(), headers()]);
+  const [settings, requestHeaders, locale, dictionary] = await Promise.all([
+    getSettings(),
+    headers(),
+    getLocale(),
+    getDictionary(),
+  ]);
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
   const style = {
     "--color-gold": settings.general.colors.accent,
@@ -78,17 +85,19 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   } as React.CSSProperties;
 
   return (
-    <html lang="fr" className={`${display.variable} ${sans.variable}`}>
+    <html lang={locale} className={`${display.variable} ${sans.variable}`}>
       <body style={style} className="min-h-screen">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[80] focus:bg-ink focus:px-4 focus:py-2 focus:text-ivory"
         >
-          Aller au contenu
+          {locale === "en" ? "Skip to content" : "Aller au contenu"}
         </a>
         <NavigationProgress />
-        <CartProvider>{children}</CartProvider>
-        <CookiePreferences />
+        <LocaleProvider locale={locale} dictionary={dictionary}>
+          <CartProvider>{children}</CartProvider>
+          <CookiePreferences />
+        </LocaleProvider>
         <Pixels
           gaId={settings.analytics.gaId}
           metaPixelId={settings.analytics.metaPixelId}

@@ -3,8 +3,8 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { changeOrderStatusAction, updateAdminNotesAction } from "@/server/actions/admin-orders";
-import { ORDER_STATUS_LABELS } from "@/lib/constants";
 import { Button, Field, Select, Textarea } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 import type { OrderStatus } from "@prisma/client";
 
 export function StatusChanger({
@@ -17,6 +17,7 @@ export function StatusChanger({
   allowed: OrderStatus[];
 }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [status, setStatus] = useState<OrderStatus>(allowed[0] ?? current);
   const [note, setNote] = useState("");
   const [notify, setNotify] = useState(true);
@@ -37,26 +38,26 @@ export function StatusChanger({
   }
 
   if (allowed.length === 0) {
-    return <p className="text-sm text-ink-muted">This order is closed — no further transitions.</p>;
+    return <p className="text-sm text-ink-muted">{t.admin.orderClosed}</p>;
   }
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <Field label="New status">
+      <Field label={t.admin.newStatus}>
         <Select value={status} onChange={(event) => setStatus(event.target.value as OrderStatus)}>
           {allowed.map((option) => (
             <option key={option} value={option}>
-              {ORDER_STATUS_LABELS[option].label}
+              {t.status[option]}
             </option>
           ))}
         </Select>
       </Field>
-      <Field label="Note (optional)">
+      <Field label={t.admin.noteOptional}>
         <Textarea value={note} onChange={(event) => setNote(event.target.value)} rows={2} />
       </Field>
       <label className="flex items-center gap-2 text-sm">
         <input type="checkbox" checked={notify} onChange={(event) => setNotify(event.target.checked)} className="h-4 w-4 accent-[#1c1a17]" />
-        Notify the customer
+        {t.admin.notifyCustomer}
       </label>
       {error && (
         <p className="text-sm text-[#9e342e]" role="alert">
@@ -64,7 +65,7 @@ export function StatusChanger({
         </p>
       )}
       <Button type="submit" disabled={pending} size="sm" className="w-full">
-        {pending ? "Updating…" : "Update status"}
+        {pending ? t.admin.updating : t.admin.updateStatus}
       </Button>
     </form>
   );
@@ -72,6 +73,7 @@ export function StatusChanger({
 
 export function NotesEditor({ orderId, initial }: { orderId: string; initial: string | null }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [notes, setNotes] = useState(initial ?? "");
   const [saved, setSaved] = useState(false);
   const [pending, setPending] = useState(false);
@@ -88,15 +90,15 @@ export function NotesEditor({ orderId, initial }: { orderId: string; initial: st
 
   return (
     <form onSubmit={submit} className="space-y-3">
-      <Field label="Internal notes (never shown to the customer)">
+      <Field label={t.admin.internalNotes}>
         <Textarea value={notes} onChange={(event) => setNotes(event.target.value)} rows={3} />
       </Field>
       <Button type="submit" disabled={pending} size="sm">
-        {pending ? "Saving…" : "Save notes"}
+        {pending ? t.admin.saving : t.admin.saveNotes}
       </Button>
       {saved && (
         <p className="text-sm text-ink-soft" role="status">
-          Saved.
+          {t.admin.saved}
         </p>
       )}
     </form>

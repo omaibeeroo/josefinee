@@ -6,9 +6,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { loginAction, mergeWishlistAction } from "@/server/actions/engagement";
 import { clearGuestWishlist, readGuestWishlist } from "@/components/storefront/product";
 import { Button, Field, Input } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 import { safeInternalPath } from "@/lib/safe-navigation";
 
 export function LoginForm() {
+  const { t } = useLocale();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
@@ -37,10 +39,10 @@ export function LoginForm() {
 
   return (
     <form onSubmit={submit} className="mx-auto mt-8 max-w-md space-y-4 border hairline bg-white p-6 md:p-8">
-      <Field label="E-mail" required>
+      <Field label={t.auth.email} required>
         <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="email" required />
       </Field>
-      <Field label="Mot de passe" required>
+      <Field label={t.auth.password} required>
         <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required />
       </Field>
       {error && (
@@ -49,12 +51,12 @@ export function LoginForm() {
         </p>
       )}
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Connexion…" : "Se connecter"}
+        {pending ? t.auth.signingIn : t.auth.signIn}
       </Button>
       <p className="text-center text-sm text-ink-soft">
-        Pas encore de compte ?{" "}
+        {t.auth.noAccount}{" "}
         <Link href="/register" className="underline underline-offset-2">
-          Créez-en un
+          {t.auth.createOne}
         </Link>
       </p>
     </form>

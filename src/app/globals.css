@@ -28,20 +28,16 @@
   --shadow-card: 0 1px 2px rgb(29 35 43 / 0.04), 0 22px 50px -28px rgb(29 35 43 / 0.25);
   --shadow-drawer: -24px 0 60px -30px rgb(29 35 43 / 0.35);
 
-  --animate-fade-in: fade-in 0.35s ease both;
-  --animate-slide-up: slide-up 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-slide-in-right: slide-in-right 0.35s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-slide-in-left: slide-in-left 0.38s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-menu-item: menu-item 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-marquee: marquee 28s linear infinite;
-  --animate-hero-image: hero-image 1s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-hero-enter: hero-enter 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-soft-float: soft-float 6s ease-in-out infinite;
-  --animate-page-enter: page-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-reveal-scale: reveal-scale 0.6s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-shimmer: shimmer 1s ease-in-out both;
-  --animate-expand: expand 0.28s cubic-bezier(0.22, 1, 0.36, 1) both;
-  --animate-fade-up: fade-up 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-in: fade-in 0.9s ease both;
+  --animate-slide-up: slide-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-slide-in-right: slide-in-right 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-slide-in-left: slide-in-left 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-menu-item: menu-item 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-hero-image: hero-image 1.6s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-hero-enter: hero-enter 1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-page-enter: page-enter 0.35s ease-out both;
+  --animate-expand: expand 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-fade-up: fade-up 1s cubic-bezier(0.22, 1, 0.36, 1) both;
 
   @keyframes fade-in {
     from {
@@ -87,14 +83,6 @@
       transform: translateX(0);
     }
   }
-  @keyframes marquee {
-    from {
-      transform: translateX(0);
-    }
-    to {
-      transform: translateX(-50%);
-    }
-  }
   @keyframes hero-image {
     from {
       opacity: 0;
@@ -115,15 +103,6 @@
       transform: translateY(0);
     }
   }
-  @keyframes soft-float {
-    0%,
-    100% {
-      transform: translateY(0);
-    }
-    50% {
-      transform: translateY(-4px);
-    }
-  }
   @keyframes page-enter {
     from {
       opacity: 0;
@@ -132,24 +111,6 @@
     to {
       opacity: 1;
       transform: translateY(0);
-    }
-  }
-  @keyframes reveal-scale {
-    from {
-      opacity: 0;
-      transform: translateY(14px) scale(0.985);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0) scale(1);
-    }
-  }
-  @keyframes shimmer {
-    from {
-      transform: translateX(-120%) skewX(-18deg);
-    }
-    to {
-      transform: translateX(260%) skewX(-18deg);
     }
   }
   @keyframes expand {
@@ -390,21 +351,6 @@
     transform: translateY(-2px);
   }
 
-  .product-card-media::after {
-    position: absolute;
-    inset: 0;
-    width: 35%;
-    content: "";
-    background: linear-gradient(105deg, transparent, rgb(255 255 255 / 0.18), transparent);
-    pointer-events: none;
-    transform: translateX(-140%) skewX(-18deg);
-  }
-
-  .product-card:hover .product-card-media::after,
-  .product-card:focus-within .product-card-media::after {
-    animation: shimmer 1.15s ease-out both;
-  }
-
   .editorial-image {
     transition:
       transform 0.9s cubic-bezier(0.22, 1, 0.36, 1),
@@ -417,7 +363,7 @@
   }
 
   .page-enter {
-    animation: page-enter 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: page-enter 0.35s ease-out both;
   }
 
   .admin-surface {
@@ -426,29 +372,39 @@
 
   .admin-nav-link {
     transition:
-      background-color 0.25s ease,
-      color 0.25s ease,
-      padding-left 0.25s ease,
-      transform 0.25s ease;
-  }
-
-  .admin-nav-link:hover,
-  .admin-nav-link:focus-visible {
-    transform: translateX(3px);
+      background-color 0.2s ease,
+      color 0.2s ease,
+      border-color 0.2s ease;
   }
 
   .admin-card {
     transition:
-      box-shadow 0.35s ease,
-      transform 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-      border-color 0.35s ease;
+      box-shadow 0.25s ease,
+      border-color 0.25s ease;
   }
 
   .admin-card:hover,
   .admin-card:focus-within {
-    border-color: color-mix(in srgb, var(--color-gold) 45%, var(--color-line));
-    box-shadow: var(--shadow-card);
-    transform: translateY(-2px);
+    border-color: #c9d1d9;
+    box-shadow: 0 14px 32px -24px rgb(29 35 43 / 0.35);
+  }
+
+  .review-form .field {
+    border-top: 0;
+    border-right: 0;
+    border-left: 0;
+    background-color: transparent;
+    min-height: 2.5rem;
+    padding-inline: 0;
+    font-size: 0.8125rem;
+  }
+
+  .review-form .field:focus {
+    box-shadow: none;
+  }
+
+  .review-form .field-label {
+    font-size: 0.625rem;
   }
 
   .btn:disabled {
@@ -768,11 +724,11 @@
   }
 
   .page-enter {
-    animation-duration: 0.45s;
+    animation-duration: 0.35s;
   }
 
   .motion-stagger > * {
-    animation-duration: 0.55s;
+    animation-duration: 1s;
   }
 
   .silver-panel {
@@ -1524,22 +1480,22 @@
 }
 
 /* ---------------------------------------------------------------------------
-   Love Mary-inspired storefront layer
-   Visual direction only: preserve Hanadi Store data, commerce logic, and brand
-   settings while adopting the reference shop's quiet editorial rhythm.
+   Editorial storefront layer
+   Quiet editorial rhythm for product storytelling: soft spotlight panels,
+   hairline product cards, and a light footer treatment.
 --------------------------------------------------------------------------- */
 @layer components {
-  .reference-spotlight {
+  .feature-spotlight {
     border-color: #e3e5e7;
     box-shadow: 0 18px 42px -38px rgb(29 35 43 / 0.48);
   }
 
-  .reference-spotlight-image {
+  .feature-spotlight-image {
     transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
-  .reference-spotlight:hover .reference-spotlight-image,
-  .reference-spotlight:focus-within .reference-spotlight-image {
+  .feature-spotlight:hover .feature-spotlight-image,
+  .feature-spotlight:focus-within .feature-spotlight-image {
     transform: scale(1.025);
   }
 
@@ -1567,15 +1523,15 @@
       padding-block: 1.5rem;
     }
 
-    .reference-spotlight {
+    .feature-spotlight {
       box-shadow: 0 14px 32px -30px rgb(29 35 43 / 0.45);
     }
   }
 }
 
 @media (hover: none), (pointer: coarse) {
-  .reference-spotlight:hover .reference-spotlight-image,
-  .reference-spotlight:focus-within .reference-spotlight-image {
+  .feature-spotlight:hover .feature-spotlight-image,
+  .feature-spotlight:focus-within .feature-spotlight-image {
     transform: none;
   }
 }

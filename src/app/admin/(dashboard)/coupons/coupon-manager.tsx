@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { deleteCouponAction, getCouponForEdit, saveCouponAction } from "@/server/actions/admin-ops";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 
 export type CouponRow = {
   id: string;
@@ -41,6 +42,7 @@ export function CouponManager({
   wilayas: Array<{ code: number; name: string }>;
 }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [editing, setEditing] = useState<Partial<CouponRow & { productSkus: string }> & { id?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -78,7 +80,7 @@ export function CouponManager({
   }
 
   async function remove(id: string) {
-    if (!window.confirm("Deactivate/delete this coupon? Used coupons are deactivated, never deleted.")) return;
+    if (!window.confirm(t.adminForm.confirmDelete)) return;
     await deleteCouponAction(id);
     router.refresh();
   }
@@ -107,7 +109,7 @@ export function CouponManager({
             })
           }
         >
-          New coupon
+          {t.adminCoupon.newCoupon}
         </Button>
       </div>
       {error && (
@@ -120,11 +122,11 @@ export function CouponManager({
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
             <tr className="border-b hairline text-xs uppercase tracking-[0.1em] text-ink-muted">
-              <th className="px-4 py-3">Code</th>
-              <th className="px-4 py-3">Discount</th>
-              <th className="px-4 py-3">Used</th>
-              <th className="px-4 py-3">Active</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="px-4 py-3">{t.adminForm.code}</th>
+              <th className="px-4 py-3">{t.adminCoupon.discount}</th>
+              <th className="px-4 py-3">{t.adminCoupon.used}</th>
+              <th className="px-4 py-3">{t.adminCoupon.activeCol}</th>
+              <th className="px-4 py-3 text-right">{t.adminCoupon.actionsCol}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -139,7 +141,7 @@ export function CouponManager({
                   {coupon._count.redemptions}
                   {coupon.usageLimit ? ` / ${coupon.usageLimit}` : ""}
                 </td>
-                <td className="px-4 py-3">{coupon.isActive ? "Yes" : "No"}</td>
+                <td className="px-4 py-3">{coupon.isActive ? t.adminCoupon.yes : t.adminCoupon.no}</td>
                 <td className="px-4 py-3 text-right text-xs">
                   <button
                     type="button"
@@ -155,75 +157,75 @@ export function CouponManager({
                     }}
                     className="underline underline-offset-2"
                   >
-                    Edit
+                    {t.adminCoupon.editCoupon}
                   </button>
                   <button type="button" onClick={() => void remove(coupon.id)} className="ml-3 text-[#9e342e] underline underline-offset-2">
-                    Delete
+                    {t.adminForm.delete}
                   </button>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        {coupons.length === 0 && <p className="p-8 text-center text-sm text-ink-muted">No coupons yet.</p>}
+          {coupons.length === 0 && <p className="p-8 text-center text-sm text-ink-muted">{t.adminCoupon.noCoupons}</p>}
       </div>
 
       {editing && (
         <form onSubmit={submit} className="mt-6 space-y-4 border hairline bg-white p-5">
-          <h2 className="font-display text-2xl">{editing.id ? `Edit ${editing.code}` : "New coupon"}</h2>
+          <h2 className="font-display text-2xl">{editing.id ? `${t.adminCoupon.editCoupon} ${editing.code}` : t.adminCoupon.newCoupon}</h2>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Code" required>
+            <Field label={t.adminForm.code} required>
               <Input value={editing.code ?? ""} onChange={(event) => setEditing({ ...editing, code: event.target.value.toUpperCase() })} required className="font-mono uppercase" />
             </Field>
-            <Field label="Type">
+            <Field label={t.adminForm.type}>
               <Select value={editing.type ?? "PERCENTAGE"} onChange={(event) => setEditing({ ...editing, type: event.target.value as "PERCENTAGE" | "FIXED" })}>
-                <option value="PERCENTAGE">Percentage</option>
-                <option value="FIXED">Fixed amount (DA)</option>
+                <option value="PERCENTAGE">{t.adminCoupon.percentage}</option>
+                <option value="FIXED">{t.adminCoupon.fixedAmount}</option>
               </Select>
             </Field>
-            <Field label={editing.type === "FIXED" ? "Amount (DA)" : "Percent (1–90)"} required>
+            <Field label={editing.type === "FIXED" ? t.adminCoupon.amountDa : t.adminCoupon.percentRange} required>
               <Input type="number" min={1} value={editing.value ?? 10} onChange={(event) => setEditing({ ...editing, value: Number(event.target.value) })} required />
             </Field>
           </div>
           <div className="grid gap-4 sm:grid-cols-4">
-            <Field label="Min order (DA)">
+            <Field label={t.adminCoupon.minOrder}>
               <Input type="number" min={0} value={editing.minOrder ?? ""} onChange={(event) => setEditing({ ...editing, minOrder: event.target.value === "" ? null : Number(event.target.value) })} />
             </Field>
-            <Field label="Max discount (DA)">
+            <Field label={t.adminCoupon.maxDiscount}>
               <Input type="number" min={0} value={editing.maxDiscount ?? ""} onChange={(event) => setEditing({ ...editing, maxDiscount: event.target.value === "" ? null : Number(event.target.value) })} />
             </Field>
-            <Field label="Total use limit">
+            <Field label={t.adminCoupon.totalLimit}>
               <Input type="number" min={0} value={editing.usageLimit ?? ""} onChange={(event) => setEditing({ ...editing, usageLimit: event.target.value === "" ? null : Number(event.target.value) })} />
             </Field>
-            <Field label="Per-customer limit">
+            <Field label={t.adminCoupon.perCustomer}>
               <Input type="number" min={0} value={editing.perCustomerLimit ?? ""} onChange={(event) => setEditing({ ...editing, perCustomerLimit: event.target.value === "" ? null : Number(event.target.value) })} />
             </Field>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Starts at">
+            <Field label={t.adminCoupon.startsAt}>
               <Input type="datetime-local" value={editing.startsAt ? toDateInput(editing.startsAt as Date) : ""} onChange={(event) => setEditing({ ...editing, startsAt: event.target.value ? (new Date(event.target.value) as unknown as Date) : null })} />
             </Field>
-            <Field label="Ends at">
+            <Field label={t.adminCoupon.endsAt}>
               <Input type="datetime-local" value={editing.endsAt ? toDateInput(editing.endsAt as Date) : ""} onChange={(event) => setEditing({ ...editing, endsAt: event.target.value ? (new Date(event.target.value) as unknown as Date) : null })} />
             </Field>
           </div>
           <div className="flex flex-wrap gap-4 text-sm">
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={editing.isActive ?? true} onChange={(event) => setEditing({ ...editing, isActive: event.target.checked })} className="h-4 w-4 accent-[#1c1a17]" />
-              Active
+              {t.adminForm.active}
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={editing.firstOrderOnly ?? false} onChange={(event) => setEditing({ ...editing, firstOrderOnly: event.target.checked })} className="h-4 w-4 accent-[#1c1a17]" />
-              First orders only
+              {t.adminCoupon.firstOrders}
             </label>
             <label className="flex items-center gap-2">
               <input type="checkbox" checked={editing.appliesToAll ?? true} onChange={(event) => setEditing({ ...editing, appliesToAll: event.target.checked })} className="h-4 w-4 accent-[#1c1a17]" />
-              Applies to whole bag
+              {t.adminCoupon.wholeBag}
             </label>
           </div>
           {!(editing.appliesToAll ?? true) && (
             <>
-              <Field label="Product SKUs (comma separated)">
+              <Field label={t.adminCoupon.productSkus}>
                 <Textarea value={editing.productSkus ?? ""} onChange={(event) => setEditing({ ...editing, productSkus: event.target.value })} rows={2} />
               </Field>
               <div>
@@ -245,7 +247,7 @@ export function CouponManager({
             </>
           )}
           <div>
-            <p className="field-label">Wilaya restriction (empty = all wilayas)</p>
+            <p className="field-label">{t.adminCoupon.wilayaRestr}</p>
             <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto border hairline p-2">
               {wilayas.map((wilaya) => (
                 <label key={wilaya.code} className="flex items-center gap-1.5 text-xs">
@@ -262,10 +264,10 @@ export function CouponManager({
           </div>
           <div className="flex gap-2">
             <Button type="submit" disabled={pending} size="sm">
-              {pending ? "Saving…" : "Save coupon"}
+              {pending ? t.adminForm.saving : t.adminCoupon.saveCoupon}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(null)}>
-              Cancel
+              {t.adminForm.cancel}
             </Button>
           </div>
         </form>

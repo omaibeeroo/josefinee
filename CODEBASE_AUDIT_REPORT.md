@@ -1,4 +1,4 @@
-# Josefinee Codebase Audit & Cleanup Report
+# Hanadi Store Codebase Audit & Cleanup Report
 
 **Audit date:** 5 October 2026
 **Repository:** `omaibeeroo/josefinee`

@@ -5,10 +5,11 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Heart, Plus } from "lucide-react";
 import { useCart } from "@/components/storefront/cart-ui";
+import { useLocale } from "@/lib/i18n/provider";
 import { Badge, Button, Modal, Price, QuantitySelector, Stars } from "@/components/ui";
 import { getWishlistIdsAction, toggleWishlistAction } from "@/server/actions/engagement";
 
-const GUEST_WISHLIST_KEY = "nur-wishlist";
+const GUEST_WISHLIST_KEY = "hanadi-wishlist";
 
 export function readGuestWishlist(): string[] {
   if (typeof window === "undefined") return [];
@@ -26,7 +27,7 @@ export function readGuestWishlist(): string[] {
 function writeGuestWishlist(ids: string[]): void {
   try {
     window.localStorage.setItem(GUEST_WISHLIST_KEY, JSON.stringify(ids));
-    window.dispatchEvent(new Event("nur-wishlist"));
+    window.dispatchEvent(new Event("hanadi-wishlist"));
   } catch {
     // storage unavailable — the heart simply stays local to this page view
   }
@@ -36,57 +37,6 @@ export function clearGuestWishlist(): void {
   writeGuestWishlist([]);
 }
 
-const RECENT_KEY = "nur-recently-viewed";
-const RECENT_MAX = 12;
-
-function recordRecentlyViewed(productId: string): void {
-  if (typeof window === "undefined") return;
-  try {
-    const raw = window.localStorage.getItem(RECENT_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    const ids = (Array.isArray(parsed) ? parsed : []).filter(
-      (entry): entry is string => typeof entry === "string",
-    );
-    const next = [productId, ...ids.filter((id) => id !== productId)].slice(0, RECENT_MAX);
-    window.localStorage.setItem(RECENT_KEY, JSON.stringify(next));
-  } catch {
-    // private browsing — recently viewed simply stays empty
-  }
-}
-
-function readRecentlyViewed(excludeId: string): string[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(RECENT_KEY);
-    const parsed: unknown = raw ? JSON.parse(raw) : [];
-    if (!Array.isArray(parsed)) return [];
-    return parsed.filter(
-      (entry): entry is string => typeof entry === "string" && entry !== excludeId,
-    );
-  } catch {
-    return [];
-  }
-}
-
-export function RecentlyViewed({ productId }: { productId: string }) {
-  const [products, setProducts] = useState<StoreProductCard[] | null>(null);
-
-  useEffect(() => {
-    recordRecentlyViewed(productId);
-    let cancelled = false;
-    void getProductsByIdsAction(readRecentlyViewed(productId))
-      .then((items) => {
-        if (!cancelled && items.length > 0) setProducts(items);
-      })
-      .catch(() => undefined);
-    return () => {
-      cancelled = true;
-    };
-  }, [productId]);
-
-  if (!products) return null;
-  return <ProductCarousel title="Consultés récemment" products={products} />;
-}
 import { discountPercent, formatPrice } from "@/lib/money";
 import { pixelEvent } from "@/components/pixels";
 import {
@@ -95,7 +45,7 @@ import {
 } from "@/lib/variant-selection";
 import { cn } from "@/lib/utils";
 import type { QuickAddData, StoreProduct, StoreProductCard } from "@/server/catalog";
-import { getProductsByIdsAction, getQuickAddAction } from "@/server/actions/cart";
+import { getQuickAddAction } from "@/server/actions/cart";
 
 /* --------------------------------------------------------- Image fallback */
 
@@ -134,6 +84,7 @@ export function ProductImage({
 /* ----------------------------------------------------------- Product card */
 
 export function ProductCard({ product }: { product: StoreProductCard }) {
+  const { t } = useLocale();
   const { add } = useCart();
   const [quickOpen, setQuickOpen] = useState(false);
   const [pending, setPending] = useState(false);
@@ -155,29 +106,29 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
 
   return (
     <article className="product-card group flex flex-col">
-      <div className="product-card-media relative overflow-hidden bg-cream">
+      <div className="product-card-media relative overflow-hidden bg-cream transition-shadow duration-500 hover:shadow-[0_28px_55px_-28px_rgb(29_35_43/0.4)]">
         <Link
           href={`/products/${product.slug}`}
           aria-label={product.name}
           className="block aspect-[3/4]"
         >
-          <div className="absolute inset-0 transition-all duration-500 ease-out group-hover:scale-[1.04] group-hover:opacity-0">
+          <div className="absolute inset-0 transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] group-hover:opacity-0">
             <ProductImage url={main?.url ?? null} alt={product.name} />
           </div>
           {hover && (
-            <div className="absolute inset-0 scale-[1.04] opacity-0 transition-all duration-500 ease-out group-hover:scale-100 group-hover:opacity-100">
+            <div className="absolute inset-0 scale-[1.06] opacity-0 transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-100 group-hover:opacity-100">
               <ProductImage url={hover.url} alt={product.name} />
             </div>
           )}
         </Link>
         <div className="absolute left-2 top-2 flex flex-col items-start gap-1.5">
           {soldOut ? (
-            <Badge tone="muted">Épuisé</Badge>
+            <Badge tone="muted">{t.product.badgeSoldOut}</Badge>
           ) : (
             <>
               {percent && <Badge tone="sale">-{percent}%</Badge>}
-              {product.isNew && <Badge tone="gold">Nouveau</Badge>}
-              {product.isBestseller && !product.isNew && <Badge tone="ink">Meilleure vente</Badge>}
+              {product.isNew && <Badge tone="gold">{t.product.badgeNew}</Badge>}
+              {product.isBestseller && !product.isNew && <Badge tone="ink">{t.product.badgeBestSeller}</Badge>}
             </>
           )}
         </div>
@@ -189,7 +140,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
             onClick={() => (product.hasVariants ? setQuickOpen(true) : void quickAdd())}
             className="absolute inset-x-0 bottom-0 hidden translate-y-2 bg-ink/90 py-3 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-ivory opacity-0 transition-all duration-200 hover:bg-ink group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 md:block"
           >
-            {pending ? "Ajout…" : product.hasVariants ? "Choisir les options" : "Ajouter au panier"}
+            {pending ? t.product.adding : product.hasVariants ? t.product.chooseOptionsBtn : t.product.addToBag}
           </button>
         )}
         {!soldOut && (
@@ -198,8 +149,8 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
             disabled={pending}
             aria-label={
               product.hasVariants
-                ? `Choisir les options pour ${product.name}`
-                : `Ajouter ${product.name} au panier`
+              ? `${t.product.chooseOptionsFor} ${product.name}`
+              : `${t.product.addFor} ${product.name} ${t.product.toBag}`
             }
             onClick={() => (product.hasVariants ? setQuickOpen(true) : void quickAdd())}
             className="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-ivory shadow-card md:hidden"
@@ -208,18 +159,18 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
           </button>
         )}
       </div>
-      <div className="flex flex-1 flex-col pt-3">
+      <div className="flex flex-1 flex-col items-center pt-3 text-center">
         <Link
           href={`/products/${product.slug}`}
-          className="text-[0.9375rem] font-medium leading-snug hover:underline"
+          className="font-display text-[1.05rem] font-medium leading-snug tracking-wide hover:underline hover:decoration-line hover:underline-offset-4"
         >
           {product.name}
         </Link>
-        <div className="mt-1">
+        <div className="mt-1 flex justify-center tracking-[0.04em]">
           <Price price={product.price} compareAt={product.compareAtPrice} />
         </div>
         {product.ratingCount > 0 && (
-          <div className="mt-1">
+          <div className="mt-1 flex justify-center">
             <Stars value={product.ratingAvg} count={product.ratingCount} />
           </div>
         )}
@@ -242,6 +193,7 @@ function QuickAddModal({
   open: boolean;
   onClose: () => void;
 }) {
+  const { t } = useLocale();
   const { add } = useCart();
   const [data, setData] = useState<QuickAddData | null>(null);
   const [loading, setLoading] = useState(false);
@@ -290,7 +242,7 @@ function QuickAddModal({
   async function submit() {
     const variantId = product.hasVariants ? activeVariant?.id : product.defaultVariantId;
     if (!variantId) {
-      setError("Veuillez d’abord choisir vos options.");
+      setError(t.product.chooseOptions);
       return;
     }
     setPending(true);
@@ -301,7 +253,7 @@ function QuickAddModal({
       pixelEvent("AddToCart", { content_ids: [product.id], currency: "DZD" });
       onClose();
     } else {
-      setError(result.error ?? "Impossible d’ajouter au panier.");
+      setError(result.error ?? t.product.addFailed);
     }
   }
 
@@ -320,16 +272,16 @@ function QuickAddModal({
             price={activeVariant?.price ?? product.price}
             compareAt={activeVariant?.compareAtPrice ?? product.compareAtPrice}
           />
-          {!product.inStock && <p className="mt-1 text-sm text-sale">Rupture de stock</p>}
+          {!product.inStock && <p className="mt-1 text-sm text-sale">{t.product.outOfStock}</p>}
           {activeVariant && activeVariant.available <= 3 && activeVariant.available > 0 && (
             <p className="mt-1 text-sm font-medium text-sale" role="status">
-              Plus que {activeVariant.available} disponible{activeVariant.available > 1 ? "s" : ""}
+              {t.product.onlyLeft.replace("{count}", String(activeVariant.available)).replace("{s}", activeVariant.available > 1 ? "s" : "")}
             </p>
           )}
         </div>
       </div>
 
-      {loading && <p className="mt-4 text-sm text-ink-soft">Chargement des options…</p>}
+      {loading && <p className="mt-4 text-sm text-ink-soft">{t.product.loadingOptions}</p>}
 
       {data && data.options.length > 0 && (
         <div className="mt-4 space-y-3">
@@ -397,7 +349,7 @@ function QuickAddModal({
             onChange={setQuantity}
             max={Math.max(1, maxQuantity)}
           />
-          <span className="text-xs text-ink-muted">Choisissez vos options pour voir la disponibilité</span>
+          <span className="text-xs text-ink-muted">{t.product.optionsAvailability}</span>
         </div>
       )}
 
@@ -414,14 +366,14 @@ function QuickAddModal({
           }
           className="flex-1"
         >
-          {pending ? "Ajout…" : "Ajouter au panier"}
+          {pending ? t.product.adding : t.product.addToBag}
         </Button>
         <Link
           href={`/products/${product.slug}`}
           onClick={onClose}
           className="btn btn-ghost flex-1 text-center"
         >
-          Détails complets
+          {t.product.fullDetails}
         </Link>
       </div>
     </Modal>
@@ -505,6 +457,7 @@ export function ProductGallery({
   images: Array<{ url: string; alt: string }>;
   name: string;
 }) {
+  const { t } = useLocale();
   const [active, setActive] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
   const [zoomPoint, setZoomPoint] = useState({ x: 50, y: 50 });
@@ -523,7 +476,7 @@ export function ProductGallery({
           });
         }}
         className="product-gallery-hero group relative block aspect-[3/4] w-full overflow-hidden bg-cream"
-        aria-label="Ouvrir la galerie en plein écran"
+        aria-label={t.product.openGallery}
       >
         <div
           className="product-zoom-frame absolute inset-0"
@@ -552,7 +505,7 @@ export function ProductGallery({
               key={image.url}
               type="button"
               onClick={() => setActive(index)}
-              aria-label={`Voir l’image ${index + 1}`}
+              aria-label={t.product.viewImage.replace("{n}", String(index + 1))}
               aria-current={index === active}
               className={cn(
                 "product-gallery-thumb relative h-20 w-16 shrink-0 overflow-hidden bg-cream",
@@ -578,7 +531,7 @@ export function ProductGallery({
           <div className="mt-4 flex items-center justify-center gap-3">
             <button
               type="button"
-              aria-label="Image précédente"
+              aria-label={t.product.prevImage}
               onClick={() => setActive((active - 1 + images.length) % images.length)}
               className="flex h-10 w-10 items-center justify-center border hairline"
             >
@@ -589,7 +542,7 @@ export function ProductGallery({
             </span>
             <button
               type="button"
-              aria-label="Image suivante"
+              aria-label={t.product.nextImage}
               onClick={() => setActive((active + 1) % images.length)}
               className="flex h-10 w-10 items-center justify-center border hairline"
             >
@@ -706,6 +659,7 @@ function VariantPicker({
 /* ------------------------------------------------------ Add to bag panel */
 
 export function AddToBagPanel({ product }: { product: StoreProduct }) {
+  const { t } = useLocale();
   const { add } = useCart();
   const [variantId, setVariantId] = useState(
     product.defaultVariantId ?? product.variants[0]?.id ?? "",
@@ -726,7 +680,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
 
   async function submit(buyNow: boolean) {
     if (!selected || selected.available <= 0) {
-      setError("Cette option est en rupture de stock.");
+      setError(t.product.optionOutOfStock);
       return;
     }
     setPending(true);
@@ -734,7 +688,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
     const result = await add(selected.id, quantity);
     setPending(false);
     if (!result.ok) {
-      setError(result.error ?? "Impossible d’ajouter au panier.");
+      setError(result.error ?? t.product.addFailed);
       return;
     }
     pixelEvent("AddToCart", {
@@ -759,7 +713,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
       </div>
       {selected?.available !== undefined && selected.available <= 3 && selected.available > 0 && (
         <p className="mt-3 text-sm font-medium text-sale" role="status">
-          Plus que {selected.available} disponible{selected.available > 1 ? "s" : ""}
+          {t.product.onlyLeft.replace("{count}", String(selected.available)).replace("{s}", selected.available > 1 ? "s" : "")}
         </p>
       )}
       <div className="mt-5 flex gap-3">
@@ -769,7 +723,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
           disabled={pending || maxQuantity <= 0}
           className="flex-1"
         >
-          {pending ? "Ajout…" : "Ajouter au panier"}
+          {pending ? t.product.adding : t.product.addToBag}
         </Button>
         <WishlistButton productId={product.id} bordered />
       </div>
@@ -779,7 +733,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
         disabled={pending || maxQuantity <= 0}
         className="mt-3 w-full"
       >
-        Acheter — paiement à la livraison
+        {t.product.buyNowCod}
       </Button>
       {error && (
         <p className="mt-3 text-sm text-[#9e342e]" role="alert">
@@ -789,7 +743,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
 
       {/* Sticky one-thumb buy bar — mobile only, the premium COD shortcut. */}
       <div className="h-[4.5rem] md:hidden" aria-hidden="true" />
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t hairline bg-ivory/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
+      <div className="fixed inset-x-0 bottom-0 z-40 border-t hairline bg-ivory pb-[env(safe-area-inset-bottom)] shadow-[0_-16px_35px_-24px_rgb(29_35_43/0.45)] md:hidden">
         <div className="flex items-center gap-3 px-4 py-3">
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{product.name}</p>
@@ -806,7 +760,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
             size="sm"
             className="shrink-0 px-6"
           >
-            {pending ? "Ajout…" : maxQuantity <= 0 ? "Épuisé" : "Ajouter"}
+            {pending ? t.product.adding : maxQuantity <= 0 ? t.product.soldOut : t.product.add}
           </Button>
         </div>
       </div>
@@ -825,6 +779,7 @@ function WishlistButton({
   className?: string;
   bordered?: boolean;
 }) {
+  const { t } = useLocale();
   const [saved, setSaved] = useState<boolean | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -871,10 +826,10 @@ function WishlistButton({
       type="button"
       disabled={pending}
       onClick={() => void toggle()}
-      aria-label={saved ? "Retirer des favoris" : "Ajouter aux favoris"}
+      aria-label={saved ? t.product.removeWishlist : t.product.addWishlist}
       aria-pressed={saved ?? false}
       className={cn(
-        "flex h-9 w-9 items-center justify-center bg-ivory/90 shadow-card transition-colors hover:bg-ivory disabled:opacity-50",
+        "flex h-9 w-9 items-center justify-center bg-ivory shadow-card transition-colors hover:bg-white disabled:opacity-50",
         bordered && "h-[2.875rem] w-[2.875rem] border hairline bg-white shadow-none",
         className,
       )}

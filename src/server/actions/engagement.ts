@@ -16,26 +16,28 @@ import { hashPassword, verifyPassword, passwordIssues } from "@/lib/auth/passwor
 import { attachCartToCustomer } from "@/server/cart";
 import { enforceRateLimit, LIMITS, clientIp } from "@/lib/rate-limit";
 import { customerLoginSchema, customerRegisterSchema } from "@/lib/validation/auth";
+import { getActionT } from "@/lib/i18n/server";
 import { flattenZodErrors, isBotSubmission } from "@/lib/validation/common";
 import { recordAudit } from "@/lib/audit";
 import { storefrontProductWhere } from "@/server/catalog";
 import { Prisma } from "@prisma/client";
 
 export async function subscribeNewsletterAction(email: string, source?: string, website?: string) {
+  const t = await getActionT();
   const parsed = newsletterSchema.safeParse({ email, source, website });
   if (!parsed.success) {
-    return { ok: false as const, error: "Please enter a valid email address." };
+    return { ok: false as const, error: t.invalidEmail };
   }
   if (isBotSubmission(parsed.data.website)) {
     // Pretend success so bots learn nothing.
-    return { ok: true as const, message: "Thank you for subscribing." };
+    return { ok: true as const, message: t.subscribedThanks };
   }
 
   const ip = await clientIp();
   try {
     await enforceRateLimit({ ...LIMITS.newsletter, key: `newsletter:${ip}` });
   } catch {
-    return { ok: false as const, error: "Too many attempts. Please try again later." };
+    return { ok: false as const, error: t.rateLimited };
   }
 
   try {
@@ -50,31 +52,32 @@ export async function subscribeNewsletterAction(email: string, source?: string, 
         });
         return { ok: true as const, message: "Welcome back — you are subscribed." };
       }
-      return { ok: true as const, message: "You are already subscribed." };
+      return { ok: true as const, message: t.alreadySubscribed };
     }
     await prisma.newsletterSubscriber.create({
       data: { email: parsed.data.email, ip, source: source ?? null },
     });
-    return { ok: true as const, message: "Thank you for subscribing." };
+    return { ok: true as const, message: t.subscribedThanks };
   } catch (error) {
     console.error("[newsletter] failed", error instanceof Error ? error.name : "unknown");
-    return { ok: false as const, error: "Something went wrong. Please try again." };
+    return { ok: false as const, error: t.wentWrong };
   }
 }
 
 export async function unsubscribeAction(token: string) {
+  const t = await getActionT();
   const parsedToken = z.string().min(16).max(128).regex(/^[A-Za-z0-9_-]+$/).safeParse(token);
-  if (!parsedToken.success) return { ok: false as const, error: "This link is not valid." };
+  if (!parsedToken.success) return { ok: false as const, error: t.linkInvalid };
   const ip = await clientIp();
   try {
     await enforceRateLimit({ ...LIMITS.lookup, key: `unsubscribe:${ip}` });
   } catch {
-    return { ok: false as const, error: "Too many attempts. Please try again later." };
+    return { ok: false as const, error: t.rateLimited };
   }
   const subscriber = await prisma.newsletterSubscriber.findUnique({
     where: { unsubscribeToken: parsedToken.data },
   });
-  if (!subscriber) return { ok: false as const, error: "This link is not valid." };
+  if (!subscriber) return { ok: false as const, error: t.linkInvalid };
   await prisma.newsletterSubscriber.update({
     where: { id: subscriber.id },
     data: { unsubscribedAt: new Date() },
@@ -90,9 +93,10 @@ export async function submitContactAction(input: {
   message: string;
   website?: string;
 }) {
+  const t = await getActionT();
   const parsed = contactSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: "Please review the highlighted fields." };
+    return { ok: false as const, error: t.reviewFields };
   }
   if (isBotSubmission(parsed.data.website)) {
     return { ok: true as const, message: "Thank you — we will get back to you soon." };
@@ -101,7 +105,7 @@ export async function submitContactAction(input: {
   try {
     await enforceRateLimit({ ...LIMITS.contact, key: `contact:${ip}` });
   } catch {
-    return { ok: false as const, error: "Too many attempts. Please try again later." };
+    return { ok: false as const, error: t.rateLimited };
   }
   try {
     const { website: _website, ...message } = parsed.data;
@@ -110,7 +114,7 @@ export async function submitContactAction(input: {
     return { ok: true as const, message: "Thank you — we will get back to you soon." };
   } catch (error) {
     console.error("[contact] failed", error instanceof Error ? error.name : "unknown");
-    return { ok: false as const, error: "Something went wrong. Please try again." };
+    return { ok: false as const, error: t.wentWrong };
   }
 }
 
@@ -122,9 +126,10 @@ export async function submitReviewAction(input: {
   authorName: string;
   website?: string;
 }) {
+  const t = await getActionT();
   const parsed = reviewSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: "Please complete the review form." };
+    return { ok: false as const, error: t.reviewIncomplete };
   }
   if (isBotSubmission(parsed.data.website)) {
     return { ok: true as const, message: "Thank you — your review is awaiting moderation." };
@@ -139,7 +144,7 @@ export async function submitReviewAction(input: {
     await enforceRateLimit({ ...LIMITS.review, key: `review-ip:${ip}` });
     await enforceRateLimit({ ...LIMITS.review, key: `review-ip-product:${ip}:${parsed.data.productId}` });
   } catch {
-    return { ok: false as const, error: "Too many attempts. Please try again later." };
+    return { ok: false as const, error: t.rateLimited };
   }
 
   // One review per customer per product; guests are limited to one per hashed IP.
@@ -152,7 +157,7 @@ export async function submitReviewAction(input: {
       });
 
   if (existing) {
-    return { ok: false as const, error: "You have already reviewed this product." };
+    return { ok: false as const, error: t.alreadyReviewed };
   }
 
   try {
@@ -171,31 +176,32 @@ export async function submitReviewAction(input: {
     return { ok: true as const, message: "Thank you — your review is awaiting moderation." };
   } catch (error) {
     if (error instanceof Error && "code" in error && (error as { code?: string }).code === "P2002") {
-      return { ok: false as const, error: "You have already reviewed this product." };
+      return { ok: false as const, error: t.alreadyReviewed };
     }
     console.error("[review] submission failed", error instanceof Error ? error.name : "unknown");
-    return { ok: false as const, error: "Something went wrong. Please try again." };
+    return { ok: false as const, error: t.wentWrong };
   }
 }
 
 export async function toggleWishlistAction(productId: string) {
+  const t = await getActionT();
   const parsedId = z.string().min(1).max(64).safeParse(productId);
-  if (!parsedId.success) return { ok: false as const, error: "This product is not available." };
+  if (!parsedId.success) return { ok: false as const, error: t.productUnavailable };
   const session = await getCustomerSession();
   if (!session) {
-    return { ok: false as const, code: "NEED_LOGIN" as const, error: "Sign in to sync your wishlist." };
+    return { ok: false as const, code: "NEED_LOGIN" as const, error: t.needLoginWishlist };
   }
   try {
     await enforceRateLimit({ ...LIMITS.wishlist, key: `wishlist:${session.customer.id}` });
   } catch {
-    return { ok: false as const, error: "Too many attempts. Please try again later." };
+    return { ok: false as const, error: t.rateLimited };
   }
 
   const visibleProduct = await prisma.product.findFirst({
     where: { AND: [storefrontProductWhere(), { id: parsedId.data }] },
     select: { id: true },
   });
-  if (!visibleProduct) return { ok: false as const, error: "This product is not available." };
+  if (!visibleProduct) return { ok: false as const, error: t.productUnavailable };
 
   let wishlist = await prisma.wishlist.findUnique({
     where: { customerId: session.customer.id },
@@ -228,14 +234,15 @@ export async function getWishlistIdsAction(): Promise<{ ids: string[]; loggedIn:
 
 /** Merges guest (localStorage) wishlist ids into the account after login. */
 export async function mergeWishlistAction(productIds: string[]) {
+  const t = await getActionT();
   const session = await getCustomerSession();
-  if (!session) return { ok: false as const, error: "Please sign in." };
+  if (!session) return { ok: false as const, error: t.signIn };
   const parsedIds = z.array(z.string().min(1).max(64)).max(100).safeParse(productIds);
-  if (!parsedIds.success) return { ok: false as const, error: "The wishlist could not be updated." };
+  if (!parsedIds.success) return { ok: false as const, error: t.wishlistFailed };
   try {
     await enforceRateLimit({ ...LIMITS.wishlist, key: `wishlist:${session.customer.id}` });
   } catch {
-    return { ok: false as const, error: "Too many attempts. Please try again later." };
+    return { ok: false as const, error: t.rateLimited };
   }
   const ids = [...new Set(parsedIds.data)];
   if (ids.length === 0) return { ok: true as const, added: 0 };
@@ -304,23 +311,24 @@ export async function registerAction(input: {
   phone: string;
   password: string;
 }) {
+  const t = await getActionT();
   const parsed = customerRegisterSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: "Please review the highlighted fields.", fields: flattenZodErrors(parsed.error) };
+    return { ok: false as const, error: t.reviewFields, fields: flattenZodErrors(parsed.error) };
   }
 
   const ip = await clientIp();
   try {
     await enforceRateLimit({ ...LIMITS.register, key: `register:${ip}` });
   } catch {
-    return { ok: false as const, error: "Too many attempts. Please try again later." };
+    return { ok: false as const, error: t.rateLimited };
   }
 
   const existing = await prisma.customer.findFirst({
     where: { OR: [{ email: parsed.data.email }, { phone: parsed.data.phone }] },
   });
   if (existing) {
-    return { ok: false as const, error: "An account already exists with this email or phone." };
+    return { ok: false as const, error: t.accountExists };
   }
 
   let customer;
@@ -337,10 +345,10 @@ export async function registerAction(input: {
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
-      return { ok: false as const, error: "An account already exists with this email or phone." };
+      return { ok: false as const, error: t.accountExists };
     }
     console.error("[register] failed", error instanceof Error ? error.name : "unknown");
-    return { ok: false as const, error: "Something went wrong. Please try again." };
+    return { ok: false as const, error: t.wentWrong };
   }
 
   await createCustomerSession(customer.id);
@@ -349,9 +357,10 @@ export async function registerAction(input: {
 }
 
 export async function loginAction(input: { email: string; password: string }) {
+  const t = await getActionT();
   const parsed = customerLoginSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: "Please enter your email and password." };
+    return { ok: false as const, error: t.enterCredentials };
   }
 
   const ip = await clientIp();
@@ -359,16 +368,16 @@ export async function loginAction(input: { email: string; password: string }) {
     await enforceRateLimit({ ...LIMITS.login, key: `login:${ip}` });
     await enforceRateLimit({ ...LIMITS.login, key: `login-account:${parsed.data.email}` });
   } catch {
-    return { ok: false as const, error: "Too many attempts. Please try again later." };
+    return { ok: false as const, error: t.rateLimited };
   }
 
   const customer = await prisma.customer.findUnique({ where: { email: parsed.data.email } });
   if (!customer?.passwordHash || customer.status !== "ACTIVE") {
-    return { ok: false as const, error: "Email or password is incorrect." };
+    return { ok: false as const, error: t.badCredentials };
   }
   const valid = await verifyPassword(customer.passwordHash, parsed.data.password);
   if (!valid) {
-    return { ok: false as const, error: "Email or password is incorrect." };
+    return { ok: false as const, error: t.badCredentials };
   }
 
   await createCustomerSession(customer.id);
@@ -381,36 +390,32 @@ export async function logoutAction() {
   redirect("/");
 }
 
-const passwordChangeSchema = z
-  .object({
-    current: z.string().min(1),
-    next: z.string().min(10).max(200),
-  })
-  .refine((data) => passwordIssues(data.next).length === 0, {
-    message: "Use upper and lower case letters and at least one number.",
-    path: ["next"],
-  });
+const passwordChangeSchema = z.object({
+  current: z.string().min(1),
+  next: z.string().min(10).max(200),
+});
 
 export async function changePasswordAction(input: { current: string; next: string }) {
+  const t = await getActionT();
   const session = await getCustomerSession();
-  if (!session) return { ok: false as const, error: "Please sign in." };
+  if (!session) return { ok: false as const, error: t.signIn };
   try {
     await enforceRateLimit({ ...LIMITS.passwordReset, key: `password-change:${session.customer.id}` });
   } catch {
-    return { ok: false as const, error: "Too many attempts. Please try again later." };
+    return { ok: false as const, error: t.rateLimited };
   }
 
   const parsed = passwordChangeSchema.safeParse(input);
-  if (!parsed.success) {
-    return { ok: false as const, error: "Please choose a stronger password." };
+  if (!parsed.success || passwordIssues(parsed.data.next).length > 0) {
+    return { ok: false as const, error: t.weakPassword };
   }
 
   if (!session.customer.passwordHash) {
-    return { ok: false as const, error: "No password is set on this account." };
+    return { ok: false as const, error: t.noPassword };
   }
 
   const valid = await verifyPassword(session.customer.passwordHash, parsed.data.current);
-  if (!valid) return { ok: false as const, error: "Your current password is incorrect." };
+  if (!valid) return { ok: false as const, error: t.wrongCurrent };
 
   await prisma.customer.update({
     where: { id: session.customer.id },
@@ -424,5 +429,5 @@ export async function changePasswordAction(input: { current: string; next: strin
     resource: "Customer",
     resourceId: session.customer.id,
   });
-  return { ok: true as const, message: "Your password has been updated." };
+  return { ok: true as const, message: t.passwordUpdated };
 }

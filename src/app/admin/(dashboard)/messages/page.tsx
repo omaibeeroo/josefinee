@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requirePermission } from "@/lib/auth/rbac";
 import { listMessagesAdmin } from "@/server/actions/admin-ops";
 import { PageHeader } from "@/components/admin/ui";
+import { getDictionary } from "@/lib/i18n/server";
+import { formatDateTimeFR } from "@/lib/money";
 import { MessageActions } from "./message-actions";
 import { cn } from "@/lib/utils";
 
@@ -18,15 +20,22 @@ export default async function AdminMessagesPage({
   const params = await searchParams;
   const raw = params.status;
   const status = (Array.isArray(raw) ? raw[0] : raw) || "NEW";
-  const messages = await listMessagesAdmin(status === "ALL" ? undefined : status);
+  const [messages, t] = await Promise.all([listMessagesAdmin(status === "ALL" ? undefined : status), getDictionary()]);
+  const tabLabels: Record<string, string> = {
+    NEW: t.adminPages.tabNew,
+    IN_PROGRESS: t.adminPages.tabInProgress,
+    RESOLVED: t.adminPages.tabResolved,
+    SPAM: t.adminPages.tabSpam,
+    ALL: t.adminPages.tabAll,
+  };
 
   return (
     <div>
       <PageHeader
-        title="Messages"
-        description="Contact-form submissions with spam protection."
+        title={t.adminPages.messagesTitle}
+        description={t.adminPages.messagesDesc}
         action={
-          <div className="flex gap-1 border hairline bg-white p-1" role="group" aria-label="Message status">
+          <div className="flex gap-1 border hairline bg-white p-1" role="group" aria-label={t.adminPages.messageStatus}>
             {STATUSES.map((option) => (
               <Link
                 key={option}
@@ -37,7 +46,7 @@ export default async function AdminMessagesPage({
                   status === option ? "bg-ink text-ivory" : "text-ink-soft hover:text-ink",
                 )}
               >
-                {option}
+                {tabLabels[option] ?? option}
               </Link>
             ))}
           </div>
@@ -51,7 +60,7 @@ export default async function AdminMessagesPage({
                 {message.subject}
                 <span className="ml-2 text-xs font-normal text-ink-muted">
                   {message.name} · {message.email}
-                  {message.phone ? ` · ${message.phone}` : ""} · {new Date(message.createdAt).toLocaleString("fr-DZ")}
+                  {message.phone ? ` · ${message.phone}` : ""} · {formatDateTimeFR(message.createdAt)}
                 </span>
               </p>
               <MessageActions id={message.id} status={message.status} />
@@ -60,7 +69,7 @@ export default async function AdminMessagesPage({
           </li>
         ))}
       </ul>
-      {messages.length === 0 && <p className="border hairline bg-white p-8 text-center text-sm text-ink-muted">Nothing here.</p>}
+      {messages.length === 0 && <p className="border hairline bg-white p-8 text-center text-sm text-ink-muted">{t.adminMisc.nothingHere}</p>}
     </div>
   );
 }

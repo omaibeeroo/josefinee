@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createUserAction, resetUserPasswordAction, setUserStatusAction } from "@/server/actions/admin-auth";
 import { ROLES } from "@/lib/auth/permissions";
 import { Button, Field, Input, Select } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 
 export type StaffRow = {
   id: string;
@@ -20,6 +21,7 @@ export type StaffRow = {
 
 export function StaffManager({ users }: { users: StaffRow[] }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [showCreate, setShowCreate] = useState(false);
   const [form, setForm] = useState({ email: "", name: "", roleName: "ORDER_MANAGER", password: "" });
   const [resetFor, setResetFor] = useState<string | null>(null);
@@ -67,7 +69,7 @@ export function StaffManager({ users }: { users: StaffRow[] }) {
     <div>
       <div className="mb-4 flex justify-end">
         <Button size="sm" onClick={() => setShowCreate(!showCreate)}>
-          New staff account
+          {t.adminStaff.newAccount}
         </Button>
       </div>
       {error && (
@@ -77,27 +79,27 @@ export function StaffManager({ users }: { users: StaffRow[] }) {
       )}
       {showCreate && (
         <form onSubmit={create} className="mb-4 grid gap-3 border hairline bg-white p-5 sm:grid-cols-2">
-          <Field label="Name" required>
+          <Field label={t.adminStaff.name} required>
             <Input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required />
           </Field>
-          <Field label="Email" required>
+          <Field label={t.adminForm.email} required>
             <Input type="email" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required />
           </Field>
-          <Field label="Role">
+          <Field label={t.adminStaff.role}>
             <Select value={form.roleName} onChange={(event) => setForm({ ...form, roleName: event.target.value })}>
               {ROLES.map((role) => (
                 <option key={role.name} value={role.name}>
-                  {role.label}
+                  {t.adminRoles[role.name as keyof typeof t.adminRoles] ?? role.label}
                 </option>
               ))}
             </Select>
           </Field>
-          <Field label="Temporary password" hint="10+ chars, mixed case, number. They must change it on first login.">
+          <Field label={t.adminStaff.tempPassword} hint={t.adminStaff.tempPasswordHint}>
             <Input type="password" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required autoComplete="new-password" />
           </Field>
           <div className="sm:col-span-2">
             <Button type="submit" disabled={pending} size="sm">
-              {pending ? "Creating…" : "Create account"}
+              {pending ? t.adminStaff.creating : t.adminStaff.createAccount}
             </Button>
           </div>
         </form>
@@ -107,11 +109,11 @@ export function StaffManager({ users }: { users: StaffRow[] }) {
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead>
             <tr className="border-b hairline text-xs uppercase tracking-[0.1em] text-ink-muted">
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Role</th>
-              <th className="px-4 py-3">2FA</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="px-4 py-3">{t.adminStaff.name}</th>
+              <th className="px-4 py-3">{t.adminStaff.role}</th>
+              <th className="px-4 py-3">{t.adminStaff.twoFactor}</th>
+              <th className="px-4 py-3">{t.adminStaff.colStatus}</th>
+              <th className="px-4 py-3 text-right">{t.adminForm.actions}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -121,15 +123,15 @@ export function StaffManager({ users }: { users: StaffRow[] }) {
                   {user.name}
                   <span className="block text-xs font-normal text-ink-muted">{user.email}</span>
                 </td>
-                <td className="px-4 py-3 text-xs">{user.role.label}</td>
-                <td className="px-4 py-3 text-xs">{user.twoFactorEnabled ? "On" : "Off"}</td>
+                <td className="px-4 py-3 text-xs">{t.adminRoles[user.role.name as keyof typeof t.adminRoles] ?? user.role.label}</td>
+                <td className="px-4 py-3 text-xs">{user.twoFactorEnabled ? t.adminStaff.on : t.adminStaff.off}</td>
                 <td className="px-4 py-3 text-xs uppercase tracking-[0.1em]">{user.status}</td>
                 <td className="px-4 py-3 text-right text-xs">
                   <button type="button" onClick={() => setResetFor(user.id)} className="underline underline-offset-2">
-                    Reset password
+                    {t.adminStaff.resetPassword}
                   </button>
                   <button type="button" onClick={() => void toggleStatus(user)} className="ml-3 underline underline-offset-2">
-                    {user.status === "ACTIVE" ? "Disable" : "Enable"}
+                    {user.status === "ACTIVE" ? t.adminStaff.disable : t.adminStaff.enable}
                   </button>
                 </td>
               </tr>
@@ -141,15 +143,15 @@ export function StaffManager({ users }: { users: StaffRow[] }) {
       {resetFor && (
         <div className="mt-4 flex max-w-md items-end gap-2 border hairline bg-white p-4">
           <div className="flex-1">
-            <Field label="New temporary password">
+            <Field label={t.adminStaff.newTempPassword}>
               <Input type="password" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" />
             </Field>
           </div>
           <Button size="sm" disabled={pending} onClick={() => void reset()}>
-            Apply
+            {t.adminStaff.apply}
           </Button>
           <Button size="sm" variant="ghost" onClick={() => setResetFor(null)}>
-            Cancel
+            {t.adminForm.cancel}
           </Button>
         </div>
       )}

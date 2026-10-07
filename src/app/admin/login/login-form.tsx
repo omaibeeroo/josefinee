@@ -4,8 +4,10 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { adminLoginAction } from "@/server/actions/admin-auth";
 import { Button, Field, Input } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 
 export function AdminLoginForm() {
+  const { t } = useLocale();
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,14 +33,14 @@ export function AdminLoginForm() {
 
   return (
     <form onSubmit={submit} className="mt-8 space-y-4 border hairline bg-white p-6 md:p-8">
-      <Field label="E-mail" required>
+      <Field label={t.adminLogin.email} required>
         <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" required />
       </Field>
-      <Field label="Mot de passe" required>
+      <Field label={t.adminLogin.password} required>
         <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required />
       </Field>
       {(needsTotp || totp) && (
-        <Field label="Code d’authentification" required hint="Code à 6 chiffres de votre application">
+        <Field label={t.adminLogin.totp} required hint={t.adminLogin.totpHint}>
           <Input value={totp} onChange={(event) => setTotp(event.target.value)} inputMode="numeric" autoComplete="one-time-code" maxLength={6} />
         </Field>
       )}
@@ -48,7 +50,7 @@ export function AdminLoginForm() {
         </p>
       )}
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Connexion…" : "Se connecter"}
+        {pending ? t.adminLogin.pending : t.adminLogin.submit}
       </Button>
     </form>
   );

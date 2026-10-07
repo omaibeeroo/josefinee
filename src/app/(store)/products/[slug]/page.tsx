@@ -14,11 +14,11 @@ import {
   AddToBagPanel,
   ProductGallery,
   ProductCarousel,
-  RecentlyViewed,
 } from "@/components/storefront/product";
 import { Accordion, Stars } from "@/components/ui";
+import { getDictionary } from "@/lib/i18n/server";
 import { PixelEvent } from "@/components/pixels";
-import { ReviewForm } from "./reviews";
+import { ReviewForm, ReviewToggle } from "./reviews";
 import { serializeForInlineJsonScript } from "@/lib/script-data";
 import { cleanRichText } from "@/lib/sanitize";
 import { formatDA } from "@/lib/money";
@@ -127,11 +127,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       : {}),
   };
 
+  const t = await getDictionary();
   const detailRows: Array<[string, string | null]> = [
-    ["Matière", product.material],
-    ["Couleur", product.color],
-    ["Dimensions", product.dimensions],
-    ["Poids", product.weight ? `${product.weight} g` : null],
+    [t.product.material, product.material],
+    [t.product.color, product.color],
+    [t.product.dimensions, product.dimensions],
+    [t.product.weight, product.weight ? `${product.weight} g` : null],
   ];
 
   return (
@@ -152,11 +153,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       />
 
       <nav
-        aria-label="Fil d’Ariane"
+        aria-label={t.product.breadcrumb}
         className="mb-6 text-xs uppercase tracking-[0.14em] text-ink-muted"
       >
         <Link href="/" className="hover:text-ink">
-          Accueil
+          {t.product.home}
         </Link>
         <span aria-hidden="true"> / </span>
         {product.category ? (
@@ -191,12 +192,12 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             {product.inStock ? (
               <>
                 <span className="h-2 w-2 rounded-full bg-success" aria-hidden="true" />
-                <span className="font-medium">En stock, prêt à partir</span>
+                <span className="font-medium">{t.product.inStockReady}</span>
               </>
             ) : (
               <>
                 <span className="h-2 w-2 rounded-full bg-sale" aria-hidden="true" />
-                <span className="font-medium text-sale">Épuisé — revenez bientôt</span>
+                <span className="font-medium text-sale">{t.product.soldOutSoon}</span>
               </>
             )}
           </p>
@@ -228,8 +229,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 aria-hidden="true"
               />
               <div>
-                <dt className="font-medium">Paiement à la livraison</dt>
-                <dd className="text-ink-soft">Payez à la réception de votre commande.</dd>
+                <dt className="font-medium">{t.product.codTitle}</dt>
+                <dd className="text-ink-soft">{t.product.codText}</dd>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -241,7 +242,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               />
               <div>
                 <dt className="font-medium">58 wilayas</dt>
-                <dd className="text-ink-soft">Frais calculés à la commande.</dd>
+                <dd className="text-ink-soft">{t.product.shippingAtCheckout}</dd>
               </div>
             </div>
           </dl>
@@ -252,7 +253,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 ...(product.description
                   ? [
                       {
-                        title: "Description",
+                        title: t.product.description,
 
                         defaultOpen: true,
                         content: (
@@ -267,7 +268,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 ...(detailRows.some(([, value]) => value)
                   ? [
                       {
-                        title: "Détails",
+                        title: t.product.details,
                         content: (
                           <dl className="space-y-2 text-sm">
                             {detailRows
@@ -288,24 +289,23 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 ...(product.careInstructions
                   ? [
                       {
-                        title: "Entretien",
+                        title: t.product.care,
                         content: <p className="rich-text">{product.careInstructions}</p>,
                       },
                     ]
                   : []),
                 {
-                  title: "Livraison & retours",
+                  title: t.product.shippingReturns,
                   content: (
                     <div className="rich-text">
                       <p>
-                        {product.shippingInfo ??
-                          "Nous livrons dans les 58 wilayas. Frais et délais affichés à la commande."}{" "}
+                        {product.shippingInfo ?? t.product.shippingFallback}{" "}
                         <Link href="/pages/shipping" className="underline underline-offset-2">
-                          Informations de livraison
+                          {t.product.shippingInfo}
                         </Link>
                         {" · "}
                         <Link href="/pages/returns" className="underline underline-offset-2">
-                          Retours sous 7 jours
+                          {t.product.returns7}
                         </Link>
                       </p>
                     </div>
@@ -317,36 +317,37 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
       </div>
 
-      <section className="mt-16 md:mt-24" aria-label="Reviews">
-        <h2 className="font-display text-3xl font-medium">Avis</h2>
+      <section className="mx-auto mt-12 max-w-2xl text-center md:mt-16" aria-label={t.product.reviews}>
+        <p className="eyebrow mb-2">{t.product.speakers}</p>
+        <h2 className="font-display text-3xl font-medium md:text-4xl">
+          {t.product.reviews}{reviews.length > 0 ? ` · ${reviews.length}` : ""}
+        </h2>
         {reviews.length === 0 ? (
-          <p className="mt-3 text-ink-soft">
-            Aucun avis pour le moment — partagez la première votre expérience.
+          <p className="mt-3 text-[0.9375rem] text-ink-soft">
+            {t.product.noReviews}
           </p>
         ) : (
-          <ul className="mt-6 grid gap-4 md:grid-cols-2">
+          <ul className="mt-8 space-y-0">
             {reviews.map((review) => (
-              <li key={review.id} className="border hairline bg-white p-5">
+              <li key={review.id} className="border-t hairline py-6 text-left last:border-b">
                 <Stars value={review.rating} />
-                {review.title && <p className="mt-2 font-medium">{review.title}</p>}
-                <p className="mt-1 text-[0.9375rem] text-ink-soft">{review.body}</p>
-                <p className="mt-3 text-xs uppercase tracking-[0.12em] text-ink-muted">
+                {review.title && <p className="mt-2 font-display text-lg">{review.title}</p>}
+                <p className="mt-1 text-[0.9375rem] leading-relaxed text-ink-soft">{review.body}</p>
+                <p className="mt-2 text-xs uppercase tracking-[0.12em] text-ink-muted">
                   {review.authorName}
-                  {review.isVerifiedPurchase ? " · Achat vérifié" : ""}
+                  {review.isVerifiedPurchase ? ` · ${t.product.verified}` : ""}
                 </p>
               </li>
             ))}
           </ul>
         )}
-        <ReviewForm productId={product.id} />
+        <ReviewToggle>
+          <ReviewForm productId={product.id} />
+        </ReviewToggle>
       </section>
 
       <div className="mt-16 md:mt-24">
-        <ProductCarousel title="Vous aimerez aussi" products={related} viewAllHref="/shop" />
-      </div>
-
-      <div className="mt-12 md:mt-16">
-        <RecentlyViewed productId={product.id} />
+        <ProductCarousel title={t.product.alsoLike} products={related} viewAllHref="/shop" />
       </div>
     </div>
   );

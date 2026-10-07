@@ -7,10 +7,12 @@ import { useRouter } from "next/navigation";
 import { clearCartAction, removeCartItemAction, updateCartItemAction } from "@/server/actions/cart";
 import { useCart } from "@/components/storefront/cart-ui";
 import { EmptyState, QuantitySelector } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 import { formatDA } from "@/lib/money";
 import { Trash2 } from "lucide-react";
 
 export function CartLines({ floor }: { floor: { minHome: number } | null }) {
+  const { t } = useLocale();
   const { items, subtotal, refresh } = useCart();
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
@@ -24,7 +26,7 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
       if (!result.ok) setError(result.error);
       await refresh();
     } catch {
-      setError("Impossible de mettre à jour le panier. Réessayez.");
+      setError(t.cart.updateFailed);
     } finally {
       setPending(null);
     }
@@ -54,7 +56,7 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
       await refresh();
       router.refresh();
     } catch {
-      setError("Impossible de vider le panier. Réessayez.");
+      setError(t.cart.clearFailed);
     } finally {
       setPending(null);
     }
@@ -63,11 +65,11 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
   if (items.length === 0) {
     return (
       <EmptyState
-        title="Votre panier est vide"
-        message="De belles pièces vous attendent."
+        title={t.cart.empty}
+        message={t.cart.emptyLong}
         action={
           <Link href="/shop" className="btn btn-primary">
-            Découvrir la boutique
+            {t.cart.discoverCta}
           </Link>
         }
       />
@@ -103,11 +105,11 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
                     {item.productName}
                   </Link>
                   {item.variantLabel && <p className="mt-0.5 text-sm text-ink-muted">{item.variantLabel}</p>}
-                  <p className="mt-1 text-sm text-ink-soft">{formatDA(item.unitPrice)} / pièce</p>
+                  <p className="mt-1 text-sm text-ink-soft">{formatDA(item.unitPrice)} {t.cart.perPiece}</p>
                 </div>
                 <button
                   type="button"
-                  aria-label={`Retirer ${item.productName}`}
+                  aria-label={`${t.cart.removeItem} ${item.productName}`}
                   disabled={pending === item.id}
                   onClick={() => void remove(item.id)}
                   className="p-1 text-ink-muted hover:text-ink disabled:opacity-40"
@@ -130,21 +132,21 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
 
       <aside className="lg:sticky lg:top-32 lg:self-start">
         <div className="border hairline bg-white p-6">
-          <h2 className="text-xs font-medium uppercase tracking-[0.2em]">Résumé de commande</h2>
+          <h2 className="text-xs font-medium uppercase tracking-[0.2em]">{t.cart.summary}</h2>
           <div className="mt-4 flex items-center justify-between">
-            <span className="text-sm text-ink-soft">Sous-total</span>
+            <span className="text-sm text-ink-soft">{t.cart.subtotal}</span>
             <span className="font-medium">{formatDA(subtotal)}</span>
           </div>
           <p className="mt-2 text-xs text-ink-muted">
-            {floor ? `Livraison dès ${formatDA(floor.minHome)} · ` : ""}
-            Frais exacts calculés à la commande. Paiement à la livraison.
+            {floor ? `${t.cart.deliveryFrom} ${formatDA(floor.minHome)} · ` : ""}
+            {t.cart.deliveryNote}
           </p>
           <Link href="/checkout" className="btn btn-primary mt-5 w-full">
-            Commander
+            {t.cart.checkout}
           </Link>
           <div className="mt-2 flex justify-between">
             <Link href="/shop" className="btn btn-ghost flex-1">
-              Continuer mes achats
+              {t.cart.continueShopping}
             </Link>
             <button
               type="button"
@@ -152,7 +154,7 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
               disabled={pending === "clear"}
               className="ml-2 px-2 text-xs uppercase tracking-[0.14em] text-ink-muted underline underline-offset-2 disabled:opacity-40"
             >
-              Vider
+              {t.cart.clear}
             </button>
           </div>
         </div>
