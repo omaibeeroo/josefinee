@@ -188,6 +188,7 @@
 
   --shadow-card: 0 1px 2px rgb(29 35 43 / 0.04), 0 22px 50px -28px rgb(29 35 43 / 0.25);
   --shadow-drawer: -24px 0 60px -30px rgb(29 35 43 / 0.35);
+  --shadow-soft: 0 12px 28px -24px rgb(29 35 43 / 0.38);
 
   --animate-fade-in: fade-in 0.9s ease both;
   --animate-slide-up: slide-up 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
@@ -294,6 +295,21 @@
       transform: translateY(0);
     }
   }
+}
+
+/* Commit theme variables in one paint instead of animating every surface. */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition-duration: 0s !important;
+  animation-duration: 0s !important;
+}
+
+[data-theme="dark"] {
+  --shadow-card: 0 1px 2px rgb(0 0 0 / 0.28), 0 24px 54px -30px rgb(0 0 0 / 0.72);
+  --shadow-drawer: -24px 0 64px -30px rgb(0 0 0 / 0.7);
+  --shadow-soft: 0 14px 30px -24px rgb(0 0 0 / 0.68);
 }
 
 @layer base {
@@ -1695,4 +1711,418 @@
   .feature-spotlight:focus-within .feature-spotlight-image {
     transform: none;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Dark-mode polish
+   --------------------------------------------------------------------------- */
+[data-theme="dark"] body {
+  background: #10151b;
+  color: var(--color-ink);
+  letter-spacing: -0.005em;
+}
+
+[data-theme="dark"] .font-display {
+  color: #f1f4f7;
+  font-weight: 500;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.035);
+}
+
+[data-theme="dark"] .eyebrow,
+[data-theme="dark"] .rule-label,
+[data-theme="dark"] .field-label {
+  color: #a5b0bb;
+}
+
+[data-theme="dark"] header {
+  border-color: rgb(70 82 94 / 0.72);
+  background: rgb(20 25 31 / 0.92);
+  box-shadow: 0 10px 28px -24px rgb(0 0 0 / 0.8);
+}
+
+[data-theme="dark"] .product-card-media {
+  border-color: #33404b;
+  background: linear-gradient(145deg, #202831, #171e25);
+  box-shadow: var(--shadow-soft);
+}
+
+[data-theme="dark"] .product-card:hover .product-card-media,
+[data-theme="dark"] .product-card:focus-within .product-card-media {
+  border-color: #4b5a68;
+  box-shadow: 0 24px 46px -28px rgb(0 0 0 / 0.82);
+}
+
+[data-theme="dark"] .feature-spotlight,
+[data-theme="dark"] .silver-panel,
+[data-theme="dark"] .product-gallery-hero {
+  border-color: #33404b;
+  background: linear-gradient(145deg, #202831, #171e25);
+  box-shadow: var(--shadow-card);
+}
+
+[data-theme="dark"] .site-footer {
+  border-top-color: #33404b;
+}
+
+[data-theme="dark"] .field,
+[data-theme="dark"] select,
+[data-theme="dark"] textarea,
+[data-theme="dark"] input {
+  border-color: #3a4753;
+  background-color: #1a2129;
+  color: var(--color-ink);
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.22);
+}
+
+[data-theme="dark"] .field:hover,
+[data-theme="dark"] select:hover,
+[data-theme="dark"] textarea:hover,
+[data-theme="dark"] input:hover {
+  border-color: #536373;
+  background-color: #202831;
+}
+
+[data-theme="dark"] .field:focus,
+[data-theme="dark"] select:focus,
+[data-theme="dark"] textarea:focus,
+[data-theme="dark"] input:focus {
+  border-color: #9fb0c0;
+  box-shadow:
+    0 0 0 3px rgb(159 176 192 / 0.18),
+    inset 0 1px 2px rgb(0 0 0 / 0.18);
+}
+
+[data-theme="dark"] .btn:hover:not(:disabled),
+[data-theme="dark"] .btn-interactive:hover:not(:disabled) {
+  box-shadow: 0 12px 24px -18px rgb(0 0 0 / 0.9);
+}
+
+[data-theme="dark"] .icon-button:hover,
+[data-theme="dark"] .icon-button:focus-visible {
+  background-color: #242e38;
+}
+
+[data-theme="dark"] .product-card button[aria-label*="wishlist"],
+[data-theme="dark"] .product-card button[aria-label*="Wishlist"] {
+  border-color: rgb(220 230 240 / 0.18);
+  background: rgb(20 25 31 / 0.9);
+  box-shadow: 0 8px 18px -16px rgb(0 0 0 / 0.9);
+}
+
+[data-theme="dark"] .checkout-summary,
+[data-theme="dark"] .cart-page aside > div,
+[data-theme="dark"] .admin-card {
+  border-color: #33404b;
+  background: #1a2129;
+  box-shadow: var(--shadow-soft);
+}
+
+@media (max-width: 767px) {
+  [data-theme="dark"] .product-card-media,
+  [data-theme="dark"] .feature-spotlight,
+  [data-theme="dark"] .silver-panel,
+  [data-theme="dark"] .product-gallery-hero,
+  [data-theme="dark"] .checkout-summary,
+  [data-theme="dark"] .cart-page aside > div {
+    box-shadow: 0 12px 28px -24px rgb(0 0 0 / 0.78);
+  }
+
+  [data-theme="dark"] .font-display {
+    text-shadow: none;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Dark-mode surface cleanup
+   Remove bright utility-white boxes and keep the UI layered, not outlined.
+   --------------------------------------------------------------------------- */
+[data-theme="dark"] [class*="bg-white"] {
+  background-color: #1a2129 !important;
+  color: var(--color-ink);
+}
+
+[data-theme="dark"] [class*="bg-white"]:hover {
+  background-color: #202831 !important;
+}
+
+[data-theme="dark"] .btn,
+[data-theme="dark"] .btn-interactive {
+  border-color: transparent;
+  box-shadow: none;
+  text-shadow: none;
+}
+
+[data-theme="dark"] .btn-primary,
+[data-theme="dark"] .btn-gold {
+  border-color: #9fb0c0;
+  background: #d7e0e8;
+  color: #10151b;
+  box-shadow: 0 8px 20px -16px rgb(0 0 0 / 0.9);
+}
+
+[data-theme="dark"] .btn-primary:hover:not(:disabled),
+[data-theme="dark"] .btn-gold:hover:not(:disabled) {
+  border-color: #c5d1dc;
+  background: #eef2f5;
+  color: #10151b;
+  box-shadow: 0 12px 24px -16px rgb(0 0 0 / 0.95);
+}
+
+[data-theme="dark"] .btn-outline {
+  border-color: #647484;
+  background: transparent;
+  color: #e6ebef;
+}
+
+[data-theme="dark"] .btn-outline:hover:not(:disabled) {
+  border-color: #b4c1cc;
+  background: #2a3540;
+  color: #f4f6f8;
+}
+
+[data-theme="dark"] .btn-ghost {
+  border-color: #3a4753;
+  background: #1a2129;
+  color: #d6dee5;
+}
+
+[data-theme="dark"] .btn-ghost:hover:not(:disabled) {
+  border-color: #657585;
+  background: #242e38;
+  color: #f1f4f7;
+}
+
+[data-theme="dark"] .product-card-media,
+[data-theme="dark"] .product-card-media .bg-cream {
+  background: linear-gradient(145deg, #242d36 0%, #1a2129 100%);
+}
+
+[data-theme="dark"] .product-card-media .font-display,
+[data-theme="dark"] .product-gallery-hero .font-display {
+  color: #aebbc7;
+  text-shadow: none;
+}
+
+[data-theme="dark"] .feature-spotlight,
+[data-theme="dark"] .site-footer,
+[data-theme="dark"] .cart-drawer > div:last-child,
+[data-theme="dark"] .cart-page > div:first-of-type,
+[data-theme="dark"] .checkout-page > div:first-of-type,
+[data-theme="dark"] .checkout-form > section {
+  border-color: #2c3844;
+  background-color: transparent;
+}
+
+[data-theme="dark"] .cart-drawer > div:first-child,
+[data-theme="dark"] .cart-drawer > div:last-child,
+[data-theme="dark"] .cart-page aside > div,
+[data-theme="dark"] .checkout-summary,
+[data-theme="dark"] .checkout-form label[class*="border"] {
+  border-color: #34414d;
+  background: #1a2129;
+  box-shadow: var(--shadow-soft);
+}
+
+[data-theme="dark"] .cart-drawer ul li,
+[data-theme="dark"] .cart-page li,
+[data-theme="dark"] .checkout-form label[class*="border"] {
+  border-color: #2e3a46;
+}
+
+[data-theme="dark"] .cart-drawer ul li:hover,
+[data-theme="dark"] .cart-page li:hover,
+[data-theme="dark"] .checkout-form label[class*="border"]:hover {
+  background: #202831;
+}
+
+[data-theme="dark"] .checkout-form label[class*="border"]:has(input:checked),
+[data-theme="dark"] .checkout-form .checkout-option-selected {
+  border-color: #9fb0c0;
+  background: #27323d;
+  box-shadow: 0 0 0 2px rgb(159 176 192 / 0.16);
+}
+
+[data-theme="dark"] .quantity-selector,
+[data-theme="dark"] .product-detail-page .variant-option,
+[data-theme="dark"] .product-detail-page .variant-option-active {
+  border-color: #3b4854;
+  background: #1a2129;
+  color: #e7edf2;
+}
+
+[data-theme="dark"] .quantity-selector button:hover,
+[data-theme="dark"] .product-detail-page .variant-option:hover {
+  background: #27323d;
+}
+
+[data-theme="dark"] .product-detail-page .variant-option-active {
+  border-color: #a9b7c3;
+  background: #d7e0e8;
+  color: #10151b;
+}
+
+[data-theme="dark"] .product-zoom-hint {
+  border: 1px solid #3d4a56;
+  background: rgb(26 33 41 / 0.92);
+  color: #d8e0e7;
+}
+
+[data-theme="dark"] .admin-card,
+[data-theme="dark"] .admin-surface,
+[data-theme="dark"] .admin-nav-link,
+[data-theme="dark"] .admin-card [class*="bg-white"] {
+  border-color: #33404b;
+  background-color: #1a2129 !important;
+}
+
+[data-theme="dark"] .admin-nav-link:hover,
+[data-theme="dark"] .admin-nav-link:focus-visible {
+  background-color: #242e38 !important;
+}
+
+[data-theme="dark"] .site-footer {
+  background: #141a20 !important;
+}
+
+@media (max-width: 767px) {
+  [data-theme="dark"] .btn,
+  [data-theme="dark"] .btn-interactive {
+    min-height: 2.875rem;
+  }
+
+  [data-theme="dark"] .btn-primary,
+  [data-theme="dark"] .btn-gold,
+  [data-theme="dark"] .btn-outline,
+  [data-theme="dark"] .btn-ghost {
+    box-shadow: 0 6px 18px -16px rgb(0 0 0 / 0.85);
+  }
+
+  [data-theme="dark"] [class*="bg-white"] {
+    box-shadow: none;
+  }
+}
+
+/* Fixed utility colors used by admin statuses and validation messages need
+   semantic dark equivalents too; otherwise their text remains muddy or
+   invisible after the theme switch. */
+[data-theme="dark"] [class~="text-amber-700"],
+[data-theme="dark"] [class~="text-amber-800"],
+[data-theme="dark"] [class~="text-amber-900"] {
+  color: #f2cf83 !important;
+}
+
+[data-theme="dark"] [class~="text-blue-700"],
+[data-theme="dark"] [class~="text-blue-800"],
+[data-theme="dark"] [class~="text-blue-900"] {
+  color: #a9d3f2 !important;
+}
+
+[data-theme="dark"] [class~="text-emerald-700"],
+[data-theme="dark"] [class~="text-emerald-800"],
+[data-theme="dark"] [class~="text-emerald-900"] {
+  color: #9fe0bd !important;
+}
+
+[data-theme="dark"] [class~="text-red-700"],
+[data-theme="dark"] [class~="text-red-800"],
+[data-theme="dark"] [class~="text-red-900"] {
+  color: #f0a4aa !important;
+}
+
+[data-theme="dark"] [class~="text-stone-800"],
+[data-theme="dark"] [class~="text-stone-900"] {
+  color: #e2e8ed !important;
+}
+
+[data-theme="dark"] [class~="bg-amber-100"],
+[data-theme="dark"] [class~="bg-amber-50"] {
+  background-color: rgb(152 111 34 / 0.2) !important;
+}
+
+[data-theme="dark"] [class~="bg-blue-100"],
+[data-theme="dark"] [class~="bg-blue-50"] {
+  background-color: rgb(43 111 161 / 0.2) !important;
+}
+
+[data-theme="dark"] [class~="bg-emerald-100"],
+[data-theme="dark"] [class~="bg-emerald-50"] {
+  background-color: rgb(41 130 84 / 0.2) !important;
+}
+
+[data-theme="dark"] [class~="bg-red-100"],
+[data-theme="dark"] [class~="bg-red-50"],
+[data-theme="dark"] .cart-page [role="alert"],
+[data-theme="dark"] .checkout-page [role="alert"] {
+  background-color: rgb(168 61 70 / 0.2) !important;
+}
+
+[data-theme="dark"] [class~="bg-stone-200"],
+[data-theme="dark"] [class~="bg-stone-100"] {
+  background-color: #29343f !important;
+}
+
+[data-theme="dark"] [class~="border-red-100"],
+[data-theme="dark"] [class~="border-red-200"] {
+  border-color: rgb(240 164 170 / 0.42) !important;
+}
+
+[data-theme="dark"] .cart-page [role="alert"],
+[data-theme="dark"] .checkout-page [role="alert"] {
+  border-color: rgb(240 164 170 / 0.42) !important;
+}
+
+/* Cross-route coverage: the root stylesheet is shared by storefront, account,
+   checkout, admin, and authentication pages. Keep native controls and admin
+   layout primitives in the same dark palette as the storefront. */
+html[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+html[data-theme="light"] {
+  color-scheme: light;
+}
+
+[data-theme="dark"] [class~="from-white"] {
+  --tw-gradient-from: #10151b !important;
+  --tw-gradient-to: rgb(16 21 27 / 0) !important;
+}
+
+[data-theme="dark"] .admin-surface {
+  background: #10151b;
+}
+
+[data-theme="dark"] [class~="bg-amber-50\/60"],
+[data-theme="dark"] [class*="bg-amber-50/"] {
+  background-color: rgb(152 111 34 / 0.16) !important;
+}
+
+[data-theme="dark"] [class~="border-amber-300"],
+[data-theme="dark"] [class~="border-emerald-300"] {
+  border-color: #536373 !important;
+}
+
+[data-theme="dark"] [class~="border-amber-300"] {
+  background-color: rgb(152 111 34 / 0.16);
+}
+
+[data-theme="dark"] [class~="border-emerald-300"] {
+  background-color: rgb(41 130 84 / 0.16);
+}
+
+[data-theme="dark"] [role="status"] {
+  color: #b7e4c9;
+}
+
+[data-theme="dark"] .admin-surface table thead,
+[data-theme="dark"] .admin-surface th {
+  color: #b7c3ce;
+}
+
+[data-theme="dark"] .admin-surface td,
+[data-theme="dark"] .admin-surface th {
+  border-color: #2e3a46;
+}
+
+[data-theme="dark"] .admin-surface tr:hover td {
+  background-color: #202831;
 }
