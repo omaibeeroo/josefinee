@@ -5,9 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
-import { getFilterFacets, getStorefrontProducts } from "@/server/catalog";
+import { getStorefrontProducts } from "@/server/catalog";
 import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
-import { CatalogToolbar, DesktopFilters, ProductGrid } from "@/components/storefront/catalog-ui";
+import { CatalogToolbar, ProductGrid } from "@/components/storefront/catalog-ui";
 import { EmptyState } from "@/components/ui";
 import { Pagination } from "@/components/pagination";
 import { parseCatalogParams, withPage } from "../../catalog-helpers";
@@ -75,13 +75,12 @@ export default async function CollectionPage({
 
   const query = parseCatalogParams(queryParams);
   after(() => trackEvent({ name: ANALYTICS_EVENTS.VIEW_COLLECTION, props: { slug: collection.slug } }));
-  const [result, facets, t] = await Promise.all([
+  const [result, t] = await Promise.all([
     getStorefrontProducts({
       ...query,
       collectionSlug: collection.slug,
       ...(collection.type === "MANUAL" ? {} : { type: collection.type }),
     }),
-    getFilterFacets(),
     getDictionary(),
   ]);
 
@@ -110,9 +109,8 @@ export default async function CollectionPage({
       )}
 
       <div className="container-luxe">
-        <CatalogToolbar facets={facets} total={result.total} />
+        <CatalogToolbar total={result.total} />
         <div className="flex gap-8">
-          <DesktopFilters facets={facets} />
           <div className="min-w-0 flex-1">
             {result.items.length === 0 ? (
                 <EmptyState

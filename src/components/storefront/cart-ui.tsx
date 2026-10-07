@@ -211,7 +211,7 @@ function CartDrawer() {
                 </li>
               ))}
             </ul>
-            <div className="border-t hairline bg-white px-5 py-5">
+            <div className="border-t hairline bg-white px-5 py-4">
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-sm text-ink-soft">{t.cart.subtotal}</span>
                 <span className="text-base font-medium">{formatDA(subtotal)}</span>
