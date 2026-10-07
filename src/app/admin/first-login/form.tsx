@@ -3,8 +3,10 @@
 import { useState, type FormEvent } from "react";
 import { adminFirstLoginAction } from "@/server/actions/admin-auth";
 import { Button, Field, Input } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 
 export function FirstLoginForm() {
+  const { t } = useLocale();
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -25,10 +27,10 @@ export function FirstLoginForm() {
 
   return (
     <form onSubmit={submit} className="mt-8 space-y-4 border hairline bg-white p-6 md:p-8">
-      <Field label="Current password" required>
+      <Field label={t.account.currentPassword} required>
         <Input type="password" value={current} onChange={(event) => setCurrent(event.target.value)} autoComplete="current-password" required />
       </Field>
-      <Field label="New password" required hint="10+ characters, upper & lower case, a number">
+      <Field label={t.firstLogin.newPassword} required hint={t.auth.passwordHint}>
         <Input type="password" value={next} onChange={(event) => setNext(event.target.value)} autoComplete="new-password" required />
       </Field>
       {error && (
@@ -37,7 +39,7 @@ export function FirstLoginForm() {
         </p>
       )}
       <Button type="submit" disabled={pending} className="w-full">
-        {pending ? "Updating…" : "Set new password"}
+        {pending ? t.account.updating : t.firstLogin.submit}
       </Button>
     </form>
   );

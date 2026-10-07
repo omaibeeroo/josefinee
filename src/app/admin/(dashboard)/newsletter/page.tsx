@@ -1,23 +1,25 @@
 import { can, requirePermission } from "@/lib/auth/rbac";
 import { listSubscribersAdmin } from "@/server/actions/admin-ops";
 import { PageHeader } from "@/components/admin/ui";
+import { getDictionary } from "@/lib/i18n/server";
+import { formatDateFR } from "@/lib/money";
 import { SubscriberActions } from "./subscriber-actions";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminNewsletterPage() {
   const user = await requirePermission("newsletter:read");
-  const subscribers = await listSubscribersAdmin();
+  const [subscribers, t] = await Promise.all([listSubscribersAdmin(), getDictionary()]);
   const active = subscribers.filter((entry) => !entry.unsubscribedAt);
 
   return (
     <div>
       <PageHeader
-        title="Newsletter"
-        description={`${active.length} active subscribers. Consent timestamps are stored for every signup.`}
+        title={t.adminPages.newsletterTitle}
+        description={t.adminPages.newsletterDesc.replace("{total}", String(active.length))}
         action={can(user, "newsletter:export") ? (
           <a href="/api/admin/newsletter/export" className="btn btn-ghost min-h-10 px-4 text-xs">
-            Export CSV
+            {t.adminPages.exportCsv}
           </a>
         ) : undefined}
       />
@@ -25,11 +27,11 @@ export default async function AdminNewsletterPage() {
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead>
             <tr className="border-b hairline text-xs uppercase tracking-[0.1em] text-ink-muted">
-              <th className="px-4 py-3">Email</th>
-              <th className="px-4 py-3">Source</th>
-              <th className="px-4 py-3">Subscribed</th>
-              <th className="px-4 py-3">Status</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="px-4 py-3">{t.adminNewsletterTable.colEmail}</th>
+              <th className="px-4 py-3">{t.adminNewsletterTable.colSource}</th>
+              <th className="px-4 py-3">{t.adminNewsletterTable.colSubscribed}</th>
+              <th className="px-4 py-3">{t.adminNewsletterTable.colStatus}</th>
+              <th className="px-4 py-3 text-right">{t.adminNewsletterTable.colActions}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -38,9 +40,9 @@ export default async function AdminNewsletterPage() {
                 <td className="px-4 py-3">{subscriber.email}</td>
                 <td className="px-4 py-3 text-xs">{subscriber.source ?? "—"}</td>
                 <td className="px-4 py-3 text-xs text-ink-muted">
-                  {new Date(subscriber.createdAt).toLocaleDateString("fr-DZ")}
+                  {formatDateFR(subscriber.createdAt)}
                 </td>
-                <td className="px-4 py-3 text-xs">{subscriber.unsubscribedAt ? "Unsubscribed" : "Active"}</td>
+                <td className="px-4 py-3 text-xs">{subscriber.unsubscribedAt ? t.adminNewsletterTable.unsubscribed : t.adminNewsletterTable.active}</td>
                 <td className="px-4 py-3 text-right">
                   <SubscriberActions id={subscriber.id} />
                 </td>
@@ -48,7 +50,7 @@ export default async function AdminNewsletterPage() {
             ))}
           </tbody>
         </table>
-        {subscribers.length === 0 && <p className="p-8 text-center text-sm text-ink-muted">No subscribers yet.</p>}
+        {subscribers.length === 0 && <p className="p-8 text-center text-sm text-ink-muted">{t.adminNewsletterTable.empty}</p>}
       </div>
     </div>
   );

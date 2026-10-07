@@ -9,7 +9,6 @@ import {
   FaqTeaser,
   FeaturedCollection,
   Hero,
-  NewsletterSection,
   ProductSpotlight,
   SocialProof,
   TrustBar,
@@ -250,15 +249,11 @@ export default async function HomePage() {
 
       {settings.homepage.showSocialProof && <SocialProof deliveredCount={deliveredCount} />}
 
-      <div className="section-space pb-4 pt-0 md:pb-6">
+      <div className="section-space pb-0 pt-0">
         <FaqTeaser items={faqs} />
       </div>
 
-      <div className="section-space pt-0">
-        <NewsletterSection />
-      </div>
-
-      <section className="container-luxe pb-4 text-center">
+      <section className="container-luxe pb-3 pt-4 text-center">
         <Link
           href="/shop"
           className="text-xs font-medium uppercase tracking-[0.24em] underline underline-offset-8"

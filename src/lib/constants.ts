@@ -1,19 +1,20 @@
 import type { DeliveryMethod, OrderStatus } from "@prisma/client";
 
-export const ORDER_STATUS_LABELS: Record<
-  OrderStatus,
-  { label: string; customerLabel: string; tone: string }
-> = {
-  PENDING: { label: "En attente", customerLabel: "Commande reçue", tone: "amber" },
-  CONFIRMED: { label: "Confirmée", customerLabel: "Confirmée", tone: "blue" },
-  PROCESSING: { label: "En préparation", customerLabel: "Préparation de votre commande", tone: "blue" },
-  PACKED: { label: "Emballée", customerLabel: "Emballée", tone: "indigo" },
-  SHIPPED: { label: "Expédiée", customerLabel: "Expédiée", tone: "indigo" },
-  OUT_FOR_DELIVERY: { label: "En livraison", customerLabel: "En cours de livraison", tone: "violet" },
-  DELIVERED: { label: "Livrée", customerLabel: "Livrée", tone: "green" },
-  CANCELLED: { label: "Annulée", customerLabel: "Annulée", tone: "red" },
-  RETURNED: { label: "Retournée", customerLabel: "Retournée", tone: "orange" },
-  FAILED_DELIVERY: { label: "Livraison échouée", customerLabel: "Tentative de livraison échouée", tone: "red" },
+/**
+ * Status badge tones (presentation only). Human labels live in the i18n
+ * dictionaries (`t.status` for staff, `t.customerStatus` for customers).
+ */
+export const ORDER_STATUS_TONES: Record<OrderStatus, { tone: string }> = {
+  PENDING: { tone: "amber" },
+  CONFIRMED: { tone: "blue" },
+  PROCESSING: { tone: "blue" },
+  PACKED: { tone: "indigo" },
+  SHIPPED: { tone: "indigo" },
+  OUT_FOR_DELIVERY: { tone: "violet" },
+  DELIVERED: { tone: "green" },
+  CANCELLED: { tone: "red" },
+  RETURNED: { tone: "orange" },
+  FAILED_DELIVERY: { tone: "red" },
 };
 
 /** The happy-path sequence shown to customers on the order timeline. */

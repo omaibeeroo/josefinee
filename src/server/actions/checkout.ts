@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAppError, toUserMessage } from "@/lib/errors";
 import { flattenZodErrors, isBotSubmission } from "@/lib/validation/common";
+import { getActionT } from "@/lib/i18n/server";
 import { checkoutSchema, trackOrderSchema, type CheckoutInput } from "@/lib/validation/checkout";
 import { createOrder } from "@/server/orders";
 import { getCartForCheckout } from "@/server/cart";
@@ -24,6 +25,7 @@ export type SubmitOrderResult =
     };
 
 export async function submitOrderAction(input: CheckoutInput): Promise<SubmitOrderResult> {
+  const tErr = await getActionT();
   const ip = await clientIp();
   try {
     await enforceRateLimit({ ...LIMITS.checkout, key: `checkout:${ip}` });
@@ -35,12 +37,12 @@ export async function submitOrderAction(input: CheckoutInput): Promise<SubmitOrd
   if (!parsed.success) {
     return {
       ok: false,
-      error: "Please review the highlighted fields.",
+      error: tErr.reviewFields,
       fields: flattenZodErrors(parsed.error),
     };
   }
   if (isBotSubmission(parsed.data.website)) {
-    return { ok: false, error: "Something went wrong. Please try again." };
+    return { ok: false, error: tErr.wentWrong };
   }
 
   const headerList = await headers();
@@ -66,7 +68,7 @@ export async function submitOrderAction(input: CheckoutInput): Promise<SubmitOrd
       };
     }
     console.error("[checkout] failed", error instanceof Error ? error.name : "unknown");
-    return { ok: false, error: "Something went wrong. Please try again." };
+    return { ok: false, error: tErr.wentWrong };
   }
 }
 
@@ -109,9 +111,10 @@ export async function getDeliveryOptionsAction(wilayaId: string) {
 }
 
 export async function lookupOrderAction(orderNumber: string, phoneRaw: string) {
+  const tErr = await getActionT();
   const parsed = trackOrderSchema.safeParse({ orderNumber, phone: phoneRaw });
   if (!parsed.success) {
-    return { ok: false as const, error: "Enter your order number and phone number." };
+    return { ok: false as const, error: tErr.lookupHint };
   }
   const ip = await clientIp();
   try {
@@ -136,12 +139,12 @@ export async function lookupOrderAction(orderNumber: string, phoneRaw: string) {
       select: { orderNumber: true },
     });
     if (!order) {
-      return { ok: false as const, error: "No order found with these details." };
+      return { ok: false as const, error: tErr.orderNotFound };
     }
     const trackingToken = signOrderToken(order.orderNumber, 24 * 60 * 60_000);
     return { ok: true as const, orderNumber: order.orderNumber, trackingToken };
   } catch (error) {
     console.error("[track] lookup failed", error instanceof Error ? error.name : "unknown");
-    return { ok: false as const, error: "Something went wrong. Please try again." };
+    return { ok: false as const, error: tErr.wentWrong };
   }
 }

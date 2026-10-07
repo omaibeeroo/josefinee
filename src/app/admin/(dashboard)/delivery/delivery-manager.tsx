@@ -4,7 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { importDeliveryCsvAction, saveDeliveryRateAction } from "@/server/actions/admin-ops";
 import { Button, Field, Input } from "@/components/ui";
-import { DELIVERY_METHOD_LABELS } from "@/lib/constants";
+import { useLocale } from "@/lib/i18n/provider";
 import { formatDA } from "@/lib/money";
 
 export type WilayaRates = {
@@ -25,6 +25,7 @@ export type WilayaRates = {
 
 export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [search, setSearch] = useState("");
   const [editing, setEditing] = useState<{ wilayaId: string; wilayaName: string; method: string; price: string; etaMin: string; etaMax: string; isActive: boolean } | null>(null);
   const [csv, setCsv] = useState("");
@@ -77,12 +78,12 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search wilaya…" aria-label="Search wilayas" className="max-w-xs" />
+        <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.adminDelivery.searchPh} aria-label={t.adminDelivery.searchLabel} className="max-w-xs" />
         <a
           href="/api/admin/delivery/export"
           className="btn btn-ghost min-h-10 px-4 text-xs"
         >
-          Export CSV
+          {t.adminDelivery.exportCsv}
         </a>
       </div>
       {error && (
@@ -132,11 +133,11 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
                             })
                           }
                           className={`text-left tabular-nums hover:underline ${rate.isActive ? "" : "text-ink-muted line-through"}`}
-                          title={`Edit ${DELIVERY_METHOD_LABELS[method]} for ${wilaya.name}`}
+                          title={`${t.adminDelivery.editRate} ${t.delivery[method as keyof typeof t.delivery]} — ${wilaya.name}`}
                         >
                           {formatDA(rate.price)}
                           <span className="block text-xs text-ink-muted">
-                            {rate.etaMinDays}–{rate.etaMaxDays}d
+                            {rate.etaMinDays}–{rate.etaMaxDays}{t.adminDelivery.daysShort}
                           </span>
                         </button>
                       ) : (
@@ -147,7 +148,7 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
                           }
                           className="text-xs text-ink-muted underline underline-offset-2"
                         >
-                          Set rate
+                          {t.adminDelivery.setRate}
                         </button>
                       )}
                     </td>
@@ -162,27 +163,27 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
       {editing && (
         <form onSubmit={submitRate} className="grid gap-3 border hairline bg-white p-5 sm:grid-cols-5">
           <p className="font-medium sm:col-span-5">
-            {editing.wilayaName} · {DELIVERY_METHOD_LABELS[editing.method as keyof typeof DELIVERY_METHOD_LABELS]}
+            {editing.wilayaName} · {t.delivery[editing.method as keyof typeof t.delivery]}
           </p>
-          <Field label="Price (DA)">
+          <Field label={t.adminDelivery.priceDa}>
             <Input type="number" min={0} value={editing.price} onChange={(event) => setEditing({ ...editing, price: event.target.value })} required />
           </Field>
-          <Field label="ETA min (days)">
+          <Field label={t.adminDelivery.etaMin}>
             <Input type="number" min={0} max={30} value={editing.etaMin} onChange={(event) => setEditing({ ...editing, etaMin: event.target.value })} required />
           </Field>
-          <Field label="ETA max (days)">
+          <Field label={t.adminDelivery.etaMax}>
             <Input type="number" min={0} max={30} value={editing.etaMax} onChange={(event) => setEditing({ ...editing, etaMax: event.target.value })} required />
           </Field>
           <label className="flex items-center gap-2 self-end pb-3 text-sm">
             <input type="checkbox" checked={editing.isActive} onChange={(event) => setEditing({ ...editing, isActive: event.target.checked })} className="h-4 w-4 accent-[#1c1a17]" />
-            Active
+            {t.adminDelivery.active}
           </label>
           <div className="flex items-end gap-2">
             <Button type="submit" disabled={pending} size="sm">
-              {pending ? "…" : "Save"}
+              {pending ? "…" : t.adminDelivery.save}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(null)}>
-              Cancel
+              {t.adminDelivery.cancel}
             </Button>
           </div>
         </form>

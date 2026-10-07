@@ -5,7 +5,7 @@ on:
   pull_request:
 
 concurrency:
-  group: josefinee-${{ github.workflow }}-${{ github.ref }}
+  group: hanadi-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
 
 permissions:
@@ -22,17 +22,17 @@ jobs:
         env:
           POSTGRES_USER: postgres
           POSTGRES_PASSWORD: postgres
-          POSTGRES_DB: josefinee_store
+          POSTGRES_DB: hanadi_store
         ports:
           - 5432:5432
         options: >-
-          --health-cmd "pg_isready -U postgres -d josefinee_store"
+          --health-cmd "pg_isready -U postgres -d hanadi_store"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
     env:
       NODE_ENV: production
-      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/josefinee_store?schema=public
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/hanadi_store?schema=public
       AUTH_SECRET: ci-only-auth-secret-012345678901234567890123456789
       ORDER_OUTBOX_SECRET: ci-only-outbox-secret-012345678901234567890123456789
       RETENTION_JOB_SECRET: ci-only-retention-secret-012345678901234567890123456789
@@ -94,20 +94,20 @@ jobs:
           PORT: 3000
           HOSTNAME: 127.0.0.1
         run: |
-          node .next/standalone/server.js > /tmp/josefinee-store.log 2>&1 &
+          node .next/standalone/server.js > /tmp/hanadi-store.log 2>&1 &
           server_pid=$!
           trap 'kill "$server_pid" 2>/dev/null || true' EXIT
           BASE_URL=http://127.0.0.1:3000 npm run smoke:production
 
       - name: Package standalone deployment artifact
         run: |
-          tar -czf "josefinee-standalone-${GITHUB_SHA}.tar.gz" \
+          tar -czf "hanadi-standalone-${GITHUB_SHA}.tar.gz" \
             -C .next/standalone .
 
       - name: Upload standalone deployment artifact
         uses: actions/upload-artifact@v4
         with:
-          name: josefinee-standalone-${{ github.sha }}
-          path: josefinee-standalone-${{ github.sha }}.tar.gz
+          name: hanadi-standalone-${{ github.sha }}
+          path: hanadi-standalone-${{ github.sha }}.tar.gz
           if-no-files-found: error
           retention-days: 14

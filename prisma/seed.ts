@@ -91,7 +91,7 @@ const PRODUCTS: SeedProduct[] = [
   {
     name: "Luna Pearl Necklace",
     slug: "luna-pearl-necklace",
-    sku: "NUR-001",
+    sku: "HAN-001",
     price: 2900,
     compareAt: 3600,
     short: "A freshwater pearl pendant on a fine gold-tone chain.",
@@ -105,14 +105,14 @@ const PRODUCTS: SeedProduct[] = [
     isBestseller: true,
     isFeatured: true,
     variants: [
-      { label: "Gold", sku: "NUR-001-G", stock: 14 },
-      { label: "Silver", sku: "NUR-001-S", stock: 10 },
+      { label: "Gold", sku: "HAN-001-G", stock: 14 },
+      { label: "Silver", sku: "HAN-001-S", stock: 10 },
     ],
   },
   {
     name: "Nova Orb Bracelet",
     slug: "nova-orb-bracelet",
-    sku: "NUR-002",
+    sku: "HAN-002",
     price: 1900,
     short: "A polished orb charm bracelet with adjustable chain.",
     description:
@@ -124,14 +124,14 @@ const PRODUCTS: SeedProduct[] = [
     isBestseller: true,
     isFeatured: true,
     variants: [
-      { label: "Gold", sku: "NUR-002-G", stock: 18 },
-      { label: "Silver", sku: "NUR-002-S", stock: 12 },
+      { label: "Gold", sku: "HAN-002-G", stock: 18 },
+      { label: "Silver", sku: "HAN-002-S", stock: 12 },
     ],
   },
   {
     name: "Aurelia Ring",
     slug: "aurelia-ring",
-    sku: "NUR-003",
+    sku: "HAN-003",
     price: 1600,
     short: "A sculptural dome ring with a mirror finish.",
     description:
@@ -143,15 +143,15 @@ const PRODUCTS: SeedProduct[] = [
     isNew: true,
     isFeatured: true,
     variants: [
-      { label: "Size 16", sku: "NUR-003-16", stock: 8 },
-      { label: "Size 17", sku: "NUR-003-17", stock: 9 },
-      { label: "Size 18", sku: "NUR-003-18", stock: 7 },
+      { label: "Size 16", sku: "HAN-003-16", stock: 8 },
+      { label: "Size 17", sku: "HAN-003-17", stock: 9 },
+      { label: "Size 18", sku: "HAN-003-18", stock: 7 },
     ],
   },
   {
     name: "Celeste Stud Earrings",
     slug: "celeste-stud-earrings",
-    sku: "NUR-004",
+    sku: "HAN-004",
     price: 1400,
     short: "Star-set crystal studs for everyday shine.",
     description:
@@ -161,12 +161,12 @@ const PRODUCTS: SeedProduct[] = [
     tags: ["earrings", "crystal", "jewelry"],
     material: "Cubic zirconia, gold-tone steel",
     isFeatured: true,
-    variants: [{ label: "Gold", sku: "NUR-004-G", stock: 20 }],
+    variants: [{ label: "Gold", sku: "HAN-004-G", stock: 20 }],
   },
   {
     name: "Dounia Gold Hoops",
     slug: "dounia-gold-hoops",
-    sku: "NUR-005",
+    sku: "HAN-005",
     price: 1700,
     short: "Medium everyday hoops with a soft shine.",
     description:
@@ -176,12 +176,12 @@ const PRODUCTS: SeedProduct[] = [
     tags: ["earrings", "hoops", "gold", "jewelry"],
     material: "Stainless steel, 18k gold finish",
     isNew: true,
-    variants: [{ label: "Gold", sku: "NUR-005-G", stock: 16 }],
+    variants: [{ label: "Gold", sku: "HAN-005-G", stock: 16 }],
   },
   {
     name: "Mira Mini Bag",
     slug: "mira-mini-bag",
-    sku: "NUR-006",
+    sku: "HAN-006",
     price: 4500,
     compareAt: 5200,
     short: "A structured mini bag with gold-tone hardware.",
@@ -195,14 +195,14 @@ const PRODUCTS: SeedProduct[] = [
     isBestseller: true,
     isFeatured: true,
     variants: [
-      { label: "Noir", sku: "NUR-006-BLK", stock: 9 },
-      { label: "Camel", sku: "NUR-006-CML", stock: 7 },
+      { label: "Noir", sku: "HAN-006-BLK", stock: 9 },
+      { label: "Camel", sku: "HAN-006-CML", stock: 7 },
     ],
   },
   {
     name: "Yasmin Quilted Tote",
     slug: "yasmin-quilted-tote",
-    sku: "NUR-007",
+    sku: "HAN-007",
     price: 5800,
     short: "A soft quilted tote that fits your whole day.",
     description:
@@ -213,12 +213,12 @@ const PRODUCTS: SeedProduct[] = [
     material: "Quilted vegan leather",
     color: "Crème",
     isNew: true,
-    variants: [{ label: "Crème", sku: "NUR-007-CRM", stock: 6 }],
+    variants: [{ label: "Crème", sku: "HAN-007-CRM", stock: 6 }],
   },
   {
     name: "Selma Silk-Touch Scarf",
     slug: "selma-silk-touch-scarf",
-    sku: "NUR-008",
+    sku: "HAN-008",
     price: 1200,
     short: "A soft printed scarf in a timeless motif.",
     description:
@@ -227,7 +227,7 @@ const PRODUCTS: SeedProduct[] = [
     collections: ["accessories"],
     tags: ["scarf", "accessories"],
     material: "Silk-touch polyester",
-    variants: [{ label: "Motif Ivoire", sku: "NUR-008-IVR", stock: 22 }],
+    variants: [{ label: "Motif Ivoire", sku: "HAN-008-IVR", stock: 22 }],
   },
 ];
 
@@ -517,7 +517,7 @@ async function main() {
     if (seed.variants.length > 1) {
       const option = await prisma.productOption.upsert({
         where: { productId_name: { productId: product.id, name: "Finish" } },
-        create: { productId: product.id, name: "Finish", position: 0 },
+        create: { productId: product.id, name: "Finition", position: 0 },
         update: {},
       });
       optionValueIds = [];

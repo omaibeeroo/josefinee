@@ -10,7 +10,7 @@ function consentGiven(): boolean {
   // through cookie preferences. No banner ever interrupts shopping.
   if (typeof window === "undefined") return false;
   try {
-    return window.localStorage.getItem("nur-cookie-consent") === "accepted";
+    return window.localStorage.getItem("hanadi-cookie-consent") === "accepted";
   } catch {
     return false;
   }
@@ -55,8 +55,8 @@ export function Pixels({
 
   useEffect(() => {
     const onConsent = () => window.location.reload();
-    window.addEventListener("nur-consent", onConsent);
-    return () => window.removeEventListener("nur-consent", onConsent);
+    window.addEventListener("hanadi-consent", onConsent);
+    return () => window.removeEventListener("hanadi-consent", onConsent);
   }, []);
 
   if (!consentGiven() || tokenizedRoute) return null;

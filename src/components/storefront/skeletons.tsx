@@ -2,6 +2,7 @@
  * Server-rendered skeleton screens shown during route transitions.
  * They match the real layouts to eliminate layout shift (CLS).
  */
+import { getDictionary } from "@/lib/i18n/server";
 
 function Skeleton({ className = "" }: { className?: string }) {
   return <div aria-hidden="true" className={`animate-pulse bg-sand/60 ${className}`} />;
@@ -21,9 +22,10 @@ function ProductGridSkeleton({ count = 8 }: { count?: number }) {
   );
 }
 
-export function CatalogLoading() {
+export async function CatalogLoading() {
+  const t = await getDictionary();
   return (
-    <div className="container-luxe py-10 md:py-14" aria-label="Chargement des produits">
+    <div className="container-luxe py-10 md:py-14" aria-label={t.skeleton.loadingProducts}>
       <div className="mx-auto mb-8 max-w-md text-center">
         <Skeleton className="mx-auto h-3 w-24" />
         <Skeleton className="mx-auto mt-3 h-10 w-64" />
@@ -34,15 +36,16 @@ export function CatalogLoading() {
       </div>
       <ProductGridSkeleton />
       <span className="sr-only" role="status">
-        Chargement des produits…
+        {t.skeleton.loadingProductsMsg}
       </span>
     </div>
   );
 }
 
-export function ProductLoading() {
+export async function ProductLoading() {
+  const t = await getDictionary();
   return (
-    <div className="container-luxe py-8 md:py-12" aria-label="Chargement du produit">
+    <div className="container-luxe py-8 md:py-12" aria-label={t.skeleton.loadingProduct}>
       <Skeleton className="mb-6 h-3 w-56" />
       <div className="grid gap-10 lg:grid-cols-2 lg:gap-16">
         <Skeleton className="aspect-[3/4] w-full" />
@@ -57,7 +60,7 @@ export function ProductLoading() {
         </div>
       </div>
       <span className="sr-only" role="status">
-        Chargement du produit…
+        {t.skeleton.loadingProductMsg}
       </span>
     </div>
   );

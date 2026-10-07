@@ -1,15 +1,17 @@
 import Link from "next/link";
+import { getDictionary } from "@/lib/i18n/server";
 
-export default function NotFound() {
+export default async function NotFound() {
+  const t = await getDictionary();
   return (
     <div className="container-luxe py-24 text-center">
       <p className="eyebrow">404</p>
-      <h1 className="mt-3 font-display text-5xl">Cette page n’existe pas</h1>
+      <h1 className="mt-3 font-display text-5xl">{t.errors.notFoundTitle}</h1>
       <p className="mx-auto mt-4 max-w-md text-ink-soft">
-        La page que vous cherchez a peut-être été déplacée ou n’existe plus.
+        {t.errors.notFoundHint}
       </p>
       <Link href="/" className="btn btn-primary mt-8">
-        Retour à l’accueil
+        {t.common.backHome}
       </Link>
     </div>
   );

@@ -10,6 +10,7 @@ import {
   savePageAction,
 } from "@/server/actions/admin-ops";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 
 export type CmsPageRow = {
   id: string;
@@ -40,6 +41,7 @@ export type AnnouncementRow = {
 
 export function PagesManager({ pages }: { pages: CmsPageRow[] }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [editing, setEditing] = useState<Partial<CmsPageRow> & { id?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -64,9 +66,9 @@ export function PagesManager({ pages }: { pages: CmsPageRow[] }) {
   }
 
   return (
-    <section aria-label="Pages">
+    <section aria-label={t.adminContent.pages}>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-display text-2xl">Pages</h2>
+        <h2 className="font-display text-2xl">{t.adminContent.pages}</h2>
       </div>
       {error && (
         <p className="mb-3 text-sm text-[#9e342e]" role="alert">
@@ -82,10 +84,10 @@ export function PagesManager({ pages }: { pages: CmsPageRow[] }) {
                   {page.title}
                   <span className="block text-xs font-normal text-ink-muted">/pages/{page.slug}</span>
                 </td>
-                <td className="px-4 py-3 text-xs">{page.isPublished ? "Published" : "Hidden"}</td>
+                <td className="px-4 py-3 text-xs">{page.isPublished ? t.adminContent.published : t.adminContent.hidden}</td>
                 <td className="px-4 py-3 text-right text-xs">
                   <button type="button" onClick={() => setEditing({ ...page })} className="underline underline-offset-2">
-                    Edit
+                    {t.adminForm.edit}
                   </button>
                 </td>
               </tr>
@@ -96,31 +98,31 @@ export function PagesManager({ pages }: { pages: CmsPageRow[] }) {
       {editing && (
         <form onSubmit={submit} className="mt-4 space-y-4 border hairline bg-white p-5">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Title" required>
+            <Field label={t.adminContent.pageTitle} required>
               <Input value={editing.title ?? ""} onChange={(event) => setEditing({ ...editing, title: event.target.value })} required />
             </Field>
-            <Field label="Slug" required>
+            <Field label={t.adminForm.slug} required>
               <Input value={editing.slug ?? ""} onChange={(event) => setEditing({ ...editing, slug: event.target.value })} required />
             </Field>
           </div>
-          <Field label="Content (safe HTML)">
+          <Field label={t.adminContent.contentHtml}>
             <Textarea value={editing.content ?? ""} onChange={(event) => setEditing({ ...editing, content: event.target.value })} rows={8} />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="SEO title">
+            <Field label={t.adminContent.seoTitle}>
               <Input value={editing.seoTitle ?? ""} onChange={(event) => setEditing({ ...editing, seoTitle: event.target.value })} />
             </Field>
-            <Field label="SEO description">
+            <Field label={t.adminContent.seoDescription}>
               <Input value={editing.seoDescription ?? ""} onChange={(event) => setEditing({ ...editing, seoDescription: event.target.value })} />
             </Field>
           </div>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={editing.isPublished ?? true} onChange={(event) => setEditing({ ...editing, isPublished: event.target.checked })} className="h-4 w-4 accent-[#1c1a17]" />
-            Published
+            {t.adminContent.publishedLabel}
           </label>
           <div className="flex gap-2">
-            <Button type="submit" size="sm">Save page</Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button type="submit" size="sm">{t.adminContent.savePage}</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(null)}>{t.adminForm.cancel}</Button>
           </div>
         </form>
       )}
@@ -130,6 +132,7 @@ export function PagesManager({ pages }: { pages: CmsPageRow[] }) {
 
 export function FaqManager({ items }: { items: FaqRow[] }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [editing, setEditing] = useState<Partial<FaqRow> & { id?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -153,11 +156,11 @@ export function FaqManager({ items }: { items: FaqRow[] }) {
   }
 
   return (
-    <section aria-label="FAQ">
+    <section aria-label={t.adminContent.faq}>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-display text-2xl">FAQ</h2>
+        <h2 className="font-display text-2xl">{t.adminContent.faq}</h2>
         <Button size="sm" onClick={() => setEditing({ category: "Ordering", question: "", answer: "", sortOrder: items.length, isPublished: true })}>
-          New question
+          {t.adminContent.newQuestion}
         </Button>
       </div>
       {error && (
@@ -171,20 +174,20 @@ export function FaqManager({ items }: { items: FaqRow[] }) {
             <div>
               <p className="text-xs uppercase tracking-[0.12em] text-ink-muted">{item.category}</p>
               <p className="font-medium">{item.question}</p>
-              {!item.isPublished && <p className="text-xs text-ink-muted">Hidden</p>}
+              {!item.isPublished && <p className="text-xs text-ink-muted">{t.adminContent.hidden}</p>}
             </div>
             <div className="flex shrink-0 gap-2 text-xs">
               <button type="button" onClick={() => setEditing({ ...item })} className="underline underline-offset-2">
-                Edit
+                {t.adminForm.edit}
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  if (window.confirm("Delete this question?")) void deleteFaqAction(item.id).then(() => router.refresh());
+                  if (window.confirm(t.adminContent.deleteQuestion)) void deleteFaqAction(item.id).then(() => router.refresh());
                 }}
                 className="text-[#9e342e] underline underline-offset-2"
               >
-                Delete
+                {t.adminForm.delete}
               </button>
             </div>
           </li>
@@ -193,7 +196,7 @@ export function FaqManager({ items }: { items: FaqRow[] }) {
       {editing && (
         <form onSubmit={submit} className="mt-4 space-y-4 border hairline bg-white p-5">
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Category" required>
+            <Field label={t.adminContent.category} required>
               <Select value={editing.category ?? ""} onChange={(event) => setEditing({ ...editing, category: event.target.value })}>
                 {["Ordering", "Delivery", "COD", "Products", "Returns", "Exchanges", "Care"].map((category) => (
                   <option key={category} value={category}>
@@ -202,23 +205,23 @@ export function FaqManager({ items }: { items: FaqRow[] }) {
                 ))}
               </Select>
             </Field>
-            <Field label="Sort order">
+            <Field label={t.adminForm.sortOrder}>
               <Input type="number" min={0} value={editing.sortOrder ?? 0} onChange={(event) => setEditing({ ...editing, sortOrder: Number(event.target.value) || 0 })} />
             </Field>
           </div>
-          <Field label="Question" required>
+          <Field label={t.adminContent.question} required>
             <Input value={editing.question ?? ""} onChange={(event) => setEditing({ ...editing, question: event.target.value })} required />
           </Field>
-          <Field label="Answer" required>
+          <Field label={t.adminContent.answer} required>
             <Textarea value={editing.answer ?? ""} onChange={(event) => setEditing({ ...editing, answer: event.target.value })} rows={4} required />
           </Field>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={editing.isPublished ?? true} onChange={(event) => setEditing({ ...editing, isPublished: event.target.checked })} className="h-4 w-4 accent-[#1c1a17]" />
-            Published
+            {t.adminContent.publishedLabel}
           </label>
           <div className="flex gap-2">
-            <Button type="submit" size="sm">Save</Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button type="submit" size="sm">{t.adminForm.save}</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(null)}>{t.adminForm.cancel}</Button>
           </div>
         </form>
       )}
@@ -228,6 +231,7 @@ export function FaqManager({ items }: { items: FaqRow[] }) {
 
 export function AnnouncementsManager({ items }: { items: AnnouncementRow[] }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [editing, setEditing] = useState<Partial<AnnouncementRow> & { id?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -250,11 +254,11 @@ export function AnnouncementsManager({ items }: { items: AnnouncementRow[] }) {
   }
 
   return (
-    <section aria-label="Announcements">
+    <section aria-label={t.adminContent.announcements}>
       <div className="mb-3 flex items-center justify-between">
-        <h2 className="font-display text-2xl">Announcements</h2>
+        <h2 className="font-display text-2xl">{t.adminContent.announcements}</h2>
         <Button size="sm" onClick={() => setEditing({ text: "", href: "", isActive: true, sortOrder: items.length })}>
-          New
+          {t.adminContent.newAnnouncement}
         </Button>
       </div>
       {error && (
@@ -268,21 +272,21 @@ export function AnnouncementsManager({ items }: { items: AnnouncementRow[] }) {
             <div>
               <p className="font-medium">{item.text}</p>
               <p className="text-xs text-ink-muted">
-                {item.href || "no link"} · {item.isActive ? "Active" : "Hidden"}
+                {item.href || t.adminContent.noLink} · {item.isActive ? t.adminForm.active : t.adminContent.hidden}
               </p>
             </div>
             <div className="flex shrink-0 gap-2 text-xs">
               <button type="button" onClick={() => setEditing({ ...item })} className="underline underline-offset-2">
-                Edit
+                {t.adminForm.edit}
               </button>
               <button
                 type="button"
                 onClick={() => {
-                  if (window.confirm("Delete this announcement?")) void deleteAnnouncementAction(item.id).then(() => router.refresh());
+                  if (window.confirm(t.adminContent.deleteAnnouncement)) void deleteAnnouncementAction(item.id).then(() => router.refresh());
                 }}
                 className="text-[#9e342e] underline underline-offset-2"
               >
-                Delete
+                {t.adminForm.delete}
               </button>
             </div>
           </li>
@@ -290,19 +294,19 @@ export function AnnouncementsManager({ items }: { items: AnnouncementRow[] }) {
       </ul>
       {editing && (
         <form onSubmit={submit} className="mt-4 space-y-4 border hairline bg-white p-5">
-          <Field label="Text" required>
+          <Field label={t.adminContent.text} required>
             <Input value={editing.text ?? ""} onChange={(event) => setEditing({ ...editing, text: event.target.value })} required maxLength={200} />
           </Field>
-          <Field label="Link">
+          <Field label={t.adminContent.link}>
             <Input value={editing.href ?? ""} onChange={(event) => setEditing({ ...editing, href: event.target.value })} placeholder="/collections/new-in" />
           </Field>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={editing.isActive ?? true} onChange={(event) => setEditing({ ...editing, isActive: event.target.checked })} className="h-4 w-4 accent-[#1c1a17]" />
-            Active
+            {t.adminForm.active}
           </label>
           <div className="flex gap-2">
-            <Button type="submit" size="sm">Save</Button>
-            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(null)}>Cancel</Button>
+            <Button type="submit" size="sm">{t.adminForm.save}</Button>
+            <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(null)}>{t.adminForm.cancel}</Button>
           </div>
         </form>
       )}

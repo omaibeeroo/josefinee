@@ -21,6 +21,7 @@ import {
 } from "@/server/actions/cart";
 import type { CartSummary } from "@/server/cart";
 import { Drawer, QuantitySelector, Button } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 import { formatDA } from "@/lib/money";
 
 type CartContextValue = CartSummary & {
@@ -37,6 +38,7 @@ const CartContext = createContext<CartContextValue | null>(null);
 const EMPTY: CartSummary = { cartId: null, items: [], subtotal: 0, count: 0 };
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { t } = useLocale();
   const [summary, setSummary] = useState<CartSummary>(EMPTY);
   const [open, setOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -47,9 +49,9 @@ export function CartProvider({ children }: { children: ReactNode }) {
       setSummary(await fetchCart());
       setError(null);
     } catch {
-      setError("Impossible de charger le panier. Réessayez.");
+      setError(t.cart.loadFailed);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void refresh();
@@ -90,6 +92,7 @@ export function useCart(): CartContextValue {
 }
 
 function CartDrawer() {
+  const { t } = useLocale();
   const { open, setOpen, items, subtotal, count, floor, error: loadError } = useCart();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -109,7 +112,7 @@ function CartDrawer() {
     setError(null);
     try {
       const result = await removeCartItemAction(itemId);
-      if (!result.ok) setError(result.error);
+      if (!result.ok) setError(result.error ?? t.cart.removeFailed);
       await refresh();
     } catch {
       setError("Impossible de retirer cet article. Réessayez.");
@@ -122,7 +125,7 @@ function CartDrawer() {
     <Drawer
       open={open}
       onClose={() => setOpen(false)}
-      title={`Votre panier (${count})`}
+      title={`${t.cart.drawerTitle} (${count})`}
       className="cart-drawer"
     >
       <div className="flex h-full flex-col">
@@ -133,17 +136,17 @@ function CartDrawer() {
         )}
         {loadError ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-            <p className="font-display text-2xl">Panier indisponible</p>
+            <p className="font-display text-2xl">{t.cart.cartUnavailable}</p>
             <Button variant="outline" size="sm" onClick={() => void refresh()}>
               Réessayer
             </Button>
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-            <p className="font-display text-2xl">Votre panier est vide</p>
-            <p className="text-sm text-ink-soft">Découvrez des pièces à porter jour après jour.</p>
+            <p className="font-display text-2xl">{t.cart.empty}</p>
+            <p className="text-sm text-ink-soft">{t.cart.emptyHint}</p>
             <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
-              Continuer mes achats
+              {t.cart.continueShopping}
             </Button>
           </div>
         ) : (
@@ -187,7 +190,7 @@ function CartDrawer() {
                       </div>
                       <button
                         type="button"
-                        aria-label={`Retirer ${item.productName}`}
+                        aria-label={`${t.cart.removeItem} ${item.productName}`}
                         disabled={pending === item.id}
                         onClick={() => void removeItem(item.id)}
                         className="p-1 text-ink-muted hover:text-ink disabled:opacity-40"
@@ -210,12 +213,12 @@ function CartDrawer() {
             </ul>
             <div className="border-t hairline bg-white px-5 py-5">
               <div className="mb-1 flex items-center justify-between">
-                <span className="text-sm text-ink-soft">Sous-total</span>
+                <span className="text-sm text-ink-soft">{t.cart.subtotal}</span>
                 <span className="text-base font-medium">{formatDA(subtotal)}</span>
               </div>
               <p className="mb-4 text-xs text-ink-muted">
-                {floor ? `Livraison dès ${formatDA(floor.minHome)} · ` : ""}
-                Frais exacts calculés à la commande. Paiement à la livraison.
+                {floor ? `${t.cart.deliveryFrom} ${formatDA(floor.minHome)} · ` : ""}
+                {t.cart.deliveryNote}
               </p>
               <div className="flex flex-col gap-2">
                 <Link
@@ -223,10 +226,10 @@ function CartDrawer() {
                   onClick={() => setOpen(false)}
                   className="btn btn-primary w-full"
                 >
-                  Commander
+                  {t.cart.checkout}
                 </Link>
                 <Link href="/cart" onClick={() => setOpen(false)} className="btn btn-ghost w-full">
-                  Voir le panier
+                  {t.cart.viewBag}
                 </Link>
               </div>
             </div>

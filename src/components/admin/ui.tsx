@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
-import { ORDER_STATUS_LABELS } from "@/lib/constants";
+import { ORDER_STATUS_TONES } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 import type { OrderStatus } from "@prisma/client";
 
@@ -61,16 +61,16 @@ const STATUS_TONES: Record<string, string> = {
   orange: "bg-orange-100 text-orange-900",
 };
 
-export function OrderStatusBadge({ status }: { status: OrderStatus }) {
-  const meta = ORDER_STATUS_LABELS[status];
+export function OrderStatusBadge({ status, label }: { status: OrderStatus; label: string }) {
+  const meta = ORDER_STATUS_TONES[status];
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]",
+        "inline-flex items-center px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]",
         STATUS_TONES[meta.tone] ?? "bg-stone-200 text-stone-800",
       )}
     >
-      {meta.label}
+      {label}
     </span>
   );
 }
@@ -79,7 +79,7 @@ export function RiskBadge({ level }: { level: "LOW" | "MEDIUM" | "HIGH" }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]",
+        "inline-flex items-center px-2.5 py-1 text-[0.6875rem] font-semibold uppercase tracking-[0.08em]",
         level === "HIGH" && "bg-red-100 text-red-900",
         level === "MEDIUM" && "bg-amber-100 text-amber-900",
         level === "LOW" && "bg-emerald-100 text-emerald-900",

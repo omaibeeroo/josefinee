@@ -16,6 +16,8 @@ import {
   X,
 } from "lucide-react";
 import { useCart } from "@/components/storefront/cart-ui";
+import { LocaleToggle } from "@/components/locale-toggle";
+import { useLocale } from "@/lib/i18n/provider";
 import { subscribeNewsletterAction } from "@/server/actions/engagement";
 import { Honeypot, useDialogFocus } from "@/components/ui";
 import { openCookieSettings } from "@/components/cookie-consent";
@@ -46,16 +48,21 @@ function BrandMark({
   brandName,
   logoUrl,
   onClick,
+  compact,
 }: {
   brandName: string;
   logoUrl: string;
   onClick?: () => void;
+  compact?: boolean;
 }) {
   return (
     <Link
       href="/"
       onClick={onClick}
-      className="inline-flex items-center gap-2 transition-transform duration-300 hover:scale-[1.02]"
+      className={cn(
+        "inline-flex origin-left items-center gap-2 motion-safe:transition-transform motion-safe:duration-300",
+        compact && "motion-safe:scale-[0.82]",
+      )}
       aria-label={`Accueil ${brandName}`}
     >
       {logoUrl ? (
@@ -87,8 +94,8 @@ function DesktopDropdown({
         {label}
         <ChevronDown size={12} className="transition-transform group-hover:rotate-180" />
       </Link>
-      <div className="invisible absolute left-1/2 top-full z-50 max-h-[70vh] w-60 -translate-x-1/2 translate-y-1 overflow-y-auto overscroll-contain border hairline bg-white opacity-0 shadow-card transition-all duration-150 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 no-scrollbar">
-        <div className="flex flex-col p-2">{children}</div>
+      <div className="invisible absolute left-1/2 top-full z-50 max-h-[70vh] w-56 -translate-x-1/2 translate-y-1 overflow-y-auto overscroll-contain border hairline bg-white opacity-0 shadow-card transition-[opacity,transform] duration-200 ease-out group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 no-scrollbar">
+        <div className="flex flex-col px-1.5 py-2">{children}</div>
       </div>
     </div>
   );
@@ -98,7 +105,7 @@ function DropdownLink({ href, children }: { href: string; children: ReactNode })
   return (
     <Link
       href={href}
-      className="px-4 py-2.5 text-sm text-ink-soft transition-colors hover:bg-cream hover:text-ink"
+      className="px-4 py-2.5 text-xs tracking-[0.08em] text-ink-soft transition-colors hover:bg-cream/60 hover:text-ink"
     >
       {children}
     </Link>
@@ -107,11 +114,11 @@ function DropdownLink({ href, children }: { href: string; children: ReactNode })
 
 export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
   const { brandName, announcement, children } = props;
+  const { t } = useLocale();
   const { count, setOpen } = useCart();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [headerHidden, setHeaderHidden] = useState(false);
   const pathname = usePathname();
 
   useEffect(() => {
@@ -120,36 +127,11 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    let lastY = window.scrollY;
-    let ticking = false;
-    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const onScroll = () => {
-      if (ticking) return;
-      ticking = true;
-      requestAnimationFrame(() => {
-        ticking = false;
-        const y = window.scrollY;
-        const goingDown = y > lastY + 4;
-        const goingUp = y < lastY - 2;
-        lastY = y;
-        setScrolled(y > 8);
-        // Slide the header away on scroll-down, back on scroll-up — like the
-        // reference shop. Transform-only so layout never shifts. Always
-        // visible near the top, while overlays are open, or under
-        // reduced-motion.
-        if (menuOpen || searchOpen || reduceMotion.matches || y <= 240) {
-          setHeaderHidden(false);
-        } else if (goingDown) {
-          setHeaderHidden(true);
-        } else if (goingUp) {
-          setHeaderHidden(false);
-        }
-      });
-    };
+    const onScroll = () => setScrolled(window.scrollY > 8);
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
-  }, [menuOpen, searchOpen]);
+  }, []);
 
   return (
     <>
@@ -165,35 +147,35 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
       )}
 
       <header
-        style={headerHidden ? { transform: "translateY(-100%)" } : undefined}
         className={cn(
-          "sticky top-0 z-50 border-b bg-white/95 backdrop-blur transition-shadow motion-safe:transition-transform motion-safe:duration-300",
+          "sticky top-0 z-50 border-b bg-white/95 backdrop-blur transition-shadow",
           scrolled ? "hairline shadow-[0_8px_30px_-18px_rgba(28,26,23,0.4)]" : "border-transparent",
         )}
       >
         {/* Desktop */}
         <div className="container-luxe hidden lg:block">
           <div className="relative flex h-16 items-center justify-center">
-            <BrandMark brandName={brandName} logoUrl={props.logoUrl} />
+            <BrandMark brandName={brandName} logoUrl={props.logoUrl} compact={scrolled} />
             <div className="absolute right-0 flex items-center justify-end gap-1">
+              <LocaleToggle className="mr-1 hidden xl:flex" />
               <button
                 type="button"
                 onClick={() => setSearchOpen(true)}
-                aria-label="Rechercher"
+                aria-label={t.header.search}
                 className="icon-button p-2.5 hover:text-gold-dark"
               >
                 <Search size={19} strokeWidth={1.75} />
               </button>
               <Link
                 href="/account"
-                aria-label="Mon compte"
+                aria-label={t.header.account}
                 className="icon-button p-2.5 hover:text-gold-dark"
               >
                 <User size={19} strokeWidth={1.75} />
               </Link>
               <Link
                 href="/wishlist"
-                aria-label="Liste d’envies"
+                aria-label={t.header.wishlist}
                 className="icon-button p-2.5 hover:text-gold-dark"
               >
                 <Heart size={19} strokeWidth={1.75} />
@@ -201,7 +183,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
               <button
                 type="button"
                 onClick={() => setOpen(true)}
-                aria-label={`Ouvrir le panier, ${count} article${count > 1 ? "s" : ""}`}
+                aria-label={`${t.header.openCart}, ${count} ${count > 1 ? t.cart.items : t.cart.item}`}
                 className="icon-button relative p-2.5 hover:text-gold-dark"
               >
                 <ShoppingBag size={19} strokeWidth={1.75} />
@@ -221,27 +203,45 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
               className="nav-link whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
               href="/"
             >
-              Accueil
+              {t.header.home}
             </Link>
             <Link
               className="nav-link whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
               href="/shop"
             >
-              Boutique
+              {t.header.shop}
             </Link>
-            <DesktopDropdown label="Catégories" href="/shop">
-              {props.categories.map((category) => (
-                <div key={category.slug}>
-                  <DropdownLink href={`/categories/${category.slug}`}>{category.name}</DropdownLink>
-                  {category.children.map((child) => (
-                    <DropdownLink key={child.slug} href={`/categories/${child.slug}`}>
-                      <span className="pl-3 text-xs">{child.name}</span>
-                    </DropdownLink>
-                  ))}
-                </div>
-              ))}
+            <DesktopDropdown label={t.header.categories} href="/shop">
+              <div className="flex flex-col px-3 py-1">
+                {props.categories.map((category, index) => (
+                  <div
+                    key={category.slug}
+                    className={index === 0 ? "py-2" : "border-t hairline py-2.5"}
+                  >
+                    <Link
+                      href={`/categories/${category.slug}`}
+                      className="block text-[10px] font-medium uppercase tracking-[0.2em] text-ink hover:text-gold-dark"
+                    >
+                      {category.name}
+                    </Link>
+                    {category.children.length > 0 && (
+                      <div className="mt-1 flex flex-col">
+                        {category.children.map((child) => (
+                          <Link
+                            key={child.slug}
+                            href={`/categories/${child.slug}`}
+                            className="py-1.5 text-[13px] text-ink-soft transition-colors hover:text-ink"
+                          >
+                            {child.name}
+                          </Link>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             </DesktopDropdown>
-            <DesktopDropdown label="Collections" href="/collections">
+            <DesktopDropdown label={t.header.collections} href="/collections">
               {props.collections.map((collection) => (
                 <DropdownLink key={collection.slug} href={`/collections/${collection.slug}`}>
                   {collection.name}
@@ -252,19 +252,19 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
               href="/collections/new-in"
               className="nav-link whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
             >
-              Nouveautés
+              {t.header.newIn}
             </Link>
             <Link
               href="/collections/best-sellers"
               className="nav-link whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
             >
-              Meilleures ventes
+              {t.header.bestSellers}
             </Link>
             <Link
               href="/collections/sale"
               className="whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-sale"
             >
-              Promotions
+              {t.header.sale}
             </Link>
           </nav>
         </div>
@@ -274,19 +274,19 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
-            aria-label="Ouvrir le menu"
+            aria-label={t.header.openMenu}
             className="p-3"
           >
             <Menu size={22} strokeWidth={1.75} />
           </button>
           <div className="flex justify-center">
-            <BrandMark brandName={brandName} logoUrl={props.logoUrl} />
+            <BrandMark brandName={brandName} logoUrl={props.logoUrl} compact={scrolled} />
           </div>
           <div className="flex items-center">
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
-              aria-label="Rechercher"
+              aria-label={t.header.search}
               className="p-2.5"
             >
               <Search size={20} strokeWidth={1.75} />
@@ -294,7 +294,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setOpen(true)}
-              aria-label={`Ouvrir le panier, ${count} article${count > 1 ? "s" : ""}`}
+              aria-label={`${t.header.openCart}, ${count} article${count > 1 ? "s" : ""}`}
               className="relative p-2.5"
             >
               <ShoppingBag size={20} strokeWidth={1.75} />
@@ -346,6 +346,7 @@ function MobileMenu({
   brandName: string;
   supportPhone: string;
 }) {
+  const { t } = useLocale();
   const [expanded, setExpanded] = useState<string | null>(null);
   const [expandedCollections, setExpandedCollections] = useState(false);
   const panelRef = useRef<HTMLElement>(null);
@@ -365,7 +366,7 @@ function MobileMenu({
       aria-label="Menu"
     >
       <button
-        aria-label="Fermer le menu"
+        aria-label={t.header.closeMenu}
         onClick={onClose}
         className="absolute inset-0 animate-fade-in bg-ink/55 backdrop-blur-[2px]"
       />
@@ -378,13 +379,13 @@ function MobileMenu({
           <div>
             <p className="font-display text-[1.35rem] leading-none tracking-[0.3em]">{brandName}</p>
             <p className="mt-1.5 text-[0.625rem] uppercase tracking-[0.28em] text-ink-muted">
-              Paiement à la livraison · 58 wilayas
+              {t.common.currencyNote} · 58 wilayas
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
-            aria-label="Fermer le menu"
+            aria-label={t.header.closeMenu}
             className="flex h-10 w-10 items-center justify-center rounded-full border hairline"
           >
             <X size={18} />
@@ -392,7 +393,7 @@ function MobileMenu({
         </div>
         <nav aria-label="Navigation mobile" className="flex-1 overflow-y-auto px-6 pb-4">
           <Link href="/shop" onClick={onClose} className={itemClass} style={stagger(0)}>
-            Boutique
+            {t.header.shop}
             <ChevronRight size={15} className="text-ink-muted" />
           </Link>
           <Link
@@ -401,7 +402,7 @@ function MobileMenu({
             className={itemClass}
             style={stagger(1)}
           >
-            Nouveautés
+            {t.header.newIn}
             <ChevronRight size={15} className="text-ink-muted" />
           </Link>
           {categories.map((category, index) => (
@@ -422,7 +423,7 @@ function MobileMenu({
                   <button
                     type="button"
                     aria-expanded={expanded === category.slug}
-                    aria-label={`Afficher ${category.name}`}
+                    aria-label={`${t.header.categories} : ${category.name}`}
                     onClick={() => setExpanded(expanded === category.slug ? null : category.slug)}
                     className="flex h-10 w-10 items-center justify-center"
                   >
@@ -470,7 +471,7 @@ function MobileMenu({
               <button
                 type="button"
                 aria-expanded={expandedCollections}
-                aria-label="Afficher les collections"
+                aria-label={`${t.header.collections}`}
                 onClick={() => setExpandedCollections(!expandedCollections)}
                 className="flex h-10 w-10 items-center justify-center"
               >
@@ -504,17 +505,20 @@ function MobileMenu({
             className={itemClass}
             style={stagger(categories.length + 3)}
           >
-            <span className="text-sale">Promotions</span>
+            <span className="text-sale">{t.header.sale}</span>
             <ChevronRight size={15} className="text-sale/60" />
           </Link>
 
-          <p className="mb-1 mt-6 text-[0.625rem] uppercase tracking-[0.28em] text-ink-muted">
-            Mon espace
-          </p>
+          <div className="mb-1 mt-6 flex items-center justify-between">
+            <p className="text-[0.625rem] uppercase tracking-[0.28em] text-ink-muted">
+              {t.header.mySpace}
+            </p>
+            <LocaleToggle />
+          </div>
           {[
-            { href: "/account", label: "Mon compte", Icon: User },
-            { href: "/wishlist", label: "Liste d’envies", Icon: Heart },
-            { href: "/track", label: "Suivre ma commande", Icon: PackageSearch },
+            { href: "/account", label: t.header.account, Icon: User },
+            { href: "/wishlist", label: t.header.wishlist, Icon: Heart },
+            { href: "/track", label: t.header.trackOrder, Icon: PackageSearch },
           ].map((entry) => (
             <Link
               key={entry.href}
@@ -530,7 +534,7 @@ function MobileMenu({
         {supportPhone && (
           <div className="border-t hairline bg-cream/60 px-6 py-4">
             <p className="text-[0.625rem] uppercase tracking-[0.24em] text-ink-muted">
-              Besoin d’aide ?
+              {t.header.needHelp}
             </p>
             <a
               href={`tel:${supportPhone.replace(/\s/g, "")}`}
@@ -557,6 +561,7 @@ function SearchOverlay({
   popularSearches: string[];
 }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [query, setQuery] = useState("");
   const panelRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -573,59 +578,61 @@ function SearchOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label="Recherche">
+    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label={t.header.search}>
       <button
-        aria-label="Fermer la recherche"
+        aria-label={t.header.closeSearch}
         onClick={onClose}
         className="absolute inset-0 bg-ink/50"
       />
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="absolute inset-x-0 top-0 border-b hairline bg-ivory px-4 py-5 md:px-8 md:py-7"
+        className="absolute inset-x-0 top-0 border-b border-[#e3e5e7] bg-gradient-to-b from-white to-[#f4f6f8] px-4 py-4 md:px-8 md:py-5"
       >
-        <div className="mx-auto max-w-2xl">
-          <div className="mb-4 flex items-center justify-between">
-            <p className="eyebrow">Rechercher</p>
+        <div className="mx-auto max-w-xl">
+          <div className="mb-3 flex items-center justify-between">
+            <p className="text-[0.625rem] font-medium uppercase tracking-[0.24em] text-ink-muted">
+              {t.header.searchLabel}
+            </p>
             <button
               type="button"
               onClick={onClose}
-              aria-label="Fermer la recherche"
-              className="p-1 text-ink-soft hover:text-ink"
+              aria-label={t.header.closeSearch}
+              className="p-1 text-ink-muted hover:text-ink"
             >
-              <X size={20} />
+              <X size={17} />
             </button>
           </div>
           <form onSubmit={submit} role="search">
-            <div className="flex items-center gap-3 border-b hairline pb-2 transition-colors focus-within:border-ink">
-              <Search size={17} className="shrink-0 text-ink-muted" aria-hidden="true" />
+            <div className="flex items-center gap-2.5 border-b border-[#d5dbe1] pb-1.5 transition-colors focus-within:border-ink">
+              <Search size={15} className="shrink-0 text-ink-muted" aria-hidden="true" />
               <input
                 ref={searchInputRef}
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
-                placeholder="Collier, sac, boucles d’oreilles…"
-                aria-label="Rechercher des produits"
-                className="w-full bg-transparent text-[0.9375rem] text-ink outline-none placeholder:text-ink-muted"
+                placeholder={t.header.searchPlaceholder}
+                aria-label={t.header.searchProducts}
+                className="w-full bg-transparent text-sm tracking-wide text-ink outline-none placeholder:text-ink-muted/70"
               />
               <button
                 type="submit"
-                className="shrink-0 text-[0.7rem] font-medium uppercase tracking-[0.22em] text-ink underline underline-offset-8 hover:text-gold-dark"
+                className="shrink-0 text-[0.65rem] font-medium uppercase tracking-[0.2em] text-ink-muted underline underline-offset-4 hover:text-ink"
               >
-                OK
+                {t.header.ok}
               </button>
             </div>
           </form>
           {popularSearches.length > 0 && (
-            <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5">
-              <p className="text-[0.65rem] uppercase tracking-[0.18em] text-ink-muted">
-                Populaires :
+            <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1">
+              <p className="text-[0.625rem] uppercase tracking-[0.18em] text-ink-muted">
+                {t.header.popular}
               </p>
               {popularSearches.map((term) => (
                 <Link
                   key={term}
                   href={`/search?q=${encodeURIComponent(term)}`}
                   onClick={onClose}
-                  className="text-sm text-ink-soft underline decoration-line underline-offset-4 hover:text-ink"
+                  className="text-[13px] text-ink-soft underline decoration-[#d5dbe1] underline-offset-4 hover:text-ink"
                 >
                   {term}
                 </Link>
@@ -641,6 +648,7 @@ function SearchOverlay({
 /* --------------------------------------------------------------- Footer */
 
 function NewsletterMini() {
+  const { t } = useLocale();
   const [email, setEmail] = useState("");
   const [website, setWebsite] = useState("");
   const [state, setState] = useState<{ ok: boolean; message: string } | null>(null);
@@ -654,7 +662,7 @@ function NewsletterMini() {
       setState({ ok: result.ok, message: result.ok ? result.message : result.error });
       if (result.ok) setEmail("");
     } catch {
-      setState({ ok: false, message: "Une erreur est survenue. Veuillez réessayer." });
+      setState({ ok: false, message: t.newsletter.subscribeFailed });
     } finally {
       setPending(false);
     }
@@ -664,7 +672,7 @@ function NewsletterMini() {
     <form onSubmit={submit} className="relative mt-0">
       <Honeypot value={website} onChange={setWebsite} />
       <label htmlFor="footer-newsletter" className="sr-only">
-        Adresse e-mail
+        {t.footer.emailLabel}
       </label>
       <div className="flex items-center gap-3 border-b hairline pb-2 transition-colors focus-within:border-ink">
         <input
@@ -673,8 +681,8 @@ function NewsletterMini() {
           required
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          placeholder="Votre adresse e-mail"
-          className="w-full bg-transparent text-sm text-ink outline-none placeholder:text-ink-muted"
+          placeholder={t.footer.emailPlaceholder}
+          className="w-full bg-transparent text-[13px] tracking-wide text-ink outline-none placeholder:text-ink-muted"
         />
         <button
           type="submit"
@@ -694,6 +702,7 @@ function NewsletterMini() {
 }
 
 function SiteFooter(props: ChromeProps) {
+  const { t } = useLocale();
   const year = new Date().getFullYear();
   const socialLinks = [
     { label: "Instagram", href: props.social.instagram },
@@ -704,14 +713,14 @@ function SiteFooter(props: ChromeProps) {
     ? `https://wa.me/${props.social.whatsapp.replace(/\D/g, "")}`
     : null;
   return (
-    <footer className="site-footer mt-8 border-t hairline bg-white">
-      <div className="container-luxe py-8 text-center md:py-10">
-        <p className="font-display text-2xl tracking-[0.28em]">{props.brandName}</p>
-        <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-ink-soft">
-          Des pièces à porter encore et encore.
+    <footer className="site-footer mt-3 border-t hairline bg-white">
+      <div className="container-luxe py-6 text-center md:py-8">
+        <p className="font-display text-xl tracking-[0.28em]">{props.brandName}</p>
+        <p className="mx-auto mt-2 max-w-xs text-xs leading-relaxed text-ink-soft">
+          {t.footer.tagline}
         </p>
         {(socialLinks.length > 0 || whatsappHref) && (
-          <div className="mt-5 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[0.68rem] uppercase tracking-[0.18em]">
+          <div className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[0.625rem] uppercase tracking-[0.18em]">
             {socialLinks.map((social) => (
               <a
                 key={social.label}
@@ -737,58 +746,58 @@ function SiteFooter(props: ChromeProps) {
         )}
       </div>
       <div className="border-t hairline">
-        <div className="container-luxe grid gap-8 py-8 text-left sm:grid-cols-2 md:grid-cols-3">
-          <nav aria-label="Boutique">
-            <p className="mb-4 text-[0.65rem] font-medium uppercase tracking-[0.2em] text-ink-muted">
-              Boutique
+        <div className="container-luxe grid gap-6 py-6 text-left sm:grid-cols-2 md:grid-cols-3">
+          <nav aria-label={t.footer.shop}>
+            <p className="mb-3 text-[0.6rem] font-medium uppercase tracking-[0.2em] text-ink-muted">
+              {t.footer.shop}
             </p>
-            <ul className="space-y-2.5 text-sm">
+            <ul className="space-y-2 text-xs">
               <li>
                 <Link href="/shop" className="text-ink-soft hover:text-ink">
-                  Toute la boutique
+                  {t.footer.shopAll}
                 </Link>
               </li>
               <li>
                 <Link href="/collections/new-in" className="text-ink-soft hover:text-ink">
-                  Nouveautés
+                  {t.footer.newIn}
                 </Link>
               </li>
               <li>
                 <Link href="/collections/best-sellers" className="text-ink-soft hover:text-ink">
-                  Meilleures ventes
+                  {t.footer.bestSellers}
                 </Link>
               </li>
             </ul>
           </nav>
-          <nav aria-label="Aide">
-            <p className="mb-4 text-[0.65rem] font-medium uppercase tracking-[0.2em] text-ink-muted">
-              Aide
+          <nav aria-label={t.footer.help}>
+            <p className="mb-3 text-[0.6rem] font-medium uppercase tracking-[0.2em] text-ink-muted">
+              {t.footer.help}
             </p>
-            <ul className="space-y-2.5 text-sm">
+            <ul className="space-y-2 text-xs">
               <li>
                 <Link href="/pages/shipping" className="text-ink-soft hover:text-ink">
-                  Livraison
+                  {t.footer.shipping}
                 </Link>
               </li>
               <li>
                 <Link href="/faq" className="text-ink-soft hover:text-ink">
-                  FAQ
+                  {t.footer.faq}
                 </Link>
               </li>
               <li>
                 <Link href="/contact" className="text-ink-soft hover:text-ink">
-                  Nous contacter
+                  {t.footer.contactUs}
                 </Link>
               </li>
             </ul>
           </nav>
           <div>
-            <p className="mb-4 text-[0.65rem] font-medium uppercase tracking-[0.2em] text-ink-muted">
-              Restez informée
+            <p className="mb-3 text-[0.6rem] font-medium uppercase tracking-[0.2em] text-ink-muted">
+              {t.footer.newsletter}
             </p>
             <NewsletterMini />
             {(props.supportEmail || props.supportPhone) && (
-              <p className="mt-4 text-xs leading-relaxed text-ink-muted">
+              <p className="mt-3 text-[11px] leading-relaxed text-ink-muted">
                 {props.supportEmail && (
                   <a href={`mailto:${props.supportEmail}`} className="hover:text-ink">
                     {props.supportEmail}
@@ -809,17 +818,17 @@ function SiteFooter(props: ChromeProps) {
         </div>
       </div>
       <div className="border-t hairline">
-        <div className="container-luxe flex flex-col gap-2 py-4 text-center text-[0.68rem] text-ink-muted sm:flex-row sm:items-center sm:justify-between sm:text-left">
+        <div className="container-luxe flex flex-col gap-1.5 py-3 text-center text-[0.68rem] text-ink-muted sm:flex-row sm:items-center sm:justify-between sm:text-left">
           <p>© {year} {props.brandName}</p>
           <div className="flex flex-wrap justify-center gap-x-5 gap-y-1">
             <Link href="/pages/privacy-policy" className="hover:text-ink">
-              Confidentialité
+              {t.footer.privacy}
             </Link>
             <Link href="/pages/terms" className="hover:text-ink">
-              Conditions
+              {t.footer.terms}
             </Link>
             <button type="button" onClick={openCookieSettings} className="hover:text-ink">
-              Cookies
+              {t.footer.cookies}
             </button>
           </div>
         </div>

@@ -4,6 +4,7 @@ import { useMemo, useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { deleteCollectionAction, saveCollectionAction } from "@/server/actions/admin-catalog";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 
 export type CollectionRow = {
   id: string;
@@ -28,6 +29,7 @@ export function CollectionManager({
   products: Array<{ id: string; name: string; slug: string }>;
 }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [editing, setEditing] = useState<(Partial<CollectionRow> & { id?: string; productIds?: string[] }) | null>(null);
   const [search, setSearch] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -67,7 +69,7 @@ export function CollectionManager({
   }
 
   async function remove(id: string) {
-    if (!window.confirm("Delete this collection? Products themselves are kept.")) return;
+    if (!window.confirm(t.adminCatalog.deleteCollectionConfirm)) return;
     await deleteCollectionAction(id);
     router.refresh();
   }
@@ -100,7 +102,7 @@ export function CollectionManager({
             })
           }
         >
-          New collection
+          {t.adminCatalog.newCollection}
         </Button>
       </div>
       {error && (
@@ -113,12 +115,12 @@ export function CollectionManager({
         <table className="w-full min-w-[680px] text-left text-sm">
           <thead>
             <tr className="border-b hairline text-xs uppercase tracking-[0.1em] text-ink-muted">
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Type</th>
-              <th className="px-4 py-3">Products</th>
-              <th className="px-4 py-3">Nav</th>
-              <th className="px-4 py-3">Active</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="px-4 py-3">{t.adminForm.name}</th>
+              <th className="px-4 py-3">{t.adminCatalog.typeCol}</th>
+              <th className="px-4 py-3">{t.adminCatalog.productsCol}</th>
+              <th className="px-4 py-3">{t.adminCatalog.nav}</th>
+              <th className="px-4 py-3">{t.adminForm.active}</th>
+              <th className="px-4 py-3 text-right">{t.adminForm.actions}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -130,14 +132,14 @@ export function CollectionManager({
                 </td>
                 <td className="px-4 py-3 text-xs">{collection.type}</td>
                 <td className="px-4 py-3 tabular-nums">{collection._count.products}</td>
-                <td className="px-4 py-3">{collection.showInNav ? "Yes" : "No"}</td>
-                <td className="px-4 py-3">{collection.isActive ? "Yes" : "No"}</td>
+                <td className="px-4 py-3">{collection.showInNav ? t.adminCoupon.yes : t.adminCoupon.no}</td>
+                <td className="px-4 py-3">{collection.isActive ? t.adminCoupon.yes : t.adminCoupon.no}</td>
                 <td className="px-4 py-3 text-right text-xs">
                   <button type="button" onClick={() => { setError(null); setEditing({ ...collection }); }} className="underline underline-offset-2">
-                    Edit
+                    {t.adminForm.edit}
                   </button>
                   <button type="button" onClick={() => void remove(collection.id)} className="ml-3 text-[#9e342e] underline underline-offset-2">
-                    Delete
+                    {t.adminForm.delete}
                   </button>
                 </td>
               </tr>
@@ -148,40 +150,40 @@ export function CollectionManager({
 
       {editing && (
         <form onSubmit={submit} className="mt-6 space-y-4 border hairline bg-white p-5">
-          <h2 className="font-display text-2xl">{editing.id ? "Edit collection" : "New collection"}</h2>
+          <h2 className="font-display text-2xl">{editing.id ? t.adminCatalog.editCollection : t.adminCatalog.newCollection}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Name" required>
+            <Field label={t.adminForm.name} required>
               <Input value={editing.name ?? ""} onChange={(event) => setEditing({ ...editing, name: event.target.value })} required />
             </Field>
-            <Field label="Slug (auto if empty)">
+            <Field label={t.adminCatalog.slugAuto}>
               <Input value={editing.slug ?? ""} onChange={(event) => setEditing({ ...editing, slug: event.target.value })} />
             </Field>
           </div>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Type" hint="Auto collections ignore manual product selection">
+            <Field label={t.adminCatalog.typeCol} hint={t.adminCatalog.typeHint}>
               <Select value={editing.type ?? "MANUAL"} onChange={(event) => setEditing({ ...editing, type: event.target.value as CollectionRow["type"] })}>
-                <option value="MANUAL">Manual</option>
-                <option value="NEW_IN">New in (auto)</option>
-                <option value="BEST_SELLERS">Best sellers (auto)</option>
-                <option value="SALE">Sale (auto)</option>
+                <option value="MANUAL">{t.adminCatalog.manual}</option>
+                <option value="NEW_IN">{t.adminCatalog.autoNew}</option>
+                <option value="BEST_SELLERS">{t.adminCatalog.autoBest}</option>
+                <option value="SALE">{t.adminCatalog.autoSale}</option>
               </Select>
             </Field>
-            <Field label="Sort order">
+            <Field label={t.adminForm.sortOrder}>
               <Input type="number" min={0} value={editing.sortOrder ?? 0} onChange={(event) => setEditing({ ...editing, sortOrder: Number(event.target.value) || 0 })} />
             </Field>
-            <Field label="Image URL">
+            <Field label={t.adminCatalog.imageUrl}>
               <Input value={editing.image ?? ""} onChange={(event) => setEditing({ ...editing, image: event.target.value })} placeholder="https://…" />
             </Field>
           </div>
-          <Field label="Description">
+          <Field label={t.adminForm.description}>
             <Textarea value={editing.description ?? ""} onChange={(event) => setEditing({ ...editing, description: event.target.value })} rows={2} />
           </Field>
           <div className="flex flex-wrap gap-4 text-sm">
             {(
               [
-                ["isActive", "Active"],
-                ["isFeatured", "Featured on homepage"],
-                ["showInNav", "Show in navigation"],
+                ["isActive", t.adminForm.active],
+                ["isFeatured", t.adminCatalog.featuredHome],
+                ["showInNav", t.adminCatalog.showInNav],
               ] as const
             ).map(([key, label]) => (
               <label key={key} className="flex items-center gap-2">
@@ -198,8 +200,8 @@ export function CollectionManager({
 
           {editing.type === "MANUAL" && (
             <div>
-              <Field label={`Products (${(editing.productIds ?? []).length} selected)`}>
-                <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search products…" />
+              <Field label={t.adminCatalog.productsSelected.replace("{count}", String((editing.productIds ?? []).length))}>
+                <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.adminCatalog.searchProducts} />
               </Field>
               <ul className="mt-2 max-h-64 space-y-1 overflow-y-auto border hairline p-2">
                 {visibleProducts.map((product) => (
@@ -221,10 +223,10 @@ export function CollectionManager({
 
           <div className="flex gap-2">
             <Button type="submit" disabled={pending} size="sm">
-              {pending ? "Saving…" : "Save collection"}
+              {pending ? t.adminForm.saving : t.adminCatalog.saveCollection}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(null)}>
-              Cancel
+              {t.adminForm.cancel}
             </Button>
           </div>
         </form>

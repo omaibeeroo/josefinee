@@ -462,15 +462,15 @@ export function Accordion({
               type="button"
               aria-expanded={isOpen}
               onClick={() => setOpen(isOpen ? null : index)}
-              className="flex w-full items-center justify-between gap-4 py-4 text-left"
+              className="flex w-full items-center justify-between gap-4 py-3 text-left"
             >
-              <span className="text-sm font-medium uppercase tracking-[0.1em]">{item.title}</span>
+              <span className="text-xs font-medium uppercase tracking-[0.12em]">{item.title}</span>
               <ChevronDown
-                size={16}
-                className={cn("transition-transform", isOpen && "rotate-180")}
+                size={14}
+                className={cn("shrink-0 text-ink-muted transition-transform", isOpen && "rotate-180")}
               />
             </button>
-            {isOpen && <div className="motion-expand pb-5">{item.content}</div>}
+            {isOpen && <div className="motion-expand pb-4">{item.content}</div>}
           </div>
         );
       })}
@@ -596,7 +596,7 @@ export function Reveal({
       ref={ref}
       style={{ transitionDelay: `${delay}ms` }}
       className={cn(
-        "transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-safe:will-change-transform",
+        "transition-[opacity,transform] duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)]",
         visible ? "translate-y-0 opacity-100" : "translate-y-7 opacity-0",
         className,
       )}

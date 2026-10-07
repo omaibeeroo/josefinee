@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { SlidersHorizontal, X } from "lucide-react";
 import { Modal, Button } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 import { ProductCard } from "@/components/storefront/product";
 import { PRODUCT_SORT_OPTIONS } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -69,6 +70,7 @@ function FiltersForm({
   initial: FilterState;
   onApply: (state: FilterState) => void;
 }) {
+  const { t } = useLocale();
   const [state, setState] = useState<FilterState>(initial);
   const [minInput, setMinInput] = useState(initial.minPrice !== undefined ? String(initial.minPrice) : "");
   const [maxInput, setMaxInput] = useState(initial.maxPrice !== undefined ? String(initial.maxPrice) : "");
@@ -88,7 +90,7 @@ function FiltersForm({
   return (
     <div className="space-y-6">
       <div>
-        <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">Disponibilité</p>
+        <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">{t.catalog.availability}</p>
         <label className="flex cursor-pointer items-center gap-2 text-sm">
           <input
             type="checkbox"
@@ -96,7 +98,7 @@ function FiltersForm({
             onChange={(event) => setState({ ...state, inStock: event.target.checked || undefined })}
             className="h-4 w-4 accent-[#1c1a17]"
           />
-          En stock uniquement
+          {t.catalog.inStockOnly}
         </label>
         <label className="mt-2 flex cursor-pointer items-center gap-2 text-sm">
           <input
@@ -105,20 +107,20 @@ function FiltersForm({
             onChange={(event) => setState({ ...state, onSale: event.target.checked || undefined })}
             className="h-4 w-4 accent-[#1c1a17]"
           />
-          En promotion
+          {t.catalog.onSale}
         </label>
       </div>
 
       {facets.maxPrice > 0 && (
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">Prix (DA)</p>
+          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">{t.catalog.price}</p>
           <div className="flex items-center gap-2">
             <input
               inputMode="numeric"
               value={minInput}
               onChange={(event) => setMinInput(event.target.value.replace(/[^0-9]/g, ""))}
               placeholder={String(facets.minPrice)}
-              aria-label="Prix minimum"
+              aria-label={t.catalog.minPrice}
               className="field min-h-10"
             />
             <span className="text-ink-muted">–</span>
@@ -127,7 +129,7 @@ function FiltersForm({
               value={maxInput}
               onChange={(event) => setMaxInput(event.target.value.replace(/[^0-9]/g, ""))}
               placeholder={String(facets.maxPrice)}
-              aria-label="Prix maximum"
+              aria-label={t.catalog.maxPrice}
               className="field min-h-10"
             />
           </div>
@@ -136,7 +138,7 @@ function FiltersForm({
 
       {facets.colors.length > 0 && (
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">Couleur</p>
+          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">{t.catalog.color}</p>
           <div className="flex flex-wrap gap-2">
             {facets.colors.map((color) => (
               <button
@@ -158,7 +160,7 @@ function FiltersForm({
 
       {facets.sizes.length > 0 && (
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">Taille</p>
+          <p className="mb-2 text-xs font-medium uppercase tracking-[0.16em] text-ink-soft">{t.catalog.size}</p>
           <div className="flex flex-wrap gap-2">
             {facets.sizes.map((size) => (
               <button
@@ -184,7 +186,7 @@ function FiltersForm({
           onClick={apply}
           className="flex-1"
         >
-          Appliquer les filtres
+          {t.catalog.applyFilters}
         </Button>
         <Button
           size="sm"
@@ -197,7 +199,7 @@ function FiltersForm({
             onApply(cleared);
           }}
         >
-          Effacer
+          {t.catalog.clear}
         </Button>
       </div>
     </div>
@@ -216,6 +218,7 @@ export function CatalogToolbar({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { t } = useLocale();
   const [filtersOpen, setFiltersOpen] = useState(false);
   const initial = useMemo(() => parseFilters(searchParams), [searchParams]);
 
@@ -244,7 +247,7 @@ export function CatalogToolbar({
     <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
       <p className="text-sm text-ink-soft" aria-live="polite">
         {title ? `${title} · ` : ""}
-        {total} {total === 1 ? "article" : "articles"}
+        {total} {total === 1 ? t.catalog.item : t.catalog.items}
       </p>
       <div className="flex items-center gap-2">
         <button
@@ -252,15 +255,15 @@ export function CatalogToolbar({
           onClick={() => setFiltersOpen(true)}
           className="btn btn-ghost min-h-10 px-4 text-xs lg:hidden"
         >
-          <SlidersHorizontal size={15} /> Filtres{activeCount > 0 ? ` (${activeCount})` : ""}
+          <SlidersHorizontal size={15} /> {t.catalog.filters}{activeCount > 0 ? ` (${activeCount})` : ""}
         </button>
         <label className="flex items-center gap-2 text-sm">
-          <span className="hidden sm:inline">Trier</span>
+          <span className="hidden sm:inline">{t.catalog.sort}</span>
           <select
             value={initial.sort ?? "featured"}
             onChange={(event) => setSort(event.target.value)}
             className="field min-h-10 w-auto"
-            aria-label="Trier les articles"
+            aria-label={t.catalog.sortProducts}
           >
             {PRODUCT_SORT_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -275,9 +278,9 @@ export function CatalogToolbar({
         <aside className="hidden" aria-hidden="true" />
       </div>
 
-      <Modal open={filtersOpen} onClose={() => setFiltersOpen(false)} title="Filtres">
+      <Modal open={filtersOpen} onClose={() => setFiltersOpen(false)} title={t.catalog.filters}>
         <div className="flex items-center justify-between">
-          <button type="button" onClick={() => setFiltersOpen(false)} className="p-1" aria-label="Fermer les filtres">
+          <button type="button" onClick={() => setFiltersOpen(false)} className="p-1" aria-label={t.catalog.closeFilters}>
             <X size={18} className="hidden" />
           </button>
         </div>
@@ -291,6 +294,7 @@ export function DesktopFilters({ facets }: { facets: Facets }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const { t } = useLocale();
   const initial = useMemo(() => parseFilters(searchParams), [searchParams]);
 
   function apply(state: FilterState) {
@@ -299,9 +303,9 @@ export function DesktopFilters({ facets }: { facets: Facets }) {
   }
 
   return (
-    <aside className="hidden w-60 shrink-0 lg:block" aria-label="Filtres">
+    <aside className="hidden w-60 shrink-0 lg:block" aria-label={t.catalog.filters}>
       <div className="sticky top-32 border hairline bg-white p-5">
-        <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em]">Filtres</p>
+        <p className="mb-4 text-xs font-medium uppercase tracking-[0.2em]">{t.catalog.filters}</p>
         <FiltersForm facets={facets} initial={initial} onApply={apply} />
       </div>
     </aside>

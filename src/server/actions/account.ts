@@ -7,6 +7,7 @@ import { getCustomerSession } from "@/lib/auth/session";
 import { signOrderToken } from "@/lib/order-token";
 import { z } from "zod";
 import { zId, zOptionalString, zPhone } from "@/lib/validation/common";
+import { getActionT } from "@/lib/i18n/server";
 import { recordAudit } from "@/lib/audit";
 import { enforceRateLimit, LIMITS } from "@/lib/rate-limit";
 import { storefrontProductWhere } from "@/server/catalog";
@@ -121,9 +122,10 @@ export async function getCustomerAddresses() {
 }
 
 export async function saveAddressAction(input: z.infer<typeof addressSchema>) {
+  const tErr = await getActionT();
   const customer = await requireCustomer();
   const parsed = addressSchema.safeParse(input);
-  if (!parsed.success) return { ok: false as const, error: "Please review the address fields." };
+  if (!parsed.success) return { ok: false as const, error: tErr.addressFields };
   const data = parsed.data;
   try {
     await enforceRateLimit({ ...LIMITS.accountMutation, key: `address:${customer.id}` });
@@ -132,11 +134,11 @@ export async function saveAddressAction(input: z.infer<typeof addressSchema>) {
   }
 
   const wilaya = await prisma.wilaya.findUnique({ where: { id: data.wilayaId } });
-  if (!wilaya?.isActive) return { ok: false as const, error: "Please select a valid wilaya." };
+  if (!wilaya?.isActive) return { ok: false as const, error: tErr.validWilaya };
   const commune = await prisma.commune.findFirst({
     where: { id: data.communeId, wilayaId: data.wilayaId, isActive: true },
   });
-  if (!commune) return { ok: false as const, error: "Please select a valid commune." };
+  if (!commune) return { ok: false as const, error: tErr.validCommune };
 
   try {
     await prisma.$transaction(async (tx) => {
@@ -151,7 +153,7 @@ export async function saveAddressAction(input: z.infer<typeof addressSchema>) {
         const existing = await tx.address.findFirst({
           where: { id: data.id, customerId: customer.id },
         });
-        if (!existing) throw new Error("Address not found.");
+        if (!existing) throw new Error(tErr.addressMissing);
         const { id: _id, ...addressData } = data;
         await tx.address.update({ where: { id: data.id }, data: addressData });
       } else {
@@ -175,9 +177,10 @@ export async function saveAddressAction(input: z.infer<typeof addressSchema>) {
 }
 
 export async function deleteAddressAction(id: string) {
+  const tErr = await getActionT();
   const customer = await requireCustomer();
   const parsedId = zId.safeParse(id);
-  if (!parsedId.success) return { ok: false as const, error: "Address not found." };
+  if (!parsedId.success) return { ok: false as const, error: tErr.addressMissing };
   try {
     await enforceRateLimit({ ...LIMITS.accountMutation, key: `address:${customer.id}` });
     await prisma.$transaction(async (tx) => {

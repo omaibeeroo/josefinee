@@ -22,7 +22,7 @@ export const BRAND_CONFIG = {
     "NEXT_PUBLIC_BRAND_DESCRIPTION",
     "Bijoux, sacs et accessoires modernes livrés partout en Algérie. Paiement à la livraison.",
   ),
-  orderPrefix: env("NEXT_PUBLIC_ORDER_PREFIX", "JOS"),
+  orderPrefix: env("NEXT_PUBLIC_ORDER_PREFIX", "HAN"),
   currency: env("NEXT_PUBLIC_CURRENCY", "DZD"),
   currencySymbol: env("NEXT_PUBLIC_CURRENCY_SYMBOL", "DA"),
   country: env("NEXT_PUBLIC_COUNTRY", "Algeria"),

@@ -11,6 +11,7 @@ import { CatalogToolbar, DesktopFilters, ProductGrid } from "@/components/storef
 import { EmptyState } from "@/components/ui";
 import { Pagination } from "@/components/pagination";
 import { parseCatalogParams, withPage } from "../../catalog-helpers";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -74,19 +75,20 @@ export default async function CollectionPage({
 
   const query = parseCatalogParams(queryParams);
   after(() => trackEvent({ name: ANALYTICS_EVENTS.VIEW_COLLECTION, props: { slug: collection.slug } }));
-  const [result, facets] = await Promise.all([
+  const [result, facets, t] = await Promise.all([
     getStorefrontProducts({
       ...query,
       collectionSlug: collection.slug,
       ...(collection.type === "MANUAL" ? {} : { type: collection.type }),
     }),
     getFilterFacets(),
+    getDictionary(),
   ]);
 
   return (
     <div className="py-10 md:py-14">
       <div className="container-luxe mb-8 text-center">
-        <p className="eyebrow mb-2">Collection</p>
+        <p className="eyebrow mb-2">{t.collections.collection}</p>
         <h1 className="font-display text-4xl font-medium md:text-5xl">{collection.name}</h1>
         {collection.description && (
           <p className="mx-auto mt-3 max-w-xl text-ink-soft">{collection.description}</p>
@@ -113,15 +115,15 @@ export default async function CollectionPage({
           <DesktopFilters facets={facets} />
           <div className="min-w-0 flex-1">
             {result.items.length === 0 ? (
-              <EmptyState
-                title="Aucun article pour le moment"
-                message="De nouvelles pièces arrivent bientôt. Revenez nous voir."
-                action={
-                  <Link href="/shop" className="btn btn-outline">
-                    Voir la boutique
-                  </Link>
-                }
-              />
+                <EmptyState
+                  title={t.collections.emptyCollection}
+                  message={t.collections.emptyCollectionHint}
+                  action={
+                    <Link href="/shop" className="btn btn-outline">
+                      {t.collections.viewShop}
+                    </Link>
+                  }
+                />
             ) : (
               <>
                 <ProductGrid products={result.items} />
@@ -129,6 +131,8 @@ export default async function CollectionPage({
                   page={result.page}
                   totalPages={result.totalPages}
                   href={(page) => `/collections/${slug}${withPage(queryParams, page)}`}
+                  prevLabel={t.pagination.previous}
+                  nextLabel={t.pagination.next}
                 />
               </>
             )}

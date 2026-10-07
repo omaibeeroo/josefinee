@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { deleteCategoryAction, saveCategoryAction } from "@/server/actions/admin-catalog";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 
 export type CategoryRow = {
   id: string;
@@ -24,6 +25,7 @@ export function CategoryManager({
   categories: CategoryRow[];
 }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [editing, setEditing] = useState<Partial<CategoryRow> & { id?: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -53,7 +55,7 @@ export function CategoryManager({
   }
 
   async function remove(id: string) {
-    if (!window.confirm("Delete this category? Only empty categories can be deleted.")) return;
+    if (!window.confirm(t.adminCatalog.deleteCategoryConfirm)) return;
     const result = await deleteCategoryAction(id);
     if (!result.ok) {
       setError(result.error);
@@ -69,7 +71,7 @@ export function CategoryManager({
           size="sm"
           onClick={() => setEditing({ name: "", slug: "", description: "", image: "", parentId: null, sortOrder: 0, isActive: true })}
         >
-          New category
+          {t.adminCatalog.newCategory}
         </Button>
       </div>
       {error && (
@@ -82,12 +84,12 @@ export function CategoryManager({
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead>
             <tr className="border-b hairline text-xs uppercase tracking-[0.1em] text-ink-muted">
-              <th className="px-4 py-3">Name</th>
-              <th className="px-4 py-3">Slug</th>
-              <th className="px-4 py-3">Parent</th>
-              <th className="px-4 py-3">Products</th>
-              <th className="px-4 py-3">Active</th>
-              <th className="px-4 py-3 text-right">Actions</th>
+              <th className="px-4 py-3">{t.adminForm.name}</th>
+              <th className="px-4 py-3">{t.adminForm.slug}</th>
+              <th className="px-4 py-3">{t.adminCatalog.parent}</th>
+              <th className="px-4 py-3">{t.adminCatalog.productsCol}</th>
+              <th className="px-4 py-3">{t.adminForm.active}</th>
+              <th className="px-4 py-3 text-right">{t.adminForm.actions}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -98,15 +100,15 @@ export function CategoryManager({
                   {category.name}
                 </td>
                 <td className="px-4 py-3 text-xs text-ink-muted">/{category.slug}</td>
-                <td className="px-4 py-3 text-xs">{category.parent?.name ?? "—"}</td>
+                <td className="px-4 py-3 text-xs">{category.parent?.name ?? t.adminCatalog.none}</td>
                 <td className="px-4 py-3 tabular-nums">{category._count.products}</td>
-                <td className="px-4 py-3">{category.isActive ? "Yes" : "No"}</td>
+                <td className="px-4 py-3">{category.isActive ? t.adminCoupon.yes : t.adminCoupon.no}</td>
                 <td className="px-4 py-3 text-right text-xs">
                   <button type="button" onClick={() => { setError(null); setEditing({ ...category }); }} className="underline underline-offset-2">
-                    Edit
+                    {t.adminForm.edit}
                   </button>
                   <button type="button" onClick={() => void remove(category.id)} className="ml-3 text-[#9e342e] underline underline-offset-2">
-                    Delete
+                    {t.adminForm.delete}
                   </button>
                 </td>
               </tr>
@@ -117,22 +119,22 @@ export function CategoryManager({
 
       {editing && (
         <form onSubmit={submit} className="mt-6 space-y-4 border hairline bg-white p-5">
-          <h2 className="font-display text-2xl">{editing.id ? "Edit category" : "New category"}</h2>
+          <h2 className="font-display text-2xl">{editing.id ? t.adminCatalog.editCategory : t.adminCatalog.newCategory}</h2>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Name" required>
+            <Field label={t.adminForm.name} required>
               <Input value={editing.name ?? ""} onChange={(event) => setEditing({ ...editing, name: event.target.value })} required />
             </Field>
-            <Field label="Slug (auto if empty)">
+            <Field label={t.adminCatalog.slugAuto}>
               <Input value={editing.slug ?? ""} onChange={(event) => setEditing({ ...editing, slug: event.target.value })} />
             </Field>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
-            <Field label="Parent">
+            <Field label={t.adminCatalog.parent}>
               <Select
                 value={editing.parentId ?? ""}
                 onChange={(event) => setEditing({ ...editing, parentId: event.target.value || null })}
               >
-                <option value="">Top level</option>
+                <option value="">{t.adminCatalog.topLevel}</option>
                 {categories
                   .filter((category) => category.id !== editing.id && !category.parentId)
                   .map((category) => (
@@ -142,26 +144,26 @@ export function CategoryManager({
                   ))}
               </Select>
             </Field>
-            <Field label="Sort order">
+            <Field label={t.adminForm.sortOrder}>
               <Input type="number" min={0} value={editing.sortOrder ?? 0} onChange={(event) => setEditing({ ...editing, sortOrder: Number(event.target.value) || 0 })} />
             </Field>
           </div>
-          <Field label="Description">
+          <Field label={t.adminForm.description}>
             <Textarea value={editing.description ?? ""} onChange={(event) => setEditing({ ...editing, description: event.target.value })} rows={2} />
           </Field>
-          <Field label="Image URL">
+          <Field label={t.adminCatalog.imageUrl}>
             <Input value={editing.image ?? ""} onChange={(event) => setEditing({ ...editing, image: event.target.value })} placeholder="https://…" />
           </Field>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" checked={editing.isActive ?? true} onChange={(event) => setEditing({ ...editing, isActive: event.target.checked })} className="h-4 w-4 accent-[#1c1a17]" />
-            Active (visible in navigation)
+            {t.adminCatalog.activeVisible}
           </label>
           <div className="flex gap-2">
             <Button type="submit" disabled={pending} size="sm">
-              {pending ? "Saving…" : "Save category"}
+              {pending ? t.adminForm.saving : t.adminCatalog.saveCategory}
             </Button>
             <Button type="button" variant="ghost" size="sm" onClick={() => setEditing(null)}>
-              Cancel
+              {t.adminForm.cancel}
             </Button>
           </div>
         </form>

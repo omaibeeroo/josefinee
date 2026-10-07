@@ -13,6 +13,7 @@ import { getSettings } from "@/lib/settings";
 import { getCustomerSession } from "@/lib/auth/session";
 import { hashPassword, passwordIssues } from "@/lib/auth/password";
 import { signOrderToken } from "@/lib/order-token";
+import { getActionT } from "@/lib/i18n/server";
 import { processPendingOrderOutbox } from "@/server/order-outbox";
 import { after } from "next/server";
 import type { DeliveryMethod } from "@prisma/client";
@@ -49,15 +50,16 @@ export async function createOrder(
   rawInput: CheckoutInput,
   context: CreateOrderContext,
 ): Promise<CreateOrderResult> {
+  const tErr = await getActionT();
   const parsed = checkoutSchema.safeParse(rawInput);
   if (!parsed.success) {
-    throw new AppError("VALIDATION", "Please review the highlighted fields and try again.");
+    throw new AppError("VALIDATION", tErr.validationReview);
   }
   const data = parsed.data;
 
   const settings = await getSettings();
   if (!settings.commerce.codEnabled) {
-    throw new AppError("COD_DISABLED", "Cash on delivery is temporarily unavailable.", 503);
+    throw new AppError("COD_DISABLED", tErr.codDisabled, 503);
   }
 
   const placed = await prisma.$transaction(async (tx) => {
@@ -67,11 +69,11 @@ export async function createOrder(
     });
     const session = await getCustomerSession();
     if (cartCustomerId && session && cartCustomerId !== session.customer.id) {
-      throw new AppError("CART_NOT_OWNED", "Please refresh your bag before placing this order.", 403);
+      throw new AppError("CART_NOT_OWNED", tErr.cartNotOwned, 403);
     }
     const secret = process.env.AUTH_SECRET;
     if (!secret || secret.length < 32) {
-      throw new AppError("CONFIG", "Checkout is temporarily unavailable.", 503);
+      throw new AppError("CONFIG", tErr.configDown, 503);
     }
     const idempotencyKey = `checkout:${createHmac("sha256", secret)
       .update(`${cartId}:${data.idempotencyKey}`)
@@ -129,7 +131,7 @@ export async function createOrder(
 
     if (prior) await tx.idempotencyKey.delete({ where: { key: idempotencyKey } });
     if (cartStatus !== "ACTIVE") {
-      throw new AppError("CART_ALREADY_CHECKED_OUT", "Your bag has already been checked out.", 409);
+      throw new AppError("CART_ALREADY_CHECKED_OUT", tErr.alreadyCheckedOut, 409);
     }
     await tx.idempotencyKey.create({
       data: {
@@ -143,13 +145,13 @@ export async function createOrder(
 
     const wilaya = await tx.wilaya.findUnique({ where: { id: data.wilayaId } });
     if (!wilaya || !wilaya.isActive) {
-      throw new AppError("INVALID_WILAYA", "Please select your wilaya.", 400);
+      throw new AppError("INVALID_WILAYA", tErr.invalidWilaya, 400);
     }
     const commune = await tx.commune.findFirst({
       where: { id: data.communeId, wilayaId: wilaya.id, isActive: true },
     });
     if (!commune) {
-      throw new AppError("INVALID_COMMUNE", "Please select a valid commune for this wilaya.", 400);
+      throw new AppError("INVALID_COMMUNE", tErr.invalidCommune, 400);
     }
 
     const variants = await tx.productVariant.findMany({
@@ -304,11 +306,11 @@ export async function createOrder(
     let passwordHash: string | null = null;
     if (data.createAccount) {
       if (!data.email)
-        throw new AppError("EMAIL_REQUIRED", "An email address is required to create an account.");
+        throw new AppError("EMAIL_REQUIRED", tErr.emailRequired);
       if (!data.password || passwordIssues(data.password).length > 0) {
         throw new AppError(
           "WEAK_PASSWORD",
-          "Choose a stronger password (10+ chars, mixed case, number).",
+          tErr.weakPasswordSignup,
         );
       }
       if (customer?.passwordHash) {
@@ -439,7 +441,7 @@ export async function createOrder(
       data: { status: "CONVERTED", customerId },
     });
     if (converted.count !== 1) {
-      throw new AppError("CART_ALREADY_CHECKED_OUT", "Your bag has already been checked out.", 409);
+      throw new AppError("CART_ALREADY_CHECKED_OUT", tErr.alreadyCheckedOut, 409);
     }
     await tx.orderOutboxEvent.createMany({
       data: ORDER_OUTBOX_KINDS.map((kind) => ({ orderId: order.id, kind })),

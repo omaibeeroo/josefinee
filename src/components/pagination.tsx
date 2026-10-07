@@ -6,10 +6,14 @@ export function Pagination({
   page,
   totalPages,
   href,
+  prevLabel,
+  nextLabel,
 }: {
   page: number;
   totalPages: number;
   href: (page: number) => string;
+  prevLabel?: string;
+  nextLabel?: string;
 }) {
   if (totalPages <= 1) return null;
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
@@ -19,7 +23,7 @@ export function Pagination({
     <nav aria-label="Pagination" className="mt-10 flex items-center justify-center gap-2">
       {page > 1 && (
         <Link href={href(page - 1)} className="btn btn-ghost min-h-10 px-4 text-xs">
-          Previous
+          {prevLabel ?? "Précédent"}
         </Link>
       )}
       {pages.map((entry) => (
@@ -37,7 +41,7 @@ export function Pagination({
       ))}
       {page < totalPages && (
         <Link href={href(page + 1)} className="btn btn-ghost min-h-10 px-4 text-xs">
-          Next
+          {nextLabel ?? "Suivant"}
         </Link>
       )}
     </nav>

@@ -1,21 +1,21 @@
 import Link from "next/link";
 import Image from "next/image";
 import { getCustomerOrders } from "@/server/actions/account";
-import { ORDER_STATUS_LABELS } from "@/lib/constants";
-import { formatDA } from "@/lib/money";
+import { formatDA, formatDateFR } from "@/lib/money";
+import { getDictionary } from "@/lib/i18n/server";
 import { EmptyState } from "@/components/ui";
 
 export default async function AccountOrdersPage() {
-  const orders = await getCustomerOrders();
+  const [orders, t] = await Promise.all([getCustomerOrders(), getDictionary()]);
 
   if (orders.length === 0) {
     return (
       <EmptyState
-        title="Aucune commande pour l’instant"
-        message="Vos commandes apparaîtront ici après votre première commande."
+        title={t.account.noOrders}
+        message={t.account.noOrdersHint}
         action={
           <Link href="/shop" className="btn btn-primary">
-            Découvrir la boutique
+            {t.common.discoverShop}
           </Link>
         }
       />
@@ -35,15 +35,11 @@ export default async function AccountOrdersPage() {
                 {order.orderNumber}
               </Link>
               <p className="mt-0.5 text-xs text-ink-muted">
-                {new Date(order.createdAt).toLocaleDateString("fr-DZ", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                })}
+                {formatDateFR(order.createdAt)}
               </p>
             </div>
             <span className="text-xs font-medium uppercase tracking-[0.14em]">
-              {ORDER_STATUS_LABELS[order.status].label}
+              {t.status[order.status]}
             </span>
             <p className="font-medium">{formatDA(order.total)}</p>
           </div>

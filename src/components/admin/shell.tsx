@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, Menu, X } from "lucide-react";
 import { adminLogoutAction } from "@/server/actions/admin-auth";
+import { LocaleToggle } from "@/components/locale-toggle";
+import { useLocale } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
 import { useDialogFocus } from "@/components/ui";
 
@@ -14,16 +16,19 @@ export function AdminShell({
   children,
   name,
   roleLabel,
+  roleName,
   sections,
   pendingOrders,
 }: {
   children: ReactNode;
   name: string;
   roleLabel: string;
+  roleName: string;
   sections: Array<{ title: string; items: NavItem[] }>;
   pendingOrders: number;
 }) {
   const pathname = usePathname();
+  const { t } = useLocale();
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
   const menuPanelRef = useRef<HTMLElement>(null);
@@ -34,33 +39,33 @@ export function AdminShell({
   }, [pathname]);
 
   return (
-    <div className="min-h-screen bg-cream">
+    <div className="min-h-screen bg-gradient-to-b from-white to-[#f4f6f8]">
       {/* Topbar */}
-      <div className="sticky top-0 z-40 border-b hairline bg-ivory print:hidden">
-        <div className="flex items-center justify-between gap-3 px-4 py-3 lg:px-6">
+      <div className="sticky top-0 z-40 border-b border-[#e3e5e7] bg-white/95 backdrop-blur print:hidden">
+        <div className="flex items-center justify-between gap-3 px-4 py-2.5 lg:px-6">
           <div className="flex items-center gap-3">
             <button
               type="button"
               onClick={() => setMenuOpen(true)}
-              aria-label="Open navigation"
-              className="p-2 lg:hidden"
+              aria-label={t.admin.openNav}
+              className="p-2 text-ink-soft hover:text-ink lg:hidden"
             >
-              <Menu size={20} />
+              <Menu size={19} />
             </button>
-            <Link href="/admin" className="font-display text-lg tracking-[0.28em]">
-              Hanadi Store <span className="text-xs tracking-[0.2em] text-ink-muted">ADMIN</span>
+            <Link href="/admin" className="font-display text-base tracking-[0.28em]">
+              Hanadi Store <span className="text-[0.625rem] tracking-[0.2em] text-ink-muted">ADMIN</span>
             </Link>
           </div>
           <div className="flex items-center gap-3">
             <Link
               href="/admin/orders?status=PENDING"
-              className="relative flex items-center gap-1.5 text-sm"
+              className="relative flex items-center gap-1.5 text-sm text-ink-soft hover:text-ink"
               onClick={() => router.refresh()}
-              title="Pending orders"
+              title={t.admin.pendingOrders}
             >
-              <Bell size={17} />
+              <Bell size={16} />
               {pendingOrders > 0 && (
-                <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-sale px-1.5 text-[0.6875rem] font-bold text-white">
+                <span className="flex h-5 min-w-5 items-center justify-center bg-sale px-1.5 text-[0.6875rem] font-bold text-white">
                   {pendingOrders}
                 </span>
               )}
@@ -68,19 +73,20 @@ export function AdminShell({
             <Link
               href="/"
               target="_blank"
-              className="hidden text-xs uppercase tracking-[0.14em] underline underline-offset-2 sm:inline"
+              className="hidden text-[0.6875rem] uppercase tracking-[0.14em] text-ink-soft underline underline-offset-4 hover:text-ink sm:inline"
             >
-              View store
+              {t.admin.viewStore}
             </Link>
+            <LocaleToggle className="hidden sm:flex" />
             <span className="hidden text-xs text-ink-muted md:inline">
-              {name} · {roleLabel}
+              {name} · {t.adminRoles[roleName as keyof typeof t.adminRoles] ?? roleLabel}
             </span>
             <form action={adminLogoutAction}>
               <button
                 type="submit"
-                className="text-xs uppercase tracking-[0.14em] underline underline-offset-2"
+                className="text-[0.6875rem] uppercase tracking-[0.14em] text-ink-soft underline underline-offset-4 hover:text-ink"
               >
-                Sign out
+                {t.admin.signOut}
               </button>
             </form>
           </div>
@@ -90,10 +96,10 @@ export function AdminShell({
       <div className="flex">
         {/* Sidebar (desktop) */}
         <aside
-          className="hidden w-64 shrink-0 border-r hairline bg-ivory lg:block print:hidden"
+          className="hidden w-60 shrink-0 border-r border-[#e3e5e7] bg-white lg:block print:hidden"
           aria-label="Admin navigation"
         >
-          <nav className="sticky top-[57px] max-h-[calc(100vh-57px)] overflow-y-auto p-4">
+          <nav className="sticky top-[53px] max-h-[calc(100vh-53px)] overflow-y-auto p-3">
             <SidebarNav sections={sections} pathname={pathname} />
           </nav>
         </aside>
@@ -114,17 +120,17 @@ export function AdminShell({
             <aside
               ref={menuPanelRef}
               tabIndex={-1}
-              className="absolute left-0 top-0 h-full w-72 overflow-y-auto bg-ivory p-4"
+              className="absolute left-0 top-0 h-full w-72 overflow-y-auto border-r border-[#e3e5e7] bg-white p-3"
             >
-              <div className="mb-3 flex items-center justify-between">
-                <span className="font-display text-lg tracking-[0.12em]">Hanadi Store</span>
+              <div className="mb-2 flex items-center justify-between px-1">
+                <span className="font-display text-base tracking-[0.12em]">Hanadi Store</span>
                 <button
                   type="button"
                   onClick={() => setMenuOpen(false)}
-                  aria-label="Close navigation"
-                  className="p-2"
+                  aria-label={t.admin.closeNav}
+                  className="p-2 text-ink-soft hover:text-ink"
                 >
-                  <X size={20} />
+                  <X size={18} />
                 </button>
               </div>
               <SidebarNav sections={sections} pathname={pathname} />
@@ -132,7 +138,7 @@ export function AdminShell({
           </div>
         )}
 
-        <main key={pathname} className="admin-surface min-w-0 flex-1 px-4 py-6 lg:px-8">
+        <main key={pathname} className="admin-surface min-w-0 flex-1 px-4 py-5 lg:px-6">
           {children}
         </main>
       </div>
@@ -149,13 +155,13 @@ function SidebarNav({
   pathname: string;
 }) {
   return (
-    <div className="space-y-5">
+    <div className="space-y-4">
       {sections.map((section) => (
         <div key={section.title}>
-          <p className="mb-1.5 px-2 text-[0.6875rem] font-semibold uppercase tracking-[0.18em] text-ink-muted">
+          <p className="mb-1 px-2 text-[0.625rem] font-medium uppercase tracking-[0.2em] text-ink-muted">
             {section.title}
           </p>
-          <ul className="space-y-0.5">
+          <ul className="space-y-px">
             {section.items.map((item) => {
               const active =
                 item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
@@ -165,20 +171,15 @@ function SidebarNav({
                     href={item.href}
                     aria-current={active ? "page" : undefined}
                     className={cn(
-                      "admin-nav-link flex items-center justify-between rounded-sm px-2 py-2 text-sm",
+                      "admin-nav-link flex items-center justify-between border-l-2 px-2 py-[0.45rem] text-[13px]",
                       active
-                        ? "bg-ink font-medium text-ivory"
-                        : "text-ink-soft hover:bg-cream hover:text-ink",
+                        ? "border-ink bg-[#eef1f4] font-medium text-ink"
+                        : "border-transparent text-ink-soft hover:bg-[#f4f6f8] hover:text-ink",
                     )}
                   >
                     {item.label}
                     {item.badge !== undefined && item.badge > 0 && (
-                      <span
-                        className={cn(
-                          "rounded-full px-1.5 text-[0.6875rem] font-bold",
-                          active ? "bg-ivory text-ink" : "bg-sale text-white",
-                        )}
-                      >
+                      <span className="bg-sale px-1.5 text-[0.6875rem] font-bold text-white">
                         {item.badge}
                       </span>
                     )}
@@ -194,6 +195,7 @@ function SidebarNav({
 }
 
 function NewOrderAlerts({ initialPending }: { initialPending: number }) {
+  const { t } = useLocale();
   const [, setKnown] = useState(initialPending);
   const [notice, setNotice] = useState<string | null>(null);
 
@@ -210,7 +212,7 @@ function NewOrderAlerts({ initialPending }: { initialPending: number }) {
         if (cancelled) return;
         setKnown((previous) => {
           if (data.pendingCount > previous) {
-            setNotice(`New order ${data.latestOrderNumber ?? ""} — check pending orders.`);
+            setNotice(t.admin.newOrderNotice.replace("{order}", data.latestOrderNumber ?? ""));
             try {
               const audio = new AudioContext();
               const oscillator = audio.createOscillator();
@@ -237,6 +239,7 @@ function NewOrderAlerts({ initialPending }: { initialPending: number }) {
       cancelled = true;
       clearInterval(timer);
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   if (!notice) return null;
@@ -245,21 +248,21 @@ function NewOrderAlerts({ initialPending }: { initialPending: number }) {
       className="fixed bottom-4 right-4 z-[70] max-w-sm animate-slide-up border hairline bg-ink p-4 text-ivory shadow-card print:hidden"
       role="alert"
     >
-      <p className="text-sm font-medium">New order received</p>
+      <p className="text-sm font-medium">{t.admin.newOrder}</p>
       <p className="mt-1 text-sm text-ivory/80">{notice}</p>
       <div className="mt-3 flex gap-2">
-        <Link
+          <Link
           href="/admin/orders?status=PENDING"
           className="btn btn-gold min-h-9 px-4 text-[0.6875rem]"
         >
-          View orders
+          {t.admin.viewOrders}
         </Link>
         <button
           type="button"
           onClick={() => setNotice(null)}
           className="btn min-h-9 border border-ivory/30 px-4 text-[0.6875rem] text-ivory"
         >
-          Dismiss
+          {t.admin.dismiss}
         </button>
       </div>
     </div>

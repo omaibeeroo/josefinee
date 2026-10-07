@@ -6,6 +6,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { toUserMessage } from "@/lib/errors";
 import { zId } from "@/lib/validation/common";
+import { getActionT } from "@/lib/i18n/server";
 import {
   addToCart,
   clearCart,
@@ -38,22 +39,11 @@ export async function getDeliveryFloorAction() {
   return getDeliveryFloor();
 }
 
-/** Storefront cards for an explicit id list, in the requested order. */
-export async function getProductsByIdsAction(productIds: string[]) {
-  const parsedIds = z.array(zId).max(12).safeParse(productIds);
-  if (!parsedIds.success) return [];
-  const ids = [...new Set(parsedIds.data)];
-  if (ids.length === 0) return [];
-  const { getStorefrontProducts } = await import("@/server/catalog");
-  const result = await getStorefrontProducts({ ids, pageSize: 12 });
-  const rank = new Map(ids.map((id, index) => [id, index]));
-  return result.items.sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
-}
-
 export async function addToCartAction(variantId: string, quantity = 1) {
+  const tErr = await getActionT();
   const parsed = z.object({ variantId: z.string().min(1).max(64), quantity: z.number().int().min(1).max(20) })
     .safeParse({ variantId, quantity });
-  if (!parsed.success) return { ok: false as const, error: "Please choose a valid item and quantity." };
+  if (!parsed.success) return { ok: false as const, error: tErr.validItem };
   try {
     await enforceCartMutationLimit("add");
     const { added, count } = await addToCart(parsed.data.variantId, parsed.data.quantity);
@@ -73,9 +63,10 @@ export async function addToCartAction(variantId: string, quantity = 1) {
 }
 
 export async function updateCartItemAction(itemId: string, quantity: number) {
+  const tErr = await getActionT();
   const parsed = z.object({ itemId: z.string().min(1).max(64), quantity: z.number().int().min(0).max(20) })
     .safeParse({ itemId, quantity });
-  if (!parsed.success) return { ok: false as const, error: "Please choose a valid quantity." };
+  if (!parsed.success) return { ok: false as const, error: tErr.validQuantity };
   try {
     await enforceCartMutationLimit("update");
     await setCartItemQuantity(parsed.data.itemId, parsed.data.quantity);
@@ -87,8 +78,9 @@ export async function updateCartItemAction(itemId: string, quantity: number) {
 }
 
 export async function removeCartItemAction(itemId: string) {
+  const tErr = await getActionT();
   const parsedId = z.string().min(1).max(64).safeParse(itemId);
-  if (!parsedId.success) return { ok: false as const, error: "This bag item is not available." };
+  if (!parsedId.success) return { ok: false as const, error: tErr.itemUnavailable };
   try {
     await enforceCartMutationLimit("remove");
     await removeCartItem(parsedId.data);
@@ -111,8 +103,9 @@ export async function clearCartAction() {
 }
 
 export async function previewCouponAction(code: string) {
+  const tErr = await getActionT();
   const parsedCode = z.string().trim().min(1).max(40).safeParse(code);
-  if (!parsedCode.success) return { ok: false as const, error: "Enter a valid promo code." };
+  if (!parsedCode.success) return { ok: false as const, error: tErr.validPromo };
   const normalized = parsedCode.data.toUpperCase();
   try {
     const ip = await clientIp();
@@ -121,7 +114,7 @@ export async function previewCouponAction(code: string) {
     const { resolveBestPromotion } = await import("@/server/promotions");
     const cart = await getCartSummary();
     if (cart.items.length === 0) {
-      return { ok: false as const, error: "Your bag is empty." };
+      return { ok: false as const, error: tErr.bagEmpty };
     }
 
     const products = await prisma.product.findMany({

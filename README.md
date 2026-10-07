@@ -151,8 +151,8 @@ deduplicates instead of double-counting.
 
 ## Storefront refresh (October 2026)
 
-Minimal, editorial direction across the whole shop (inspired by the
-lovemary.store reference, original execution — no copied assets or copy):
+Minimal, editorial direction across the whole shop (original work — no
+third-party assets or copy):
 
 - Light minimal footer (centered brand, Boutique / Aide columns, underline
   newsletter) on every page via `SiteChrome`; French contact page

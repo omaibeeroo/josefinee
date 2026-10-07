@@ -3,15 +3,11 @@ import { requirePermission } from "@/lib/auth/rbac";
 import { getDashboardStats, getLowStockProducts, getOrdersSeries, resolveRange } from "@/server/admin-analytics";
 import { BarList, Card, LineChart, PageHeader, StatCard } from "@/components/admin/ui";
 import { formatDA } from "@/lib/money";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
-const RANGES = [
-  { value: "today", label: "Today" },
-  { value: "7", label: "7 days" },
-  { value: "30", label: "30 days" },
-  { value: "90", label: "90 days" },
-];
+const RANGE_KEYS = ["today", "7", "30", "90"] as const;
 
 export default async function AdminDashboard({
   searchParams,
@@ -21,31 +17,38 @@ export default async function AdminDashboard({
   await requirePermission("dashboard:read");
   const params = await searchParams;
   const preset = params.range ?? "30";
-  const range = resolveRange(RANGES.some((entry) => entry.value === preset) ? preset : "30");
+  const range = resolveRange(RANGE_KEYS.some((value) => value === preset) ? preset : "30");
 
-  const [stats, series, lowStock] = await Promise.all([
+  const [stats, series, lowStock, t] = await Promise.all([
     getDashboardStats(range),
     getOrdersSeries(range),
     getLowStockProducts(8),
+    getDictionary(),
   ]);
+  const rangeLabels: Record<(typeof RANGE_KEYS)[number], string> = {
+    today: t.adminDash.today,
+    "7": t.adminDash.days7,
+    "30": t.adminDash.days30,
+    "90": t.adminDash.days90,
+  };
 
   return (
     <div>
       <PageHeader
-        title="Dashboard"
-        description="Store performance at a glance. All figures come from real orders."
+        title={t.adminDash.title}
+        description={t.adminDash.desc}
         action={
-          <div className="flex gap-1 border hairline bg-white p-1" role="group" aria-label="Date range">
-            {RANGES.map((entry) => (
+          <div className="flex gap-1 border hairline bg-white p-1" role="group" aria-label={t.adminDash.range}>
+            {RANGE_KEYS.map((value) => (
               <Link
-                key={entry.value}
-                href={`/admin?range=${entry.value}`}
-                aria-current={preset === entry.value ? "true" : undefined}
+                key={value}
+                href={`/admin?range=${value}`}
+                aria-current={preset === value ? "true" : undefined}
                 className={`px-3 py-1.5 text-xs font-medium uppercase tracking-[0.1em] ${
-                  preset === entry.value ? "bg-ink text-ivory" : "text-ink-soft hover:text-ink"
+                  preset === value ? "bg-ink text-ivory" : "text-ink-soft hover:text-ink"
                 }`}
               >
-                {entry.label}
+                {rangeLabels[value]}
               </Link>
             ))}
           </div>
@@ -53,57 +56,57 @@ export default async function AdminDashboard({
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label="Revenue (delivered)" value={formatDA(stats.revenue)} hint={`${stats.deliveredOrders} delivered orders`} />
-        <StatCard label="Orders" value={String(stats.orderCount)} hint={`AOV ${formatDA(stats.averageOrderValue)}`} />
-        <StatCard label="Pending orders" value={String(stats.pendingOrders)} href="/admin/orders?status=PENDING" />
-        <StatCard label="Cancelled / failed" value={`${stats.cancellationRate}%`} hint={`${stats.failedDeliveries} failed deliveries`} />
+        <StatCard label={t.adminDash.revenue} value={formatDA(stats.revenue)} hint={`${stats.deliveredOrders} ${t.adminDash.deliveredOrders}`} />
+        <StatCard label={t.adminDash.orders} value={String(stats.orderCount)} hint={`${t.adminDash.aov} ${formatDA(stats.averageOrderValue)}`} />
+        <StatCard label={t.adminDash.pending} value={String(stats.pendingOrders)} href="/admin/orders?status=PENDING" />
+        <StatCard label={t.adminDash.cancelled} value={`${stats.cancellationRate}%`} hint={`${stats.failedDeliveries} ${t.adminDash.failedDeliveries}`} />
       </div>
 
       <div className="mt-4 grid gap-3 xl:grid-cols-[1.6fr_1fr]">
         <Card>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">Orders over time</h2>
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminDash.overTime}</h2>
           <LineChart data={series.map((point) => ({ date: point.date.slice(5), value: point.orders }))} />
         </Card>
         <Card>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">Revenue over time</h2>
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminDash.revenueOverTime}</h2>
           <LineChart data={series.map((point) => ({ date: point.date.slice(5), value: point.revenue }))} />
         </Card>
       </div>
 
       <div className="mt-4 grid gap-3 xl:grid-cols-3">
         <Card>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">Top products</h2>
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminDash.topProducts}</h2>
           {stats.topProducts.length === 0 ? (
-            <p className="text-sm text-ink-muted">No sales yet.</p>
+            <p className="text-sm text-ink-muted">{t.adminDash.noSales}</p>
           ) : (
             <BarList
               items={stats.topProducts.map((product) => ({
                 label: product.name,
                 value: product.soldCount,
-                display: `${product.soldCount} sold`,
+                display: `${product.soldCount} ${t.adminDash.soldSuffix}`,
               }))}
             />
           )}
         </Card>
         <Card>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">Sales by wilaya</h2>
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminDash.salesByWilaya}</h2>
           {stats.salesByWilaya.length === 0 ? (
-            <p className="text-sm text-ink-muted">No orders in this period.</p>
+            <p className="text-sm text-ink-muted">{t.adminDash.noOrdersPeriod}</p>
           ) : (
             <BarList
               items={stats.salesByWilaya.map((entry) => ({
                 label: entry.wilaya,
                 value: entry.orders,
-                display: `${entry.orders} orders`,
+                display: `${entry.orders} ${t.adminDash.ordersSuffix}`,
               }))}
             />
           )}
         </Card>
         <Card>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-medium uppercase tracking-[0.14em]">Low stock</h2>
+            <h2 className="text-sm font-medium uppercase tracking-[0.14em]">{t.adminDash.lowStock}</h2>
             <Link href="/admin/inventory" className="text-xs uppercase tracking-[0.12em] underline underline-offset-2">
-              View all
+              {t.adminDash.viewAll}
             </Link>
           </div>
           {lowStock.length === 0 ? (

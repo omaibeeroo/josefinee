@@ -2,16 +2,18 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { prisma } from "@/lib/prisma";
+import { getDictionary } from "@/lib/i18n/server";
 import { EmptyState } from "@/components/ui";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Collections",
-  description: "Découvrez nos collections de vêtements, bijoux et accessoires.",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getDictionary();
+  return { title: t.collections.title, description: t.collections.description };
+}
 
 export default async function CollectionsPage() {
+  const t = await getDictionary();
   const collections = await prisma.collection.findMany({
     where: { isActive: true },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
@@ -21,14 +23,14 @@ export default async function CollectionsPage() {
   return (
     <div className="container-luxe py-10 md:py-14">
       <div className="mb-10 text-center">
-        <p className="eyebrow mb-2">Sélections exclusives</p>
-        <h1 className="font-display text-4xl font-medium md:text-5xl">Nos collections</h1>
+        <p className="eyebrow mb-2">{t.collections.eyebrow}</p>
+        <h1 className="font-display text-4xl font-medium md:text-5xl">{t.collections.heading}</h1>
       </div>
       {collections.length === 0 ? (
         <EmptyState
-          title="Aucune collection pour le moment"
-          message="Découvrez toutes nos pièces dans la boutique."
-          action={<Link href="/shop" className="btn btn-primary">Voir la boutique</Link>}
+          title={t.collections.emptyTitle}
+          message={t.collections.emptyHint}
+          action={<Link href="/shop" className="btn btn-primary">{t.collections.viewShop}</Link>}
         />
       ) : (
       <div className="grid gap-5 md:grid-cols-2">

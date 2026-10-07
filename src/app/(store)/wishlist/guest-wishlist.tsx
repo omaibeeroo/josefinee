@@ -7,6 +7,7 @@ import { useCart } from "@/components/storefront/cart-ui";
 import { getWishlistProductsAction } from "@/server/actions/engagement";
 import { readGuestWishlist } from "@/components/storefront/product";
 import { Button, Price } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 import { ProductImage } from "@/components/storefront/product";
 import { X } from "lucide-react";
 
@@ -23,6 +24,7 @@ export type GuestWishlistRow = {
 };
 
 export function GuestWishlist() {
+  const { t } = useLocale();
   const router = useRouter();
   const { add } = useCart();
   const [items, setItems] = useState<GuestWishlistRow[] | null>(null);
@@ -41,15 +43,15 @@ export function GuestWishlist() {
   useEffect(() => {
     void load();
     const onChange = () => void load();
-    window.addEventListener("nur-wishlist", onChange);
-    return () => window.removeEventListener("nur-wishlist", onChange);
+    window.addEventListener("hanadi-wishlist", onChange);
+    return () => window.removeEventListener("hanadi-wishlist", onChange);
   }, [load]);
 
   function remove(productId: string) {
     try {
       const ids = readGuestWishlist().filter((id) => id !== productId);
-      window.localStorage.setItem("nur-wishlist", JSON.stringify(ids));
-      window.dispatchEvent(new Event("nur-wishlist"));
+      window.localStorage.setItem("hanadi-wishlist", JSON.stringify(ids));
+      window.dispatchEvent(new Event("hanadi-wishlist"));
     } catch {
       setItems((previous) => previous?.filter((item) => item.productId !== productId) ?? previous);
     }
@@ -63,31 +65,31 @@ export function GuestWishlist() {
     try {
       const result = await add(item.defaultVariantId, 1);
       if (result.ok) remove(item.productId);
-      else setMoveErrors((current) => ({ ...current, [item.productId]: result.error || "Impossible d’ajouter cet article. Réessayez." }));
+      else setMoveErrors((current) => ({ ...current, [item.productId]: result.error || t.wishlist.addFailed }));
     } catch {
-      setMoveErrors((current) => ({ ...current, [item.productId]: "Impossible d’ajouter cet article. Réessayez." }));
+      setMoveErrors((current) => ({ ...current, [item.productId]: t.wishlist.addFailed }));
     } finally {
       setMovingProductIds((current) => current.filter((productId) => productId !== item.productId));
     }
   }
 
   if (items === null) {
-    return <p className="py-10 text-center text-ink-soft">Chargement de vos favoris…</p>;
+    return <p className="py-10 text-center text-ink-soft">{t.account.loadingWishlist}</p>;
   }
 
   if (items.length === 0) {
     return (
       <div className="py-10 text-center">
-        <p className="font-display text-2xl">Rien de sauvegardé pour l’instant</p>
+        <p className="font-display text-2xl">{t.account.savedEmpty}</p>
         <p className="mt-2 text-ink-soft">
-          Touchez le cœur sur un article pour le garder ici — connectez-vous pour le synchroniser.
+          {t.account.savedHintSync}
         </p>
         <div className="mt-6 flex justify-center gap-3">
           <Link href="/shop" className="btn btn-primary">
-            Découvrir nos pièces
+            {t.common.discoverShop}
           </Link>
           <Link href="/login" className="btn btn-ghost">
-            Se connecter
+            {t.auth.signIn}
           </Link>
         </div>
       </div>
@@ -106,7 +108,7 @@ export function GuestWishlist() {
               <Link href={`/products/${item.slug}`} className="text-sm font-medium hover:underline">
                 {item.name}
               </Link>
-              <button type="button" aria-label={`Retirer ${item.name}`} onClick={() => remove(item.productId)} className="p-1 text-ink-muted hover:text-ink">
+              <button type="button" aria-label={`${t.cart.removeItem} ${item.name}`} onClick={() => remove(item.productId)} className="p-1 text-ink-muted hover:text-ink">
                 <X size={16} />
               </button>
             </div>
@@ -116,10 +118,10 @@ export function GuestWishlist() {
           <div className="mt-auto pt-2">
               {item.inStock && item.defaultVariantId ? (
                 <Button size="sm" variant="outline" disabled={movingProductIds.includes(item.productId)} onClick={() => void moveToBag(item)}>
-                  {movingProductIds.includes(item.productId) ? "Ajout…" : "Ajouter au panier"}
+                  {movingProductIds.includes(item.productId) ? t.product.adding : t.product.addToBag}
                 </Button>
               ) : (
-                <p className="text-xs uppercase tracking-[0.14em] text-ink-muted">Épuisé</p>
+                <p className="text-xs uppercase tracking-[0.14em] text-ink-muted">{t.product.soldOut}</p>
               )}
               {moveErrors[item.productId] && <p className="mt-2 text-xs text-sale" role="alert">{moveErrors[item.productId]}</p>}
             </div>

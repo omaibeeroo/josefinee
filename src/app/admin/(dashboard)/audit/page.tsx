@@ -2,6 +2,8 @@ import Link from "next/link";
 import { requirePermission } from "@/lib/auth/rbac";
 import { listAuditLogs } from "@/server/actions/admin-ops";
 import { PageHeader } from "@/components/admin/ui";
+import { getDictionary } from "@/lib/i18n/server";
+import { formatDateTimeFR } from "@/lib/money";
 
 export const dynamic = "force-dynamic";
 
@@ -18,33 +20,33 @@ export default async function AdminAuditPage({
     search: pick(params.search) || undefined,
     page: pick(params.page) ? Number.parseInt(pick(params.page), 10) || 1 : 1,
   };
-  const result = await listAuditLogs(filters);
+  const [result, t] = await Promise.all([listAuditLogs(filters), getDictionary()]);
 
   return (
     <div>
-      <PageHeader title="Journal d’audit" description="Registre immuable des actions admin importantes. Les entrées ne sont ni modifiées ni supprimées." />
+      <PageHeader title={t.adminPages.auditTitle} description={t.adminPages.auditDesc} />
       <form method="get" className="mb-4 flex flex-col gap-2 border hairline bg-white p-4 sm:flex-row">
-        <input name="search" defaultValue={filters.search} placeholder="Action or resource ID…" className="field min-h-10 flex-1" aria-label="Search audit log" />
+        <input name="search" defaultValue={filters.search} placeholder={t.adminAuditTable.searchPh} className="field min-h-10 flex-1" aria-label={t.adminAuditTable.searchLabel} />
         <button type="submit" className="btn btn-primary min-h-10 px-6 text-xs">
-          Search
+          {t.adminAuditTable.search}
         </button>
       </form>
       <div className="overflow-x-auto border hairline bg-white">
         <table className="w-full min-w-[800px] text-left text-sm">
           <thead>
             <tr className="border-b hairline text-xs uppercase tracking-[0.1em] text-ink-muted">
-              <th className="px-4 py-3">When</th>
-              <th className="px-4 py-3">Actor</th>
-              <th className="px-4 py-3">Action</th>
-              <th className="px-4 py-3">Resource</th>
-              <th className="px-4 py-3">IP</th>
+              <th className="px-4 py-3">{t.adminAuditTable.colWhen}</th>
+              <th className="px-4 py-3">{t.adminAuditTable.colActor}</th>
+              <th className="px-4 py-3">{t.adminAuditTable.colAction}</th>
+              <th className="px-4 py-3">{t.adminAuditTable.colResource}</th>
+              <th className="px-4 py-3">{t.adminAuditTable.colIp}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
             {result.items.map((entry) => (
               <tr key={entry.id}>
                 <td className="px-4 py-3 text-xs text-ink-muted">
-                  {new Date(entry.createdAt).toLocaleString("fr-DZ")}
+                  {formatDateTimeFR(entry.createdAt)}
                 </td>
                 <td className="px-4 py-3 text-xs">
                   {entry.actor ? `${entry.actor.name} (${entry.actor.email})` : entry.actorType}

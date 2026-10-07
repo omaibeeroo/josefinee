@@ -10,6 +10,7 @@ import { CatalogToolbar, DesktopFilters, ProductGrid } from "@/components/storef
 import { EmptyState } from "@/components/ui";
 import { Pagination } from "@/components/pagination";
 import { parseCatalogParams, withPage } from "../../catalog-helpers";
+import { getDictionary } from "@/lib/i18n/server";
 
 export const dynamic = "force-dynamic";
 
@@ -65,18 +66,19 @@ export default async function CategoryPage({
 
   const query = parseCatalogParams(queryParams);
   after(() => trackEvent({ name: ANALYTICS_EVENTS.VIEW_COLLECTION, props: { slug: `category:${category.slug}` } }));
-  const [result, facets] = await Promise.all([
+  const [result, facets, t] = await Promise.all([
     getStorefrontProducts({
       ...query,
       categorySlugs: [category.slug, ...category.children.map((child) => child.slug)],
     }),
     getFilterFacets(),
+    getDictionary(),
   ]);
 
   return (
     <div className="container-luxe py-10 md:py-14">
       <div className="mb-6 text-center">
-        <p className="eyebrow mb-2">Catégorie</p>
+        <p className="eyebrow mb-2">{t.category.eyebrow}</p>
         <h1 className="font-display text-4xl font-medium md:text-5xl">{category.name}</h1>
         {category.description && (
           <p className="mx-auto mt-3 max-w-xl text-ink-soft">{category.description}</p>
@@ -104,11 +106,11 @@ export default async function CategoryPage({
         <div className="min-w-0 flex-1">
           {result.items.length === 0 ? (
             <EmptyState
-              title="Aucun article pour le moment"
-              message="De nouvelles pièces arrivent bientôt. Revenez nous voir."
+              title={t.collections.emptyCollection}
+              message={t.collections.emptyCollectionHint}
               action={
                 <Link href="/shop" className="btn btn-outline">
-                  Voir la boutique
+                  {t.collections.viewShop}
                 </Link>
               }
             />
@@ -119,6 +121,8 @@ export default async function CategoryPage({
                 page={result.page}
                 totalPages={result.totalPages}
                 href={(page) => `/categories/${slug}${withPage(queryParams, page)}`}
+                prevLabel={t.pagination.previous}
+                nextLabel={t.pagination.next}
               />
             </>
           )}

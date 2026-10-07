@@ -3,14 +3,14 @@ import { productionEnvironmentIssues } from "./production-env";
 
 const validProductionEnv = {
   NODE_ENV: "production",
-  DATABASE_URL: "postgresql://app-user:test-only-password@db.example.test:5432/josefinee_store?schema=public",
+  DATABASE_URL: "postgresql://app-user:test-only-password@db.example.test:5432/hanadi_store?schema=public",
   AUTH_SECRET: "unit-test-secret-value-that-is-not-used-outside-tests",
   ORDER_OUTBOX_SECRET: "separate-unit-test-outbox-secret-value",
   RETENTION_JOB_SECRET: "separate-unit-test-retention-secret-value",
   APP_URL: "https://store.example.test",
   TRUSTED_CLIENT_IP_HEADER: "x-real-ip",
   STORAGE_DRIVER: "s3",
-  STORAGE_BUCKET: "nur-test-bucket",
+  STORAGE_BUCKET: "hanadi-test-bucket",
   STORAGE_ACCESS_KEY: "test-access-key",
   STORAGE_SECRET_KEY: "test-secret-key",
   STORAGE_PUBLIC_HOST: "https://cdn.example.test",

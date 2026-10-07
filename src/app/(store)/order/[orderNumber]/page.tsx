@@ -6,19 +6,19 @@ import { CheckCircle2 } from "lucide-react";
 import { getOrderConfirmation } from "@/server/orders";
 import { getSettings } from "@/lib/settings";
 import { verifyOrderToken } from "@/lib/order-token";
-import { CUSTOMER_ORDER_FLOW, DELIVERY_METHOD_LABELS, ORDER_STATUS_LABELS } from "@/lib/constants";
+import { CUSTOMER_ORDER_FLOW } from "@/lib/constants";
 import { formatDA } from "@/lib/money";
 import { formatPhoneDisplay } from "@/lib/phone";
+import { getDictionary } from "@/lib/i18n/server";
 import { PixelEvent } from "@/components/pixels";
 import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Commande confirmée",
-  robots: { index: false, follow: false },
-  referrer: "no-referrer",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const d = await getDictionary();
+  return { title: d.order.confirmed, robots: { index: false, follow: false }, referrer: "no-referrer" };
+}
 
 export default async function ConfirmationPage({
   params,
@@ -35,11 +35,11 @@ export default async function ConfirmationPage({
 
   const order = await getOrderConfirmation(normalized);
   if (!order) notFound();
-  const settings = await getSettings();
+  const [settings, d] = await Promise.all([getSettings(), getDictionary()]);
   const whatsappNumber = settings.social.whatsapp.replace(/\D/g, "");
   const whatsappHref = whatsappNumber
     ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-        `Bonjour, j’ai une question au sujet de ma commande ${order.orderNumber}.`,
+        d.order.whatsappMsg.replace("{order}", order.orderNumber),
       )}`
     : null;
 
@@ -59,20 +59,19 @@ export default async function ConfirmationPage({
       />
       <div className="text-center">
         <CheckCircle2 size={44} strokeWidth={1.25} className="mx-auto text-success" />
-        <p className="eyebrow mt-4">Commande confirmée ♡</p>
+        <p className="eyebrow mt-4">{d.order.confirmed}</p>
         <h1 className="mt-2 font-display text-4xl font-medium md:text-5xl">
-          Merci, {order.firstName}.
+          {d.order.thanks.replace("{name}", order.firstName)}
         </h1>
         <p className="mx-auto mt-3 max-w-md text-ink-soft">
-          Nous préparerons votre commande avec soin et appellerons le{" "}
-          {formatPhoneDisplay(order.phone)} avant la livraison.
+          {d.order.prepareNote.replace("{phone}", formatPhoneDisplay(order.phone))}
         </p>
         <p className="mt-4 inline-block border hairline bg-white px-5 py-2.5 text-sm tracking-[0.12em]">
-          Commande <span className="font-semibold">{order.orderNumber}</span>
+          {d.order.order} <span className="font-semibold">{order.orderNumber}</span>
         </p>
       </div>
 
-      <ol className="mt-10" aria-label="Suivi de commande">
+      <ol className="mt-10" aria-label={d.order.progress}>
         {CUSTOMER_ORDER_FLOW.map((status, index) => {
           const done = index <= activeIndex;
           return (
@@ -92,8 +91,8 @@ export default async function ConfirmationPage({
                 )}
               </div>
               <p className={cn("pb-6 text-sm", done ? "font-medium" : "text-ink-muted")}>
-                {ORDER_STATUS_LABELS[status].customerLabel}
-                {index === activeIndex && <span className="ml-2 text-xs text-gold-dark">· en cours</span>}
+                {d.customerStatus[status]}
+                {index === activeIndex && <span className="ml-2 text-xs text-gold-dark">· {d.order.current}</span>}
               </p>
             </li>
           );
@@ -101,7 +100,7 @@ export default async function ConfirmationPage({
       </ol>
 
       <div className="border hairline bg-white p-6">
-        <h2 className="text-xs font-medium uppercase tracking-[0.2em]">Résumé de commande</h2>
+        <h2 className="text-xs font-medium uppercase tracking-[0.2em]">{d.order.summary}</h2>
         <ul className="mt-4 space-y-3">
           {order.items.map((item, index) => (
             <li key={`${item.productName}-${index}`} className="flex items-center gap-3">
@@ -113,7 +112,7 @@ export default async function ConfirmationPage({
               <div className="flex-1">
                 <p className="text-sm font-medium">{item.productName}</p>
                 <p className="text-xs text-ink-muted">
-                  {item.variantLabel ? `${item.variantLabel} · ` : ""}Qté {item.quantity}
+                  {item.variantLabel ? `${item.variantLabel} · ` : ""}{d.order.qty} {item.quantity}
                 </p>
               </div>
               <p className="text-sm font-medium">{formatDA(item.lineTotal)}</p>
@@ -122,27 +121,27 @@ export default async function ConfirmationPage({
         </ul>
         <dl className="mt-4 space-y-1.5 border-t hairline pt-4 text-sm">
           <div className="flex justify-between">
-            <dt className="text-ink-soft">Sous-total</dt>
+            <dt className="text-ink-soft">{d.order.subtotal}</dt>
             <dd>{formatDA(order.subtotal)}</dd>
           </div>
           {order.promotionDiscount > 0 && (
             <div className="flex justify-between">
-              <dt className="text-ink-soft">Promotion{order.promotionName ? ` (${order.promotionName})` : ""}</dt>
+              <dt className="text-ink-soft">{d.order.promotion}{order.promotionName ? ` (${order.promotionName})` : ""}</dt>
               <dd>−{formatDA(order.promotionDiscount)}</dd>
             </div>
           )}
           {order.discount > 0 && (
             <div className="flex justify-between">
-              <dt className="text-ink-soft">Réduction</dt>
+              <dt className="text-ink-soft">{d.order.discount}</dt>
               <dd>−{formatDA(order.discount)}</dd>
             </div>
           )}
           <div className="flex justify-between">
-            <dt className="text-ink-soft">Livraison ({DELIVERY_METHOD_LABELS[order.deliveryMethod]})</dt>
+            <dt className="text-ink-soft">{d.order.delivery} ({d.delivery[order.deliveryMethod]})</dt>
             <dd>{formatDA(order.shipping)}</dd>
           </div>
           <div className="flex justify-between text-base font-medium">
-            <dt>Total (paiement à la livraison)</dt>
+            <dt>{d.order.totalCod}</dt>
             <dd>{formatDA(order.total)}</dd>
           </div>
         </dl>
@@ -158,19 +157,19 @@ export default async function ConfirmationPage({
 
       <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
         <Link href="/shop" className="btn btn-primary">
-          Continuer mes achats
+          {d.cart.continueShopping}
         </Link>
         {whatsappHref ? (
           <a href={whatsappHref} target="_blank" rel="noopener noreferrer" className="btn btn-gold">
-            Nous contacter sur WhatsApp à propos de cette commande
+            {d.order.whatsappCta}
           </a>
         ) : (
           <Link href="/contact" className="btn btn-ghost">
-          Contacter le service client
+          {d.order.contactSupport}
           </Link>
         )}
         <Link href={`/order/${order.orderNumber}?t=${encodeURIComponent(t ?? "")}`} className="btn btn-ghost">
-          Actualiser le statut
+          {d.order.refreshStatus}
         </Link>
       </div>
     </div>

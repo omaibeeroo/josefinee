@@ -1,4 +1,4 @@
-const SAFE_BASE = "https://nur.invalid";
+const SAFE_BASE = "https://hanadi.invalid";
 
 /** Accept only same-origin absolute paths; never hand router.push an external URL. */
 export function safeInternalPath(value: string | null | undefined, fallback = "/account"): string {

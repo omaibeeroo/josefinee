@@ -5,6 +5,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { saveProductAction } from "@/server/actions/admin-catalog";
 import { Button, Field, Input, Select, Textarea } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 import { ArrowDown, ArrowUp, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -102,6 +103,7 @@ export function ProductEditor({
   categories: Array<{ id: string; name: string }>;
 }) {
   const router = useRouter();
+  const { t } = useLocale();
   const [state, setState] = useState<EditorState>(initial);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -263,35 +265,35 @@ export function ProductEditor({
           </p>
         )}
 
-        <section className="border hairline bg-white p-5" aria-label="Basics">
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">Basics</h2>
+        <section className="border hairline bg-white p-5" aria-label={t.adminEditor.basics}>
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminEditor.basics}</h2>
           <div className="space-y-4">
-            <Field label="Product name" required error={fieldErrors.name}>
+            <Field label={t.adminEditor.productName} required error={fieldErrors.name}>
               <Input value={state.name} onChange={(event) => set("name", event.target.value)} required />
             </Field>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Slug (auto if empty)" error={fieldErrors.slug}>
+              <Field label={t.adminEditor.slugAuto} error={fieldErrors.slug}>
                 <Input value={state.slug} onChange={(event) => set("slug", event.target.value)} placeholder="luna-pearl-necklace" />
               </Field>
-              <Field label="SKU">
+              <Field label={t.adminEditor.sku}>
                 <Input value={state.sku} onChange={(event) => set("sku", event.target.value)} />
               </Field>
             </div>
             <div className="grid gap-4 sm:grid-cols-3">
-              <Field label="Price (DA)" required error={fieldErrors.price}>
+              <Field label={t.adminEditor.priceDa} required error={fieldErrors.price}>
                 <Input type="number" min={0} value={state.price} onChange={(event) => set("price", num(event.target.value))} required />
               </Field>
-              <Field label="Compare-at (DA)">
+              <Field label={t.adminEditor.compareAt}>
                 <Input type="number" min={0} value={state.compareAtPrice} onChange={(event) => set("compareAtPrice", event.target.value)} placeholder="—" />
               </Field>
-              <Field label="Cost (DA, internal)">
+              <Field label={t.adminEditor.costInternal}>
                 <Input type="number" min={0} value={state.costPrice} onChange={(event) => set("costPrice", event.target.value)} placeholder="—" />
               </Field>
             </div>
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Category">
+              <Field label={t.adminEditor.category}>
                 <Select value={state.categoryId} onChange={(event) => set("categoryId", event.target.value)}>
-                  <option value="">Uncategorized</option>
+                  <option value="">{t.adminEditor.uncategorized}</option>
                   {categories.map((category) => (
                     <option key={category.id} value={category.id}>
                       {category.name}
@@ -299,20 +301,20 @@ export function ProductEditor({
                   ))}
                 </Select>
               </Field>
-              <Field label="Tags (comma separated)">
+              <Field label={t.adminEditor.tags}>
                 <Input value={state.tags} onChange={(event) => set("tags", event.target.value)} placeholder="gold, necklace" />
               </Field>
             </div>
-            <Field label="Short description">
+            <Field label={t.adminEditor.shortDesc}>
               <Textarea value={state.shortDescription} onChange={(event) => set("shortDescription", event.target.value)} rows={2} maxLength={300} />
             </Field>
-            <Field label="Description (safe HTML allowed)" hint="Only headings, lists, bold, links survive — scripts are stripped.">
+            <Field label={t.adminEditor.descHtml} hint="Only headings, lists, bold, links survive — scripts are stripped.">
               <Textarea value={state.description} onChange={(event) => set("description", event.target.value)} rows={8} />
             </Field>
           </div>
         </section>
 
-        <section className="border hairline bg-white p-5" aria-label="Images">
+        <section className="border hairline bg-white p-5" aria-label={t.adminEditor.images}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-medium uppercase tracking-[0.14em]">Images ({state.images.length}/20)</h2>
             <label className="btn btn-ghost min-h-10 cursor-pointer px-4 text-xs">
@@ -328,7 +330,7 @@ export function ProductEditor({
             </label>
           </div>
           {state.images.length === 0 ? (
-            <p className="text-sm text-ink-muted">No images yet. The first image becomes the primary one.</p>
+            <p className="text-sm text-ink-muted">{t.adminEditor.noImages}</p>
           ) : (
             <ul className="grid grid-cols-3 gap-3 sm:grid-cols-4">
               {state.images.map((image, index) => (
@@ -343,7 +345,7 @@ export function ProductEditor({
                       images[index] = { ...images[index]!, alt: event.target.value };
                       set("images", images);
                     }}
-                    placeholder="Alt text"
+                    placeholder={t.adminEditor.altText}
                     aria-label={`Alt text for image ${index + 1}`}
                     className="w-full border-t hairline bg-white px-2 py-1 text-xs"
                   />
@@ -352,15 +354,15 @@ export function ProductEditor({
                       {index === 0 ? "Primary" : `#${index + 1}`}
                     </span>
                     <div className="flex">
-                      <button type="button" aria-label="Move up" disabled={index === 0} onClick={() => moveImage(index, -1)} className="p-1 disabled:opacity-30">
+                      <button type="button" aria-label={t.adminEditor.moveUp} disabled={index === 0} onClick={() => moveImage(index, -1)} className="p-1 disabled:opacity-30">
                         <ArrowUp size={14} />
                       </button>
-                      <button type="button" aria-label="Move down" disabled={index === state.images.length - 1} onClick={() => moveImage(index, 1)} className="p-1 disabled:opacity-30">
+                      <button type="button" aria-label={t.adminEditor.moveDown} disabled={index === state.images.length - 1} onClick={() => moveImage(index, 1)} className="p-1 disabled:opacity-30">
                         <ArrowDown size={14} />
                       </button>
                       <button
                         type="button"
-                        aria-label="Remove image"
+                        aria-label={t.adminEditor.removeImage}
                         onClick={() => set("images", state.images.filter((_, i) => i !== index))}
                         className="p-1 text-[#9e342e]"
                       >
@@ -374,15 +376,15 @@ export function ProductEditor({
           )}
         </section>
 
-        <section className="border hairline bg-white p-5" aria-label="Options">
+        <section className="border hairline bg-white p-5" aria-label={t.adminEditor.options}>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-medium uppercase tracking-[0.14em]">Options (e.g. Finish, Size)</h2>
+            <h2 className="text-sm font-medium uppercase tracking-[0.14em]">{t.adminEditor.options}</h2>
             <button type="button" onClick={addOption} className="btn btn-ghost min-h-10 px-4 text-xs">
-              <Plus size={14} /> Add option
+              <Plus size={14} /> {t.adminEditor.addOption}
             </button>
           </div>
           {state.options.length === 0 && (
-            <p className="text-sm text-ink-muted">No options — the product sells as a single variant.</p>
+            <p className="text-sm text-ink-muted">{t.adminEditor.noOptions}</p>
           )}
           <div className="space-y-4">
             {state.options.map((option, optionIndex) => (
@@ -407,15 +409,15 @@ export function ProductEditor({
                         })),
                       }));
                     }}
-                    placeholder="Option name"
-                    aria-label="Option name"
+                    placeholder={t.adminEditor.optionName}
+                    aria-label={t.adminEditor.optionName}
                   />
                   <p className="self-center text-xs text-ink-muted">
-                    Values with optional swatch colors (shown on color options).
+                    {t.adminEditor.valuesHint}
                   </p>
                   <button
                     type="button"
-                    aria-label="Remove option"
+                    aria-label={t.adminEditor.removeOption}
                     onClick={() => set("options", state.options.filter((_, i) => i !== optionIndex))}
                     className="p-2 text-[#9e342e]"
                   >
@@ -447,8 +449,8 @@ export function ProductEditor({
                             })),
                           }));
                         }}
-                        placeholder="Value (e.g. Gold)"
-                        aria-label={`Option value ${valueIndex + 1}`}
+                        placeholder={t.adminEditor.valueEg}
+                        aria-label={`${t.adminEditor.optionValue} ${valueIndex + 1}`}
                       />
                       <input
                         type="color"
@@ -460,13 +462,13 @@ export function ProductEditor({
                           options[optionIndex] = { ...options[optionIndex]!, values };
                           set("options", options);
                         }}
-                        aria-label={`Swatch color for ${entry.value || `value ${valueIndex + 1}`}`}
-                        title="Swatch color"
+                        aria-label={`${t.adminEditor.swatch} ${entry.value || `${valueIndex + 1}`}`}
+                        title={t.adminEditor.swatch}
                         className="h-10 w-12 cursor-pointer border hairline bg-white p-1"
                       />
                       <button
                         type="button"
-                        aria-label="Remove value"
+                        aria-label={t.adminEditor.removeValue}
                         onClick={() => {
                           const options = [...state.options];
                           options[optionIndex] = {
@@ -503,9 +505,9 @@ export function ProductEditor({
 
         <section className="border hairline bg-white p-5" aria-label="Variants">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-medium uppercase tracking-[0.14em]">Variants & stock</h2>
+            <h2 className="text-sm font-medium uppercase tracking-[0.14em]">{t.adminEditor.variantsStock}</h2>
             <button type="button" onClick={addVariant} className="btn btn-ghost min-h-10 px-4 text-xs">
-              <Plus size={14} /> Add variant
+              <Plus size={14} /> {t.adminEditor.addVariant}
             </button>
           </div>
           <div className="space-y-3">
@@ -524,12 +526,12 @@ export function ProductEditor({
                   />
                 </div>
                 <div>
-                  <label className="field-label">Price override</label>
+                  <label className="field-label">{t.adminEditor.priceOverride}</label>
                   <Input
                     type="number"
                     min={0}
                     value={variant.price}
-                    placeholder="inherit"
+                    placeholder={t.adminEditor.inherit}
                     onChange={(event) => {
                       const variants = [...state.variants];
                       variants[variantIndex] = { ...variants[variantIndex]!, price: event.target.value };
@@ -538,7 +540,7 @@ export function ProductEditor({
                   />
                 </div>
                 <div>
-                  <label className="field-label">Stock</label>
+                  <label className="field-label">{t.adminEditor.stock}</label>
                   <Input
                     type="number"
                     min={0}
@@ -551,7 +553,7 @@ export function ProductEditor({
                   />
                 </div>
                 <div>
-                  <label className="field-label">Low-stock at</label>
+                  <label className="field-label">{t.adminEditor.lowStockAt}</label>
                   <Input
                     type="number"
                     min={0}
@@ -579,7 +581,7 @@ export function ProductEditor({
                   </label>
                   <button
                     type="button"
-                    aria-label="Remove variant"
+                    aria-label={t.adminEditor.removeVariant}
                     onClick={() => set("variants", state.variants.filter((_, i) => i !== variantIndex))}
                     className="mb-2.5 p-1 text-[#9e342e]"
                   >
@@ -624,48 +626,48 @@ export function ProductEditor({
           </div>
         </section>
 
-        <section className="border hairline bg-white p-5" aria-label="Attributes">
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">Attributes</h2>
+        <section className="border hairline bg-white p-5" aria-label={t.adminEditor.attributes}>
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminEditor.attributes}</h2>
           <div className="grid gap-4 sm:grid-cols-3">
-            <Field label="Material">
+            <Field label={t.adminEditor.material}>
               <Input value={state.material} onChange={(event) => set("material", event.target.value)} />
             </Field>
-            <Field label="Color">
+            <Field label={t.adminEditor.color}>
               <Input value={state.color} onChange={(event) => set("color", event.target.value)} />
             </Field>
-            <Field label="Size">
+            <Field label={t.adminEditor.size}>
               <Input value={state.size} onChange={(event) => set("size", event.target.value)} />
             </Field>
-            <Field label="Weight (g)">
+            <Field label={t.adminEditor.weight}>
               <Input type="number" min={0} value={state.weight} onChange={(event) => set("weight", event.target.value)} />
             </Field>
-            <Field label="Dimensions">
+            <Field label={t.adminEditor.dimensions}>
               <Input value={state.dimensions} onChange={(event) => set("dimensions", event.target.value)} />
             </Field>
-            <Field label="Barcode">
+            <Field label={t.adminEditor.barcode}>
               <Input value={state.barcode} onChange={(event) => set("barcode", event.target.value)} />
             </Field>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field label="Care instructions">
+            <Field label={t.adminEditor.care}>
               <Textarea value={state.careInstructions} onChange={(event) => set("careInstructions", event.target.value)} rows={3} />
             </Field>
-            <Field label="Shipping info">
+            <Field label={t.adminEditor.shippingInfo}>
               <Textarea value={state.shippingInfo} onChange={(event) => set("shippingInfo", event.target.value)} rows={3} />
             </Field>
           </div>
         </section>
 
-        <section className="border hairline bg-white p-5" aria-label="SEO">
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">SEO</h2>
+        <section className="border hairline bg-white p-5" aria-label={t.adminEditor.seo}>
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminEditor.seo}</h2>
           <div className="space-y-4">
-            <Field label="SEO title">
+            <Field label={t.adminEditor.seoTitle}>
               <Input value={state.seoTitle} onChange={(event) => set("seoTitle", event.target.value)} maxLength={160} />
             </Field>
-            <Field label="SEO description">
+            <Field label={t.adminEditor.seoDesc}>
               <Textarea value={state.seoDescription} onChange={(event) => set("seoDescription", event.target.value)} rows={2} maxLength={320} />
             </Field>
-            <Field label="Social image URL">
+            <Field label={t.adminEditor.socialImage}>
               <Input value={state.seoImage} onChange={(event) => set("seoImage", event.target.value)} placeholder="https://…" />
             </Field>
           </div>
@@ -674,20 +676,20 @@ export function ProductEditor({
 
       <aside className="xl:sticky xl:top-20 xl:self-start">
         <div className="border hairline bg-white p-5">
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">Publish</h2>
-          <Field label="Status">
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminEditor.publish}</h2>
+          <Field label={t.adminEditor.status}>
             <Select value={state.status} onChange={(event) => set("status", event.target.value as EditorState["status"])}>
-              <option value="DRAFT">Draft</option>
-              <option value="ACTIVE">Active</option>
-              <option value="ARCHIVED">Archived</option>
+              <option value="DRAFT">{t.adminEditor.draft}</option>
+              <option value="ACTIVE">{t.adminEditor.activeSt}</option>
+              <option value="ARCHIVED">{t.adminEditor.archived}</option>
             </Select>
           </Field>
           <div className="mt-3 space-y-2 text-sm">
             {(
               [
-                ["isFeatured", "Featured on homepage"],
-                ["isBestseller", "Mark as bestseller"],
-                ["isNew", "Mark as new"],
+                ["isFeatured", t.adminEditor.featuredHome],
+                ["isBestseller", t.adminEditor.markBest],
+                ["isNew", t.adminEditor.markNew],
               ] as const
             ).map(([key, label]) => (
               <label key={key} className="flex cursor-pointer items-center gap-2">
@@ -697,7 +699,7 @@ export function ProductEditor({
             ))}
           </div>
           <Button type="submit" disabled={pending} className="mt-5 w-full">
-            {pending ? "Saving…" : state.id ? "Save changes" : "Create product"}
+            {pending ? t.adminEditor.saving : state.id ? t.adminEditor.saveChanges : t.adminEditor.createProduct}
           </Button>
         </div>
       </aside>

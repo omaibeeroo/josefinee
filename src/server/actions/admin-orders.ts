@@ -7,7 +7,9 @@ import { requirePermission } from "@/lib/auth/rbac";
 import { recordAudit } from "@/lib/audit";
 import { incrementStock } from "@/server/inventory";
 import { sendOrderStatusUpdate, sendShippingNotification } from "@/lib/notifications";
-import { ORDER_STATUS_LABELS } from "@/lib/constants";
+import { LOCALE_COOKIE, parseLocale } from "@/lib/i18n/locales";
+import dictionaries from "@/lib/i18n";
+import { cookies } from "next/headers";
 import type { OrderStatus, Prisma } from "@prisma/client";
 import { z } from "zod";
 import { adminId, orderFilters } from "@/lib/validation/admin";
@@ -136,10 +138,12 @@ export async function changeOrderStatusAction(
   if (!order) return { ok: false as const, error: "Order not found." };
   if (order.status === status) return { ok: true as const };
 
+  const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
+  const t = dictionaries[locale];
   if (!allowedNextStatuses(order.status).includes(status)) {
     return {
       ok: false as const,
-      error: `Cannot move an order from ${ORDER_STATUS_LABELS[order.status].label} to ${ORDER_STATUS_LABELS[status].label}.`,
+      error: `${t.adminOrderDetail.transitionBlocked}: ${t.status[order.status]} → ${t.status[status]}.`,
     };
   }
 
@@ -189,7 +193,7 @@ export async function changeOrderStatusAction(
     });
 
     if (notify) {
-      const label = ORDER_STATUS_LABELS[status].customerLabel;
+      const label = t.customerStatus[status];
       if (status === "SHIPPED") {
         await sendShippingNotification({
           orderId,

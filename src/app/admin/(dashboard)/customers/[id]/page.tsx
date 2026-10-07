@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { requirePermission } from "@/lib/auth/rbac";
 import { getCustomerDetail } from "@/server/actions/admin-ops";
 import { Card, OrderStatusBadge, PageHeader, RiskBadge } from "@/components/admin/ui";
+import { getDictionary } from "@/lib/i18n/server";
 import { formatDA } from "@/lib/money";
 import { formatPhoneDisplay } from "@/lib/phone";
 import { CustomerForms } from "./customer-forms";
@@ -16,7 +17,7 @@ export default async function AdminCustomerDetailPage({
 }) {
   await requirePermission("customers:read");
   const { id } = await params;
-  const customer = await getCustomerDetail(id).catch(() => null);
+  const [customer, t] = await Promise.all([getCustomerDetail(id).catch(() => null), getDictionary()]);
   if (!customer) notFound();
 
   return (
@@ -27,13 +28,13 @@ export default async function AdminCustomerDetailPage({
       />
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
-          <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.14em]">Profile</h2>
+          <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.14em]">{t.adminCustomer.profile}</h2>
           <p className="text-sm">{formatPhoneDisplay(customer.phone)}</p>
           {customer.email && <p className="text-sm">{customer.email}</p>}
           <p className="mt-2 text-xs uppercase tracking-[0.1em] text-ink-muted">{customer.status}</p>
-          <h3 className="mb-2 mt-5 text-sm font-medium uppercase tracking-[0.14em]">Addresses</h3>
+          <h3 className="mb-2 mt-5 text-sm font-medium uppercase tracking-[0.14em]">{t.adminCustomer.addresses}</h3>
           {customer.addresses.length === 0 ? (
-            <p className="text-sm text-ink-muted">No saved addresses.</p>
+            <p className="text-sm text-ink-muted">{t.adminCustomer.noAddresses}</p>
           ) : (
             <ul className="space-y-2 text-sm">
               {customer.addresses.map((address) => (
@@ -46,22 +47,22 @@ export default async function AdminCustomerDetailPage({
         </Card>
         <div className="space-y-4">
           <Card>
-            <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.14em]">Orders ({customer.orders.length})</h2>
+            <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.14em]">{t.adminCustomer.orders} ({customer.orders.length})</h2>
             <ul className="divide-y divide-line">
               {customer.orders.map((order) => (
                 <li key={order.id} className="flex items-center justify-between gap-3 py-2 text-sm">
                   <Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">
                     {order.orderNumber}
                   </Link>
-                  <OrderStatusBadge status={order.status} />
+                  <OrderStatusBadge status={order.status} label={t.status[order.status]} />
                   <span className="tabular-nums">{formatDA(order.total)}</span>
                 </li>
               ))}
             </ul>
-            {customer.orders.length === 0 && <p className="text-sm text-ink-muted">No orders yet.</p>}
+            {customer.orders.length === 0 && <p className="text-sm text-ink-muted">{t.adminCustomer.noOrders}</p>}
           </Card>
           <Card>
-            <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.14em]">Internal</h2>
+            <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.14em]">{t.adminCustomer.internal}</h2>
             <CustomerForms id={customer.id} notes={customer.riskNotes} status={customer.status} />
           </Card>
         </div>
