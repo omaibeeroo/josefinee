@@ -95,6 +95,73 @@
 }
 
 /* ---------------------------------------------------------------------------
+   Dark-mode contrast for hardcoded feedback colors.
+   Status pastels (amber/red/emerald-100 chips) keep dark text on purpose —
+   they stay readable as contrast islands in both themes.
+--------------------------------------------------------------------------- */
+[data-theme="dark"] .text-\[#9e342e\] {
+  color: #e89aa2;
+}
+
+[data-theme="dark"] .bg-red-50 {
+  background-color: rgb(208 138 148 / 0.12);
+}
+
+[data-theme="dark"] .bg-\[#fff8f7\] {
+  background-color: rgb(208 138 148 / 0.1);
+}
+
+[data-theme="dark"] .bg-\[#9e342e\]\/5 {
+  background-color: rgb(208 138 148 / 0.1);
+}
+
+[data-theme="dark"] .border-\[#9e342e\]\/30 {
+  border-color: rgb(232 154 162 / 0.35);
+}
+
+[data-theme="dark"] .bg-emerald-50 {
+  background-color: rgb(130 173 143 / 0.12);
+}
+
+[data-theme="dark"] .border-emerald-300 {
+  border-color: rgb(130 173 143 / 0.4);
+}
+
+[data-theme="dark"] .text-emerald-700 {
+  color: #8fce9f;
+}
+
+[data-theme="dark"] .text-amber-700 {
+  color: #e3b866;
+}
+
+/* Overlays and photo scrims stay dark in dark mode so content behind
+   them keeps its contrast (they would otherwise flip light). */
+[data-theme="dark"] .bg-ink\/50 {
+  background-color: rgb(10 14 18 / 0.6);
+}
+
+[data-theme="dark"] .bg-ink\/55 {
+  background-color: rgb(10 14 18 / 0.62);
+}
+
+[data-theme="dark"] .from-ink\/70 {
+  --tw-gradient-from: rgb(10 14 18 / 0.72) var(--tw-gradient-from-position);
+}
+
+[data-theme="dark"] .from-ink\/55 {
+  --tw-gradient-from: rgb(10 14 18 / 0.6) var(--tw-gradient-from-position);
+}
+
+[data-theme="dark"] .from-ink\/50 {
+  --tw-gradient-from: rgb(10 14 18 / 0.55) var(--tw-gradient-from-position);
+}
+
+[data-theme="dark"] .via-ink\/15 {
+  --tw-gradient-via: rgb(10 14 18 / 0.18) var(--tw-gradient-via-position);
+}
+
+/* ---------------------------------------------------------------------------
    Hanadi Store — design tokens
    All storefront colors/typography flow from these tokens. The admin can
    override accent colors at runtime through settings -> CSS variables.
