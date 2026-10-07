@@ -531,42 +531,54 @@ export function CheckoutForm({
           </div>
         </section>
 
-        <section aria-labelledby="account-heading">
+        <section aria-labelledby="account-heading" className="text-center">
           <h2 id="account-heading" className="mb-4 font-display text-2xl">
             {t.checkout.stepLast}
           </h2>
-          <label className="flex cursor-pointer items-start gap-3 text-sm">
-            <input
-              type="checkbox"
-              checked={createAccount}
-              onChange={(event) => setCreateAccount(event.target.checked)}
-              className="mt-0.5 h-4 w-4 accent-[#1c1a17]"
-            />
-            <span>
-              {t.checkout.createAccount}
-              <span className="block text-xs text-ink-muted">
-                {t.checkout.createAccountHint}
-              </span>
-            </span>
-          </label>
-          {createAccount && (
-            <div className="mt-3">
-            <Field
-              label={t.auth.password}
-              required
-              error={fields.password}
-              hint={t.auth.passwordHint}
+          {!createAccount ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCreateAccount(true)}
+              aria-expanded={false}
+              aria-controls="checkout-create-account"
             >
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                  autoComplete="new-password"
-                />
-              </Field>
+              {t.checkout.createAccount}
+            </Button>
+          ) : (
+            <div id="checkout-create-account">
+              <p className="text-sm text-ink-muted">{t.checkout.createAccountHint}</p>
+              <div className="mx-auto mt-3 max-w-sm text-left">
+                <Field
+                  label={t.auth.password}
+                  required
+                  error={fields.password}
+                  hint={t.auth.passwordHint}
+                >
+                  <Input
+                    type="password"
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                    autoComplete="new-password"
+                  />
+                </Field>
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="mt-2"
+                onClick={() => {
+                  setCreateAccount(false);
+                  setPassword("");
+                }}
+              >
+                {t.common.cancel}
+              </Button>
             </div>
           )}
-          <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm">
+          <label className="mt-4 flex cursor-pointer items-start justify-center gap-3 text-left text-sm">
             <input
               type="checkbox"
               checked={acceptTerms}
