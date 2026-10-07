@@ -1,6 +1,20 @@
 import { z } from "zod";
 import { zId, zOptionalString, zPrice, zSlug } from "./common";
 
+/**
+ * Product image locations: absolute http(s) URLs (S3/R2/CDN) or app-relative
+ * paths produced by our own upload endpoint (local driver → `/uploads/...`).
+ * Relative URLs render fine in <img>; JSON-LD absolutizes them at render time.
+ */
+export const productImageUrl = z
+  .string()
+  .trim()
+  .min(1)
+  .max(1000)
+  .refine((value) => /^https?:\/\/[^/\s]+\/\S*$/i.test(value) || value.startsWith("/"),
+    "Image URL must be an absolute http(s) URL or an app-relative path.",
+  );
+
 const productOptionValueSchema = z.object({
   id: zId.optional(),
   value: z.string().trim().min(1).max(60),
@@ -73,7 +87,7 @@ export const productSchema = z.object({
     .array(
       z.object({
         id: zId.optional(),
-        url: z.string().trim().url().max(1000),
+        url: productImageUrl,
         storageKey: zOptionalString(500),
         alt: zOptionalString(200),
         width: z.coerce.number().int().optional(),

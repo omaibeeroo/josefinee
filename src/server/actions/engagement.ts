@@ -50,7 +50,7 @@ export async function subscribeNewsletterAction(email: string, source?: string, 
           where: { id: existing.id },
           data: { unsubscribedAt: null, consentAt: new Date(), source: source ?? null },
         });
-        return { ok: true as const, message: "Welcome back — you are subscribed." };
+        return { ok: true as const, message: t.welcomeBack };
       }
       return { ok: true as const, message: t.alreadySubscribed };
     }
@@ -99,7 +99,7 @@ export async function submitContactAction(input: {
     return { ok: false as const, error: t.reviewFields };
   }
   if (isBotSubmission(parsed.data.website)) {
-    return { ok: true as const, message: "Thank you — we will get back to you soon." };
+    return { ok: true as const, message: t.contactThanks };
   }
   const ip = await clientIp();
   try {
@@ -111,7 +111,7 @@ export async function submitContactAction(input: {
     const { website: _website, ...message } = parsed.data;
     void _website;
     await prisma.contactMessage.create({ data: { ...message, ip } });
-    return { ok: true as const, message: "Thank you — we will get back to you soon." };
+    return { ok: true as const, message: t.contactThanks };
   } catch (error) {
     console.error("[contact] failed", error instanceof Error ? error.name : "unknown");
     return { ok: false as const, error: t.wentWrong };
@@ -132,7 +132,7 @@ export async function submitReviewAction(input: {
     return { ok: false as const, error: t.reviewIncomplete };
   }
   if (isBotSubmission(parsed.data.website)) {
-    return { ok: true as const, message: "Thank you — your review is awaiting moderation." };
+    return { ok: true as const, message: t.reviewThanks };
   }
   const session = await getCustomerSession();
   const ip = await clientIp();
@@ -173,7 +173,7 @@ export async function submitReviewAction(input: {
         status: "PENDING",
       },
     });
-    return { ok: true as const, message: "Thank you — your review is awaiting moderation." };
+    return { ok: true as const, message: t.reviewThanks };
   } catch (error) {
     if (error instanceof Error && "code" in error && (error as { code?: string }).code === "P2002") {
       return { ok: false as const, error: t.alreadyReviewed };

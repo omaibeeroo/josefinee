@@ -82,6 +82,7 @@ See `.env.example` for the full list. Highlights:
 | `UPSTASH_REDIS_REST_URL/TOKEN` | Optional distributed rate limiting; production falls back to shared PostgreSQL buckets, while memory fallback is development/test only |
 | `TRUSTED_CLIENT_IP_HEADER` | Header overwritten by the trusted reverse proxy (default `x-real-ip`); required for production public mutation rate limits |
 | `ORDER_OUTBOX_SECRET` | 32+ random bytes used only by the scheduled order-effect retry endpoint; required in production |
+| `CHECKOUT_TX_TIMEOUT_MS` | Optional checkout transaction budget in ms (default 5000, clamped 5000–60000). Raise only when the database is far from the app server (e.g. local dev against a remote DB) |
 
 Never commit `.env`.
 
@@ -267,7 +268,9 @@ Test restores on a staging database before you need them.
 - CSRF: SameSite cookies + server-action origin checks + explicit origin check
   on mutating routes · strict CSP/HSTS/security headers (`next.config.ts`)
 - Uploads: MIME + signature validation via sharp, 8 MB cap, WebP re-encode,
-  metadata strip, safe filenames, no execution
+  metadata strip, safe filenames, no execution. Product image URLs may be
+  absolute (S3/R2/CDN) or app-relative (`/uploads/…` from the local driver);
+  both validate, and product JSON-LD absolutizes relative URLs at render time.
 - Validation with Zod on every boundary; HTML sanitized with an allow-list;
   stack traces never leak to customers; audit log is append-only
 - Secrets only in env; `.env.example` ships without credentials

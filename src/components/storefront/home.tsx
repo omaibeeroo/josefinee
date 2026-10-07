@@ -73,25 +73,25 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
           <div className="absolute inset-x-0 bottom-0 pb-10 md:pb-16">
             <div className="container-luxe text-ivory">
               <p
-                className="eyebrow !text-ivory/80 motion-safe:animate-hero-enter opacity-0"
+                className="eyebrow !text-ivory/80 motion-safe:animate-hero-enter motion-safe:opacity-0"
                 style={{ animationDelay: "60ms" }}
               >
                 {hero.eyebrow}
               </p>
               <h1
-                className="mt-3 max-w-2xl font-display text-4xl font-medium leading-[1.05] motion-safe:animate-hero-enter opacity-0 md:text-6xl"
+                className="mt-3 max-w-2xl font-display text-4xl font-medium leading-[1.05] motion-safe:animate-hero-enter motion-safe:opacity-0 md:text-6xl"
                 style={{ animationDelay: "120ms" }}
               >
                 {hero.headline}
               </h1>
               <p
-                className="mt-4 max-w-xl text-[0.9375rem] leading-relaxed text-ivory/85 motion-safe:animate-hero-enter opacity-0"
+                className="mt-4 max-w-xl text-[0.9375rem] leading-relaxed text-ivory/85 motion-safe:animate-hero-enter motion-safe:opacity-0"
                 style={{ animationDelay: "180ms" }}
               >
                 {hero.subheading}
               </p>
               <div
-                className="mt-6 flex flex-wrap gap-3 motion-safe:animate-hero-enter opacity-0"
+                className="mt-6 flex flex-wrap gap-3 motion-safe:animate-hero-enter motion-safe:opacity-0"
                 style={{ animationDelay: "240ms" }}
               >
                 <Link
@@ -113,25 +113,25 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
       ) : (
         <div className="container-luxe py-16 text-center md:py-28">
           <p
-            className="eyebrow motion-safe:animate-hero-enter opacity-0"
+            className="eyebrow motion-safe:animate-hero-enter motion-safe:opacity-0"
             style={{ animationDelay: "60ms" }}
           >
             {hero.eyebrow}
           </p>
           <h1
-            className="mx-auto mt-4 max-w-3xl font-display text-5xl font-medium leading-[1.05] motion-safe:animate-hero-enter opacity-0 md:text-7xl"
+            className="mx-auto mt-4 max-w-3xl font-display text-5xl font-medium leading-[1.05] motion-safe:animate-hero-enter motion-safe:opacity-0 md:text-7xl"
             style={{ animationDelay: "120ms" }}
           >
             {hero.headline}
           </h1>
           <p
-            className="mx-auto mt-5 max-w-xl text-ink-soft motion-safe:animate-hero-enter opacity-0"
+            className="mx-auto mt-5 max-w-xl text-ink-soft motion-safe:animate-hero-enter motion-safe:opacity-0"
             style={{ animationDelay: "180ms" }}
           >
             {hero.subheading}
           </p>
           <div
-            className="mt-8 flex flex-wrap justify-center gap-3 motion-safe:animate-hero-enter opacity-0"
+            className="mt-8 flex flex-wrap justify-center gap-3 motion-safe:animate-hero-enter motion-safe:opacity-0"
             style={{ animationDelay: "240ms" }}
           >
             <Link href={hero.primaryHref} className="btn btn-primary btn-shine">

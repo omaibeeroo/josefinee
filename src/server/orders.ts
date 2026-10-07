@@ -62,6 +62,14 @@ export async function createOrder(
     throw new AppError("COD_DISABLED", tErr.codDisabled, 503);
   }
 
+  // Interactive-transaction budget. Default 5s (Prisma default); override locally
+  // with CHECKOUT_TX_TIMEOUT_MS when the database is far from the app server
+  // (e.g. local dev against a remote DB). Clamped to 5s–60s. Production
+  // behavior is unchanged unless the variable is explicitly set.
+  const txTimeoutMs = Math.min(
+    60_000,
+    Math.max(5_000, Number(process.env.CHECKOUT_TX_TIMEOUT_MS) || 5_000),
+  );
   const placed = await prisma.$transaction(async (tx) => {
     // Read the cart even if it is already converted so a lost response can be recovered.
     const { cartId, customerId: cartCustomerId, status: cartStatus, lines } = await getCartForCheckout(tx, {
@@ -486,7 +494,7 @@ export async function createOrder(
       result,
       customerId,
     };
-  });
+  }, { timeout: txTimeoutMs });
 
   if (placed.replay) {
     after(async () => {

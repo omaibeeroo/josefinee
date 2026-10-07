@@ -83,18 +83,29 @@ function DesktopDropdown({
   children,
 }: {
   label: string;
-  href: string;
+  /** Omit href for menu-only parents (e.g. categories) so the label toggles the menu instead of duplicating another nav link. */
+  href?: string;
   children: ReactNode;
 }) {
+  const triggerClass =
+    "nav-link flex items-center gap-1 whitespace-nowrap py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:text-gold-dark";
   return (
     <div className="group relative shrink-0">
-      <Link
-        href={href}
-        className="nav-link flex items-center gap-1 whitespace-nowrap py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:text-gold-dark"
-      >
-        {label}
-        <ChevronDown size={12} className="transition-transform group-hover:rotate-180" />
-      </Link>
+      {href ? (
+        <Link href={href} className={triggerClass}>
+          {label}
+          <ChevronDown size={12} className="transition-transform group-hover:rotate-180" />
+        </Link>
+      ) : (
+        <button
+          type="button"
+          aria-haspopup="true"
+          className={`${triggerClass} cursor-pointer bg-transparent`}
+        >
+          {label}
+          <ChevronDown size={12} className="transition-transform group-hover:rotate-180" />
+        </button>
+      )}
       <div className="invisible absolute left-1/2 top-full z-50 max-h-[70vh] w-56 -translate-x-1/2 translate-y-1 overflow-y-auto overscroll-contain border hairline bg-white opacity-0 shadow-card transition-[opacity,transform] duration-200 ease-out group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 no-scrollbar">
         <div className="flex flex-col px-1.5 py-2">{children}</div>
       </div>
@@ -213,7 +224,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             >
               {t.header.shop}
             </Link>
-            <DesktopDropdown label={t.header.categories} href="/shop">
+            <DesktopDropdown label={t.header.categories}>
               <div className="flex flex-col px-3 py-1">
                 {props.categories.map((category, index) => (
                   <div

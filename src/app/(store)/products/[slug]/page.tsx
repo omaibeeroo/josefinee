@@ -22,6 +22,7 @@ import { ReviewForm, ReviewToggle } from "./reviews";
 import { serializeForInlineJsonScript } from "@/lib/script-data";
 import { cleanRichText } from "@/lib/sanitize";
 import { formatDA } from "@/lib/money";
+import { appUrl } from "@/config/brand";
 
 const getCachedProductBySlug = cache((slug: string) => getProductBySlug(slug));
 
@@ -100,13 +101,19 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   );
 
   const firstImage = product.images[0];
+  // JSON-LD requires absolute image URLs; absolutize app-relative upload paths.
+  const firstImageUrl = firstImage?.url
+    ? firstImage.url.startsWith("/")
+      ? `${appUrl()}${firstImage.url}`
+      : firstImage.url
+    : undefined;
   const jsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
     name: product.name,
     description: product.shortDescription ?? undefined,
     sku: product.sku ?? undefined,
-    image: firstImage?.url ? [firstImage.url] : undefined,
+    image: firstImageUrl ? [firstImageUrl] : undefined,
     brand: { "@type": "Brand", name: settings.general.name },
     offers: {
       "@type": "Offer",

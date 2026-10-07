@@ -90,6 +90,28 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
     Next.js toolchain to satisfy an audit blindly. The depth-guarded `braces`
     package is vendored under `vendor/braces` and pinned by the npm override;
     update it only with a reviewed upstream replacement.
+14. **No hard-coded user-facing copy outside the dictionaries.** Server
+    actions use `getActionT()`, server components use `getDictionary()`,
+    client components use `useLocale()` — every FR/EN key lives in both
+    `src/lib/i18n/fr.ts` and `en.ts` (shape enforced by
+    `dictionaries.test.ts`). A success/error string typed directly into an
+    action or component is a bug even if it reads correctly in one language.
+15. **Product images may be absolute or app-relative.** The local storage
+    driver returns `/uploads/…` paths; S3/R2 returns absolute URLs.
+    `productImageUrl` accepts both (absolute http(s) or a `/`-rooted path —
+    never bare filenames, `javascript:`, or `data:`). JSON-LD absolutizes
+    relative URLs with `appUrl()` at render time. Never weaken this to accept
+    arbitrary schemes.
+16. **Entrance animations must degrade to visible.** Any `opacity-0` paired
+    with a `motion-safe:` animation must itself be motion-gated
+    (`motion-safe:opacity-0`), so `prefers-reduced-motion` users get static
+    visible content instead of an invisible page. The same applies to
+    `Reveal`-wrapped content: it must be operable and readable without
+    intersection/animations firing.
+17. **Dropdown nav parents must not duplicate sibling links.** A menu-only
+    parent (e.g. CATÉGORIES, whose items are the categories) renders as a
+    toggle button (`DesktopDropdown` without `href`), never as a link to a
+    URL another top-level item already covers.
 
 ## Database workflow
 

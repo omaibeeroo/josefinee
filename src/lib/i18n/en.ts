@@ -354,6 +354,9 @@ const en: FrDictionary = {
     hasAccount: "Already have an account?",
   },
   account: {
+    eyebrow: "My account",
+    hello: "Hello, {name}",
+    signOut: "Sign out",
     overview: "Overview",
     orders: "Orders",
     wishlist: "Wishlist",

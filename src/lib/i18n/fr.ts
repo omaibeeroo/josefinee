@@ -352,6 +352,9 @@ const fr = {
     hasAccount: "Déjà un compte ?",
   },
   account: {
+    eyebrow: "Mon compte",
+    hello: "Bonjour, {name}",
+    signOut: "Se déconnecter",
     overview: "Aperçu",
     orders: "Commandes",
     wishlist: "Favoris",
