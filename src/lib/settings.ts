@@ -17,8 +17,27 @@ type GeneralSettings = {
   colors: { accent: string; ink: string; background: string };
 };
 
+export const HOMEPAGE_SECTION_IDS = [
+  "discovery",
+  "featured",
+  "spotlight",
+  "featuredCollection",
+  "bestSellers",
+  "newIn",
+  "categories",
+  "trust",
+  "socialProof",
+  "faq",
+] as const;
+
+export type HomepageSectionId = (typeof HOMEPAGE_SECTION_IDS)[number];
+
 export type HomepageSettings = {
   announcement: { text: string; href: string; isActive: boolean };
+  /** Ordered homepage blocks; hidden ones are skipped when rendering. */
+  sections: Array<{ id: HomepageSectionId; visible: boolean }>;
+  /** Hand-picked spotlight product; null = first featured product. */
+  spotlightProductId: string | null;
   hero: {
     eyebrow: string;
     headline: string;
@@ -114,6 +133,19 @@ export const DEFAULT_SETTINGS: SettingsMap = {
       imageMobile: "",
     },
     featuredCollectionSlug: "jewelry",
+    sections: [
+      { id: "discovery", visible: true },
+      { id: "featured", visible: true },
+      { id: "spotlight", visible: true },
+      { id: "featuredCollection", visible: true },
+      { id: "bestSellers", visible: true },
+      { id: "newIn", visible: true },
+      { id: "categories", visible: true },
+      { id: "trust", visible: true },
+      { id: "socialProof", visible: true },
+      { id: "faq", visible: true },
+    ],
+    spotlightProductId: null,
     showSocialProof: true,
     socialProofOverride: 0,
     pillars: [
@@ -202,6 +234,15 @@ const settingsSchemas = {
       imageMobile: safeLink,
     }),
     featuredCollectionSlug: z.string().max(160),
+    sections: z
+      .array(
+        z.object({
+          id: z.enum(HOMEPAGE_SECTION_IDS),
+          visible: z.boolean(),
+        }),
+      )
+      .max(24),
+    spotlightProductId: z.string().max(64).nullable(),
     showSocialProof: z.boolean(),
     socialProofOverride: z.number().int().nonnegative(),
     pillars: z.array(z.object({ title: z.string().max(120), text: z.string().max(500) })).max(12),
@@ -265,6 +306,35 @@ function mergeSection<K extends keyof SettingsMap>(key: K, value: unknown): Sett
     };
     if (Array.isArray(stored.pillars) && stored.pillars.length > 0) {
       home.pillars = stored.pillars as HomepageSettings["pillars"];
+    }
+    // Sanitize the vitrine section order: keep known ids in saved order,
+    // then append any missing default block as visible (forward-compatible).
+    {
+      const seen = new Set<string>();
+      const ordered: HomepageSettings["sections"] = [];
+      const storedSections = Array.isArray(stored.sections) ? stored.sections : [];
+      for (const entry of storedSections) {
+        if (
+          entry &&
+          typeof entry === "object" &&
+          typeof (entry as { id?: unknown }).id === "string" &&
+          (HOMEPAGE_SECTION_IDS as readonly string[]).includes((entry as { id: string }).id) &&
+          !seen.has((entry as { id: string }).id)
+        ) {
+          seen.add((entry as { id: string }).id);
+          ordered.push({
+            id: (entry as { id: HomepageSectionId }).id,
+            visible: (entry as { visible?: unknown }).visible !== false,
+          });
+        }
+      }
+      for (const def of DEFAULT_SETTINGS.homepage.sections) {
+        if (!seen.has(def.id)) ordered.push({ ...def });
+      }
+      home.sections = ordered;
+    }
+    if (typeof home.spotlightProductId !== "string" || home.spotlightProductId.length === 0) {
+      home.spotlightProductId = null;
     }
   }
   if (key === "social") {

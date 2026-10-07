@@ -229,6 +229,43 @@ export async function getStorefrontProducts(query: CatalogQuery): Promise<{
     if (query.inStock) {
       where = { AND: [where, { id: { in: await getAvailableProductIds() } }] };
     }
+    // Manual collection with default sort follows the vitrine order
+    // (CollectionProduct.sortOrder) instead of the global product order.
+    if (query.collectionSlug && !query.sort && !query.type && !query.search) {
+      const manual = await prisma.collection.findFirst({
+        where: { slug: query.collectionSlug, isActive: true, type: "MANUAL" },
+        select: { id: true },
+      });
+      if (manual) {
+        const links = await prisma.collectionProduct.findMany({
+          where: {
+            collectionId: manual.id,
+            product: { AND: Array.isArray((where as { AND?: unknown }).AND) ? (where as { AND: Prisma.ProductWhereInput[] }).AND : [where] },
+          },
+          orderBy: [{ sortOrder: "asc" }, { productId: "asc" }],
+          select: { productId: true },
+        });
+        const orderedIds = [...new Set(links.map((link) => link.productId))];
+        const total = orderedIds.length;
+        const pageIds = orderedIds.slice((page - 1) * pageSize, page * pageSize);
+        if (pageIds.length === 0) {
+          return { items: [], total, page, pageSize, totalPages: Math.max(1, Math.ceil(total / pageSize)) };
+        }
+        const rows = await prisma.product.findMany({
+          where: { id: { in: pageIds } },
+          include: cardInclude,
+        });
+        const rank = new Map(pageIds.map((id, index) => [id, index] as const));
+        rows.sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
+        return {
+          items: await mapProductCards(rows),
+          total,
+          page,
+          pageSize,
+          totalPages: Math.max(1, Math.ceil(total / pageSize)),
+        };
+      }
+    }
     const [rows, total] = await Promise.all([
       prisma.product.findMany({
         where,

@@ -39,6 +39,7 @@ export type EditorState = {
   categoryId: string;
   tags: string;
   status: "DRAFT" | "ACTIVE" | "ARCHIVED";
+  sortOrder: string;
   isFeatured: boolean;
   isBestseller: boolean;
   isNew: boolean;
@@ -70,6 +71,7 @@ export const EMPTY_EDITOR: EditorState = {
   categoryId: "",
   tags: "",
   status: "DRAFT",
+  sortOrder: "0",
   isFeatured: false,
   isBestseller: false,
   isNew: false,
@@ -195,6 +197,7 @@ export function ProductEditor({
       categoryId: state.categoryId || undefined,
       tags: state.tags.split(",").map((tag) => tag.trim()).filter(Boolean),
       status: state.status,
+      sortOrder: Number(state.sortOrder) || 0,
       isFeatured: state.isFeatured,
       isBestseller: state.isBestseller,
       isNew: state.isNew,
@@ -683,6 +686,9 @@ export function ProductEditor({
               <option value="ACTIVE">{t.adminEditor.activeSt}</option>
               <option value="ARCHIVED">{t.adminEditor.archived}</option>
             </Select>
+          </Field>
+          <Field label={t.adminEditor.displayOrder}>
+            <Input type="number" min={0} max={9999} value={state.sortOrder} onChange={(event) => set("sortOrder", event.target.value)} />
           </Field>
           <div className="mt-3 space-y-2 text-sm">
             {(

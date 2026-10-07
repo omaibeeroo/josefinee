@@ -5,8 +5,9 @@ This file orients AI coding agents. Humans: see `README.md`.
 ## What this is
 
 Premium fashion/jewelry e-commerce for Algeria. Cash on delivery (COD),
-mobile-first French-locale storefront + full admin back office. Real orders,
-real inventory, real money — treat every change like it ships to production.
+mobile-first bilingual (FR default, EN toggle) storefront + full admin back
+office. Real orders, real inventory, real money — treat every change like it
+ships to production.
 
 ## Stack
 
@@ -37,7 +38,9 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
 - `src/components/` — `ui.tsx` primitives, `storefront/`, `admin/`
 - `src/config/brand.ts` — brand values; never hard-code brand identity elsewhere
 - `src/lib/` — cross-cutting: `prisma`, `auth/*`, `phone`, `money`, `validation/*`,
-  `settings`, `storage`, `notifications`, `meta-capi`, `rate-limit`, `audit`
+  `settings`, `storage`, `notifications`, `meta-capi`, `rate-limit`, `audit`,
+  `i18n/` (FR/EN dictionaries, locale cookie, provider, server helpers)
+- `src/components/locale-toggle.tsx` — FR/EN switcher (header + admin topbar)
 - `src/server/` — domain services (`catalog`, `cart`, `orders`, `coupons`,
   `promotions`, `inventory`, `delivery`, `risk`, `analytics`, `navigation`)
 - `src/server/actions/` — server actions only (files with `"use server"` export
@@ -108,9 +111,10 @@ complete typecheck, lint, test, production-build, and dependency-audit suite.
 
 ## UX bar
 
-Feminine, minimal, editorial, fast on 3G and 360px screens. French copy.
-`prefers-reduced-motion` is respected globally. No placeholder buttons — every
-control must work or not exist.
+Feminine, minimal, editorial, fast on 3G and 360px screens. French by default
+with a full English toggle (see i18n rules below). `prefers-reduced-motion`
+is respected globally. No placeholder buttons — every control must work or
+not exist.
 
 Minimal direction (October 2026 refresh, do not regress):
 
@@ -118,17 +122,26 @@ Minimal direction (October 2026 refresh, do not regress):
   or global hover recoloring. Sharp corners (`border-radius: 0`) everywhere,
   including product-detail overrides. Variants: ink primary, gold accent,
   ink-fill outline, border-only ghost.
-- **Header hides on scroll.** Transform-only (`translateY(-100%)` via inline
-  style, never a bare utility that can fail silent), past 240px down / back
-  on scroll-up; always visible near the top, while menu/search overlays are
-  open, and under reduced-motion. Sticky positioning is load-bearing — keep it.
+- **Header always travels.** Sticky and permanently visible (never hides);
+  the brand mark smoothly scales to 82% once scrolled (`scrolled` state,
+  transform-only so layout never shifts), disabled under reduced-motion.
+  Sticky positioning is load-bearing — keep it.
 - **Vertical rhythm lives in `.section-space`** (currently 1.5rem mobile /
   1.75rem desktop, bottom-weighted via `pt-0` siblings). Tighten/loosen the
   token, never individual sections, unless a seam needs a local override.
-- **French everywhere customer-facing,** including admin nav/headers, order
-  statuses, seed data, and DB content (FAQ, categories, collections, legal
-  pages). URL slugs stay English-stable — translate names only. Product
-  names/descriptions are merchandising content, edited in Admin → Produits.
+- **French by default, English on toggle.** Every user-facing string lives in
+  `src/lib/i18n/fr.ts` + `en.ts` (identical shape, enforced by
+  `dictionaries.test.ts` — never add a key to one without the other).
+  Server components use `getDictionary()`; client components use
+  `useLocale()`; server actions use `getActionT()` (locale cookie
+  `hanadi-locale`, `setLocaleAction`, `<html lang>` follows). URL slugs stay
+  English-stable — translate names only. Product names/descriptions and other
+  DB merchandising content stay French, edited in Admin → Produits.
+  Notifications follow the admin's locale (customer locale is not stored).
+- **Money/date formatting is hand-rolled** (`formatNumber`, `formatDateFR`,
+  `formatDateTimeFR` in `src/lib/money.ts`), never `Intl.*`/`toLocale*` in
+  rendered output — ICU differences between server and browser break
+  hydration.
 - **Announcement bar is settings-driven** (`homepage.announcement.isActive`).
   Never hard-remove it from `SiteChrome`; toggle it in Admin → Réglages.
 

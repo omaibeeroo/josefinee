@@ -1,8 +1,8 @@
 # Hanadi Store — Premium COD E-Commerce for Algeria
 
 A complete, production-ready e-commerce application for a fashion/jewelry brand
-selling in **Algeria** with **Cash on Delivery (COD)**. Mobile-first, French-locale
-storefront plus a full admin back office.
+selling in **Algeria** with **Cash on Delivery (COD)**. Mobile-first, bilingual
+(FR default, EN toggle) storefront plus a full admin back office.
 
 > **Brand:** every brand value (name, logo, colors, copy, social links) lives in
 > `src/config/brand.ts` and the database `Setting` table. The storefront brand is
@@ -161,17 +161,17 @@ third-party assets or copy):
 - Slim search overlay (underline field + OK), flat minimal buttons
   site-wide (no gradients, shine sweeps, or lift-and-glow hovers; sharp
   corners everywhere).
-- Hide-on-scroll header: slides away scrolling down past 240px, returns on
-  scroll-up. Transform-only (no layout shift), always visible near the top,
-  while the menu/search overlays are open, and under
-  `prefers-reduced-motion`.
+- Always-visible sticky header: travels with you while scrolling; the brand
+  mark smoothly scales to 82% once scrolled (transform-only, no layout
+  shift), disabled under `prefers-reduced-motion`.
 - Tighter vertical rhythm via the shared `.section-space` token (1.5rem
   mobile / 1.75rem desktop). The announcement bar is off (Admin → Réglages)
   and the homepage experience-pillars block was removed.
-- Fully French customer-facing copy: cart, filters/sort, product,
-  checkout, tracking, auth, wishlist, account, order confirmation, FAQ,
-  categories/collections/legal content (slugs unchanged), order statuses,
-  plus admin nav, login, and page headers.
+- Fully bilingual UI (FR/EN dictionaries in `src/lib/i18n/`, cookie-persisted
+  toggle in the header and admin topbar, `<html lang>` follows; key parity
+  enforced by `dictionaries.test.ts`). Covers storefront, admin, statuses,
+  and server-action messages. DB merchandising content (product names, FAQ,
+  category/collection/legal texts) stays French; URL slugs stay stable.
 - Performance: single hero image download (was desktop + mobile), no
   below-fold `priority` preloads, full font weights (no faux-bold),
   homepage data in one parallel wave, snappier animations (~30% shorter,
@@ -335,7 +335,7 @@ For existing databases, use `npm run db:deploy` rather than invoking `prisma mig
 
 The storefront is designed mobile-first for narrow 360px screens through desktop layouts and is validated for current Chromium, Safari/WebKit, and Firefox browsers on Android, iPhone/iPad, tablets, and desktop. Compatibility safeguards include Android/iOS web-app metadata and `/manifest.webmanifest`, safe viewport handling for browser URL bars and iOS standalone mode, touch and coarse-pointer fallbacks, narrow-screen overflow protection, mobile-safe modal and cart-drawer scrolling, readable fallbacks when `backdrop-filter` is unavailable, a checkout selected-state fallback for browsers without CSS `:has()`, and global `prefers-reduced-motion` support.
 
-When changing mobile UI, preserve keyboard access, visible focus, minimum touch targets, readable form text (at least 16px on small screens to prevent iOS auto-zoom), and French copy. Validate at minimum at 360px, 390px, 768px, 1024px, and desktop widths.
+When changing mobile UI, preserve keyboard access, visible focus, minimum touch targets, readable form text (at least 16px on small screens to prevent iOS auto-zoom), and French copy. Validate at minimum at 360px, 390px, 768px, 1024px, and desktop widths. Every user-facing string must exist in both `src/lib/i18n/fr.ts` and `en.ts`.
 
 ## GitHub and Vercel deployment constraint
 
