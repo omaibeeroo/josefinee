@@ -144,6 +144,13 @@ Minimal direction (October 2026 refresh, do not regress):
   hydration.
 - **Announcement bar is settings-driven** (`homepage.announcement.isActive`).
   Never hard-remove it from `SiteChrome`; toggle it in Admin → Réglages.
+- **Homepage order is admin data, not code.** Blocks render from
+  `settings.homepage.sections` (ordered, visible-filtered) and the spotlight
+  from `spotlightProductId` (null = first featured). Never hard-code block
+  order in `(store)/page.tsx`. Manual collections order by
+  `CollectionProduct.sortOrder`; global carousels by `isFeatured` then product
+  `sortOrder`. Vitrine actions live in `src/server/actions/vitrine.ts`
+  (`catalog:write`, audited).
 
 
 ## Mobile and browser compatibility rules

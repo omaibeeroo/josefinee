@@ -186,6 +186,7 @@ third-party assets or copy):
 | Dashboard, analytics | `/admin`, `/admin/analytics` |
 | Orders (filter/search/status/notes/print/CSV) | `/admin/orders` |
 | Products, categories, collections, inventory | `/admin/products…` |
+| Storefront composer (blocks, spotlight, order) | `/admin/vitrine` |
 | Coupons, promotions, delivery rates (CSV import/export) | `/admin/coupons`, `/admin/promotions`, `/admin/delivery` |
 | Customers, reviews, messages, newsletter | `/admin/customers…` |
 | Pages, FAQ, announcements, settings, staff, audit | `/admin/content…` |
@@ -193,6 +194,29 @@ third-party assets or copy):
 Staff roles: `SUPER_ADMIN, ADMIN, ORDER_MANAGER, PRODUCT_MANAGER,
 CUSTOMER_SUPPORT, ANALYST` — each with a least-privilege permission set
 (`src/lib/auth/permissions.ts`).
+
+## Storefront composer (Vitrine)
+
+**Admin → Vitrine** controls the homepage without touching code:
+
+- **Blocks**: reorder homepage sections (discovery, carousels, spotlight,
+  categories, guarantees, social proof, FAQ) with up/down controls, or hide
+  any block. Stored in `settings.homepage.sections`; the storefront renders
+  blocks in exactly that order.
+- **Spotlight**: hand-pick the large feature product, or leave automatic
+  (first featured product). Stored in `settings.homepage.spotlightProductId`.
+- **Collection order**: open any manual collection and move products up/down.
+  The storefront follows `CollectionProduct.sortOrder` on manual-collection
+  pages (`settings.homepage.spotlightProductId`).
+- **Per-product placement**: in the product editor, flags (`Nouveau`,
+  `Mis en avant`, `Meilleure vente`) plus **display order** (`sortOrder`)
+  decide carousel placement and ordering everywhere; collection membership
+  decides collection pages. Price, name, description, options, and
+  promotion scope (collection or SKUs) are edited in the same place.
+
+All vitrine actions require `catalog:write` (or `products:read` for viewing)
+and write audit entries. No database migration was needed (settings JSON +
+existing `sortOrder` columns).
 
 ## Promotions (flash sales)
 
