@@ -85,7 +85,7 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
       )}
       <ul className="divide-y divide-line border-y hairline">
         {items.map((item) => (
-          <li key={item.id} className="flex gap-4 py-5 md:gap-6">
+          <li key={item.id} className="flex gap-4 py-4 md:gap-6">
             <Link
               href={`/products/${item.productSlug}`}
               className="relative h-32 w-24 shrink-0 overflow-hidden bg-cream md:h-40 md:w-32"
@@ -131,7 +131,7 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
       </ul>
 
       <aside className="lg:sticky lg:top-32 lg:self-start">
-        <div className="border hairline bg-white p-6">
+        <div className="border hairline bg-white p-5">
           <h2 className="text-xs font-medium uppercase tracking-[0.2em]">{t.cart.summary}</h2>
           <div className="mt-4 flex items-center justify-between">
             <span className="text-sm text-ink-soft">{t.cart.subtotal}</span>

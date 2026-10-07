@@ -519,32 +519,3 @@ export async function getBestSellers(take = 10) {
   }
 }
 
-export async function getFilterFacets() {
-  try {
-    const [colors, sizes, priceRange] = await Promise.all([
-      prisma.product.findMany({
-        where: { AND: [storefrontProductWhere(), { color: { not: null } }] },
-        select: { color: true },
-        distinct: ["color"],
-      }),
-      prisma.product.findMany({
-        where: { AND: [storefrontProductWhere(), { size: { not: null } }] },
-        select: { size: true },
-        distinct: ["size"],
-      }),
-      prisma.product.aggregate({
-        where: storefrontProductWhere(),
-        _min: { price: true },
-        _max: { price: true },
-      }),
-    ]);
-    return {
-      colors: colors.map((entry) => entry.color).filter((value): value is string => Boolean(value)),
-      sizes: sizes.map((entry) => entry.size).filter((value): value is string => Boolean(value)),
-      minPrice: priceRange._min.price ?? 0,
-      maxPrice: priceRange._max.price ?? 0,
-    };
-  } catch {
-    return { colors: [], sizes: [], minPrice: 0, maxPrice: 0 };
-  }
-}

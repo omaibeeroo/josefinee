@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { after } from "next/server";
 import Link from "next/link";
-import { getFilterFacets, getStorefrontProducts } from "@/server/catalog";
+import { getStorefrontProducts } from "@/server/catalog";
 import { recordSearch } from "@/server/navigation";
 import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
 import { PixelEvent } from "@/components/pixels";
-import { CatalogToolbar, DesktopFilters, ProductGrid } from "@/components/storefront/catalog-ui";
+import { CatalogToolbar, ProductGrid } from "@/components/storefront/catalog-ui";
 import { EmptyState } from "@/components/ui";
 import { Pagination } from "@/components/pagination";
 import { parseCatalogParams, withPage } from "../catalog-helpers";
@@ -41,9 +41,9 @@ export default async function SearchPage({
   }
 
   const query = parseCatalogParams(params);
-  const [result, facets, t] = term
-    ? await Promise.all([getStorefrontProducts({ ...query, search: term }), getFilterFacets(), getDictionary()])
-    : [{ items: [], total: 0, page: 1, pageSize: 12, totalPages: 1 }, { colors: [], sizes: [], minPrice: 0, maxPrice: 0 }, await getDictionary()];
+  const [result, t] = term
+    ? await Promise.all([getStorefrontProducts({ ...query, search: term }), getDictionary()])
+    : [{ items: [], total: 0, page: 1, pageSize: 12, totalPages: 1 }, await getDictionary()];
 
   return (
     <div className="container-luxe py-10 md:py-14">
@@ -67,9 +67,8 @@ export default async function SearchPage({
         />
       ) : (
         <>
-          <CatalogToolbar facets={facets} total={result.total} />
+          <CatalogToolbar total={result.total} />
           <div className="flex gap-8">
-            <DesktopFilters facets={facets} />
             <div className="min-w-0 flex-1">
               {result.items.length === 0 ? (
                 <EmptyState
