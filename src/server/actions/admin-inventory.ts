@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAG_CATALOG } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 import { toUserMessage } from "@/lib/errors";
 import { requirePermission } from "@/lib/auth/rbac";
@@ -109,6 +110,7 @@ export async function adjustStockAction(input: z.infer<typeof adjustSchema>) {
       metadata: { stock: parsed.data.stock, reason: parsed.data.reason },
     });
     revalidatePath("/admin/inventory");
+    revalidateTag(CACHE_TAG_CATALOG);
     return { ok: true as const };
   } catch (error) {
     return { ok: false as const, error: toUserMessage(error) };

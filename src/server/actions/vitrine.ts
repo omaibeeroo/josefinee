@@ -1,6 +1,8 @@
 "use server";
 
 import { z } from "zod";
+import { revalidateTag } from "next/cache";
+import { CACHE_TAG_CATALOG } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/rbac";
 import { recordAudit } from "@/lib/audit";
@@ -179,6 +181,8 @@ export async function moveCollectionProduct(input: {
       resourceId: parsed.data.collectionId,
       metadata: { productId: parsed.data.productId, direction: parsed.data.direction },
     });
+    // Manual collection order feeds cached listing queries.
+    revalidateTag(CACHE_TAG_CATALOG);
     return { ok: true };
   } catch {
     return { ok: false, error: t.wentWrong };

@@ -115,6 +115,15 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
     parent (e.g. CATÉGORIES, whose items are the categories) renders as a
     toggle button (`DesktopDropdown` without `href`), never as a link to a
     URL another top-level item already covers.
+18. **Cache display data only, never money or stock truth.** Public catalog
+    reads (`catalog.ts`, `navigation.ts`) may use `unstable_cache` with the
+    shared tags in `src/lib/cache.ts` (300s backstop). Carts, checkout
+    pricing, coupons/promotions evaluation, inventory mutations, orders,
+    sessions, and per-customer data always read live. Every
+    catalog-affecting admin mutation calls `revalidateTag()` next to its
+    existing `revalidatePath()`. A stale badge can never oversell or
+    misprice because cart/checkout revalidate availability and recompute
+    prices server-side.
 
 ## Database workflow
 

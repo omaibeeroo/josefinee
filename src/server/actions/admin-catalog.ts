@@ -1,6 +1,7 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
+import { CACHE_TAG_CATALOG, CACHE_TAG_NAVIGATION } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 import { AppError, toUserMessage } from "@/lib/errors";
 import { requirePermission } from "@/lib/auth/rbac";
@@ -456,6 +457,7 @@ export async function saveProductAction(input: ProductInput) {
     revalidatePath("/admin/products");
     revalidatePath(`/products/${saved.slug}`);
     revalidatePath("/shop");
+    revalidateTag(CACHE_TAG_CATALOG);
     return { ok: true as const, id: saved.id, slug: saved.slug };
   } catch (error) {
     console.error("[admin] save product failed", error instanceof Error ? error.name : "unknown");
@@ -483,6 +485,7 @@ export async function archiveProductAction(id: string) {
     resourceId: id,
   });
   revalidatePath("/admin/products");
+  revalidateTag(CACHE_TAG_CATALOG);
   return { ok: true as const };
 }
 
@@ -511,6 +514,7 @@ export async function setProductStatusAction(id: string, status: "DRAFT" | "ACTI
     metadata: { status },
   });
   revalidatePath("/admin/products");
+  revalidateTag(CACHE_TAG_CATALOG);
   return { ok: true as const };
 }
 
@@ -583,6 +587,8 @@ export async function saveCategoryAction(input: unknown) {
     resourceId: saved.id,
   });
   revalidatePath("/admin/categories");
+  revalidateTag(CACHE_TAG_CATALOG);
+  revalidateTag(CACHE_TAG_NAVIGATION);
   return { ok: true as const, id: saved.id };
 }
 
@@ -606,6 +612,8 @@ export async function deleteCategoryAction(id: string) {
     resourceId: id,
   });
   revalidatePath("/admin/categories");
+  revalidateTag(CACHE_TAG_CATALOG);
+  revalidateTag(CACHE_TAG_NAVIGATION);
   return { ok: true as const };
 }
 
@@ -684,6 +692,8 @@ export async function saveCollectionAction(input: unknown) {
   });
   revalidatePath("/admin/collections");
   revalidatePath(`/collections/${saved.slug}`);
+  revalidateTag(CACHE_TAG_CATALOG);
+  revalidateTag(CACHE_TAG_NAVIGATION);
   return { ok: true as const, id: saved.id };
 }
 
@@ -697,6 +707,8 @@ export async function deleteCollectionAction(id: string) {
     resourceId: id,
   });
   revalidatePath("/admin/collections");
+  revalidateTag(CACHE_TAG_CATALOG);
+  revalidateTag(CACHE_TAG_NAVIGATION);
   return { ok: true as const };
 }
 
@@ -745,6 +757,7 @@ export async function moderateReviewAction(id: string, status: "APPROVED" | "REJ
   });
   revalidatePath("/admin/reviews");
   revalidatePath(`/products/${review.productId}`);
+  revalidateTag(CACHE_TAG_CATALOG);
   return { ok: true as const };
 }
 
@@ -763,5 +776,6 @@ export async function deleteReviewAction(id: string) {
     resourceId: id,
   });
   revalidatePath("/admin/reviews");
+  revalidateTag(CACHE_TAG_CATALOG);
   return { ok: true as const };
 }

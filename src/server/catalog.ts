@@ -1,6 +1,8 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE, type ProductSort } from "@/lib/constants";
+import { CACHE_TAG_CATALOG, CATALOG_REVALIDATE_SECONDS, stableCatalogQueryKey } from "@/lib/cache";
 import { Prisma } from "@prisma/client";
 
 export type StoreProductCard = {
@@ -215,7 +217,7 @@ function buildWhere(query: CatalogQuery): Prisma.ProductWhereInput {
   return { AND: and };
 }
 
-export async function getStorefrontProducts(query: CatalogQuery): Promise<{
+async function getStorefrontProductsFresh(query: CatalogQuery): Promise<{
   items: StoreProductCard[];
   total: number;
   page: number;
@@ -291,7 +293,18 @@ export async function getStorefrontProducts(query: CatalogQuery): Promise<{
   }
 }
 
-export async function getProductBySlug(slug: string): Promise<StoreProduct | null> {
+const getStorefrontProductsCached = unstable_cache(
+  async (key: string) => getStorefrontProductsFresh(JSON.parse(key) as CatalogQuery),
+  ["catalog:products"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_CATALOG] },
+);
+
+/** Cached storefront listing (see src/lib/cache.ts for scope rules). */
+export async function getStorefrontProducts(query: CatalogQuery) {
+  return getStorefrontProductsCached(stableCatalogQueryKey(query));
+}
+
+async function getProductBySlugFresh(slug: string): Promise<StoreProduct | null> {
   const product = await prisma.product.findFirst({
       where: { slug, ...storefrontProductWhere() },
       include: {
@@ -372,6 +385,17 @@ export async function getProductBySlug(slug: string): Promise<StoreProduct | nul
       optionValueIds: variant.optionValues.map((entry) => entry.optionValueId),
     })),
   };
+}
+
+const getProductBySlugCached = unstable_cache(
+  async (slug: string) => getProductBySlugFresh(slug),
+  ["catalog:product-by-slug"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_CATALOG] },
+);
+
+/** Cached product detail (see src/lib/cache.ts for scope rules). */
+export async function getProductBySlug(slug: string): Promise<StoreProduct | null> {
+  return getProductBySlugCached(slug);
 }
 
 export type QuickAddData = {
@@ -461,7 +485,7 @@ export async function getQuickAddData(productId: string): Promise<QuickAddData |
   }
 }
 
-export async function getRelatedProducts(productId: string, categoryId: string | null, take = 8) {
+async function getRelatedProductsFresh(productId: string, categoryId: string | null, take = 8) {
   const rows = await prisma.product.findMany({
     where: {
       ...storefrontProductWhere(),
@@ -475,7 +499,19 @@ export async function getRelatedProducts(productId: string, categoryId: string |
   return mapProductCards(rows);
 }
 
-export async function getFeaturedProducts(take = 10) {
+const getRelatedProductsCached = unstable_cache(
+  async (productId: string, categoryId: string | null, take: number) =>
+    getRelatedProductsFresh(productId, categoryId, take),
+  ["catalog:related"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_CATALOG] },
+);
+
+/** Cached related-products rail (see src/lib/cache.ts for scope rules). */
+export async function getRelatedProducts(productId: string, categoryId: string | null, take = 8) {
+  return getRelatedProductsCached(productId, categoryId, take);
+}
+
+async function getFeaturedProductsFresh(take = 10) {
   try {
     const rows = await prisma.product.findMany({
       where: { AND: [storefrontProductWhere(), { OR: [{ isFeatured: true }, { isBestseller: true }] }] },
@@ -490,7 +526,18 @@ export async function getFeaturedProducts(take = 10) {
   }
 }
 
-export async function getNewInProducts(take = 10) {
+const getFeaturedProductsCached = unstable_cache(
+  async (take: number) => getFeaturedProductsFresh(take),
+  ["catalog:featured"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_CATALOG] },
+);
+
+/** Cached featured rail (see src/lib/cache.ts for scope rules). */
+export async function getFeaturedProducts(take = 10) {
+  return getFeaturedProductsCached(take);
+}
+
+async function getNewInProductsFresh(take = 10) {
   try {
     const rows = await prisma.product.findMany({
       where: { AND: [storefrontProductWhere(), { isNew: true }] },
@@ -505,7 +552,18 @@ export async function getNewInProducts(take = 10) {
   }
 }
 
-export async function getBestSellers(take = 10) {
+const getNewInProductsCached = unstable_cache(
+  async (take: number) => getNewInProductsFresh(take),
+  ["catalog:new-in"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_CATALOG] },
+);
+
+/** Cached new-arrivals rail (see src/lib/cache.ts for scope rules). */
+export async function getNewInProducts(take = 10) {
+  return getNewInProductsCached(take);
+}
+
+async function getBestSellersFresh(take = 10) {
   try {
     const rows = await prisma.product.findMany({
       where: storefrontProductWhere(),
@@ -518,5 +576,16 @@ export async function getBestSellers(take = 10) {
     console.error("[catalog] best sellers failed", error instanceof Error ? error.name : "unknown");
     return [];
   }
+}
+
+const getBestSellersCached = unstable_cache(
+  async (take: number) => getBestSellersFresh(take),
+  ["catalog:best-sellers"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_CATALOG] },
+);
+
+/** Cached best-sellers rail (see src/lib/cache.ts for scope rules). */
+export async function getBestSellers(take = 10) {
+  return getBestSellersCached(take);
 }
 

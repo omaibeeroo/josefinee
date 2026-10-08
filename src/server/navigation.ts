@@ -1,5 +1,7 @@
 import "server-only";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { CACHE_TAG_NAVIGATION, CATALOG_REVALIDATE_SECONDS } from "@/lib/cache";
 
 export type NavCategory = {
   name: string;
@@ -8,7 +10,7 @@ export type NavCategory = {
   children: Array<{ name: string; slug: string }>;
 };
 
-export async function getNavigation(): Promise<{
+async function getNavigationFresh(): Promise<{
   categories: NavCategory[];
   collections: Array<{ name: string; slug: string }>;
 }> {
@@ -42,7 +44,21 @@ export async function getNavigation(): Promise<{
   }
 }
 
-export async function getPopularSearches(limit = 6): Promise<string[]> {
+const getNavigationCached = unstable_cache(
+  async () => getNavigationFresh(),
+  ["navigation:main"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_NAVIGATION] },
+);
+
+/** Cached header nav (see src/lib/cache.ts for scope rules). */
+export async function getNavigation(): Promise<{
+  categories: NavCategory[];
+  collections: Array<{ name: string; slug: string }>;
+}> {
+  return getNavigationCached();
+}
+
+async function getPopularSearchesFresh(limit = 6): Promise<string[]> {
   try {
     const rows = await prisma.searchQuery.findMany({
       orderBy: [{ count: "desc" }, { updatedAt: "desc" }],
@@ -53,6 +69,17 @@ export async function getPopularSearches(limit = 6): Promise<string[]> {
   } catch {
     return [];
   }
+}
+
+const getPopularSearchesCached = unstable_cache(
+  async (limit: number) => getPopularSearchesFresh(limit),
+  ["navigation:popular-searches"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_NAVIGATION] },
+);
+
+/** Cached popular search terms (see src/lib/cache.ts for scope rules). */
+export async function getPopularSearches(limit = 6): Promise<string[]> {
+  return getPopularSearchesCached(limit);
 }
 
 export async function recordSearch(term: string): Promise<void> {
