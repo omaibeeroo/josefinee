@@ -301,6 +301,12 @@ const getStorefrontProductsCached = unstable_cache(
 
 /** Cached storefront listing (see src/lib/cache.ts for scope rules). */
 export async function getStorefrontProducts(query: CatalogQuery) {
+  // Search terms are unbounded and unrepeatable — caching them would grow
+  // the data cache without bound (one entry per unique query). Searches
+  // always read live; everything else shares stable keyed entries.
+  if (query.search?.trim()) {
+    return getStorefrontProductsFresh({ ...query, search: query.search.trim() });
+  }
   return getStorefrontProductsCached(stableCatalogQueryKey(query));
 }
 

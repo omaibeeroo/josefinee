@@ -17,6 +17,8 @@ import type { CatalogQuery } from "@/server/catalog";
  *   cart and checkout guards (availability checks, conditional stock
  *   decrement) remain the source of truth, so a stale badge can never
  *   oversell or misprice an order.
+ * - Key cardinality is bounded: free-text search queries bypass the cache
+ *   (one entry per unique term would grow data-cache storage without bound).
  */
 export const CACHE_TAG_CATALOG = "catalog";
 export const CACHE_TAG_NAVIGATION = "navigation";
