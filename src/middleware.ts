@@ -41,12 +41,29 @@ export async function middleware(request: NextRequest) {
     } catch {
       slug = "";
     }
-    // Malformed product paths get an instant plain 404. Existence of a
-    // well-formed slug is checked by the product page itself (which renders
-    // the branded 404) — no duplicate database lookup here, saving one
-    // query on every product view.
     if (!slug || slug.includes("/")) {
       return productNotFound(csp);
+    }
+    try {
+      const [{ prisma }, { storefrontProductWhere }] = await Promise.all([
+        import("@/lib/prisma"),
+        import("@/server/catalog"),
+      ]);
+      const product = await prisma.product.findFirst({
+        where: { ...storefrontProductWhere(), slug },
+        select: { id: true },
+      });
+      if (!product) return productNotFound(csp);
+    } catch {
+      return new NextResponse("Service temporairement indisponible.", {
+        status: 503,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-store",
+          "Content-Security-Policy": csp,
+          "Retry-After": "30",
+        },
+      });
     }
   }
 
