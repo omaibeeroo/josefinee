@@ -516,7 +516,7 @@ async function main() {
     let optionValueIds: string[] = [];
     if (seed.variants.length > 1) {
       const option = await prisma.productOption.upsert({
-        where: { productId_name: { productId: product.id, name: "Finish" } },
+        where: { productId_name: { productId: product.id, name: "Finition" } },
         create: { productId: product.id, name: "Finition", position: 0 },
         update: {},
       });

@@ -50,7 +50,8 @@ export type StoreProduct = StoreProductCard & {
 };
 
 const cardInclude = Prisma.validator<Prisma.ProductInclude>()({
-  images: { orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }], take: 2 },
+  // Up to 6 photos feed the card image carousel (arrows/dots/swipe).
+  images: { orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }], take: 6 },
   variants: {
     where: { isActive: true },
     orderBy: { position: "asc" },

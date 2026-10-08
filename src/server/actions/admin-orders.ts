@@ -83,7 +83,15 @@ export async function getAdminOrder(id: string) {
   const order = await prisma.order.findUnique({
     where: { id: parsedId.data },
     include: {
-      items: true,
+      items: {
+        include: {
+          product: {
+            select: {
+              images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
+            },
+          },
+        },
+      },
       wilaya: { select: { name: true, code: true } },
       commune: { select: { name: true } },
       customer: {
@@ -99,7 +107,15 @@ export async function getAdminOrder(id: string) {
     },
   });
   if (!order) throw new AppError("NOT_FOUND", "Order not found.", 404);
-  return order;
+  // Display-only fallback: snapshot imageUrl stays frozen, but the thumbnail
+  // shows the product's current primary photo when the snapshot has none.
+  return {
+    ...order,
+    items: order.items.map((item) => ({
+      ...item,
+      displayImageUrl: item.imageUrl ?? item.product?.images[0]?.url ?? null,
+    })),
+  };
 }
 
 export async function changeOrderStatusAction(

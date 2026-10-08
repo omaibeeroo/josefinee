@@ -114,7 +114,10 @@ src/
     actions/            # server actions (storefront + admin)
 prisma/
   schema.prisma         # full data model
-  migrations/           # SQL migrations (apply with `prisma migrate deploy`)
+  prisma.config.ts      # CLI config (schema path, migrations, seed command)
+                        # loads .env only when the file exists — CI/production
+                        # rely on real environment variables instead
+  migrations/            # SQL migrations (apply with `prisma migrate deploy`)
   seed.ts               # idempotent seed (safe to re-run)
   data/algeria_cities.json  # public wilaya/commune dataset (source: othmanus/algeria-cities)
 ```

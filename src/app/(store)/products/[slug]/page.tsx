@@ -324,7 +324,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
       </div>
 
-      <section className="mx-auto mt-12 max-w-2xl text-center md:mt-16" aria-label={t.product.reviews}>
+      <section className="mx-auto mt-8 max-w-2xl text-center md:mt-10" aria-label={t.product.reviews}>
         <p className="eyebrow mb-2">{t.product.speakers}</p>
         <h2 className="font-display text-3xl font-medium md:text-4xl">
           {t.product.reviews}{reviews.length > 0 ? ` · ${reviews.length}` : ""}
@@ -353,7 +353,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </ReviewToggle>
       </section>
 
-      <div className="mt-16 md:mt-24">
+      <div className="mt-10 md:mt-14">
         <ProductCarousel title={t.product.alsoLike} products={related} viewAllHref="/shop" />
       </div>
     </div>

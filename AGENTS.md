@@ -45,8 +45,11 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
   `promotions`, `inventory`, `delivery`, `risk`, `analytics`, `navigation`)
 - `src/server/actions/` — server actions only (files with `"use server"` export
   **async functions only** — the build fails otherwise)
-- `prisma/` — `schema.prisma`, versioned SQL `migrations/`, `seed.ts`, factual
+- `prisma/` — `schema.prisma`, `prisma.config.ts` (CLI config), versioned SQL `migrations/`, `seed.ts`, factual
   wilaya/commune dataset in `data/`
+- `prisma.config.ts` must work with no `.env` file present (that is the CI
+  shape: real environment variables only). Guard any `.env` loading with an
+  existence check and verify from an env-less directory before pushing.
 
 ## Non-negotiable invariants
 

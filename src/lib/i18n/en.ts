@@ -190,6 +190,7 @@ const en: FrDictionary = {
     viewImage: "View image {n}",
     prevImage: "Previous image",
     nextImage: "Next image",
+    imageCounter: "Image {current} of {total}",
     optionOutOfStock: "This option is out of stock.",
     add: "Add",
     soldOut: "Sold out",

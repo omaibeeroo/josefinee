@@ -88,9 +88,14 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
   const { add } = useCart();
   const [quickOpen, setQuickOpen] = useState(false);
   const [pending, setPending] = useState(false);
+  const [index, setIndex] = useState(0);
+  const touchStartX = useRef<number | null>(null);
 
-  const main = product.images[0];
-  const hover = product.images[1];
+  const images = product.images;
+  const count = images.length;
+  const current = count === 0 ? 0 : index % count;
+  const go = (direction: 1 | -1) =>
+    setIndex((previous) => (previous + direction + count) % Math.max(count, 1));
   const percent = discountPercent(product.price, product.compareAtPrice);
   const soldOut = !product.inStock;
 
@@ -106,21 +111,81 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
 
   return (
     <article className="product-card group flex flex-col">
-      <div className="product-card-media relative overflow-hidden bg-cream transition-shadow duration-500 hover:shadow-[0_28px_55px_-28px_rgb(29_35_43/0.4)]">
+      <div
+        className="product-card-media relative overflow-hidden bg-cream transition-shadow duration-500 hover:shadow-[0_28px_55px_-28px_rgb(29_35_43/0.4)]"
+        role={count > 1 ? "group" : undefined}
+        aria-roledescription={count > 1 ? "carousel" : undefined}
+        aria-label={count > 1 ? product.name : undefined}
+        onTouchStart={(event) => {
+          touchStartX.current = event.touches[0]?.clientX ?? null;
+        }}
+        onTouchEnd={(event) => {
+          if (touchStartX.current === null || count < 2) return;
+          const delta = (event.changedTouches[0]?.clientX ?? 0) - touchStartX.current;
+          touchStartX.current = null;
+          if (Math.abs(delta) < 30) return;
+          go(delta < 0 ? 1 : -1);
+        }}
+      >
         <Link
           href={`/products/${product.slug}`}
           aria-label={product.name}
           className="block aspect-[3/4]"
         >
-          <div className="absolute inset-0 transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06] group-hover:opacity-0">
-            <ProductImage url={main?.url ?? null} alt={product.name} />
+          <div className="absolute inset-0 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]">
+            {images.map((image, imageIndex) => (
+              <div
+                key={`${image.url}-${imageIndex}`}
+                aria-hidden={imageIndex === current ? undefined : true}
+                className={cn(
+                  "absolute inset-0 transition-opacity duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
+                  imageIndex === current ? "opacity-100" : "pointer-events-none opacity-0",
+                )}
+              >
+                <ProductImage url={image.url} alt={image.alt || product.name} />
+              </div>
+            ))}
+            {count === 0 && <ProductImage url={null} alt={product.name} />}
           </div>
-          {hover && (
-            <div className="absolute inset-0 scale-[1.06] opacity-0 transition-[opacity,transform] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-100 group-hover:opacity-100">
-              <ProductImage url={hover.url} alt={product.name} />
-            </div>
-          )}
         </Link>
+        {count > 1 && (
+          <>
+            <button
+              type="button"
+              aria-label={t.product.prevImage}
+              onClick={() => go(-1)}
+              className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-card transition-opacity duration-200 hover:bg-white focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+            >
+              <ChevronLeft size={17} />
+            </button>
+            <button
+              type="button"
+              aria-label={t.product.nextImage}
+              onClick={() => go(1)}
+              className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-card transition-opacity duration-200 hover:bg-white focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+            >
+              <ChevronRight size={17} />
+            </button>
+            <div className="absolute inset-x-0 bottom-2 flex items-center justify-center gap-1.5">
+              {images.map((image, imageIndex) => (
+                <button
+                  key={`dot-${image.url}-${imageIndex}`}
+                  type="button"
+                  aria-label={t.product.viewImage.replace("{n}", String(imageIndex + 1))}
+                  aria-current={imageIndex === current}
+                  onClick={() => setIndex(imageIndex)}
+                  className={cn(
+                    "h-1.5 rounded-full transition-all duration-200",
+                    imageIndex === current ? "w-5 bg-white" : "w-1.5 bg-white/60 hover:bg-white",
+                  )}
+                />
+              ))}
+            </div>
+            <span aria-live="polite" className="sr-only">
+              {t.product.imageCounter.replace("{current}", String(current + 1)).replace("{total}", String(count))}
+            </span>
+          </>
+        )}
         <div className="absolute left-2 top-2 flex flex-col items-start gap-1.5">
           {soldOut ? (
             <Badge tone="muted">{t.product.badgeSoldOut}</Badge>
