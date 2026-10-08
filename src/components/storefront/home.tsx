@@ -71,9 +71,9 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/15 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 pb-10 md:pb-16">
-            <div className="container-luxe text-ivory">
+            <div className="container-luxe overlay-text">
               <p
-                className="eyebrow !text-ivory/80 motion-safe:animate-hero-enter motion-safe:opacity-0"
+                className="eyebrow overlay-text-soft motion-safe:animate-hero-enter motion-safe:opacity-0"
                 style={{ animationDelay: "60ms" }}
               >
                 {hero.eyebrow}
@@ -85,7 +85,7 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
                 {hero.headline}
               </h1>
               <p
-                className="mt-4 max-w-xl text-[0.9375rem] leading-relaxed text-ivory/85 motion-safe:animate-hero-enter motion-safe:opacity-0"
+                className="mt-4 max-w-xl text-[0.9375rem] leading-relaxed overlay-text-faint motion-safe:animate-hero-enter motion-safe:opacity-0"
                 style={{ animationDelay: "180ms" }}
               >
                 {hero.subheading}
@@ -102,7 +102,7 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
                 </Link>
                 <Link
                   href={hero.secondaryHref}
-                  className="btn border border-ivory/70 text-ivory hover:bg-ivory hover:text-ink"
+                  className="btn border border-[#fff]/70 text-[#fff] hover:bg-[#fff] hover:text-[#1d232b]"
                 >
                   {hero.secondaryLabel}
                 </Link>
@@ -186,11 +186,11 @@ export function FeaturedCollection({
               </div>
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-ink/55 via-transparent to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-2 p-6 text-ivory md:p-10">
-              <p className="eyebrow !text-ivory/80">Collection à découvrir</p>
+            <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-2 p-6 overlay-text md:p-10">
+              <p className="eyebrow overlay-text-soft">Collection à découvrir</p>
               <h2 className="font-display text-4xl font-medium md:text-5xl">{title}</h2>
-              <p className="max-w-lg text-sm text-ivory/85 md:text-base">{description}</p>
-              <span className="btn mt-3 bg-ivory text-ink group-hover:bg-white">
+              <p className="max-w-lg text-sm overlay-text-faint md:text-base">{description}</p>
+              <span className="btn mt-3 bg-[#fbfcfd] text-[#1d232b] hover:bg-[#fff]">
                 {cta} <ArrowRight size={15} />
               </span>
             </div>
@@ -283,9 +283,9 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
                   </span>
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/50 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-3 text-ivory md:p-4">
+                <div className="absolute inset-x-0 bottom-0 p-3 overlay-text md:p-4">
                   <p className="text-sm font-medium md:text-base">{category.name}</p>
-                  <p className="mt-0.5 flex items-center gap-1 text-[0.6875rem] uppercase tracking-[0.16em] text-ivory/80">
+                  <p className="mt-0.5 flex items-center gap-1 text-[0.6875rem] uppercase tracking-[0.16em] overlay-text-soft">
                     {t.home.discover} <ArrowRight size={12} />
                   </p>
                 </div>

@@ -162,6 +162,19 @@
   --tw-gradient-via: rgb(10 14 18 / 0.18) var(--tw-gradient-via-position);
 }
 
+/* Photo overlay copy stays ivory in both modes (photos don't flip themes).
+   Use these instead of text-ivory anywhere text sits on a photo scrim —
+   plain opacity utilities would fight motion-safe:opacity-0 entrances. */
+.overlay-text {
+  color: #fbfcfd;
+}
+.overlay-text-soft {
+  color: rgb(251 252 253 / 0.8);
+}
+.overlay-text-faint {
+  color: rgb(251 252 253 / 0.85);
+}
+
 /* ---------------------------------------------------------------------------
    Hanadi Store — design tokens
    All storefront colors/typography flow from these tokens. The admin can
