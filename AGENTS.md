@@ -47,6 +47,9 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
   **async functions only** — the build fails otherwise)
 - `prisma/` — `schema.prisma`, `prisma.config.ts` (CLI config), versioned SQL `migrations/`, `seed.ts`, factual
   wilaya/commune dataset in `data/`
+- `prisma.config.ts` must work with no `.env` file present (that is the CI
+  shape: real environment variables only). Guard any `.env` loading with an
+  existence check and verify from an env-less directory before pushing.
 
 ## Non-negotiable invariants
 
