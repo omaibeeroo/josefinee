@@ -966,10 +966,6 @@ html.theme-switching *::after {
   .container-luxe {
     padding-inline: 2.5rem;
   }
-
-  .section-space {
-    padding-block: 6rem;
-  }
 }
 
 @media (min-width: 1280px) {
