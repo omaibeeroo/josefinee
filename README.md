@@ -324,8 +324,10 @@ Before deployment, run `npm ci`, `npm run typecheck`, `npm run lint`,
 
 ### Vercel staging and production
 
-The linked Vercel project is `josefinee-store`. The `staging` branch is the
-Preview/staging source, and `main` is the production source. Vercel Preview
+The linked Vercel project is `josefinee-store`, pinned to the `fra1`
+(Frankfurt) region next to the Neon `eu-central-1` database so catalog and
+checkout queries stay fast and function runs stay short. The `staging`
+branch is the Preview/staging source, and `main` is the production source. Vercel Preview
 deployments are enabled for staging. The `Promote staging to production`
 workflow runs only after the all-push `CI/CD` workflow succeeds for staging;
 it verifies that the branch has not advanced since the tested commit, opens or
@@ -348,6 +350,26 @@ optional check as skipped while still running the public safety checks.
 | `npm run dev / build / start` | develop / build / run production |
 | `npm run typecheck / lint / test` | `tsc --noEmit` / ESLint / Vitest |
 | `npm run db:generate / db:migrate / db:deploy / db:seed / db:studio` | Prisma workflows |
+
+## Catalog data cache (function-cost control)
+
+Public catalog reads (`src/server/catalog.ts`, `src/server/navigation.ts`)
+are cached with `unstable_cache` under the shared tags in `src/lib/cache.ts`
+(`catalog`, `navigation`, 300s backstop) so repeat visits skip the database.
+Rules:
+
+- Display data only — carts, checkout pricing, coupons/promotions
+  evaluation, inventory writes, orders, sessions, and per-customer data
+  always read live.
+- Free-text search bypasses the cache (unbounded terms would inflate cache
+  storage).
+- Full-route ISR is incompatible with the cookie locale toggle — do not add
+  `revalidate` expecting edge-cached HTML.
+- Every catalog-affecting admin mutation calls `revalidateTag()` next to its
+  `revalidatePath()`, so admin edits appear instantly instead of waiting out
+  the window.
+- Correctness never depends on the cache: cart and checkout revalidate
+  availability and recompute prices server-side on every order.
 
 ## Production checklist
 

@@ -119,7 +119,10 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
     reads (`catalog.ts`, `navigation.ts`) may use `unstable_cache` with the
     shared tags in `src/lib/cache.ts` (300s backstop). Carts, checkout
     pricing, coupons/promotions evaluation, inventory mutations, orders,
-    sessions, and per-customer data always read live. Every
+    sessions, and per-customer data always read live. Free-text search
+    bypasses the cache (unbounded terms would grow cache storage without
+    bound). Full-route ISR is incompatible with the cookie locale toggle, so
+    do not add `revalidate` expecting edge-cached HTML. Every
     catalog-affecting admin mutation calls `revalidateTag()` next to its
     existing `revalidatePath()`. A stale badge can never oversell or
     misprice because cart/checkout revalidate availability and recompute
