@@ -162,6 +162,31 @@ export function FeaturedCollection({
   href: string;
   cta: string;
 }) {
+  // Imageless collections render as a compact editorial strip instead of a
+  // tall empty panel — no fabricated imagery, no wasted vertical space.
+  if (!image) {
+    return (
+      <section className="container-luxe" aria-label={title}>
+        <Reveal>
+          <Link
+            href={href}
+            className="group flex flex-wrap items-center gap-x-8 gap-y-3 border-y hairline py-6"
+          >
+            <div className="min-w-0 flex-1">
+              <p className="eyebrow">Collection à découvrir</p>
+              <h2 className="mt-1 font-display text-3xl font-medium text-ink md:text-4xl">{title}</h2>
+              {description ? (
+                <p className="mt-1 max-w-lg text-sm text-ink-soft">{description}</p>
+              ) : null}
+            </div>
+            <span className="btn btn-outline mt-1 w-fit">
+              {cta} <ArrowRight size={15} />
+            </span>
+          </Link>
+        </Reveal>
+      </section>
+    );
+  }
   return (
     <section className="container-luxe" aria-label={title}>
       <Reveal>
@@ -169,22 +194,14 @@ export function FeaturedCollection({
           href={href}
           className="group relative block overflow-hidden bg-cream transition-[transform,box-shadow] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:shadow-[0_30px_60px_-30px_rgb(29_35_43/0.45)]"
         >
-          <div className={image ? "relative aspect-[16/10] w-full md:aspect-[21/8]" : "relative min-h-[18rem] w-full md:min-h-[22rem]"}>
-            {image ? (
-              <Image
-                src={image}
-                alt={title}
-                fill
-                sizes="(max-width: 768px) 100vw, 1200px"
-                className="editorial-image object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center">
-                <span className="font-display text-6xl text-ink-muted/50 md:text-8xl">
-                  {title.charAt(0)}
-                </span>
-              </div>
-            )}
+          <div className="relative aspect-[16/10] w-full md:aspect-[21/8]">
+            <Image
+              src={image}
+              alt={title}
+              fill
+              sizes="(max-width: 768px) 100vw, 1200px"
+              className="editorial-image object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
+            />
             <div className="absolute inset-0 bg-gradient-to-t from-ink/55 via-transparent to-transparent" />
             <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-2 p-6 text-ivory md:p-10">
               <p className="eyebrow !text-ivory/80">Collection à découvrir</p>
