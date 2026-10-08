@@ -45,7 +45,7 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
   `promotions`, `inventory`, `delivery`, `risk`, `analytics`, `navigation`)
 - `src/server/actions/` — server actions only (files with `"use server"` export
   **async functions only** — the build fails otherwise)
-- `prisma/` — `schema.prisma`, versioned SQL `migrations/`, `seed.ts`, factual
+- `prisma/` — `schema.prisma`, `prisma.config.ts` (CLI config), versioned SQL `migrations/`, `seed.ts`, factual
   wilaya/commune dataset in `data/`
 
 ## Non-negotiable invariants
