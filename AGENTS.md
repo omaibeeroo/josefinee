@@ -151,8 +151,8 @@ Minimal direction (October 2026 refresh, do not regress):
   the brand mark smoothly scales to 82% once scrolled (`scrolled` state,
   transform-only so layout never shifts), disabled under reduced-motion.
   Sticky positioning is load-bearing — keep it.
-- **Vertical rhythm lives in `.section-space`** (currently 1.5rem mobile /
-  1.75rem desktop, bottom-weighted via `pt-0` siblings). Tighten/loosen the
+- **Vertical rhythm lives in `.section-space`** (currently 2.5rem mobile /
+  3rem desktop, bottom-weighted via `pt-0` siblings). Tighten/loosen the
   token, never individual sections, unless a seam needs a local override.
 - **French by default, English on toggle.** Every user-facing string lives in
   `src/lib/i18n/fr.ts` + `en.ts` (identical shape, enforced by
