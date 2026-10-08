@@ -160,7 +160,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
 
       <header
         className={cn(
-          "sticky top-0 z-50 border-b bg-white/95 backdrop-blur transition-shadow",
+          "sticky top-0 z-50 border-b bg-chrome backdrop-blur-md transition-shadow",
           scrolled ? "hairline shadow-[0_8px_30px_-18px_rgba(28,26,23,0.4)]" : "border-transparent",
         )}
       >
@@ -727,7 +727,7 @@ function SiteFooter(props: ChromeProps) {
     ? `https://wa.me/${props.social.whatsapp.replace(/\D/g, "")}`
     : null;
   return (
-    <footer className="site-footer mt-3 border-t hairline bg-white">
+    <footer className="site-footer mt-3 border-t hairline bg-chrome">
       <div className="container-luxe py-6 text-center md:py-8">
         <p className="font-display text-xl tracking-[0.28em]">{props.brandName}</p>
         <p className="mx-auto mt-2 max-w-xs text-xs leading-relaxed text-ink-soft">

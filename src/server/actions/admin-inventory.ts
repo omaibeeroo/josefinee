@@ -45,7 +45,14 @@ export async function listInventory(params: { search?: string; lowOnly?: boolean
             sku: true,
             optionLabel: true,
             isActive: true,
-            product: { select: { id: true, name: true, slug: true } },
+            product: {
+              select: {
+                id: true,
+                name: true,
+                slug: true,
+                images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
+              },
+            },
           },
         },
       },
@@ -64,6 +71,7 @@ export async function listInventory(params: { search?: string; lowOnly?: boolean
       productId: row.variant.product.id,
       productName: row.variant.product.name,
       productSlug: row.variant.product.slug,
+      productImageUrl: row.variant.product.images[0]?.url ?? null,
       optionLabel: row.variant.optionLabel,
       isActive: row.variant.isActive,
     })),

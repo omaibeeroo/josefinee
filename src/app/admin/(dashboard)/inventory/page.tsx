@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { requirePermission } from "@/lib/auth/rbac";
 import { listInventory } from "@/server/actions/admin-inventory";
 import { PageHeader } from "@/components/admin/ui";
@@ -57,10 +58,19 @@ export default async function AdminInventoryPage({
             {result.items.map((item) => (
               <tr key={item.variantId} className={cn(item.available <= item.threshold && "bg-amber-50/60")}>
                 <td className="px-4 py-3">
-                  <Link href={`/admin/products/${item.productId}`} className="font-medium hover:underline">
-                    {item.productName}
-                  </Link>
-                  <span className="block text-xs text-ink-muted">{item.optionLabel ?? t.adminInventoryTable.defaultVariant}</span>
+                  <div className="flex items-center gap-3">
+                    <div className="relative h-11 w-10 shrink-0 overflow-hidden bg-cream">
+                      {item.productImageUrl && (
+                        <Image src={item.productImageUrl} alt={item.productName} fill sizes="40px" className="object-cover" />
+                      )}
+                    </div>
+                    <div>
+                      <Link href={`/admin/products/${item.productId}`} className="font-medium hover:underline">
+                        {item.productName}
+                      </Link>
+                      <span className="block text-xs text-ink-muted">{item.optionLabel ?? t.adminInventoryTable.defaultVariant}</span>
+                    </div>
+                  </div>
                 </td>
                 <td className="px-4 py-3 text-xs">{item.sku}</td>
                 <td className={cn("px-4 py-3 font-semibold tabular-nums", item.available === 0 && "text-[#9e342e]")}>

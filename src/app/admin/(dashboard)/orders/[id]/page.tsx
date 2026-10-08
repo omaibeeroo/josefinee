@@ -60,8 +60,8 @@ export default async function AdminOrderDetailPage({
               {order.items.map((item) => (
                 <li key={item.id} className="flex items-center gap-4 py-3">
                   <div className="relative h-16 w-14 shrink-0 overflow-hidden bg-cream">
-                    {item.imageUrl && (
-                      <Image src={item.imageUrl} alt={item.productName} fill sizes="56px" className="object-cover" />
+                    {item.displayImageUrl && (
+                      <Image src={item.displayImageUrl} alt={item.productName} fill sizes="56px" className="object-cover" />
                     )}
                   </div>
                   <div className="flex-1">

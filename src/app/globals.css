@@ -21,6 +21,7 @@
   --color-success: #82ad8f;
   --color-line: #2c3540;
   --color-white: #1a2129;
+  --color-chrome: rgb(24 30 38 / 0.88);
 }
 
 [data-theme="dark"] body {
@@ -179,6 +180,8 @@
   --color-sale: #b14f5c;
   --color-success: #3f6b4e;
   --color-line: #dce1e6;
+  /* Premium silver chrome for the sticky header + footer (translucent). */
+  --color-chrome: rgb(233 236 239 / 0.88);
 
   --font-display: var(--font-display), "Cormorant Garamond", Georgia, serif;
   --font-sans: var(--font-sans), Inter, system-ui, -apple-system, sans-serif;
@@ -1736,7 +1739,7 @@ html.theme-switching *::after {
 
 [data-theme="dark"] header {
   border-color: rgb(70 82 94 / 0.72);
-  background: rgb(20 25 31 / 0.92);
+  background: var(--color-chrome);
   box-shadow: 0 10px 28px -24px rgb(0 0 0 / 0.8);
 }
 

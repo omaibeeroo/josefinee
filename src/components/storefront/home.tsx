@@ -111,7 +111,7 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
           </div>
         </>
       ) : (
-        <div className="container-luxe py-16 text-center md:py-28">
+        <div className="container-luxe py-10 text-center md:py-16">
           <p
             className="eyebrow motion-safe:animate-hero-enter motion-safe:opacity-0"
             style={{ animationDelay: "60ms" }}
@@ -169,7 +169,7 @@ export function FeaturedCollection({
           href={href}
           className="group relative block overflow-hidden bg-cream transition-[transform,box-shadow] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:shadow-[0_30px_60px_-30px_rgb(29_35_43/0.45)]"
         >
-          <div className="relative aspect-[16/10] w-full md:aspect-[21/8]">
+          <div className={image ? "relative aspect-[16/10] w-full md:aspect-[21/8]" : "relative min-h-[18rem] w-full md:min-h-[22rem]"}>
             {image ? (
               <Image
                 src={image}
