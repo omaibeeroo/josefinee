@@ -11,7 +11,7 @@ export function ReviewToggle({ children }: { children: ReactNode }) {
   const { t } = useLocale();
   const [open, setOpen] = useState(false);
   return (
-    <div className="mt-8">
+    <div className="mt-6">
       <button
         type="button"
         onClick={() => setOpen((value) => !value)}

@@ -351,7 +351,7 @@ export function CheckoutForm({
         )}
 
         <section aria-labelledby="contact-heading">
-          <h2 id="contact-heading" className="mb-4 font-display text-2xl">
+          <h2 id="contact-heading" className="mb-4 text-center font-display text-2xl">
             {t.checkout.stepContact}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
@@ -404,7 +404,7 @@ export function CheckoutForm({
         </section>
 
         <section aria-labelledby="delivery-heading" aria-busy={loadingRegion}>
-          <h2 id="delivery-heading" className="mb-4 font-display text-2xl">
+          <h2 id="delivery-heading" className="mb-4 text-center font-display text-2xl">
             {t.checkout.stepDelivery}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
