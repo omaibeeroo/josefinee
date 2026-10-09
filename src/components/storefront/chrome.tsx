@@ -993,7 +993,7 @@ function SiteFooter(props: ChromeProps) {
       <div>
         <div className="container-luxe flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 text-start text-[0.6rem] overlay-text-soft md:text-[0.68rem]">
           <p>
-            © {year} {props.brandName}
+            © {year} {props.brandName} · {t.footer.rights}
           </p>
           <div className="flex flex-wrap justify-end gap-x-3 gap-y-1 md:gap-x-5">
             <Link href="/pages/privacy-policy" className="hover:text-[#fff]">

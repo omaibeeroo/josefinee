@@ -139,6 +139,7 @@ const fr = {
     privacy: "Confidentialité",
     terms: "Conditions",
     cookies: "Cookies",
+    rights: "Tous droits réservés — contenu et design protégés.",
   },
   home: {
     featuredTitle: "La sélection Hanadi Store",

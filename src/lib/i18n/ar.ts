@@ -141,6 +141,7 @@ const ar: FrDictionary = {
     privacy: "الخصوصية",
     terms: "الشروط",
     cookies: "ملفات الارتباط",
+    rights: "جميع الحقوق محفوظة — المحتوى والتصميم محميان.",
   },
   home: {
     featuredTitle: "مختارات متجر هنادي",

@@ -13,9 +13,52 @@ export type StoredImage = {
   height: number;
   mimeType: string;
   sizeBytes: number;
+  watermarked: boolean;
 };
 
 const MAX_DIMENSION = 2200;
+
+/**
+ * Optional brand watermark for copy protection. Point PRODUCT_WATERMARK_PATH
+ * at a PNG with transparency (e.g. the white wordmark, ~600px wide, baked
+ * at 60–80% opacity with its own padding). The mark is scaled to 18% of the
+ * photo width and composited into the bottom-right corner.
+ *
+ * Unset = byte-identical pipeline (existing behavior, fully preserved).
+ * Set-but-unreadable = upload fails closed so an admin never ships
+ * unmarked photos believing they are protected.
+ */
+export async function applyProductWatermark(image: Buffer): Promise<{
+  buffer: Buffer;
+  watermarked: boolean;
+}> {
+  const markPath = (process.env.PRODUCT_WATERMARK_PATH ?? "").trim();
+  if (!markPath) return { buffer: image, watermarked: false };
+
+  const { default: sharp } = await import("sharp");
+  const { readFile } = await import("node:fs/promises");
+  let mark: Buffer;
+  try {
+    const resolved = path.isAbsolute(markPath) ? markPath : path.join(process.cwd(), markPath);
+    mark = await readFile(resolved);
+  } catch {
+    throw new AppError(
+      "STORAGE_MISCONFIGURED",
+      "Product watermark is configured but unreadable.",
+      500,
+    );
+  }
+  const meta = await sharp(image).metadata();
+  const targetWidth = Math.max(64, Math.floor((meta.width ?? 800) * 0.18));
+  let overlay: Buffer;
+  try {
+    overlay = await sharp(mark).resize({ width: targetWidth }).png().toBuffer();
+  } catch {
+    throw new AppError("INVALID_WATERMARK", "Product watermark must be a valid image file.", 500);
+  }
+  const buffer = await sharp(image).composite([{ input: overlay, gravity: "southeast" }]).toBuffer();
+  return { buffer, watermarked: true };
+}
 
 /** Uploads are always re-encoded to WebP, so the extension is constant. */
 function storedExtension(): string {
@@ -59,11 +102,12 @@ export async function storeImage(file: {
   // the source exceeds MAX_DIMENSION (never upscaled). Effort 6 costs CPU
   // once at upload time; rendering stays cheap because the file is served
   // byte-identical (see ProductImage `unoptimized`).
-  const processed = await sharp(file.buffer)
+  const resized = await sharp(file.buffer)
     .rotate()
     .resize({ width: MAX_DIMENSION, height: MAX_DIMENSION, fit: "inside", withoutEnlargement: true })
-    .webp({ lossless: true, effort: 6 })
     .toBuffer();
+  const marked = await applyProductWatermark(resized);
+  const processed = await sharp(marked.buffer).webp({ lossless: true, effort: 6 }).toBuffer();
 
   const output = await sharp(processed).metadata();
   const width = output.width ?? metadata.width ?? MAX_DIMENSION;
@@ -115,6 +159,7 @@ export async function storeImage(file: {
       height,
       mimeType: "image/webp",
       sizeBytes,
+      watermarked: marked.watermarked,
     };
   }
 
@@ -142,5 +187,6 @@ export async function storeImage(file: {
     height,
     mimeType: "image/webp",
     sizeBytes,
+    watermarked: marked.watermarked,
   };
 }

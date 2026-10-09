@@ -141,6 +141,7 @@ const en: FrDictionary = {
     privacy: "Privacy",
     terms: "Terms",
     cookies: "Cookies",
+    rights: "All rights reserved — content and design protected.",
   },
   home: {
     featuredTitle: "The Hanadi Store selection",

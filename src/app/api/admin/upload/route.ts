@@ -45,7 +45,7 @@ export async function POST(request: Request) {
       actorUserId: session.user.id,
       action: "PRODUCT_IMAGE_UPLOADED",
       resource: "ProductImage",
-      metadata: { size: file.size, mimeType: stored.mimeType },
+      metadata: { size: file.size, mimeType: stored.mimeType, watermarked: stored.watermarked },
     });
 
     return Response.json({ ok: true, ...stored }, { headers: NO_STORE });
