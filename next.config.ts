@@ -49,6 +49,9 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   images: {
     formats: ["image/avif", "image/webp"],
+    // Only the fidelity tiers used across the shop: 90 for heroes, product
+    // cards and gallery, 85 for thumbnails, 75 as the framework fallback.
+    qualities: [75, 85, 90],
     remotePatterns: storageRemotePatterns(),
   },
   experimental: {

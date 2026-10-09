@@ -91,7 +91,7 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
               className="relative h-32 w-24 shrink-0 overflow-hidden bg-cream md:h-40 md:w-32"
             >
               {item.imageUrl ? (
-                <Image src={item.imageUrl} alt={item.productName} fill sizes="128px" className="object-cover" />
+                <Image src={item.imageUrl} alt={item.productName} fill sizes="128px" unoptimized className="object-cover" />
               ) : (
                 <span className="flex h-full w-full items-center justify-center font-display text-3xl text-ink-muted">
                   {item.productName.charAt(0)}

@@ -637,6 +637,7 @@ export function CheckoutForm({
                       alt={item.productName}
                       fill
                       sizes="56px"
+                      unoptimized
                       className="object-cover"
                     />
                   )}

@@ -79,7 +79,7 @@ export default async function AdminProductsPage({
                   <div className="flex items-center gap-3">
                     <div className="relative h-12 w-10 shrink-0 overflow-hidden bg-cream">
                       {product.images[0] && (
-                        <Image src={product.images[0].url} alt={product.name} fill sizes="40px" className="object-cover" />
+                        <Image src={product.images[0].url} alt={product.name} fill sizes="40px" unoptimized className="object-cover" />
                       )}
                     </div>
                     <div>

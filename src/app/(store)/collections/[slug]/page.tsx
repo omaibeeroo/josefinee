@@ -102,6 +102,7 @@ export default async function CollectionPage({
               alt={collection.name}
               fill
               sizes="(max-width: 768px) 100vw, 1200px"
+              unoptimized
               className="object-cover"
             />
           </div>

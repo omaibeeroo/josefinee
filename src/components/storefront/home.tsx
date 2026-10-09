@@ -20,15 +20,16 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
       {hasImage ? (
         <>
           <div className="relative aspect-[4/5] w-full sm:aspect-[16/10] md:aspect-[21/9]">
-            <Image
-              src={hero.imageMobile || hero.imageDesktop}
-              alt={hero.headline}
-              fill
-              priority
-              fetchPriority="high"
-              sizes="100vw"
-              className="object-cover motion-safe:animate-hero-image"
-            />
+              <Image
+                src={hero.imageMobile || hero.imageDesktop}
+                alt={hero.headline}
+                fill
+                priority
+                fetchPriority="high"
+                unoptimized
+                sizes="100vw"
+                className="object-cover motion-safe:animate-hero-image"
+              />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/15 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 pb-10 md:pb-16">
@@ -144,6 +145,7 @@ export function FeaturedCollection({
                 alt={title}
                 fill
                 sizes="(max-width: 768px) 100vw, 1200px"
+                unoptimized
                 className="editorial-image object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
               />
             ) : (
@@ -245,7 +247,8 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
                     alt={category.name}
                     fill
                     sizes="(max-width: 768px) 50vw, 16vw"
-                    className="object-cover transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
+                    unoptimized
+                    className="object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
                   />
                 ) : (
                   <span className="flex h-full w-full items-center justify-center font-display text-5xl text-ink-muted/60">

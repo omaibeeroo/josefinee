@@ -166,6 +166,7 @@ function CartDrawer() {
                         alt={item.productName}
                         fill
                         sizes="80px"
+                        unoptimized
                         className="object-cover"
                       />
                     ) : (

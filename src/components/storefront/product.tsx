@@ -55,14 +55,12 @@ export function ProductImage({
   className,
   sizes,
   priority,
-  quality,
 }: {
   url: string | null;
   alt: string;
   className?: string;
   sizes?: string;
   priority?: boolean;
-  quality?: number;
 }) {
   if (!url) {
     return (
@@ -71,6 +69,8 @@ export function ProductImage({
       </span>
     );
   }
+  // Served byte-identical (no optimizer recompression): uploads are stored
+  // lossless, so any quality setting here would only throw detail away.
   return (
     <Image
       src={url}
@@ -78,7 +78,7 @@ export function ProductImage({
       fill
       sizes={sizes ?? "(max-width: 768px) 50vw, 25vw"}
       priority={priority}
-      quality={quality ?? 80}
+      unoptimized
       className={cn("object-cover", className)}
     />
   );
@@ -557,7 +557,6 @@ export function ProductGallery({
               alt={current.alt || name}
               sizes="(max-width: 768px) 100vw, 50vw"
               priority
-              quality={90}
               className="product-zoom-image"
             />
           ) : (

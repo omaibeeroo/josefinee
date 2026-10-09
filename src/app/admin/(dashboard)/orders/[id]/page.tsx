@@ -61,7 +61,7 @@ export default async function AdminOrderDetailPage({
                 <li key={item.id} className="flex items-center gap-4 py-3">
                   <div className="relative h-16 w-14 shrink-0 overflow-hidden bg-cream">
                     {item.displayImageUrl && (
-                      <Image src={item.displayImageUrl} alt={item.productName} fill sizes="56px" className="object-cover" />
+                      <Image src={item.displayImageUrl} alt={item.productName} fill sizes="56px" unoptimized className="object-cover" />
                     )}
                   </div>
                   <div className="flex-1">

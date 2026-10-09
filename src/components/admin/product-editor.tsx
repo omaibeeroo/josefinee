@@ -338,7 +338,7 @@ export function ProductEditor({
               {state.images.map((image, index) => (
                 <li key={image.url} className={cn("relative border hairline bg-cream", index === 0 && "ring-2 ring-gold")}>
                   <div className="relative aspect-square">
-                    <Image src={image.url} alt={image.alt || state.name} fill sizes="160px" className="object-cover" />
+                    <Image src={image.url} alt={image.alt || state.name} fill sizes="160px" unoptimized className="object-cover" />
                   </div>
                   <input
                     value={image.alt ?? ""}

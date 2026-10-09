@@ -53,12 +53,16 @@ export async function storeImage(file: {
     throw new AppError("INVALID_FILE", "The uploaded file is not a valid image.");
   }
 
-  // Premium catalog quality: near-lossless WebP keeps jewelry detail crisp
-  // on retina screens while staying far smaller than the source upload.
+  // True-lossless catalog encode: bit-exact WebP (no quantization at all)
+  // so what the admin uploads is what the customer sees — metal glints,
+  // stone facets and fabric weave survive untouched. Only downscaled when
+  // the source exceeds MAX_DIMENSION (never upscaled). Effort 6 costs CPU
+  // once at upload time; rendering stays cheap because the file is served
+  // byte-identical (see ProductImage `unoptimized`).
   const processed = await sharp(file.buffer)
     .rotate()
     .resize({ width: MAX_DIMENSION, height: MAX_DIMENSION, fit: "inside", withoutEnlargement: true })
-    .webp({ quality: 90, effort: 5 })
+    .webp({ lossless: true, effort: 6 })
     .toBuffer();
 
   const output = await sharp(processed).metadata();

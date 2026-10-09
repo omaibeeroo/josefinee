@@ -106,7 +106,7 @@ export default async function ConfirmationPage({
             <li key={`${item.productName}-${index}`} className="flex items-center gap-3">
               <div className="relative h-14 w-12 shrink-0 overflow-hidden bg-cream">
                 {item.imageUrl && (
-                  <Image src={item.imageUrl} alt={item.productName} fill sizes="48px" className="object-cover" />
+                  <Image src={item.imageUrl} alt={item.productName} fill sizes="48px" unoptimized className="object-cover" />
                 )}
               </div>
               <div className="flex-1">

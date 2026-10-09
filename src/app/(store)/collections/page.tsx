@@ -47,6 +47,7 @@ export default async function CollectionsPage() {
                   alt={collection.name}
                   fill
                   sizes="(max-width: 768px) 100vw, 50vw"
+                  unoptimized
                   className="object-cover transition-transform duration-500 group-hover:scale-105"
                 />
               ) : (

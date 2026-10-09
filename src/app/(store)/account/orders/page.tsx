@@ -47,7 +47,7 @@ export default async function AccountOrdersPage() {
             {order.items.slice(0, 6).map((item, index) => (
               <div key={index} className="relative h-14 w-12 shrink-0 overflow-hidden bg-cream" title={item.productName}>
                 {item.imageUrl ? (
-                  <Image src={item.imageUrl} alt={item.productName} fill sizes="48px" className="object-cover" />
+                  <Image src={item.imageUrl} alt={item.productName} fill sizes="48px" unoptimized className="object-cover" />
                 ) : (
                   <span className="flex h-full w-full items-center justify-center font-display text-lg text-ink-muted">
                     {item.productName.charAt(0)}

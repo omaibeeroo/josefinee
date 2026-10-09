@@ -70,7 +70,7 @@ export default async function AdminInventoryPage({
                   <div className="flex items-center gap-3">
                     <div className="relative h-11 w-10 shrink-0 overflow-hidden bg-cream">
                       {item.productImageUrl && (
-                        <Image src={item.productImageUrl} alt={item.productName} fill sizes="40px" className="object-cover" />
+                        <Image src={item.productImageUrl} alt={item.productName} fill sizes="40px" unoptimized className="object-cover" />
                       )}
                     </div>
                     <div>

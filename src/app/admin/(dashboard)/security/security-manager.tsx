@@ -104,7 +104,7 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
         ) : qr ? (
           <form onSubmit={confirm} className="mt-4 space-y-3">
             <p className="text-sm text-ink-soft">{t.adminSecurity.scanHow}</p>
-            <Image src={qr} alt={t.adminSecurity.qrAlt} width={220} height={220} />
+            <Image src={qr} alt={t.adminSecurity.qrAlt} width={220} height={220} unoptimized />
             {manualKey && (
               <p className="break-all font-mono text-xs text-ink-muted">
                 {t.adminSecurity.manualKey} {manualKey}
