@@ -131,18 +131,18 @@ export default async function AdminOrdersPage({
               <tr key={order.id} className="hover:bg-cream/60">
                 <td className="px-4 py-3">
                   <Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">
-                    {order.orderNumber}
+                    <bdi>{order.orderNumber}</bdi>
                   </Link>
                 </td>
                 <td className="px-4 py-3">
                   {order.firstName} {order.lastName}
-                  <span className="block text-xs text-ink-muted">{order.phone}</span>
+                  <span className="block text-xs text-ink-muted"><bdi>{order.phone}</bdi></span>
                 </td>
                 <td className="px-4 py-3 text-xs">
                   {order.communeName}, {order.wilayaName}
                 </td>
                 <td className="px-4 py-3 tabular-nums">{order._count.items}</td>
-                <td className="px-4 py-3 font-medium tabular-nums">{formatDA(order.total)}</td>
+                <td className="px-4 py-3 font-medium tabular-nums">{formatDA(order.total, t.locale)}</td>
                 <td className="px-4 py-3">
                   <OrderStatusBadge status={order.status} label={t.status[order.status]} />
                 </td>

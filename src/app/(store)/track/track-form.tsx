@@ -35,6 +35,8 @@ export function TrackForm() {
           onChange={(event) => setOrderNumber(event.target.value)}
           placeholder="HAN-2026-000123"
           autoComplete="off"
+          dir="ltr"
+          className="text-start"
           required
         />
       </Field>

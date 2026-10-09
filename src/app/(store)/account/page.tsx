@@ -42,13 +42,13 @@ export default async function AccountOverviewPage() {
                     href={`/order/${order.orderNumber}?t=${encodeURIComponent(order.trackingToken)}`}
                     className="font-medium hover:underline"
                   >
-                    {order.orderNumber}
+                    <bdi>{order.orderNumber}</bdi>
                   </Link>
                   <p className="text-xs text-ink-muted">
                     {formatDateFR(order.createdAt, t.locale)} · {t.status[order.status]}
                   </p>
                 </div>
-                <p className="font-medium">{formatDA(order.total)}</p>
+                <p className="font-medium">{formatDA(order.total, t.locale)}</p>
               </li>
             ))}
           </ul>

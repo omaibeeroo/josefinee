@@ -26,7 +26,7 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
         </div>
         <div className="text-end">
           <p className="text-lg font-bold">{t.adminPrint.packingSlip}</p>
-          <p>{order.orderNumber}</p>
+          <p><bdi>{order.orderNumber}</bdi></p>
           <p className="text-xs">{formatDateTimeFR(order.placedAt, t.locale)}</p>
         </div>
       </div>
@@ -37,7 +37,7 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
           <p>
             {order.firstName} {order.lastName}
           </p>
-          <p>{formatPhoneDisplay(order.phone)}</p>
+          <p><bdi>{formatPhoneDisplay(order.phone)}</bdi></p>
           <p>
             {order.address}, {order.communeName}, {order.wilayaName}
           </p>
@@ -46,7 +46,7 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
         <div className="text-end">
           <p className="font-bold">{t.adminPrint.payment}</p>
           <p>{t.adminPrint.cod}</p>
-          <p className="mt-2 text-xl font-bold">{t.adminPrint.collect} {formatDA(order.total)}</p>
+          <p className="mt-2 text-xl font-bold">{t.adminPrint.collect} {formatDA(order.total, t.locale)}</p>
         </div>
       </div>
 
@@ -69,19 +69,19 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
               </td>
               <td className="py-2">{item.sku ?? "—"}</td>
               <td className="py-2 text-end font-bold">{item.quantity}</td>
-              <td className="py-2 text-end">{formatDA(item.unitPrice)}</td>
-              <td className="py-2 text-end">{formatDA(item.lineTotal)}</td>
+              <td className="py-2 text-end">{formatDA(item.unitPrice, t.locale)}</td>
+              <td className="py-2 text-end">{formatDA(item.lineTotal, t.locale)}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
       <div className="mt-4 space-y-1 text-end">
-        <p>{t.adminPrint.subtotal}: {formatDA(order.subtotal)}</p>
-        {order.promotionDiscount > 0 && <p>{t.adminPrint.promotion}: −{formatDA(order.promotionDiscount)}</p>}
-        <p>{t.adminPrint.discount}: −{formatDA(order.discount)}</p>
-        <p>{t.adminPrint.delivery}: {formatDA(order.shipping)}</p>
-        <p className="text-lg font-bold">{t.adminPrint.total}: {formatDA(order.total)}</p>
+          <p>{t.adminPrint.subtotal}: {formatDA(order.subtotal, t.locale)}</p>
+          {order.promotionDiscount > 0 && <p>{t.adminPrint.promotion}: −{formatDA(order.promotionDiscount, t.locale)}</p>}
+          <p>{t.adminPrint.discount}: −{formatDA(order.discount, t.locale)}</p>
+          <p>{t.adminPrint.delivery}: {formatDA(order.shipping, t.locale)}</p>
+          <p className="text-lg font-bold">{t.adminPrint.total}: {formatDA(order.total, t.locale)}</p>
       </div>
 
       <p className="mt-8 border-t border-black/20 pt-2 text-xs">☐ {t.adminPrint.packed} &nbsp;&nbsp; ☐ {t.adminPrint.checked} &nbsp;&nbsp; {t.adminPrint.signature} __________</p>

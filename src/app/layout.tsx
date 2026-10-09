@@ -55,7 +55,7 @@ const sansAr = Almarai({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getSettings();
+  const [settings, locale] = await Promise.all([getSettings(), getLocale()]);
   const name = settings.general.name || BRAND_CONFIG.name;
   const base = appUrl();
   const ogImage = settings.seo.defaultOgImage || "/og-default.svg";
@@ -70,7 +70,7 @@ export async function generateMetadata(): Promise<Metadata> {
     openGraph: {
       siteName: name,
       type: "website",
-      locale: "fr_DZ",
+      locale: locale === "ar" ? "ar_DZ" : locale === "en" ? "en_US" : "fr_DZ",
       images: ogImage ? [{ url: ogImage }] : undefined,
     },
     twitter: {

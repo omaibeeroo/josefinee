@@ -12,7 +12,7 @@ import { formatDA } from "@/lib/money";
 import { Trash2 } from "lucide-react";
 
 export function CartLines({ floor }: { floor: { minHome: number } | null }) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const { items, subtotal, refresh } = useCart();
   const router = useRouter();
   const [pending, setPending] = useState<string | null>(null);
@@ -105,7 +105,7 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
                     {item.productName}
                   </Link>
                   {item.variantLabel && <p className="mt-0.5 text-sm text-ink-muted">{item.variantLabel}</p>}
-                  <p className="mt-1 text-sm text-ink-soft">{formatDA(item.unitPrice)} {t.cart.perPiece}</p>
+                  <p className="mt-1 text-sm text-ink-soft">{formatDA(item.unitPrice, locale)} {t.cart.perPiece}</p>
                 </div>
                 <button
                   type="button"
@@ -123,7 +123,7 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
                   max={Math.min(20, Math.max(item.available, item.quantity))}
                   onChange={(quantity) => void changeQuantity(item.id, quantity)}
                 />
-                <p className="font-medium">{formatDA(item.lineTotal)}</p>
+                <p className="font-medium">{formatDA(item.lineTotal, locale)}</p>
               </div>
             </div>
           </li>
@@ -135,10 +135,10 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
           <h2 className="text-xs font-medium uppercase tracking-[0.2em]">{t.cart.summary}</h2>
           <div className="mt-4 flex items-center justify-between">
             <span className="text-sm text-ink-soft">{t.cart.subtotal}</span>
-            <span className="font-medium">{formatDA(subtotal)}</span>
+            <span className="font-medium">{formatDA(subtotal, locale)}</span>
           </div>
           <p className="mt-2 text-xs text-ink-muted">
-            {floor ? `${t.cart.deliveryFrom} ${formatDA(floor.minHome)} · ` : ""}
+            {floor ? `${t.cart.deliveryFrom} ${formatDA(floor.minHome, locale)} · ` : ""}
             {t.cart.deliveryNote}
           </p>
           <Link href="/checkout" className="btn btn-primary mt-5 w-full">

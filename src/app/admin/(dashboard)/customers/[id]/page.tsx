@@ -29,7 +29,7 @@ export default async function AdminCustomerDetailPage({
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <h2 className="mb-3 text-sm font-medium uppercase tracking-[0.14em]">{t.adminCustomer.profile}</h2>
-          <p className="text-sm">{formatPhoneDisplay(customer.phone)}</p>
+          <p className="text-sm"><bdi>{formatPhoneDisplay(customer.phone)}</bdi></p>
           {customer.email && <p className="text-sm">{customer.email}</p>}
           <p className="mt-2 text-xs uppercase tracking-[0.1em] text-ink-muted">{customer.status}</p>
           <h3 className="mb-2 mt-5 text-sm font-medium uppercase tracking-[0.14em]">{t.adminCustomer.addresses}</h3>
@@ -52,10 +52,10 @@ export default async function AdminCustomerDetailPage({
               {customer.orders.map((order) => (
                 <li key={order.id} className="flex items-center justify-between gap-3 py-2 text-sm">
                   <Link href={`/admin/orders/${order.id}`} className="font-medium hover:underline">
-                    {order.orderNumber}
+                    <bdi>{order.orderNumber}</bdi>
                   </Link>
                   <OrderStatusBadge status={order.status} label={t.status[order.status]} />
-                  <span className="tabular-nums">{formatDA(order.total)}</span>
+                  <span className="tabular-nums">{formatDA(order.total, t.locale)}</span>
                 </li>
               ))}
             </ul>

@@ -30,6 +30,15 @@ describe("formatDateFR", () => {
     expect(formatDateFR("2026-10-06T00:00:00Z", "ar")).toBe("6 أكتوبر 2026");
     expect(formatDateTimeFR("2026-10-06T14:32:00Z", "ar")).toBe("6 أكتوبر 2026, 14:32");
   });
+
+  it("wraps Arabic prices in bidi isolates and leaves other locales bare", () => {
+    const ar = formatDA(2300, "ar");
+    expect(ar).toBe(
+      `${String.fromCodePoint(0x2066)}2 300 DA${String.fromCodePoint(0x2069)}`,
+    );
+    expect(formatDA(2300, "fr")).toBe("2 300 DA");
+    expect(formatDA(2300)).toBe("2 300 DA");
+  });
 });
 
 describe("discountPercent", () => {

@@ -26,7 +26,7 @@ export default async function AdminOrderDetailPage({
   return (
     <div>
       <PageHeader
-        title={order.orderNumber}
+        title={<bdi>{order.orderNumber}</bdi>}
         description={`${t.adminOrderDetail.orderPlacedOn.replace("{date}", formatDateTimeFR(order.placedAt, t.locale))} · IP ${order.ip ?? "—"}`}
         action={
           <div className="flex gap-2">
@@ -72,8 +72,8 @@ export default async function AdminOrderDetailPage({
                     </p>
                   </div>
                   <div className="text-end text-sm">
-                    <p className="tabular-nums">{formatDA(item.unitPrice)} × {item.quantity}</p>
-                    <p className="font-medium tabular-nums">{formatDA(item.lineTotal)}</p>
+                    <p className="tabular-nums">{formatDA(item.unitPrice, t.locale)} × {item.quantity}</p>
+                    <p className="font-medium tabular-nums">{formatDA(item.lineTotal, t.locale)}</p>
                   </div>
                 </li>
               ))}
@@ -81,25 +81,25 @@ export default async function AdminOrderDetailPage({
             <dl className="mt-4 space-y-1.5 border-t hairline pt-4 text-sm">
               <div className="flex justify-between">
                 <dt className="text-ink-soft">{t.adminOrderDetail.subtotal}</dt>
-                <dd className="tabular-nums">{formatDA(order.subtotal)}</dd>
+                <dd className="tabular-nums">{formatDA(order.subtotal, t.locale)}</dd>
               </div>
               {order.promotionDiscount > 0 && (
                 <div className="flex justify-between">
                   <dt className="text-ink-soft">{t.adminOrderDetail.promotion}{order.promotion ? ` (${order.promotion.name})` : ""}</dt>
-                  <dd className="tabular-nums">−{formatDA(order.promotionDiscount)}</dd>
+                  <dd className="tabular-nums">−{formatDA(order.promotionDiscount, t.locale)}</dd>
                 </div>
               )}
               <div className="flex justify-between">
                 <dt className="text-ink-soft">{t.adminOrderDetail.discount}{order.coupon ? ` (${order.coupon.code})` : ""}</dt>
-                <dd className="tabular-nums">−{formatDA(order.discount)}</dd>
+                  <dd className="tabular-nums">−{formatDA(order.discount, t.locale)}</dd>
               </div>
               <div className="flex justify-between">
                 <dt className="text-ink-soft">{t.adminOrderDetail.delivery}</dt>
-                <dd className="tabular-nums">{formatDA(order.shipping)}</dd>
+                <dd className="tabular-nums">{formatDA(order.shipping, t.locale)}</dd>
               </div>
               <div className="flex justify-between text-base font-medium">
                 <dt>{t.adminOrderDetail.total}</dt>
-                <dd className="tabular-nums">{formatDA(order.total)}</dd>
+                <dd className="tabular-nums">{formatDA(order.total, t.locale)}</dd>
               </div>
             </dl>
           </Card>
@@ -149,7 +149,7 @@ export default async function AdminOrderDetailPage({
             <p className="font-medium">
               {order.firstName} {order.lastName}
             </p>
-            <p className="text-sm">{formatPhoneDisplay(order.phone)}</p>
+            <p className="text-sm"><bdi>{formatPhoneDisplay(order.phone)}</bdi></p>
             {order.email && <p className="text-sm">{order.email}</p>}
             <p className="mt-2 text-sm text-ink-soft">
               {order.address}

@@ -13,7 +13,7 @@ import {
 import { previewCouponAction } from "@/server/actions/cart";
 import { Button, Field, Honeypot, Input, Select, Textarea } from "@/components/ui";
 import { useLocale } from "@/lib/i18n/provider";
-import { formatDA } from "@/lib/money";
+import { bidiIsolate, formatDA } from "@/lib/money";
 import { pixelEvent } from "@/components/pixels";
 import type { CartLine } from "@/server/cart";
 import type { CommuneOption, DeliveryOption, WilayaOption } from "@/server/delivery";
@@ -217,8 +217,8 @@ export function CheckoutForm({
         setCoupon({ code: result.code, discount: result.discount });
         setCouponMessage(
           t.checkout.couponApplied
-            .replace("{code}", result.code)
-            .replace("{discount}", formatDA(result.discount)),
+            .replace("{code}", bidiIsolate(result.code))
+            .replace("{discount}", formatDA(result.discount, t.locale)),
         );
       } else {
         setCoupon(null);
@@ -509,7 +509,7 @@ export function CheckoutForm({
                       </span>
                     </span>
                       <span className="font-medium">
-                        {freeDelivery ? t.checkout.free : formatDA(option.price)}
+                        {freeDelivery ? t.checkout.free : formatDA(option.price, t.locale)}
                       </span>
                   </label>
                 ))}
@@ -612,10 +612,10 @@ export function CheckoutForm({
         >
           {submitting
             ? t.checkout.submitPending
-            : t.checkout.submit.replace("{total}", formatDA(total))}
+            : t.checkout.submit.replace("{total}", formatDA(total, t.locale))}
         </Button>
         <p className="text-center text-xs text-ink-muted">
-          {t.checkout.payNotePrefix} {t.checkout.payNote.replace("{total}", formatDA(total))}
+          {t.checkout.payNotePrefix} {t.checkout.payNote.replace("{total}", formatDA(total, t.locale))}
         </p>
       </form>
 
@@ -651,7 +651,7 @@ export function CheckoutForm({
                     <p className="text-xs text-ink-muted">{item.variantLabel}</p>
                   )}
                 </div>
-                <p className="text-sm font-medium">{formatDA(item.lineTotal)}</p>
+                <p className="text-sm font-medium">{formatDA(item.lineTotal, t.locale)}</p>
               </li>
             ))}
           </ul>
@@ -666,7 +666,8 @@ export function CheckoutForm({
                 value={couponInput}
                 onChange={(event) => setCouponInput(event.target.value)}
                 placeholder="WELCOME10"
-                className="uppercase"
+                dir="ltr"
+                className="uppercase text-start"
               />
               <Button
                 type="button"
@@ -688,32 +689,32 @@ export function CheckoutForm({
           <dl className="mt-4 space-y-1.5 border-t hairline pt-4 text-sm">
             <div className="flex justify-between">
               <dt className="text-ink-soft">{t.order.subtotal}</dt>
-              <dd>{formatDA(initialCart.subtotal)}</dd>
+              <dd>{formatDA(initialCart.subtotal, t.locale)}</dd>
             </div>
             {promotion && promotion.discount > 0 && (
               <div className="flex justify-between text-success">
                 <dt>{t.order.promotion} ({promotion.name})</dt>
-                <dd>−{formatDA(promotion.discount)}</dd>
+                <dd>−{formatDA(promotion.discount, t.locale)}</dd>
               </div>
             )}
             {discount > 0 && (
               <div className="flex justify-between text-success">
                 <dt>{t.order.discount}{coupon ? ` (${coupon.code})` : ""}</dt>
-                <dd>−{formatDA(discount)}</dd>
+                <dd>−{formatDA(discount, t.locale)}</dd>
               </div>
             )}
             <div className="flex justify-between">
               <dt className="text-ink-soft">{t.order.delivery}</dt>
-              <dd>{selectedRate ? (freeDelivery ? t.checkout.free : formatDA(shipping)) : "—"}</dd>
+              <dd>{selectedRate ? (freeDelivery ? t.checkout.free : formatDA(shipping, t.locale)) : "—"}</dd>
             </div>
             <div className="flex justify-between border-t hairline pt-2 text-base font-medium">
               <dt>{t.checkout.totalToPay}</dt>
-              <dd>{formatDA(total)}</dd>
+              <dd>{formatDA(total, t.locale)}</dd>
             </div>
           </dl>
           {remainingForFree > 0 && (
             <p className="mt-3 text-xs text-ink-muted">
-              {t.checkout.freeShipPrefix} {formatDA(remainingForFree)} {t.checkout.freeShipHint}
+              {t.checkout.freeShipPrefix} {formatDA(remainingForFree, t.locale)} {t.checkout.freeShipHint}
             </p>
           )}
         </div>

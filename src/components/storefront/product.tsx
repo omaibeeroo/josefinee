@@ -728,7 +728,7 @@ function VariantPicker({
 /* ------------------------------------------------------ Add to bag panel */
 
 export function AddToBagPanel({ product }: { product: StoreProduct }) {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const { add } = useCart();
   const [variantId, setVariantId] = useState(
     product.defaultVariantId ?? product.variants[0]?.id ?? "",
@@ -817,7 +817,9 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
           <div className="min-w-0 flex-1">
             <p className="truncate text-sm font-medium">{product.name}</p>
             <p className="text-sm text-ink-soft">
-              {selected ? formatPrice(selected.price) : formatPrice(product.price)}
+              {selected
+                ? formatPrice(selected.price, { locale })
+                : formatPrice(product.price, { locale })}
               {selected?.optionLabel && (
                 <span className="text-ink-muted"> · {selected.optionLabel}</span>
               )}

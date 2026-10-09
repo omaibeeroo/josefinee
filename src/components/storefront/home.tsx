@@ -33,7 +33,9 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/15 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 pb-10 md:pb-16">
-            <div className="container-luxe overlay-text">
+            {/* Hero copy always anchors left (even in RTL): inner text keeps
+                its own bidi direction, so Arabic still reads correctly. */}
+            <div className="container-luxe overlay-text" dir="ltr" style={{ textAlign: "left" }}>
               <p
                 className="eyebrow overlay-text-soft motion-safe:animate-hero-enter motion-safe:opacity-0"
                 style={{ animationDelay: "60ms" }}

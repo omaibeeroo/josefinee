@@ -32,7 +32,7 @@ export default async function AccountOrdersPage() {
                 href={`/order/${order.orderNumber}?t=${encodeURIComponent(order.trackingToken)}`}
                 className="font-medium hover:underline"
               >
-                {order.orderNumber}
+                <bdi>{order.orderNumber}</bdi>
               </Link>
               <p className="mt-0.5 text-xs text-ink-muted">
                 {formatDateFR(order.createdAt, t.locale)}
@@ -41,7 +41,7 @@ export default async function AccountOrdersPage() {
             <span className="text-xs font-medium uppercase tracking-[0.14em]">
               {t.status[order.status]}
             </span>
-            <p className="font-medium">{formatDA(order.total)}</p>
+            <p className="font-medium">{formatDA(order.total, t.locale)}</p>
           </div>
           <div className="mt-3 flex gap-2 overflow-x-auto">
             {order.items.slice(0, 6).map((item, index) => (

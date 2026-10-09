@@ -1,10 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { setLocaleAction } from "@/server/actions/locale";
 import { useLocale } from "@/lib/i18n/provider";
-import type { Locale } from "@/lib/i18n/locales";
+import { LOCALE_COOKIE, localeDir, type Locale } from "@/lib/i18n/locales";
 import { cn } from "@/lib/utils";
 
 const LOCALE_LABELS: Record<Locale, string> = { fr: "FR", en: "EN", ar: "عربي" };
@@ -20,18 +19,38 @@ export function LocaleToggle({
 }) {
   const { locale } = useLocale();
   const router = useRouter();
-  const [pending, setPending] = useState(false);
+  const [isRefreshing, startRefresh] = useTransition();
+  const [optimistic, setOptimistic] = useState<Locale | null>(null);
+  const shown = optimistic ?? locale;
+  const pending = isRefreshing;
 
-  async function switchTo(next: Locale) {
-    if (next === locale || pending) return;
-    setPending(true);
-    await setLocaleAction(next).catch(() => undefined);
-    setPending(false);
-    router.refresh();
+  // Once the server catches up, drop the override so the toggle can never
+  // get stuck showing a locale the server rejected.
+  useEffect(() => {
+    setOptimistic(null);
+  }, [locale]);
+
+  function switchTo(next: Locale) {
+    if (next === locale || isRefreshing) return;
+    // Instant feedback: persist the cookie client-side (it is readable by
+    // design), flip document direction immediately, then revalidate server
+    // content in a transition so the UI never freezes. This skips the extra
+    // server-action round trip entirely.
+    setOptimistic(next);
+    try {
+      document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=${365 * 86_400}; samesite=lax`;
+      document.documentElement.lang = next;
+      document.documentElement.dir = localeDir(next);
+    } catch {
+      // storage/DOM unavailable — the refresh below still applies the locale.
+    }
+    startRefresh(() => {
+      router.refresh();
+    });
   }
 
   if (variant === "cycle") {
-    const next = LOCALE_ORDER[(LOCALE_ORDER.indexOf(locale) + 1) % LOCALE_ORDER.length]!;
+    const next = LOCALE_ORDER[(LOCALE_ORDER.indexOf(shown) + 1) % LOCALE_ORDER.length]!;
     return (
       <button
         type="button"
@@ -44,7 +63,7 @@ export function LocaleToggle({
           className,
         )}
       >
-        {LOCALE_LABELS[locale]}
+        {LOCALE_LABELS[shown]}
       </button>
     );
   }
@@ -61,10 +80,10 @@ export function LocaleToggle({
           type="button"
           disabled={pending}
           onClick={() => void switchTo(code)}
-          aria-pressed={locale === code}
+          aria-pressed={shown === code}
           className={cn(
             "underline-offset-4 disabled:opacity-50",
-            locale === code ? "text-ink underline" : "text-ink-muted hover:text-ink",
+            shown === code ? "text-ink underline" : "text-ink-muted hover:text-ink",
           )}
         >
           {LOCALE_LABELS[code]}

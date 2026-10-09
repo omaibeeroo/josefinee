@@ -135,7 +135,7 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
                           className={`text-start tabular-nums hover:underline ${rate.isActive ? "" : "text-ink-muted line-through"}`}
                           title={`${t.adminDelivery.editRate} ${t.delivery[method as keyof typeof t.delivery]} — ${wilaya.name}`}
                         >
-                          {formatDA(rate.price)}
+                          {formatDA(rate.price, t.locale)}
                           <span className="block text-xs text-ink-muted">
                             {rate.etaMinDays}–{rate.etaMaxDays}{t.adminDelivery.daysShort}
                           </span>

@@ -92,7 +92,7 @@ export function useCart(): CartContextValue {
 }
 
 function CartDrawer() {
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const { open, setOpen, items, subtotal, count, floor, error: loadError } = useCart();
   const [pending, setPending] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -206,7 +206,7 @@ function CartDrawer() {
                         max={Math.min(20, Math.max(item.available, item.quantity))}
                         onChange={(quantity) => void changeQuantity(item.id, quantity)}
                       />
-                      <p className="text-sm font-medium">{formatDA(item.lineTotal)}</p>
+                      <p className="text-sm font-medium">{formatDA(item.lineTotal, locale)}</p>
                     </div>
                   </div>
                 </li>
@@ -215,10 +215,10 @@ function CartDrawer() {
             <div className="border-t hairline bg-white px-5 py-4">
               <div className="mb-1 flex items-center justify-between">
                 <span className="text-sm text-ink-soft">{t.cart.subtotal}</span>
-                <span className="text-base font-medium">{formatDA(subtotal)}</span>
+                <span className="text-base font-medium">{formatDA(subtotal, locale)}</span>
               </div>
               <p className="mb-4 text-xs text-ink-muted">
-                {floor ? `${t.cart.deliveryFrom} ${formatDA(floor.minHome)} · ` : ""}
+                {floor ? `${t.cart.deliveryFrom} ${formatDA(floor.minHome, locale)} · ` : ""}
                 {t.cart.deliveryNote}
               </p>
               <div className="flex flex-col gap-2">

@@ -538,13 +538,14 @@ export function Price({
   compareAt?: number | null;
   large?: boolean;
 }) {
+  const { locale } = useLocale();
   return (
-    <p className={cn("flex items-baseline gap-2", large ? "text-2xl" : "text-[0.9375rem]")}>
+    <p className={cn("flex items-baseline gap-2 tabular-nums", large ? "text-2xl" : "text-[0.9375rem]")}>
       <span className={cn("font-medium", compareAt && compareAt > price && "text-sale")}>
-        {formatDA(price)}
+        {formatDA(price, locale)}
       </span>
       {compareAt && compareAt > price && (
-        <span className="text-sm text-ink-muted line-through">{formatDA(compareAt)}</span>
+        <span className="text-sm text-ink-muted line-through">{formatDA(compareAt, locale)}</span>
       )}
     </p>
   );

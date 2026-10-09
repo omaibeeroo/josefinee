@@ -343,8 +343,8 @@ html.theme-switching *::after {
     background-color: var(--color-ivory);
     color: var(--color-ink);
     font-family: var(--font-sans);
-    font-size: 1.0625rem;
-    line-height: 1.65;
+    font-size: 1.125rem;
+    line-height: 1.7;
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -414,6 +414,16 @@ html.theme-switching *::after {
   [dir="rtl"] .divide-x > :not([hidden]) ~ :not([hidden]) {
     border-right-width: 0;
     border-left-width: 1px;
+  }
+
+  /*
+   * Bidi isolation for numbers in RTL. Prices ("2 300 DA"), counts and
+   * quantities must render in logical order — without isolation the
+   * surrounding Arabic reorders digits, spaces and currency codes.
+   */
+  [dir="rtl"] .tabular-nums {
+    direction: ltr;
+    unicode-bidi: isolate;
   }
 
   img,

@@ -92,7 +92,7 @@ export default async function AdminProductsPage({
                     </div>
                   </div>
                 </td>
-                <td className="px-4 py-3 tabular-nums">{formatDA(product.price)}</td>
+                <td className="px-4 py-3 tabular-nums">{formatDA(product.price, t.locale)}</td>
                 <td className="px-4 py-3 tabular-nums">
                   <span className={product.stock === 0 ? "font-semibold text-[#9e342e]" : ""}>
                     {product.stock}

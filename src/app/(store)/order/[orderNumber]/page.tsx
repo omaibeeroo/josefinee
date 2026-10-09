@@ -7,7 +7,7 @@ import { getOrderConfirmation } from "@/server/orders";
 import { getSettings } from "@/lib/settings";
 import { verifyOrderToken } from "@/lib/order-token";
 import { CUSTOMER_ORDER_FLOW } from "@/lib/constants";
-import { formatDA } from "@/lib/money";
+import { bidiIsolate, formatDA } from "@/lib/money";
 import { formatPhoneDisplay } from "@/lib/phone";
 import { getDictionary } from "@/lib/i18n/server";
 import { PixelEvent } from "@/components/pixels";
@@ -39,7 +39,7 @@ export default async function ConfirmationPage({
   const whatsappNumber = settings.social.whatsapp.replace(/\D/g, "");
   const whatsappHref = whatsappNumber
     ? `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(
-        d.order.whatsappMsg.replace("{order}", order.orderNumber),
+        d.order.whatsappMsg.replace("{order}", bidiIsolate(order.orderNumber)),
       )}`
     : null;
 
@@ -67,7 +67,7 @@ export default async function ConfirmationPage({
           {d.order.prepareNote.replace("{phone}", formatPhoneDisplay(order.phone))}
         </p>
         <p className="mt-4 inline-block border hairline bg-white px-5 py-2.5 text-sm tracking-[0.12em]">
-          {d.order.order} <span className="font-semibold">{order.orderNumber}</span>
+          {d.order.order} <span className="font-semibold"><bdi>{order.orderNumber}</bdi></span>
         </p>
       </div>
 
@@ -115,39 +115,39 @@ export default async function ConfirmationPage({
                   {item.variantLabel ? `${item.variantLabel} · ` : ""}{d.order.qty} {item.quantity}
                 </p>
               </div>
-              <p className="text-sm font-medium">{formatDA(item.lineTotal)}</p>
+                <p className="text-sm font-medium">{formatDA(item.lineTotal, d.locale)}</p>
             </li>
           ))}
         </ul>
         <dl className="mt-4 space-y-1.5 border-t hairline pt-4 text-sm">
           <div className="flex justify-between">
             <dt className="text-ink-soft">{d.order.subtotal}</dt>
-            <dd>{formatDA(order.subtotal)}</dd>
+              <dd>{formatDA(order.subtotal, d.locale)}</dd>
           </div>
           {order.promotionDiscount > 0 && (
             <div className="flex justify-between">
               <dt className="text-ink-soft">{d.order.promotion}{order.promotionName ? ` (${order.promotionName})` : ""}</dt>
-              <dd>−{formatDA(order.promotionDiscount)}</dd>
+              <dd>−{formatDA(order.promotionDiscount, d.locale)}</dd>
             </div>
           )}
           {order.discount > 0 && (
             <div className="flex justify-between">
               <dt className="text-ink-soft">{d.order.discount}</dt>
-              <dd>−{formatDA(order.discount)}</dd>
+              <dd>−{formatDA(order.discount, d.locale)}</dd>
             </div>
           )}
           <div className="flex justify-between">
             <dt className="text-ink-soft">{d.order.delivery} ({d.delivery[order.deliveryMethod]})</dt>
-            <dd>{formatDA(order.shipping)}</dd>
+              <dd>{formatDA(order.shipping, d.locale)}</dd>
           </div>
           <div className="flex justify-between text-base font-medium">
             <dt>{d.order.totalCod}</dt>
-            <dd>{formatDA(order.total)}</dd>
+              <dd>{formatDA(order.total, d.locale)}</dd>
           </div>
         </dl>
         <div className="mt-4 border-t hairline pt-4 text-sm text-ink-soft">
           <p>
-            {order.firstName} {order.lastName} · {formatPhoneDisplay(order.phone)}
+            {order.firstName} {order.lastName} · <bdi>{formatPhoneDisplay(order.phone)}</bdi>
           </p>
           <p className="mt-1">
             {order.address}, {order.communeName}, {order.wilayaName}

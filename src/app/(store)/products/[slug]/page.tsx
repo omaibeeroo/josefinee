@@ -211,7 +211,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             >
               {promotion.type === "PERCENTAGE"
                 ? t.product.promoPercent.replace("{value}", String(promotion.value))
-                : t.product.promoFixed.replace("{value}", formatDA(promotion.value))}{" "}
+                : t.product.promoFixed.replace("{value}", formatDA(promotion.value, t.locale))}{" "}
               {t.product.promoWith.replace("{name}", promotion.name)}
             </p>
           )}

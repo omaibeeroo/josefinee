@@ -52,9 +52,9 @@ export default async function AdminAnalyticsPage({
         }
       />
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={t.adminAnalytics.revenue} value={formatDA(stats.revenue)} hint={`${stats.deliveredOrders} ${t.adminAnalytics.delivered}`} />
-        <StatCard label={t.adminAnalytics.orders} value={String(stats.orderCount)} hint={`${t.adminAnalytics.gross} ${formatDA(stats.grossTotal)}`} />
-        <StatCard label={t.adminAnalytics.aov} value={formatDA(stats.averageOrderValue)} />
+        <StatCard label={t.adminAnalytics.revenue} value={formatDA(stats.revenue, t.locale)} hint={`${stats.deliveredOrders} ${t.adminAnalytics.delivered}`} />
+        <StatCard label={t.adminAnalytics.orders} value={String(stats.orderCount)} hint={`${t.adminAnalytics.gross} ${formatDA(stats.grossTotal, t.locale)}`} />
+        <StatCard label={t.adminAnalytics.aov} value={formatDA(stats.averageOrderValue, t.locale)} />
         <StatCard label={t.adminAnalytics.deliveredRate} value={`${stats.deliveredRate}%`} hint={`${stats.failedDeliveries} ${t.adminAnalytics.failedDeliveries}`} />
       </div>
       <div className="mt-4 grid gap-3 xl:grid-cols-2">
@@ -79,7 +79,7 @@ export default async function AdminAnalyticsPage({
           {stats.salesByWilaya.length === 0 ? (
             <p className="text-sm text-ink-muted">{t.adminDash.noOrdersPeriod}</p>
           ) : (
-            <BarList items={stats.salesByWilaya.map((entry) => ({ label: entry.wilaya, value: entry.total, display: formatDA(entry.total) }))} />
+            <BarList items={stats.salesByWilaya.map((entry) => ({ label: entry.wilaya, value: entry.total, display: formatDA(entry.total, t.locale) }))} />
           )}
         </Card>
       </div>

@@ -56,8 +56,8 @@ export default async function AdminDashboard({
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={t.adminDash.revenue} value={formatDA(stats.revenue)} hint={`${stats.deliveredOrders} ${t.adminDash.deliveredOrders}`} />
-        <StatCard label={t.adminDash.orders} value={String(stats.orderCount)} hint={`${t.adminDash.aov} ${formatDA(stats.averageOrderValue)}`} />
+        <StatCard label={t.adminDash.revenue} value={formatDA(stats.revenue, t.locale)} hint={`${stats.deliveredOrders} ${t.adminDash.deliveredOrders}`} />
+        <StatCard label={t.adminDash.orders} value={String(stats.orderCount)} hint={`${t.adminDash.aov} ${formatDA(stats.averageOrderValue, t.locale)}`} />
         <StatCard label={t.adminDash.pending} value={String(stats.pendingOrders)} href="/admin/orders?status=PENDING" />
         <StatCard label={t.adminDash.cancelled} value={`${stats.cancellationRate}%`} hint={`${stats.failedDeliveries} ${t.adminDash.failedDeliveries}`} />
       </div>
