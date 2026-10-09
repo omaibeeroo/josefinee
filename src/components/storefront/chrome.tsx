@@ -510,7 +510,7 @@ function MobileMenu({
       <aside
         ref={panelRef}
         tabIndex={-1}
-        className="mobile-menu-panel absolute start-0 top-0 flex h-full w-[86%] max-w-sm flex-col border-e hairline bg-ivory/95 pb-[env(safe-area-inset-bottom)] shadow-[18px_0_52px_-30px_rgba(29,35,43,0.38)] backdrop-blur-md"
+        className="mobile-menu-panel absolute start-0 top-0 flex h-full w-[86%] max-w-sm flex-col border-e hairline pb-[env(safe-area-inset-bottom)] shadow-[18px_0_52px_-30px_rgba(29,35,43,0.38)] backdrop-blur-md"
       >
         <div className="flex items-center justify-between border-b hairline px-6 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
           <div>
