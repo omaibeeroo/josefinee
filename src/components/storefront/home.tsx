@@ -359,13 +359,14 @@ export function FaqTeaser({ items }: { items: Array<{ question: string; answer: 
   return (
     <section className="container-luxe max-w-3xl" aria-label={t.home.faqTitle}>
       <Reveal>
-        <div className="mb-5 text-center">
-          <p className="eyebrow mb-2">{t.home.faqEyebrow}</p>
-          <h2 className="font-display text-lg font-medium md:text-xl">{t.home.faqTitle}</h2>
+        <div className="mb-3 text-center md:mb-5">
+          <p className="eyebrow mb-1 text-[0.58rem] md:mb-2 md:text-xs">{t.home.faqEyebrow}</p>
+          <h2 className="font-display text-base font-medium md:text-xl">{t.home.faqTitle}</h2>
         </div>
       </Reveal>
       <Reveal delay={100}>
         <Accordion
+          compact
           items={items.map((item) => ({
             title: item.question,
             content: <p className="rich-text">{item.answer}</p>,

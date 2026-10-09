@@ -2,7 +2,12 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Fragment } from "react";
 import { getSettings } from "@/lib/settings";
-import { getBestSellers, getFeaturedProducts, getNewInProducts, getStorefrontProducts } from "@/server/catalog";
+import {
+  getBestSellers,
+  getFeaturedProducts,
+  getNewInProducts,
+  getStorefrontProducts,
+} from "@/server/catalog";
 import { getDictionary } from "@/lib/i18n/server";
 import { prisma } from "@/lib/prisma";
 import {
@@ -67,18 +72,24 @@ async function getHomeData() {
         (value) => ({ status: "fulfilled" as const, value }),
         (error: unknown) => {
           console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
-          return { status: "rejected" as const, value: [] as Array<{ name: string; slug: string; image: string | null; _count: { products: number } }> };
+          return {
+            status: "rejected" as const,
+            value: [] as Array<{
+              name: string;
+              slug: string;
+              image: string | null;
+              _count: { products: number };
+            }>,
+          };
         },
       ),
-    prisma.order
-      .count({ where: { status: "DELIVERED" } })
-      .then(
-        (value) => ({ status: "fulfilled" as const, value }),
-        (error: unknown) => {
-          console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
-          return { status: "rejected" as const, value: 0 };
-        },
-      ),
+    prisma.order.count({ where: { status: "DELIVERED" } }).then(
+      (value) => ({ status: "fulfilled" as const, value }),
+      (error: unknown) => {
+        console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
+        return { status: "rejected" as const, value: 0 };
+      },
+    ),
     prisma.faqItem
       .findMany({
         where: { isPublished: true },
@@ -90,7 +101,10 @@ async function getHomeData() {
         (value) => ({ status: "fulfilled" as const, value }),
         (error: unknown) => {
           console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
-          return { status: "rejected" as const, value: [] as Array<{ question: string; answer: string }> };
+          return {
+            status: "rejected" as const,
+            value: [] as Array<{ question: string; answer: string }>,
+          };
         },
       ),
   ]);
@@ -233,8 +247,9 @@ export default async function HomePage() {
       </div>
     ),
     trust: <TrustBar />,
-    socialProof:
-      settings.homepage.showSocialProof ? <SocialProof deliveredCount={deliveredCount} /> : null,
+    socialProof: settings.homepage.showSocialProof ? (
+      <SocialProof deliveredCount={deliveredCount} />
+    ) : null,
     faq: (
       <div className="section-space pb-0 pt-0">
         <FaqTeaser items={faqs} />
@@ -253,7 +268,9 @@ export default async function HomePage() {
           aria-labelledby="catalog-empty-title"
         >
           <div className="border-y hairline bg-cream/60 px-6 py-14 md:py-20">
-            <p className="eyebrow">{catalogError ? t.home.emptyErrorEyebrow : t.home.emptyEyebrow}</p>
+            <p className="eyebrow">
+              {catalogError ? t.home.emptyErrorEyebrow : t.home.emptyEyebrow}
+            </p>
             <h2
               id="catalog-empty-title"
               className="mt-3 font-display text-3xl font-medium md:text-4xl"
@@ -278,10 +295,10 @@ export default async function HomePage() {
         </>
       )}
 
-      <section className="container-luxe pb-3 pt-4 text-center">
+      <section className="container-luxe pb-2 pt-3 text-center md:pb-3 md:pt-4">
         <Link
           href="/shop"
-          className="text-xs font-medium uppercase tracking-[0.24em] underline underline-offset-8"
+          className="text-[0.62rem] font-medium uppercase tracking-[0.16em] underline underline-offset-4 md:text-xs md:tracking-[0.24em] md:underline-offset-8"
         >
           {t.home.shopAllLink}
         </Link>
