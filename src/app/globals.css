@@ -1771,9 +1771,19 @@ html.theme-switching *::after {
   }
 }
 
+/* Desktop reading scale: roomier type and larger product presence on large
+   screens only. Every rem-based size, spacing token and the rem-wide
+   container grow together, so text, buttons, fields and grid columns scale
+   as one. Mobile and tablet keep the base 16px scale, and the 16px iOS
+   anti-zoom rule further below is untouched. */
+@media (min-width: 1024px) {
+  html {
+    font-size: 18px;
+  }
+}
+
 /* Safari versions without backdrop-filter keep the same readable opaque
-   surfaces instead of rendering translucent text over page content. */
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+   surfaces instead of rendering translucent text over page content. */@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   header {
     background: #fbfcfd;
   }
