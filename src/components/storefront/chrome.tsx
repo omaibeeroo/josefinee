@@ -806,7 +806,7 @@ function NewsletterMini() {
       <label htmlFor="footer-newsletter" className="sr-only">
         {t.footer.emailLabel}
       </label>
-      <div className="flex items-center gap-3 border-b border-white/30 pb-2 transition-colors focus-within:border-white">
+      <div className="flex items-center gap-3 border-b border-[#fff]/30 pb-2 transition-colors focus-within:border-[#fff]">
         <input
           id="footer-newsletter"
           type="email"
@@ -814,12 +814,12 @@ function NewsletterMini() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder={t.footer.emailPlaceholder}
-          className="w-full bg-transparent text-center text-[0.9375rem] tracking-wide text-white outline-none placeholder:text-white/60"
+          className="w-full bg-transparent text-center text-[0.9375rem] tracking-wide text-[#fff] outline-none placeholder:text-[#fff]/60"
         />
         <button
           type="submit"
           disabled={pending}
-          className="shrink-0 text-[0.7rem] font-medium uppercase tracking-[0.22em] text-white underline underline-offset-8 hover:text-gold-dark disabled:opacity-50"
+          className="shrink-0 text-[0.7rem] font-medium uppercase tracking-[0.22em] text-[#fff] underline underline-offset-8 hover:text-gold-dark disabled:opacity-50"
         >
           OK
         </button>
@@ -874,7 +874,7 @@ function SiteFooter(props: ChromeProps) {
                 href={social.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="overlay-text-soft hover:text-white"
+                className="overlay-text-soft hover:text-[#fff]"
               >
                 {social.label}
               </a>
@@ -884,7 +884,7 @@ function SiteFooter(props: ChromeProps) {
                 href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="overlay-text-soft hover:text-white"
+                className="overlay-text-soft hover:text-[#fff]"
               >
                 WhatsApp
               </a>
@@ -893,7 +893,7 @@ function SiteFooter(props: ChromeProps) {
         )}
       </div>
       {props.faqItems.length > 0 && (
-        <div className="border-t border-white/20">
+        <div className="border-t border-[#fff]/20">
           <div className="container-luxe py-3 md:py-4">
             <Accordion
               compact
@@ -917,7 +917,7 @@ function SiteFooter(props: ChromeProps) {
           </div>
         </div>
       )}
-      <div className="border-t border-white/20">
+      <div className="border-t border-[#fff]/20">
         <div className="container-luxe grid min-w-0 grid-cols-3 gap-3 py-4 text-start md:gap-6 md:py-6">
           <nav aria-label={t.footer.shop}>
             <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] overlay-text-soft md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
@@ -925,17 +925,17 @@ function SiteFooter(props: ChromeProps) {
             </p>
             <ul className="space-y-1.5 text-[0.68rem] leading-tight md:space-y-2 md:text-xs">
               <li>
-                <Link href="/shop" className="overlay-text-soft hover:text-white">
+                <Link href="/shop" className="overlay-text-soft hover:text-[#fff]">
                   {t.footer.shopAll}
                 </Link>
               </li>
               <li>
-                <Link href="/collections/new-in" className="overlay-text-soft hover:text-white">
+                <Link href="/collections/new-in" className="overlay-text-soft hover:text-[#fff]">
                   {t.footer.newIn}
                 </Link>
               </li>
               <li>
-                <Link href="/collections/best-sellers" className="overlay-text-soft hover:text-white">
+                <Link href="/collections/best-sellers" className="overlay-text-soft hover:text-[#fff]">
                   {t.footer.bestSellers}
                 </Link>
               </li>
@@ -947,12 +947,12 @@ function SiteFooter(props: ChromeProps) {
             </p>
             <ul className="space-y-1.5 text-[0.68rem] leading-tight md:space-y-2 md:text-xs">
               <li>
-                <Link href="/pages/shipping" className="overlay-text-soft hover:text-white">
+                <Link href="/pages/shipping" className="overlay-text-soft hover:text-[#fff]">
                   {t.footer.shipping}
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="overlay-text-soft hover:text-white">
+                <Link href="/contact" className="overlay-text-soft hover:text-[#fff]">
                   {t.footer.contactUs}
                 </Link>
               </li>
@@ -966,7 +966,7 @@ function SiteFooter(props: ChromeProps) {
             {(props.supportEmail || props.supportPhone) && (
               <p className="mt-2 break-words text-[9px] leading-tight overlay-text-soft md:mt-3 md:text-[11px] md:leading-relaxed">
                 {props.supportEmail && (
-                  <a href={`mailto:${props.supportEmail}`} className="hover:text-white">
+                  <a href={`mailto:${props.supportEmail}`} className="hover:text-[#fff]">
                     {props.supportEmail}
                   </a>
                 )}
@@ -974,7 +974,7 @@ function SiteFooter(props: ChromeProps) {
                 {props.supportPhone && (
                   <a
                     href={`tel:${props.supportPhone.replace(/\s/g, "")}`}
-                    className="hover:text-white"
+                    className="hover:text-[#fff]"
                   >
                     {props.supportPhone}
                   </a>
@@ -984,19 +984,19 @@ function SiteFooter(props: ChromeProps) {
           </div>
         </div>
       </div>
-      <div className="border-t border-white/20">
+      <div className="border-t border-[#fff]/20">
         <div className="container-luxe flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 text-start text-[0.6rem] overlay-text-soft md:text-[0.68rem]">
           <p>
             © {year} {props.brandName}
           </p>
           <div className="flex flex-wrap justify-end gap-x-3 gap-y-1 md:gap-x-5">
-            <Link href="/pages/privacy-policy" className="hover:text-white">
+            <Link href="/pages/privacy-policy" className="hover:text-[#fff]">
               {t.footer.privacy}
             </Link>
-            <Link href="/pages/terms" className="hover:text-white">
+            <Link href="/pages/terms" className="hover:text-[#fff]">
               {t.footer.terms}
             </Link>
-            <button type="button" onClick={openCookieSettings} className="hover:text-white">
+            <button type="button" onClick={openCookieSettings} className="hover:text-[#fff]">
               {t.footer.cookies}
             </button>
           </div>

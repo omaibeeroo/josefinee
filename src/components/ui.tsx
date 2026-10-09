@@ -470,7 +470,7 @@ export function Accordion({
       data-tone={light ? "light" : undefined}
       className={cn(
         "divide-y border-y",
-        light ? "divide-white/20 border-white/20 overlay-text" : "divide-line border-y hairline",
+        light ? "divide-[#fff]/20 border-[#fff]/20 overlay-text" : "divide-line border-y hairline",
       )}
     >
       {items.map((item, index) => {
@@ -498,7 +498,7 @@ export function Accordion({
                 size={14}
                 className={cn(
                   "shrink-0 transition-transform",
-                  light ? "text-white/70" : "text-ink-muted",
+                  light ? "text-[#fff]/70" : "text-ink-muted",
                   isOpen && "rotate-180",
                 )}
               />
