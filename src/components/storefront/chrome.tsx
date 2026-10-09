@@ -164,7 +164,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
 
       <header
         className={cn(
-          "fixed inset-x-0 z-50 border-b bg-chrome backdrop-blur-md transition-[box-shadow,top] lg:sticky lg:inset-x-auto lg:top-0",
+          "mobile-persistent-header fixed inset-x-0 z-50 border-b bg-chrome backdrop-blur-md transition-[box-shadow,top] lg:sticky lg:inset-x-auto lg:top-0",
           !scrolled && announcement ? "top-8" : "top-0",
           scrolled ? "hairline shadow-[0_8px_30px_-18px_rgba(28,26,23,0.4)]" : "border-transparent",
         )}
