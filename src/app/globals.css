@@ -1721,7 +1721,7 @@ html.theme-switching *::after {
 
 .mobile-menu-panel {
   border-color: #dce1e6;
-  background: #f8fafb;
+  background: var(--color-ivory);
 }
 
 .mobile-menu-panel > div:first-child {
