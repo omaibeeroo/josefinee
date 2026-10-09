@@ -31,7 +31,7 @@ export default async function AdminNewsletterPage() {
               <th className="px-4 py-3">{t.adminNewsletterTable.colSource}</th>
               <th className="px-4 py-3">{t.adminNewsletterTable.colSubscribed}</th>
               <th className="px-4 py-3">{t.adminNewsletterTable.colStatus}</th>
-              <th className="px-4 py-3 text-right">{t.adminNewsletterTable.colActions}</th>
+              <th className="px-4 py-3 text-end">{t.adminNewsletterTable.colActions}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -43,7 +43,7 @@ export default async function AdminNewsletterPage() {
                   {formatDateFR(subscriber.createdAt, t.locale)}
                 </td>
                 <td className="px-4 py-3 text-xs">{subscriber.unsubscribedAt ? t.adminNewsletterTable.unsubscribed : t.adminNewsletterTable.active}</td>
-                <td className="px-4 py-3 text-right">
+                <td className="px-4 py-3 text-end">
                   <SubscriberActions id={subscriber.id} />
                 </td>
               </tr>

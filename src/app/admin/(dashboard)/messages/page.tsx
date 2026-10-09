@@ -58,7 +58,7 @@ export default async function AdminMessagesPage({
             <div className="flex flex-wrap items-center justify-between gap-2">
               <p className="font-medium">
                 {message.subject}
-                <span className="ml-2 text-xs font-normal text-ink-muted">
+                <span className="ms-2 text-xs font-normal text-ink-muted">
                   {message.name} · {message.email}
                   {message.phone ? ` · ${message.phone}` : ""} · {formatDateTimeFR(message.createdAt, t.locale)}
                 </span>

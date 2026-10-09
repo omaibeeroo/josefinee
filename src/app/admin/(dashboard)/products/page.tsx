@@ -69,7 +69,7 @@ export default async function AdminProductsPage({
               <th className="px-4 py-3">{t.adminProducts.colStock}</th>
               <th className="px-4 py-3">{t.adminProducts.colSold}</th>
               <th className="px-4 py-3">{t.adminProducts.colStatus}</th>
-              <th className="px-4 py-3 text-right">{t.adminProducts.colActions}</th>
+              <th className="px-4 py-3 text-end">{t.adminProducts.colActions}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">

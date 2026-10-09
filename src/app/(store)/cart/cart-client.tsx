@@ -152,7 +152,7 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
               type="button"
               onClick={() => void clear()}
               disabled={pending === "clear"}
-              className="ml-2 px-2 text-xs uppercase tracking-[0.14em] text-ink-muted underline underline-offset-2 disabled:opacity-40"
+              className="ms-2 px-2 text-xs uppercase tracking-[0.14em] text-ink-muted underline underline-offset-2 disabled:opacity-40"
             >
               {t.cart.clear}
             </button>

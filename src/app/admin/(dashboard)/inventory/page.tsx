@@ -84,7 +84,7 @@ export default async function AdminInventoryPage({
                 <td className="px-4 py-3 text-xs">{item.sku}</td>
                 <td className={cn("px-4 py-3 font-semibold tabular-nums", item.available === 0 && "text-[#9e342e]")}>
                   {item.available}
-                  {item.reserved > 0 && <span className="ml-1 text-xs font-normal text-ink-muted">{t.adminInventoryTable.reservedNote.replace("{count}", String(item.reserved))}</span>}
+                  {item.reserved > 0 && <span className="ms-1 text-xs font-normal text-ink-muted">{t.adminInventoryTable.reservedNote.replace("{count}", String(item.reserved))}</span>}
                 </td>
                 <td className="px-4 py-3 tabular-nums">{item.stock}</td>
                 <td className="px-4 py-3">

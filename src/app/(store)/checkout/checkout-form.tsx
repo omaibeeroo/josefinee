@@ -547,7 +547,7 @@ export function CheckoutForm({
           ) : (
             <div id="checkout-create-account">
               <p className="text-sm text-ink-muted">{t.checkout.createAccountHint}</p>
-              <div className="mx-auto mt-3 max-w-sm text-left">
+              <div className="mx-auto mt-3 max-w-sm text-start">
                 <Field
                   label={t.auth.password}
                   required
@@ -576,7 +576,7 @@ export function CheckoutForm({
               </Button>
             </div>
           )}
-          <label className="mt-4 flex cursor-pointer items-start justify-center gap-3 text-left text-sm">
+          <label className="mt-4 flex cursor-pointer items-start justify-center gap-3 text-start text-sm">
             <input
               type="checkbox"
               checked={acceptTerms}
@@ -640,7 +640,7 @@ export function CheckoutForm({
                       className="object-cover"
                     />
                   )}
-                  <span className="absolute right-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-ink px-1 text-[0.625rem] text-ivory">
+                  <span className="absolute end-0.5 top-0.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-ink px-1 text-[0.625rem] text-ivory">
                     {item.quantity}
                   </span>
                 </div>

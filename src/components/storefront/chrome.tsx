@@ -187,8 +187,8 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         <div className="container-luxe hidden lg:block">
           <div className="relative flex h-16 items-center justify-center">
             <BrandMark brandName={brandName} logoUrl={props.logoUrl} compact={scrolled} />
-            <div className="absolute right-0 flex items-center justify-end gap-1">
-              <LocaleToggle className="mr-1 hidden xl:flex" />
+            <div className="absolute end-0 flex items-center justify-end gap-1">
+                <LocaleToggle className="me-1 hidden xl:flex" />
               <ThemeToggle className="hidden lg:block" />
               <button
                 type="button"
@@ -220,7 +220,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
               >
                 <ShoppingBag size={19} strokeWidth={1.75} />
                 {count > 0 && (
-                  <span className="absolute right-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.625rem] font-semibold text-ivory">
+                  <span className="absolute end-0.5 top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.625rem] font-semibold text-ivory">
                     {count}
                   </span>
                 )}
@@ -333,7 +333,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             >
               <ShoppingBag size={21} strokeWidth={1.75} />
               {count > 0 && (
-                <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.625rem] font-semibold text-ivory">
+                <span className="absolute end-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.625rem] font-semibold text-ivory">
                   {count}
                 </span>
               )}
@@ -424,7 +424,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           <span className="relative">
             <ShoppingBag size={21} strokeWidth={1.5} />
             {count > 0 && (
-              <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.55rem] font-semibold text-ivory">
+              <span className="absolute -end-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.55rem] font-semibold text-ivory">
                 {count}
               </span>
             )}
@@ -496,7 +496,7 @@ function MobileMenu({
       <aside
         ref={panelRef}
         tabIndex={-1}
-        className="absolute left-0 top-0 flex h-full w-[86%] max-w-sm animate-slide-in-left flex-col bg-ivory shadow-drawer"
+        className="absolute start-0 top-0 flex h-full w-[86%] max-w-sm animate-slide-in-left flex-col bg-ivory pb-[env(safe-area-inset-bottom)] shadow-drawer"
       >
         <div className="flex items-center justify-between border-b hairline px-6 pb-5 pt-6">
           <div>
@@ -517,7 +517,7 @@ function MobileMenu({
         <nav aria-label={t.header.mobileNav} className="flex-1 overflow-y-auto px-6 pb-4">
           <Link href="/shop" onClick={onClose} className={itemClass} style={stagger(0)}>
             {t.header.shop}
-            <ChevronRight size={15} className="text-ink-muted" />
+            <ChevronRight size={15} className="text-ink-muted rtl-flip" />
           </Link>
           <Link
             href="/collections/new-in"
@@ -526,7 +526,7 @@ function MobileMenu({
             style={stagger(1)}
           >
             {t.header.newIn}
-            <ChevronRight size={15} className="text-ink-muted" />
+            <ChevronRight size={15} className="text-ink-muted rtl-flip" />
           </Link>
           {categories.map((category, index) => (
             <div
@@ -559,7 +559,7 @@ function MobileMenu({
                     />
                   </button>
                 ) : (
-                  <ChevronRight size={15} className="text-ink-muted" />
+                  <ChevronRight size={15} className="text-ink-muted rtl-flip" />
                 )}
               </div>
               {expanded === category.slug && (
@@ -569,10 +569,10 @@ function MobileMenu({
                       key={child.slug}
                       href={`/categories/${child.slug}`}
                       onClick={onClose}
-                      className="flex items-center justify-between py-2.5 pl-1 text-[0.9375rem] text-ink-soft"
+                      className="flex items-center justify-between py-2.5 ps-1 text-[0.9375rem] text-ink-soft"
                     >
                       {child.name}
-                      <ChevronRight size={13} className="text-line" />
+                      <ChevronRight size={13} className="text-line rtl-flip" />
                     </Link>
                   ))}
                 </div>
@@ -614,7 +614,7 @@ function MobileMenu({
                     key={collection.slug}
                     href={`/collections/${collection.slug}`}
                     onClick={onClose}
-                    className="py-2.5 pl-1 text-[0.9375rem] text-ink-soft"
+                    className="py-2.5 ps-1 text-[0.9375rem] text-ink-soft"
                   >
                     {collection.name}
                   </Link>
@@ -629,7 +629,7 @@ function MobileMenu({
             style={stagger(categories.length + 3)}
           >
             <span className="text-sale">{t.header.sale}</span>
-            <ChevronRight size={15} className="text-sale/60" />
+            <ChevronRight size={15} className="text-sale/60 rtl-flip" />
           </Link>
 
           <div className="mb-1 mt-6 flex items-center justify-between">
@@ -899,7 +899,7 @@ function SiteFooter(props: ChromeProps) {
         </div>
       )}
       <div className="border-t hairline">
-        <div className="container-luxe grid min-w-0 grid-cols-3 gap-3 py-4 text-left md:gap-6 md:py-6">
+        <div className="container-luxe grid min-w-0 grid-cols-3 gap-3 py-4 text-start md:gap-6 md:py-6">
           <nav aria-label={t.footer.shop}>
             <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] text-ink-muted md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
               {t.footer.shop}
@@ -966,7 +966,7 @@ function SiteFooter(props: ChromeProps) {
         </div>
       </div>
       <div className="border-t hairline">
-        <div className="container-luxe flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 text-left text-[0.6rem] text-ink-muted md:text-[0.68rem]">
+        <div className="container-luxe flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 text-start text-[0.6rem] text-ink-muted md:text-[0.68rem]">
           <p>
             © {year} {props.brandName}
           </p>

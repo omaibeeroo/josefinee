@@ -53,7 +53,7 @@ export function ReviewForm({ productId }: { productId: string }) {
   }
 
   return (
-    <form onSubmit={submit} className="review-form relative mx-auto mt-6 max-w-xl space-y-3 text-left">
+    <form onSubmit={submit} className="review-form relative mx-auto mt-6 max-w-xl space-y-3 text-start">
       <Honeypot value={website} onChange={setWebsite} />
       <h3 className="text-center font-display text-xl font-medium">{t.product.giveReview}</h3>
       <div>

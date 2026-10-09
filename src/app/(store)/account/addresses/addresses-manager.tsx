@@ -103,7 +103,7 @@ export function AddressesManager({
               <p className="font-medium">
                 {address.label || `${address.firstName} ${address.lastName}`}
                 {address.isDefault && (
-                  <span className="ml-2 text-[0.6875rem] uppercase tracking-[0.14em] text-gold-dark">{t.account.isDefault}</span>
+                  <span className="ms-2 text-[0.6875rem] uppercase tracking-[0.14em] text-gold-dark">{t.account.isDefault}</span>
                 )}
               </p>
             </div>

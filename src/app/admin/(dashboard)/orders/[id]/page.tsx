@@ -43,7 +43,7 @@ export default async function AdminOrderDetailPage({
         <div className="mb-4 border border-amber-300 bg-amber-50 p-4 text-sm">
           <p className="font-medium">{t.adminOrderDetail.riskReview.replace("{score}", String(order.riskScore))}</p>
           {order.riskFlags.length > 0 && (
-            <ul className="mt-1 list-disc pl-5 text-ink-soft">
+            <ul className="mt-1 list-disc ps-5 text-ink-soft">
               {order.riskFlags.map((flag) => (
                 <li key={flag}>{flag}</li>
               ))}
@@ -71,7 +71,7 @@ export default async function AdminOrderDetailPage({
                       {item.sku ?? t.adminOrderDetail.noSku} · {t.adminOrderDetail.qty} {item.quantity}
                     </p>
                   </div>
-                  <div className="text-right text-sm">
+                  <div className="text-end text-sm">
                     <p className="tabular-nums">{formatDA(item.unitPrice)} × {item.quantity}</p>
                     <p className="font-medium tabular-nums">{formatDA(item.lineTotal)}</p>
                   </div>

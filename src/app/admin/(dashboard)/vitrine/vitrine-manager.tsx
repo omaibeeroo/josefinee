@@ -190,7 +190,7 @@ export function VitrineManager({ data }: { data: VitrineData }) {
               {collection.products.map((link, index) => (
                 <li key={link.product.id} className="flex items-center justify-between gap-3 py-2">
                   <span className="min-w-0 flex-1 truncate text-sm">
-                    <span className="mr-2 text-xs tabular-nums text-ink-muted">{index + 1}</span>
+                    <span className="me-2 text-xs tabular-nums text-ink-muted">{index + 1}</span>
                     {link.product.name}
                   </span>
                   <span className="flex shrink-0 gap-1">

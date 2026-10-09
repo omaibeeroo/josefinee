@@ -332,7 +332,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </h2>
             <ul className="mt-8 space-y-0">
               {reviews.map((review) => (
-                <li key={review.id} className="border-t hairline py-6 text-left last:border-b">
+                <li key={review.id} className="border-t hairline py-6 text-start last:border-b">
                   <Stars value={review.rating} />
                   {review.title && <p className="mt-2 font-display text-lg">{review.title}</p>}
                   <p className="mt-1 text-[0.9375rem] leading-relaxed text-ink-soft">

@@ -98,7 +98,7 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
       )}
 
       <div className="overflow-x-auto border hairline bg-white">
-        <table className="w-full min-w-[760px] text-left text-sm">
+        <table className="w-full min-w-[760px] text-start text-sm">
           <thead>
             <tr className="border-b hairline text-xs uppercase tracking-[0.1em] text-ink-muted">
               <th className="px-4 py-3">Wilaya</th>
@@ -132,7 +132,7 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
                               isActive: rate.isActive,
                             })
                           }
-                          className={`text-left tabular-nums hover:underline ${rate.isActive ? "" : "text-ink-muted line-through"}`}
+                          className={`text-start tabular-nums hover:underline ${rate.isActive ? "" : "text-ink-muted line-through"}`}
                           title={`${t.adminDelivery.editRate} ${t.delivery[method as keyof typeof t.delivery]} — ${wilaya.name}`}
                         >
                           {formatDA(rate.price)}

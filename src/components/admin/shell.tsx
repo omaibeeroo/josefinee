@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bell, Menu, X } from "lucide-react";
+import { Bell, ChevronDown, Menu, X } from "lucide-react";
 import { adminLogoutAction } from "@/server/actions/admin-auth";
 import { LocaleToggle } from "@/components/locale-toggle";
 import { useLocale } from "@/lib/i18n/provider";
@@ -96,7 +96,7 @@ export function AdminShell({
       <div className="flex">
         {/* Sidebar (desktop) */}
         <aside
-          className="hidden w-60 shrink-0 border-r hairline bg-white lg:block print:hidden"
+          className="hidden w-60 shrink-0 border-e hairline bg-white lg:block print:hidden"
           aria-label={t.admin.openNav}
         >
           <nav className="sticky top-[53px] max-h-[calc(100vh-53px)] overflow-y-auto p-3">
@@ -120,7 +120,7 @@ export function AdminShell({
             <aside
               ref={menuPanelRef}
               tabIndex={-1}
-              className="absolute left-0 top-0 h-full w-72 overflow-y-auto border-r hairline bg-white p-3"
+              className="absolute start-0 top-0 h-full w-72 overflow-y-auto border-e hairline bg-white p-3"
             >
               <div className="mb-2 flex items-center justify-between px-1">
                 <span className="font-display text-base tracking-[0.12em]">Hanadi Store</span>
@@ -134,6 +134,17 @@ export function AdminShell({
                 </button>
               </div>
               <SidebarNav sections={sections} pathname={pathname} />
+              <div className="mt-4 flex items-center justify-between border-t hairline px-2 pb-[env(safe-area-inset-bottom)] pt-4">
+                <LocaleToggle />
+                <form action={adminLogoutAction}>
+                  <button
+                    type="submit"
+                    className="text-[0.6875rem] uppercase tracking-[0.14em] text-ink-soft underline underline-offset-4 hover:text-ink"
+                  >
+                    {t.admin.signOut}
+                  </button>
+                </form>
+              </div>
             </aside>
           </div>
         )}
@@ -147,6 +158,8 @@ export function AdminShell({
   );
 }
 
+const NAV_COLLAPSE_KEY = "hanadi-admin-nav-collapsed";
+
 function SidebarNav({
   sections,
   pathname,
@@ -154,42 +167,83 @@ function SidebarNav({
   sections: Array<{ title: string; items: NavItem[] }>;
   pathname: string;
 }) {
+  // Collapsed groups persist per browser. Everything starts open so the
+  // server render and first client paint always agree (no hydration flash).
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
+  useEffect(() => {
+    try {
+      const raw = window.localStorage.getItem(NAV_COLLAPSE_KEY);
+      if (raw) setCollapsed(new Set(JSON.parse(raw) as string[]));
+    } catch {
+      // private mode etc. — groups simply stay open.
+    }
+  }, []);
+  function toggle(title: string) {
+    setCollapsed((previous) => {
+      const next = new Set(previous);
+      if (next.has(title)) next.delete(title);
+      else next.add(title);
+      try {
+        window.localStorage.setItem(NAV_COLLAPSE_KEY, JSON.stringify([...next]));
+      } catch {
+        // ignore persistence failures
+      }
+      return next;
+    });
+  }
   return (
     <div className="space-y-4">
-      {sections.map((section) => (
-        <div key={section.title}>
-          <p className="mb-1 px-2 text-[0.625rem] font-medium uppercase tracking-[0.2em] text-ink-muted">
-            {section.title}
-          </p>
-          <ul className="space-y-px">
-            {section.items.map((item) => {
-              const active =
-                item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
-              return (
-                <li key={item.href}>
-                  <Link
-                    href={item.href}
-                    aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "admin-nav-link flex items-center justify-between border-l-2 px-2 py-[0.45rem] text-[13px]",
-                        active
-                          ? "border-ink bg-cream font-medium text-ink"
-                          : "border-transparent text-ink-soft hover:bg-cream/60 hover:text-ink",
-                      )}
-                  >
-                    {item.label}
-                    {item.badge !== undefined && item.badge > 0 && (
-                      <span className="bg-sale px-1.5 text-[0.6875rem] font-bold text-[#fff]">
-                        {item.badge}
-                      </span>
-                    )}
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        </div>
-      ))}
+      {sections.map((section) => {
+        const isCollapsed = collapsed.has(section.title);
+        const containsActive = section.items.some((item) =>
+          item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href),
+        );
+        return (
+          <div key={section.title}>
+            <button
+              type="button"
+              onClick={() => toggle(section.title)}
+              aria-expanded={!isCollapsed}
+              className="mb-1 flex w-full items-center justify-between px-2 text-[0.625rem] font-medium uppercase tracking-[0.2em] text-ink-muted hover:text-ink"
+            >
+              {section.title}
+              <ChevronDown
+                size={13}
+                className={cn("transition-transform duration-200", isCollapsed && "-rotate-90 rtl-flip")}
+              />
+            </button>
+            {!isCollapsed || containsActive ? (
+              <ul className="space-y-px">
+                {section.items.map((item) => {
+                  const active =
+                    item.href === "/admin" ? pathname === "/admin" : pathname.startsWith(item.href);
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "admin-nav-link flex items-center justify-between border-s-2 px-2 py-[0.45rem] text-[13px]",
+                          active
+                            ? "border-ink bg-cream font-medium text-ink"
+                            : "border-transparent text-ink-soft hover:bg-cream/60 hover:text-ink",
+                        )}
+                      >
+                        {item.label}
+                        {item.badge !== undefined && item.badge > 0 && (
+                          <span className="bg-sale px-1.5 text-[0.6875rem] font-bold text-[#fff]">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            ) : null}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -245,7 +299,7 @@ function NewOrderAlerts({ initialPending }: { initialPending: number }) {
   if (!notice) return null;
   return (
     <div
-      className="fixed bottom-4 right-4 z-[70] max-w-sm animate-slide-up border hairline bg-ink p-4 text-ivory shadow-card print:hidden"
+      className="fixed bottom-[max(1rem,env(safe-area-inset-bottom))] end-4 z-[70] max-w-sm animate-slide-up border hairline bg-ink p-4 text-ivory shadow-card print:hidden"
       role="alert"
     >
       <p className="text-sm font-medium">{t.admin.newOrder}</p>

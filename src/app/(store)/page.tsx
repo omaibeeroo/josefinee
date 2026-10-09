@@ -12,7 +12,6 @@ import { getDictionary } from "@/lib/i18n/server";
 import { prisma } from "@/lib/prisma";
 import {
   CategoryGrid,
-  DiscoveryStrip,
   FeaturedCollection,
   Hero,
   ProductSpotlight,
@@ -172,7 +171,6 @@ export default async function HomePage() {
   const hasCatalog = featured.length > 0 || newIn.length > 0 || bestSellers.length > 0;
 
   const blocks: Record<string, React.ReactNode> = {
-    discovery: <DiscoveryStrip />,
     featured: hasCatalog ? (
       <div className="section-space pt-0">
         <ProductCarousel

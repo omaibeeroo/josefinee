@@ -55,12 +55,14 @@ export function ProductImage({
   className,
   sizes,
   priority,
+  quality,
 }: {
   url: string | null;
   alt: string;
   className?: string;
   sizes?: string;
   priority?: boolean;
+  quality?: number;
 }) {
   if (!url) {
     return (
@@ -76,6 +78,7 @@ export function ProductImage({
       fill
       sizes={sizes ?? "(max-width: 768px) 50vw, 25vw"}
       priority={priority}
+      quality={quality ?? 80}
       className={cn("object-cover", className)}
     />
   );
@@ -154,17 +157,17 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
               type="button"
               aria-label={t.product.prevImage}
               onClick={() => go(-1)}
-              className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-card transition-opacity duration-200 hover:bg-white focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+              className="absolute start-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-card transition-opacity duration-200 hover:bg-white focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
             >
-              <ChevronLeft size={17} />
+              <ChevronLeft size={17} className="rtl-flip" />
             </button>
             <button
               type="button"
               aria-label={t.product.nextImage}
               onClick={() => go(1)}
-              className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-card transition-opacity duration-200 hover:bg-white focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+              className="absolute end-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-card transition-opacity duration-200 hover:bg-white focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
             >
-              <ChevronRight size={17} />
+              <ChevronRight size={17} className="rtl-flip" />
             </button>
             <div className="absolute inset-x-0 bottom-2 flex items-center justify-center gap-1.5">
               {images.map((image, imageIndex) => (
@@ -186,7 +189,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
             </span>
           </>
         )}
-        <div className="absolute left-2 top-2 flex flex-col items-start gap-1.5">
+        <div className="absolute start-2 top-2 flex flex-col items-start gap-1.5">
           {soldOut ? (
             <Badge tone="muted">{t.product.badgeSoldOut}</Badge>
           ) : (
@@ -197,7 +200,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
             </>
           )}
         </div>
-        <WishlistButton productId={product.id} className="absolute right-2 top-2" />
+        <WishlistButton productId={product.id} className="absolute end-2 top-2" />
         {!soldOut && (
           <button
             type="button"
@@ -218,7 +221,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
               : `${t.product.addFor} ${product.name} ${t.product.toBag}`
             }
             onClick={() => (product.hasVariants ? setQuickOpen(true) : void quickAdd())}
-            className="absolute bottom-2 right-2 flex h-10 w-10 items-center justify-center rounded-full bg-ivory shadow-card md:hidden"
+            className="absolute bottom-2 end-2 flex h-10 w-10 items-center justify-center rounded-full bg-ivory shadow-card md:hidden"
           >
             <Plus size={18} />
           </button>
@@ -480,7 +483,7 @@ export function ProductCarousel({
           {viewAllHref && (
             <Link
               href={viewAllHref}
-              className="mr-2 hidden text-xs font-medium uppercase tracking-[0.18em] underline underline-offset-4 sm:inline"
+              className="me-2 hidden text-xs font-medium uppercase tracking-[0.18em] underline underline-offset-4 sm:inline"
             >
               {t.common.viewAll}
             </Link>
@@ -491,7 +494,7 @@ export function ProductCarousel({
             onClick={() => scrollBy(-1)}
             className="flex h-10 w-10 items-center justify-center border hairline bg-white"
           >
-            <ChevronLeft size={18} />
+            <ChevronLeft size={18} className="rtl-flip" />
           </button>
           <button
             type="button"
@@ -499,7 +502,7 @@ export function ProductCarousel({
             onClick={() => scrollBy(1)}
             className="flex h-10 w-10 items-center justify-center border hairline bg-white"
           >
-            <ChevronRight size={18} />
+            <ChevronRight size={18} className="rtl-flip" />
           </button>
         </div>
       </div>
@@ -554,13 +557,14 @@ export function ProductGallery({
               alt={current.alt || name}
               sizes="(max-width: 768px) 100vw, 50vw"
               priority
+              quality={90}
               className="product-zoom-image"
             />
           ) : (
             <ProductImage url={null} alt={name} />
           )}
         </div>
-        <span className="product-zoom-hint pointer-events-none absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-white/85 px-3 py-2 text-[0.625rem] font-medium uppercase tracking-[0.18em] text-ink-soft opacity-0 backdrop-blur transition-opacity duration-300 group-hover:opacity-100">
+        <span className="product-zoom-hint pointer-events-none absolute bottom-4 start-4 inline-flex items-center gap-2 rounded-full bg-white/85 px-3 py-2 text-[0.625rem] font-medium uppercase tracking-[0.18em] text-ink-soft opacity-0 backdrop-blur transition-opacity duration-300 group-hover:opacity-100">
           {t.product.zoomHint}
         </span>
       </button>
@@ -601,7 +605,7 @@ export function ProductGallery({
               onClick={() => setActive((active - 1 + images.length) % images.length)}
               className="flex h-10 w-10 items-center justify-center border hairline"
             >
-              <ChevronLeft size={18} />
+              <ChevronLeft size={18} className="rtl-flip" />
             </button>
             <span className="text-sm text-ink-muted" aria-live="polite">
               {active + 1} / {images.length}
@@ -612,7 +616,7 @@ export function ProductGallery({
               onClick={() => setActive((active + 1) % images.length)}
               className="flex h-10 w-10 items-center justify-center border hairline"
             >
-              <ChevronRight size={18} />
+              <ChevronRight size={18} className="rtl-flip" />
             </button>
           </div>
         )}

@@ -18,7 +18,6 @@ type GeneralSettings = {
 };
 
 export const HOMEPAGE_SECTION_IDS = [
-  "discovery",
   "featured",
   "spotlight",
   "featuredCollection",
@@ -134,7 +133,6 @@ export const DEFAULT_SETTINGS: SettingsMap = {
     },
     featuredCollectionSlug: "jewelry",
     sections: [
-      { id: "discovery", visible: true },
       { id: "featured", visible: true },
       { id: "spotlight", visible: true },
       { id: "featuredCollection", visible: true },

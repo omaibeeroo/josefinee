@@ -119,14 +119,14 @@ export function CouponManager({
       )}
 
       <div className="overflow-x-auto border hairline bg-white">
-        <table className="w-full min-w-[720px] text-left text-sm">
+        <table className="w-full min-w-[720px] text-start text-sm">
           <thead>
             <tr className="border-b hairline text-xs uppercase tracking-[0.1em] text-ink-muted">
               <th className="px-4 py-3">{t.adminForm.code}</th>
               <th className="px-4 py-3">{t.adminCoupon.discount}</th>
               <th className="px-4 py-3">{t.adminCoupon.used}</th>
               <th className="px-4 py-3">{t.adminCoupon.activeCol}</th>
-              <th className="px-4 py-3 text-right">{t.adminCoupon.actionsCol}</th>
+              <th className="px-4 py-3 text-end">{t.adminCoupon.actionsCol}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -142,7 +142,7 @@ export function CouponManager({
                   {coupon.usageLimit ? ` / ${coupon.usageLimit}` : ""}
                 </td>
                 <td className="px-4 py-3">{coupon.isActive ? t.adminCoupon.yes : t.adminCoupon.no}</td>
-                <td className="px-4 py-3 text-right text-xs">
+                <td className="px-4 py-3 text-end text-xs">
                   <button
                     type="button"
                     onClick={() => {
@@ -159,7 +159,7 @@ export function CouponManager({
                   >
                     {t.adminCoupon.editCoupon}
                   </button>
-                  <button type="button" onClick={() => void remove(coupon.id)} className="ml-3 text-[#9e342e] underline underline-offset-2">
+                  <button type="button" onClick={() => void remove(coupon.id)} className="ms-3 text-[#9e342e] underline underline-offset-2">
                     {t.adminForm.delete}
                   </button>
                 </td>

@@ -92,7 +92,7 @@ export default async function ConfirmationPage({
               </div>
               <p className={cn("pb-6 text-sm", done ? "font-medium" : "text-ink-muted")}>
                 {d.customerStatus[status]}
-                {index === activeIndex && <span className="ml-2 text-xs text-gold-dark">· {d.order.current}</span>}
+                {index === activeIndex && <span className="ms-2 text-xs text-gold-dark">· {d.order.current}</span>}
               </p>
             </li>
           );

@@ -24,7 +24,7 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
           <p className="font-display text-2xl tracking-[0.24em]">{settings.general.name}</p>
           <p className="text-xs">{settings.general.phone} · {settings.general.email}</p>
         </div>
-        <div className="text-right">
+        <div className="text-end">
           <p className="text-lg font-bold">{t.adminPrint.packingSlip}</p>
           <p>{order.orderNumber}</p>
           <p className="text-xs">{formatDateTimeFR(order.placedAt, t.locale)}</p>
@@ -43,7 +43,7 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
           </p>
           {order.notes && <p className="mt-1 italic">{t.adminPrint.note} {order.notes}</p>}
         </div>
-        <div className="text-right">
+        <div className="text-end">
           <p className="font-bold">{t.adminPrint.payment}</p>
           <p>{t.adminPrint.cod}</p>
           <p className="mt-2 text-xl font-bold">{t.adminPrint.collect} {formatDA(order.total)}</p>
@@ -52,12 +52,12 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
 
       <table className="mt-6 w-full border-collapse text-sm">
         <thead>
-          <tr className="border-b-2 border-black text-left">
+          <tr className="border-b-2 border-black text-start">
             <th className="py-2">{t.adminPrint.product}</th>
             <th className="py-2">{t.adminPrint.sku}</th>
-            <th className="py-2 text-right">{t.adminPrint.qty}</th>
-            <th className="py-2 text-right">{t.adminPrint.unit}</th>
-            <th className="py-2 text-right">{t.adminPrint.line}</th>
+            <th className="py-2 text-end">{t.adminPrint.qty}</th>
+            <th className="py-2 text-end">{t.adminPrint.unit}</th>
+            <th className="py-2 text-end">{t.adminPrint.line}</th>
           </tr>
         </thead>
         <tbody>
@@ -68,15 +68,15 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
                 {item.variantLabel ? ` (${item.variantLabel})` : ""}
               </td>
               <td className="py-2">{item.sku ?? "—"}</td>
-              <td className="py-2 text-right font-bold">{item.quantity}</td>
-              <td className="py-2 text-right">{formatDA(item.unitPrice)}</td>
-              <td className="py-2 text-right">{formatDA(item.lineTotal)}</td>
+              <td className="py-2 text-end font-bold">{item.quantity}</td>
+              <td className="py-2 text-end">{formatDA(item.unitPrice)}</td>
+              <td className="py-2 text-end">{formatDA(item.lineTotal)}</td>
             </tr>
           ))}
         </tbody>
       </table>
 
-      <div className="mt-4 space-y-1 text-right">
+      <div className="mt-4 space-y-1 text-end">
         <p>{t.adminPrint.subtotal}: {formatDA(order.subtotal)}</p>
         {order.promotionDiscount > 0 && <p>{t.adminPrint.promotion}: −{formatDA(order.promotionDiscount)}</p>}
         <p>{t.adminPrint.discount}: −{formatDA(order.discount)}</p>

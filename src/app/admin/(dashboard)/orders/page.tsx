@@ -113,7 +113,7 @@ export default async function AdminOrdersPage({
       </form>
 
       <div className="overflow-x-auto border hairline bg-white">
-        <table className="w-full min-w-[880px] text-left text-sm">
+        <table className="w-full min-w-[880px] text-start text-sm">
           <thead>
             <tr className="border-b hairline text-xs uppercase tracking-[0.1em] text-ink-muted">
               <th className="px-4 py-3">{t.adminOrders.colOrder}</th>

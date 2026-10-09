@@ -343,6 +343,8 @@ html.theme-switching *::after {
     background-color: var(--color-ivory);
     color: var(--color-ink);
     font-family: var(--font-sans);
+    font-size: 1.0625rem;
+    line-height: 1.65;
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
@@ -372,6 +374,42 @@ html.theme-switching *::after {
   [dir="rtl"] h3,
   [dir="rtl"] .font-display {
     letter-spacing: normal;
+  }
+
+  /* Premium Arabic faces: Amiri for display, Plex Sans Arabic for body.
+   * They precede the Latin stacks so Arabic glyphs use them while Latin
+   * text keeps Inter/Cormorant. */
+  [dir="rtl"] body {
+    font-family: var(--font-sans-ar), var(--font-sans);
+  }
+
+  [dir="rtl"] .font-display,
+  [dir="rtl"] h1,
+  [dir="rtl"] h2,
+  [dir="rtl"] h3 {
+    font-family: var(--font-display-ar), var(--font-display);
+  }
+
+  /* Directional icons point the other way in RTL. */
+  [dir="rtl"] .rtl-flip {
+    transform: scaleX(-1);
+  }
+
+  /* Drawers dock to the inline-start side, so their entrance mirrors too:
+   * the cart drawer (right in LTR) becomes left-docked, the mobile menu
+   * (left in LTR) becomes right-docked. */
+  [dir="rtl"] .animate-slide-in-right {
+    animation-name: slide-in-left;
+  }
+
+  [dir="rtl"] .animate-slide-in-left {
+    animation-name: slide-in-right;
+  }
+
+  /* Physical dividers become inline-end dividers in RTL. */
+  [dir="rtl"] .divide-x > :not([hidden]) ~ :not([hidden]) {
+    border-right-width: 0;
+    border-left-width: 1px;
   }
 
   img,

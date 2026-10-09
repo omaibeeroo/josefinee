@@ -430,7 +430,7 @@ export function Drawer({
         ref={panelRef}
         tabIndex={-1}
         className={cn(
-          "absolute right-0 top-0 flex h-full min-h-[100svh] w-full max-w-md flex-col overscroll-contain bg-ivory shadow-drawer animate-slide-in-right",
+          "absolute end-0 top-0 flex h-full min-h-[100svh] w-full max-w-md flex-col overscroll-contain bg-ivory pb-[env(safe-area-inset-bottom)] shadow-drawer animate-slide-in-right",
           className,
         )}
       >
@@ -473,7 +473,7 @@ export function Accordion({
               aria-expanded={isOpen}
               onClick={() => setOpen(isOpen ? null : index)}
               className={cn(
-                "flex w-full items-center justify-between gap-4 text-left",
+                "flex w-full items-center justify-between gap-4 text-start",
                 compact ? "py-2" : "py-3",
               )}
             >
@@ -521,7 +521,7 @@ export function Stars({ value, count }: { value: number; count?: number }) {
         return <Star key={index} size={13} className="text-line" />;
       })}
       {typeof count === "number" && (
-        <span className="ml-1.5 text-xs text-ink-muted">({count})</span>
+        <span className="ms-1.5 text-xs text-ink-muted">({count})</span>
       )}
     </span>
   );

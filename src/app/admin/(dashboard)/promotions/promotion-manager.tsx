@@ -124,7 +124,7 @@ export function PromotionManager({
               <th className="px-4 py-3">{t.adminPromo.window}</th>
               <th className="px-4 py-3">{t.adminPromo.status}</th>
               <th className="px-4 py-3">{t.adminPromo.ordersCol}</th>
-              <th className="px-4 py-3 text-right">{t.adminForm.actions}</th>
+              <th className="px-4 py-3 text-end">{t.adminForm.actions}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -149,7 +149,7 @@ export function PromotionManager({
                   {isLive(promotion) ? t.adminPromo.live : promotion.isActive ? t.adminPromo.scheduled : t.adminPromo.off}
                 </td>
                 <td className="px-4 py-3 tabular-nums">{promotion._count.orders}</td>
-                <td className="px-4 py-3 text-right text-xs">
+                <td className="px-4 py-3 text-end text-xs">
                   <button
                     type="button"
                     onClick={() => {
@@ -170,7 +170,7 @@ export function PromotionManager({
                   >
                     {t.adminPromo.editPromo}
                   </button>
-                  <button type="button" onClick={() => void remove(promotion.id)} className="ml-3 text-[#9e342e] underline underline-offset-2">
+                  <button type="button" onClick={() => void remove(promotion.id)} className="ms-3 text-[#9e342e] underline underline-offset-2">
                     {t.adminForm.delete}
                   </button>
                 </td>

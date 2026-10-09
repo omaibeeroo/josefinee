@@ -53,10 +53,12 @@ export async function storeImage(file: {
     throw new AppError("INVALID_FILE", "The uploaded file is not a valid image.");
   }
 
+  // Premium catalog quality: near-lossless WebP keeps jewelry detail crisp
+  // on retina screens while staying far smaller than the source upload.
   const processed = await sharp(file.buffer)
     .rotate()
     .resize({ width: MAX_DIMENSION, height: MAX_DIMENSION, fit: "inside", withoutEnlargement: true })
-    .webp({ quality: 82 })
+    .webp({ quality: 90, effort: 5 })
     .toBuffer();
 
   const output = await sharp(processed).metadata();

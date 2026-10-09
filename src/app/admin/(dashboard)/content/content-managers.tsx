@@ -76,7 +76,7 @@ export function PagesManager({ pages }: { pages: CmsPageRow[] }) {
         </p>
       )}
       <div className="overflow-x-auto border hairline bg-white">
-        <table className="w-full min-w-[560px] text-left text-sm">
+        <table className="w-full min-w-[560px] text-start text-sm">
           <tbody className="divide-y divide-line">
             {pages.map((page) => (
               <tr key={page.id}>
@@ -85,7 +85,7 @@ export function PagesManager({ pages }: { pages: CmsPageRow[] }) {
                   <span className="block text-xs font-normal text-ink-muted">/pages/{page.slug}</span>
                 </td>
                 <td className="px-4 py-3 text-xs">{page.isPublished ? t.adminContent.published : t.adminContent.hidden}</td>
-                <td className="px-4 py-3 text-right text-xs">
+                <td className="px-4 py-3 text-end text-xs">
                   <button type="button" onClick={() => setEditing({ ...page })} className="underline underline-offset-2">
                     {t.adminForm.edit}
                   </button>

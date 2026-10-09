@@ -12,42 +12,6 @@ import { ProductImage } from "@/components/storefront/product";
 
 /* ------------------------------------------------------------------ Hero */
 
-export function DiscoveryStrip() {
-  const { t } = useLocale();
-  const items = [
-    { label: t.header.newIn, detail: t.home.newInDetail, href: "/collections/new-in" },
-    {
-      label: t.header.bestSellers,
-      detail: t.home.bestSellersDetail,
-      href: "/collections/best-sellers",
-    },
-    { label: t.footer.shipping, detail: t.home.shippingDetail, href: "/pages/shipping" },
-  ];
-
-  return (
-    <section aria-label={t.home.discovery}>
-      <div className="container-luxe grid grid-cols-3 gap-0 divide-x divide-[var(--color-line)] py-2 text-center">
-        {items.map((item, index) => (
-          <Link key={item.label} href={item.href} className="group block min-w-0 px-1.5 sm:px-6">
-            <span
-              className="text-[0.56rem] font-medium uppercase tracking-[0.12em] text-ink-muted sm:text-[0.65rem] sm:tracking-[0.24em]"
-              aria-hidden="true"
-            >
-              0{index + 1}
-            </span>
-            <span className="mt-1 block text-[0.55rem] font-medium uppercase leading-tight tracking-[0.08em] group-hover:text-gold-dark sm:mt-1.5 sm:text-[0.7rem] sm:tracking-[0.2em]">
-              {item.label}
-            </span>
-            <span className="mt-1 block text-[0.65rem] leading-tight text-ink-soft sm:text-sm">
-              {item.detail}
-            </span>
-          </Link>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
   const { t } = useLocale();
   const hasImage = Boolean(hero.imageDesktop);
@@ -195,7 +159,7 @@ export function FeaturedCollection({
               <h2 className="font-display text-4xl font-medium md:text-5xl">{title}</h2>
               <p className="max-w-lg text-sm overlay-text-faint md:text-base">{description}</p>
               <span className="btn mt-3 bg-[#fbfcfd] text-[#1d232b] hover:bg-[#fff]">
-                {cta} <ArrowRight size={15} />
+                {cta} <ArrowRight size={15} className="rtl-flip" />
               </span>
             </div>
           </div>
@@ -237,7 +201,7 @@ export function ProductSpotlight({ product }: { product: StoreProductCard }) {
             {t.home.spotlightText}
           </p>
           <Link href={`/products/${product.slug}`} className="btn btn-primary btn-shine mt-8 w-fit">
-            {t.home.discoverPiece} <ArrowRight size={15} />
+            {t.home.discoverPiece} <ArrowRight size={15} className="rtl-flip" />
           </Link>
         </div>
       </div>
@@ -292,7 +256,7 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
                 <div className="absolute inset-x-0 bottom-0 p-3 overlay-text md:p-4">
                   <p className="text-sm font-medium md:text-base">{category.name}</p>
                   <p className="mt-0.5 flex items-center gap-1 text-[0.6875rem] uppercase tracking-[0.16em] overlay-text-soft">
-                    {t.home.discover} <ArrowRight size={12} />
+                    {t.home.discover} <ArrowRight size={12} className="rtl-flip" />
                   </p>
                 </div>
               </div>

@@ -81,7 +81,7 @@ export function CategoryManager({
       )}
 
       <div className="overflow-x-auto border hairline bg-white">
-        <table className="w-full min-w-[640px] text-left text-sm">
+        <table className="w-full min-w-[640px] text-start text-sm">
           <thead>
             <tr className="border-b hairline text-xs uppercase tracking-[0.1em] text-ink-muted">
               <th className="px-4 py-3">{t.adminForm.name}</th>
@@ -89,25 +89,25 @@ export function CategoryManager({
               <th className="px-4 py-3">{t.adminCatalog.parent}</th>
               <th className="px-4 py-3">{t.adminCatalog.productsCol}</th>
               <th className="px-4 py-3">{t.adminForm.active}</th>
-              <th className="px-4 py-3 text-right">{t.adminForm.actions}</th>
+              <th className="px-4 py-3 text-end">{t.adminForm.actions}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
             {categories.map((category) => (
               <tr key={category.id}>
                 <td className="px-4 py-3 font-medium">
-                  {category.parentId ? <span className="mr-2 text-ink-muted">↳</span> : null}
+                  {category.parentId ? <span className="me-2 text-ink-muted">↳</span> : null}
                   {category.name}
                 </td>
                 <td className="px-4 py-3 text-xs text-ink-muted">/{category.slug}</td>
                 <td className="px-4 py-3 text-xs">{category.parent?.name ?? t.adminCatalog.none}</td>
                 <td className="px-4 py-3 tabular-nums">{category._count.products}</td>
                 <td className="px-4 py-3">{category.isActive ? t.adminCoupon.yes : t.adminCoupon.no}</td>
-                <td className="px-4 py-3 text-right text-xs">
+                <td className="px-4 py-3 text-end text-xs">
                   <button type="button" onClick={() => { setError(null); setEditing({ ...category }); }} className="underline underline-offset-2">
                     {t.adminForm.edit}
                   </button>
-                  <button type="button" onClick={() => void remove(category.id)} className="ml-3 text-[#9e342e] underline underline-offset-2">
+                  <button type="button" onClick={() => void remove(category.id)} className="ms-3 text-[#9e342e] underline underline-offset-2">
                     {t.adminForm.delete}
                   </button>
                 </td>

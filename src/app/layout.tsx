@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
+import { Amiri, IBM_Plex_Sans_Arabic } from "next/font/google";
 import "./globals.css";
 import { cookies } from "next/headers";
 import { getSettings } from "@/lib/settings";
@@ -33,6 +34,23 @@ const sans = localFont({
     { path: "../../public/fonts/inter-700.ttf", weight: "700" },
   ],
   variable: "--font-sans",
+  display: "swap",
+});
+
+// Premium Arabic faces, used only when the page is RTL: Amiri (editorial
+// serif matching Cormorant's voice) for display, IBM Plex Sans Arabic for
+// body. Subset-limited weights keep the download small.
+const displayAr = Amiri({
+  subsets: ["arabic"],
+  weight: ["400", "700"],
+  variable: "--font-display-ar",
+  display: "swap",
+});
+
+const sansAr = IBM_Plex_Sans_Arabic({
+  subsets: ["arabic"],
+  weight: ["400", "500", "700"],
+  variable: "--font-sans-ar",
   display: "swap",
 });
 
@@ -104,11 +122,11 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   ) as React.CSSProperties | undefined;
 
   return (
-    <html lang={locale} dir={localeDir(locale)} data-theme={theme} className={`${display.variable} ${sans.variable}`}>
+    <html lang={locale} dir={localeDir(locale)} data-theme={theme} className={`${display.variable} ${sans.variable} ${displayAr.variable} ${sansAr.variable}`}>
       <body style={style} className="min-h-screen">
         <a
           href="#main-content"
-          className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[80] focus:bg-ink focus:px-4 focus:py-2 focus:text-ivory"
+          className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-[80] focus:bg-ink focus:px-4 focus:py-2 focus:text-ivory"
         >
           {dictionary.common.skipToContent}
         </a>

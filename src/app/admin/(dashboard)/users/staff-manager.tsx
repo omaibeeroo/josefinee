@@ -113,7 +113,7 @@ export function StaffManager({ users }: { users: StaffRow[] }) {
               <th className="px-4 py-3">{t.adminStaff.role}</th>
               <th className="px-4 py-3">{t.adminStaff.twoFactor}</th>
               <th className="px-4 py-3">{t.adminStaff.colStatus}</th>
-              <th className="px-4 py-3 text-right">{t.adminForm.actions}</th>
+              <th className="px-4 py-3 text-end">{t.adminForm.actions}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -126,11 +126,11 @@ export function StaffManager({ users }: { users: StaffRow[] }) {
                 <td className="px-4 py-3 text-xs">{t.adminRoles[user.role.name as keyof typeof t.adminRoles] ?? user.role.label}</td>
                 <td className="px-4 py-3 text-xs">{user.twoFactorEnabled ? t.adminStaff.on : t.adminStaff.off}</td>
                 <td className="px-4 py-3 text-xs uppercase tracking-[0.1em]">{user.status}</td>
-                <td className="px-4 py-3 text-right text-xs">
+                <td className="px-4 py-3 text-end text-xs">
                   <button type="button" onClick={() => setResetFor(user.id)} className="underline underline-offset-2">
                     {t.adminStaff.resetPassword}
                   </button>
-                  <button type="button" onClick={() => void toggleStatus(user)} className="ml-3 underline underline-offset-2">
+                  <button type="button" onClick={() => void toggleStatus(user)} className="ms-3 underline underline-offset-2">
                     {user.status === "ACTIVE" ? t.adminStaff.disable : t.adminStaff.enable}
                   </button>
                 </td>
