@@ -104,9 +104,9 @@ function DesktopDropdown({
   children: ReactNode;
 }) {
   const triggerClass =
-    "nav-link flex items-center gap-1 whitespace-nowrap py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:text-gold-dark";
+    "nav-link flex w-full items-center justify-center gap-1 whitespace-nowrap py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-ink transition-colors hover:text-gold-dark";
   return (
-    <div className="group relative shrink-0">
+    <div className="group relative w-full shrink-0">
       {href ? (
         <Link href={href} className={triggerClass}>
           {label}
@@ -179,6 +179,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
       )}
 
       <header
+        dir="ltr"
         className={cn(
           "mobile-persistent-header fixed inset-x-0 z-50 border-b bg-chrome backdrop-blur-md transition-shadow",
           !scrolled && announcement ? "top-8" : "top-0",
@@ -231,16 +232,17 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
           </div>
           <nav
             aria-label={t.header.mainNav}
-            className="flex flex-wrap items-center justify-center gap-x-3 border-t hairline px-2 py-1 xl:gap-x-6"
+            dir="ltr"
+            className="grid grid-cols-7 items-center border-t hairline px-2 py-1"
           >
             <Link
-              className="nav-link whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
+              className="nav-link flex w-full justify-center whitespace-nowrap px-1 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
               href="/"
             >
               {t.header.home}
             </Link>
             <Link
-              className="nav-link whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
+              className="nav-link flex w-full justify-center whitespace-nowrap px-1 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
               href="/shop"
             >
               {t.header.shop}
@@ -284,19 +286,19 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             </DesktopDropdown>
             <Link
               href="/collections/new-in"
-              className="nav-link whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
+              className="nav-link flex w-full justify-center whitespace-nowrap px-1 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
             >
               {t.header.newIn}
             </Link>
             <Link
               href="/collections/best-sellers"
-              className="nav-link whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
+              className="nav-link flex w-full justify-center whitespace-nowrap px-1 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] hover:text-gold-dark"
             >
               {t.header.bestSellers}
             </Link>
             <Link
               href="/collections/sale"
-              className="whitespace-nowrap px-2 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-sale"
+              className="flex w-full justify-center whitespace-nowrap px-1 py-2.5 text-[0.65rem] font-medium uppercase tracking-[0.12em] text-sale"
             >
               {t.header.sale}
             </Link>
@@ -304,11 +306,13 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         </div>
 
         {/* Mobile */}
-        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-0 px-2 py-2.5 lg:hidden">
+        <div dir="ltr" className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-0 px-2 py-2.5 lg:hidden">
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-label={t.header.openMenu}
+            aria-expanded={menuOpen}
+            aria-controls="mobile-navigation-dialog"
             className="flex min-h-11 min-w-11 items-center justify-center p-3"
           >
             <Menu size={23} strokeWidth={1.75} />
@@ -404,6 +408,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
   return (
     <nav
       aria-label={t.header.mobileNav}
+      dir="ltr"
       className="fixed inset-x-0 bottom-0 z-50 border-t hairline bg-chrome/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-14px_35px_-28px_rgb(29_35_43/0.65)] backdrop-blur-xl lg:hidden"
     >
       <div className="mx-auto flex h-[4.75rem] max-w-lg items-stretch px-1">
@@ -413,7 +418,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           aria-current={isActive("/") ? "page" : undefined}
         >
           <Home size={22} strokeWidth={isActive("/") ? 2 : 1.5} />
-          <span>{t.header.home}</span>
+          <span dir="auto" className="max-w-full truncate">{t.header.home}</span>
         </Link>
         <Link
           href="/shop"
@@ -421,7 +426,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           aria-current={isActive("/shop") ? "page" : undefined}
         >
           <LayoutGrid size={22} strokeWidth={isActive("/shop") ? 2 : 1.5} />
-          <span>{t.header.shop}</span>
+          <span dir="auto" className="max-w-full truncate">{t.header.shop}</span>
         </Link>
         <button
           type="button"
@@ -437,7 +442,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
               </span>
             )}
           </span>
-          <span>{t.header.openCart.replace(/^Ouvrir |^Open /, "")}</span>
+          <span dir="auto" className="max-w-full truncate">{t.header.openCart.replace(/^Ouvrir |^Open /, "")}</span>
         </button>
         <Link
           href="/wishlist"
@@ -445,7 +450,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           aria-current={isActive("/wishlist") ? "page" : undefined}
         >
           <Heart size={22} strokeWidth={isActive("/wishlist") ? 2 : 1.5} />
-          <span>{t.header.wishlist}</span>
+          <span dir="auto" className="max-w-full truncate">{t.header.wishlist}</span>
         </Link>
         <Link
           href="/account"
@@ -453,7 +458,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           aria-current={isActive("/account") ? "page" : undefined}
         >
           <User size={22} strokeWidth={isActive("/account") ? 2 : 1.5} />
-          <span>{t.header.account.replace(/^Mon |^My /, "")}</span>
+          <span dir="auto" className="max-w-full truncate">{t.header.account.replace(/^Mon |^My /, "")}</span>
         </Link>
       </div>
     </nav>
@@ -486,11 +491,13 @@ function MobileMenu({
   if (!open) return null;
 
   const itemClass =
-    "flex items-center justify-between border-b hairline py-4 text-[0.8125rem] font-medium uppercase tracking-[0.12em]";
+    "flex items-center justify-between border-b hairline py-4 text-[0.8125rem] font-medium uppercase tracking-[0.12em] transition-colors duration-200 hover:bg-cream/50";
 
   return (
     <div
-      className="fixed inset-0 z-[60] lg:hidden"
+      id="mobile-navigation-dialog"
+      dir="ltr"
+      className="mobile-menu-overlay fixed inset-0 z-[60] lg:hidden"
       role="dialog"
       aria-modal="true"
       aria-label={t.header.mobileMenu}
@@ -498,12 +505,12 @@ function MobileMenu({
       <button
         aria-label={t.header.closeMenu}
         onClick={onClose}
-        className="absolute inset-0 bg-ink/45"
+        className="mobile-menu-backdrop absolute inset-0 bg-ink/40 backdrop-blur-[2px]"
       />
       <aside
         ref={panelRef}
         tabIndex={-1}
-        className="absolute start-0 top-0 flex h-full w-[86%] max-w-sm flex-col border-e hairline bg-[#fbfcfd] pb-[env(safe-area-inset-bottom)] shadow-[16px_0_40px_-28px_rgb(29_35_43/0.5)]"
+        className="mobile-menu-panel absolute start-0 top-0 flex h-full w-[86%] max-w-sm flex-col border-e hairline bg-ivory/95 pb-[env(safe-area-inset-bottom)] shadow-[18px_0_52px_-30px_rgba(29,35,43,0.38)] backdrop-blur-md"
       >
         <div className="flex items-center justify-between border-b hairline px-6 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
           <div>
@@ -516,12 +523,12 @@ function MobileMenu({
             type="button"
             onClick={onClose}
             aria-label={t.header.closeMenu}
-            className="flex h-10 w-10 items-center justify-center border hairline bg-white/70"
+            className="flex h-10 w-10 items-center justify-center border hairline bg-white/70 transition-colors duration-200 hover:bg-cream"
           >
             <X size={18} />
           </button>
         </div>
-        <nav aria-label={t.header.mobileNav} className="flex-1 overflow-y-auto px-6 pb-4">
+        <nav aria-label={t.header.mobileNav} className="flex-1 overscroll-contain overflow-y-auto px-6 pb-4">
           <Link href="/shop" onClick={onClose} className={itemClass}>
             {t.header.shop}
             <ChevronRight size={15} className="text-ink-muted rtl-flip" />
