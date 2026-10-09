@@ -201,7 +201,6 @@ export function ProductEditor({
       isFeatured: state.isFeatured,
       isBestseller: state.isBestseller,
       isNew: state.isNew,
-      soldCount: 0,
       publishedAt: null,
       material: state.material || undefined,
       color: state.color || undefined,

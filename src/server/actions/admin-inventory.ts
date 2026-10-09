@@ -19,19 +19,31 @@ export async function listInventory(params: { search?: string; lowOnly?: boolean
   const page = safeParams.page;
   const pageSize = 30;
 
-  const where: Prisma.InventoryWhereInput = {};
+  const conditions: Prisma.InventoryWhereInput[] = [];
   if (safeParams.search) {
     const term = safeParams.search;
-    where.variant = {
-      OR: [
-        { sku: { contains: term, mode: "insensitive" } },
-        { product: { name: { contains: term, mode: "insensitive" } } },
-      ],
-    };
+    conditions.push({
+      variant: {
+        OR: [
+          { sku: { contains: term, mode: "insensitive" } },
+          { product: { name: { contains: term, mode: "insensitive" } } },
+        ],
+      },
+    });
   }
   if (safeParams.lowOnly) {
-    where.stock = { lte: 5 };
+    // Available stock (stock - reserved) cannot be expressed in a Prisma
+    // where clause, so prefilter low IDs with SQL against per-row thresholds.
+    const lowRows = await prisma.$queryRaw<Array<{ variantId: string }>>`
+      SELECT "variantId" FROM "Inventory"
+      WHERE stock - reserved <= "lowStockThreshold"
+      LIMIT 5000
+    `;
+    const lowIds = lowRows.map((row) => row.variantId);
+    if (lowIds.length === 0) return { items: [], total: 0, page, totalPages: 1 };
+    conditions.push({ variantId: { in: lowIds } });
   }
+  const where: Prisma.InventoryWhereInput = conditions.length > 0 ? { AND: conditions } : {};
 
   const [items, total] = await Promise.all([
     prisma.inventory.findMany({
@@ -83,7 +95,7 @@ export async function listInventory(params: { search?: string; lowOnly?: boolean
 }
 
 const adjustSchema = z.object({
-  variantId: z.string().min(1),
+  variantId: adminId,
   stock: z.coerce.number().int().min(0),
   reason: z.string().trim().max(200).optional(),
 });

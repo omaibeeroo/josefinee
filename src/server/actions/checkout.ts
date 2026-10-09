@@ -5,6 +5,7 @@ import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { isAppError, toUserMessage } from "@/lib/errors";
 import { flattenZodErrors, isBotSubmission } from "@/lib/validation/common";
+import { zId } from "@/lib/validation/common";
 import { getActionT } from "@/lib/i18n/server";
 import { checkoutSchema, trackOrderSchema, type CheckoutInput } from "@/lib/validation/checkout";
 import { createOrder } from "@/server/orders";
@@ -103,10 +104,12 @@ export async function getCheckoutData() {
 }
 
 export async function getCommunesAction(wilayaId: string) {
+  if (!zId.safeParse(wilayaId).success) return [];
   return getCommunes(wilayaId);
 }
 
 export async function getDeliveryOptionsAction(wilayaId: string) {
+  if (!zId.safeParse(wilayaId).success) return [];
   return getDeliveryOptions(wilayaId);
 }
 

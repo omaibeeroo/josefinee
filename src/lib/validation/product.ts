@@ -11,14 +11,27 @@ export const productImageUrl = z
   .trim()
   .min(1)
   .max(1000)
-  .refine((value) => /^https?:\/\/[^/\s]+\/\S*$/i.test(value) || value.startsWith("/"),
+  .refine(
+    (value) =>
+      /^https?:\/\/[^/\s]+\/\S*$/i.test(value) ||
+      (value.length > 1 && value.startsWith("/") && !value.startsWith("//")),
     "Image URL must be an absolute http(s) URL or an app-relative path.",
   );
+
+/** Optional image field: "" and absent both mean "no image", otherwise allowlisted. */
+export const optionalImageUrl = z.preprocess(
+  (value) => (value === "" ? undefined : value),
+  productImageUrl.optional(),
+);
 
 const productOptionValueSchema = z.object({
   id: zId.optional(),
   value: z.string().trim().min(1).max(60),
-  hexColor: z.string().trim().max(9).optional(),
+  hexColor: z
+    .string()
+    .trim()
+    .regex(/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/, "Use a hex color like #b08d57.")
+    .optional(),
   position: z.coerce.number().int().min(0).default(0),
 });
 
@@ -35,7 +48,7 @@ const variantSchema = z.object({
   barcode: zOptionalString(80),
   price: zPrice.nullable().optional(),
   compareAtPrice: zPrice.nullable().optional(),
-  imageUrl: zOptionalString(1000),
+  imageUrl: optionalImageUrl,
   /** Name-based selections (e.g. [{option:"Finish", value:"Gold"}]) — resolved to IDs server-side. */
   selections: z
     .array(
@@ -69,7 +82,7 @@ export const productSchema = z.object({
   isFeatured: z.coerce.boolean().default(false),
   isBestseller: z.coerce.boolean().default(false),
   isNew: z.coerce.boolean().default(false),
-  soldCount: z.coerce.number().int().min(0).default(0),
+  // soldCount is derived from orders server-side and never accepted from input.
   publishedAt: z.coerce.date().nullable().optional(),
   material: zOptionalString(200),
   color: zOptionalString(80),
@@ -80,7 +93,7 @@ export const productSchema = z.object({
   shippingInfo: zOptionalString(2000),
   seoTitle: zOptionalString(160),
   seoDescription: zOptionalString(320),
-  seoImage: zOptionalString(1000),
+  seoImage: optionalImageUrl,
   options: z.array(productOptionSchema).max(4).default([]),
   variants: z.array(variantSchema).max(100).default([]),
   images: z
@@ -90,8 +103,8 @@ export const productSchema = z.object({
         url: productImageUrl,
         storageKey: zOptionalString(500),
         alt: zOptionalString(200),
-        width: z.coerce.number().int().optional(),
-        height: z.coerce.number().int().optional(),
+        width: z.coerce.number().int().min(1).max(10000).optional(),
+        height: z.coerce.number().int().min(1).max(10000).optional(),
         sortOrder: z.coerce.number().int().min(0).default(0),
         isPrimary: z.coerce.boolean().default(false),
       }),
@@ -102,25 +115,30 @@ export const productSchema = z.object({
 
 export type ProductInput = z.infer<typeof productSchema>;
 
-export const categorySchema = z.object({
-  id: zId.optional(),
-  name: z.string().trim().min(1).max(120),
-  slug: zSlug.optional(),
-  description: zOptionalString(1000),
-  image: zOptionalString(1000),
-  parentId: zId.optional(),
-  sortOrder: z.coerce.number().int().min(0).default(0),
-  isActive: z.coerce.boolean().default(true),
-  seoTitle: zOptionalString(160),
-  seoDescription: zOptionalString(320),
-});
+export const categorySchema = z
+  .object({
+    id: zId.optional(),
+    name: z.string().trim().min(1).max(120),
+    slug: zSlug.optional(),
+    description: zOptionalString(1000),
+    image: optionalImageUrl,
+    parentId: zId.optional(),
+    sortOrder: z.coerce.number().int().min(0).default(0),
+    isActive: z.coerce.boolean().default(true),
+    seoTitle: zOptionalString(160),
+    seoDescription: zOptionalString(320),
+  })
+  .refine((data) => data.id === undefined || data.parentId !== data.id, {
+    message: "A category cannot be its own parent.",
+    path: ["parentId"],
+  });
 
 export const collectionSchema = z.object({
   id: zId.optional(),
   name: z.string().trim().min(1).max(120),
   slug: zSlug.optional(),
   description: zOptionalString(2000),
-  image: zOptionalString(1000),
+  image: optionalImageUrl,
   type: z.enum(["MANUAL", "NEW_IN", "BEST_SELLERS", "SALE"]).default("MANUAL"),
   sortOrder: z.coerce.number().int().min(0).default(0),
   isActive: z.coerce.boolean().default(true),

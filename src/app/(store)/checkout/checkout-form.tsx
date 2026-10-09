@@ -94,9 +94,7 @@ export function CheckoutForm({
           setDeliveryMethod(draft.deliveryMethod);
           setCouponInput(draft.couponInput);
           setCouponMessage(
-            draft.couponInput
-              ? "Code promo enregistré — appliquez-le à nouveau pour vérifier sa disponibilité."
-              : null,
+            draft.couponInput ? t.checkout.couponRemembered : null,
           );
           setDraftRestored(true);
         } else {
@@ -111,7 +109,7 @@ export function CheckoutForm({
       idempotencyKey.current = newCheckoutKey();
     }
     setDraftLoaded(true);
-  }, []);
+  }, [t.checkout.couponRemembered]);
 
   useEffect(() => {
     if (!draftLoaded) return;
@@ -218,7 +216,9 @@ export function CheckoutForm({
       if (result.ok) {
         setCoupon({ code: result.code, discount: result.discount });
         setCouponMessage(
-          `Code ${result.code} appliqué — vous économisez ${formatDA(result.discount)}.`,
+          t.checkout.couponApplied
+            .replace("{code}", result.code)
+            .replace("{discount}", formatDA(result.discount)),
         );
       } else {
         setCoupon(null);
@@ -226,7 +226,7 @@ export function CheckoutForm({
       }
     } catch {
       setCoupon(null);
-      setCouponMessage("Impossible de vérifier ce code. Veuillez réessayer.");
+      setCouponMessage(t.checkout.couponCheckFailed);
     } finally {
       setCouponPending(false);
     }
@@ -266,9 +266,7 @@ export function CheckoutForm({
       });
     } catch {
       setSubmitting(false);
-      setFormError(
-        "La réponse n’a pas pu être confirmée. Vos informations restent enregistrées dans cet onglet ; réessayez pour vérifier la commande sans risque de doublon.",
-      );
+      setFormError(t.checkout.submitConfirmFailed);
       return;
     }
 
@@ -623,7 +621,7 @@ export function CheckoutForm({
 
       <aside
         className="lg:sticky lg:top-32 lg:self-start"
-        aria-label="Récapitulatif de la commande"
+        aria-label={t.checkout.summary}
       >
         <div className="checkout-summary border hairline bg-white p-6">
           <h2 className="text-xs font-medium uppercase tracking-[0.2em]">

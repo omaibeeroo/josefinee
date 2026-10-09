@@ -1,7 +1,6 @@
 import "server-only";
 import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
 import * as OTPAuth from "otpauth";
-import QRCode from "qrcode";
 import { AppError } from "@/lib/errors";
 
 /**
@@ -26,8 +25,10 @@ export function encryptSecret(plaintext: string): string {
 }
 
 export function decryptSecret(payload: string): string {
-  const [, ivB64, tagB64, dataB64] = payload.split(":");
-  if (!ivB64 || !tagB64 || !dataB64) throw new AppError("2FA", "Invalid 2FA secret.");
+  const [version, ivB64, tagB64, dataB64] = payload.split(":");
+  if (version !== "v1" || !ivB64 || !tagB64 || !dataB64) {
+    throw new AppError("2FA", "Invalid 2FA secret.");
+  }
   try {
     const decipher = createDecipheriv("aes-256-gcm", encryptionKey(), Buffer.from(ivB64, "base64url"));
     decipher.setAuthTag(Buffer.from(tagB64, "base64url"));
@@ -73,5 +74,7 @@ export function verifyTotp(secretBase32: string, token: string): boolean {
 }
 
 export async function qrCodeDataUrl(uri: string): Promise<string> {
+  // Lazy-loaded: only the 2FA-setup action pays the qrcode bundle cost.
+  const { default: QRCode } = await import("qrcode");
   return QRCode.toDataURL(uri, { margin: 1, width: 220 });
 }

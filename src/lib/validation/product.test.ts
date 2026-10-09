@@ -15,9 +15,27 @@ describe("productImageUrl", () => {
   });
 
   it("rejects non-URL strings and dangerous schemes", () => {
-    for (const bad of ["not-a-url", "javascript:alert(1)", "data:image/png;base64,AAA", ""]) {
+    for (const bad of [
+      "not-a-url",
+      "javascript:alert(1)",
+      "data:image/png;base64,AAA",
+      "",
+      "/",
+      "//evil.com/x.webp",
+    ]) {
       expect(productImageUrl.safeParse(bad).success).toBe(false);
     }
+  });
+
+  it("ignores client-supplied soldCount (derived server-side)", () => {
+    const result = productSchema.safeParse({
+      name: "Parure Perle Éclat",
+      price: 4500,
+      soldCount: 9999,
+      variants: [{ sku: "TEST-PERLE-002", stock: 1 }],
+    });
+    expect(result.success).toBe(true);
+    if (result.success) expect("soldCount" in result.data).toBe(false);
   });
 });
 

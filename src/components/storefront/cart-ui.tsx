@@ -115,7 +115,7 @@ function CartDrawer() {
       if (!result.ok) setError(result.error ?? t.cart.removeFailed);
       await refresh();
     } catch {
-      setError("Impossible de retirer cet article. Réessayez.");
+      setError(t.cart.removeFailed);
     } finally {
       setPending(null);
     }
@@ -137,9 +137,9 @@ function CartDrawer() {
         {loadError ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
             <p className="font-display text-2xl">{t.cart.cartUnavailable}</p>
-            <Button variant="outline" size="sm" onClick={() => void refresh()}>
-              Réessayer
-            </Button>
+              <Button variant="outline" size="sm" onClick={() => void refresh()}>
+                {t.common.retry}
+              </Button>
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">

@@ -55,17 +55,34 @@ export const getAdminSession = cache(async () => {
   const session = await prisma.adminSession
     .findUnique({
       where: { tokenHash: hashToken(token) },
-      include: {
+      select: {
+        revokedAt: true,
+        expiresAt: true,
         user: {
-          include: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            status: true,
+            mustChangePassword: true,
+            passwordHash: true,
+            twoFactorSecret: true,
+            twoFactorEnabled: true,
             role: {
-              include: { permissions: { include: { permission: true } } },
+              select: {
+                name: true,
+                label: true,
+                permissions: { select: { permission: { select: { code: true } } } },
+              },
             },
           },
         },
       },
     })
-    .catch(() => null);
+    .catch((error) => {
+      console.error("[session] admin lookup failed", error instanceof Error ? error.name : "unknown");
+      return null;
+    });
 
   if (!session) return null;
   if (session.revokedAt || session.expiresAt.getTime() < Date.now()) return null;
@@ -127,9 +144,26 @@ export const getCustomerSession = cache(async () => {
   const session = await prisma.customerSession
     .findUnique({
       where: { tokenHash: hashToken(token) },
-      include: { customer: true },
+      select: {
+        revokedAt: true,
+        expiresAt: true,
+        customer: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            email: true,
+            phone: true,
+            status: true,
+            passwordHash: true,
+          },
+        },
+      },
     })
-    .catch(() => null);
+    .catch((error) => {
+      console.error("[session] customer lookup failed", error instanceof Error ? error.name : "unknown");
+      return null;
+    });
 
   if (!session) return null;
   if (session.revokedAt || session.expiresAt.getTime() < Date.now()) return null;

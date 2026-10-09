@@ -36,7 +36,12 @@ export const auditListParams = z.object({
   search: adminSearch,
   page: adminPage,
 });
-export const deliveryCsv = z.string().max(1_000_000);
+export const deliveryCsv = z
+  .string()
+  .max(1_000_000)
+  .refine((value) => value.split("\n").length <= 5000, {
+    message: "CSV has too many rows (max 5000).",
+  });
 export const customerNotes = z.string().max(2_000);
 export const settingsKey = z.enum([
   "general",
@@ -47,7 +52,15 @@ export const settingsKey = z.enum([
   "analytics",
   "notifications",
 ]);
-export const settingsValue = z.record(z.string(), z.unknown());
+export const settingsValue = z
+  .record(z.string().max(120), z.unknown())
+  .refine(
+    (value) =>
+      Object.keys(value).every(
+        (key) => key !== "__proto__" && key !== "constructor" && key !== "prototype",
+      ),
+    { message: "Invalid settings key." },
+  );
 export const orderFilters = z.object({
   status: orderStatus.optional(),
   wilayaId: adminId.optional(),

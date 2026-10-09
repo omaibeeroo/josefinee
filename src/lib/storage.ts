@@ -4,7 +4,7 @@ import { UPLOAD_ALLOWED_MIME, UPLOAD_MAX_BYTES } from "@/lib/constants";
 import { isS3Configured } from "@/config/brand";
 import path from "node:path";
 import { mkdir, writeFile } from "node:fs/promises";
-import sharp, { type Metadata, type Sharp } from "sharp";
+import type { Metadata, Sharp } from "sharp";
 
 export type StoredImage = {
   url: string;
@@ -17,16 +17,9 @@ export type StoredImage = {
 
 const MAX_DIMENSION = 2200;
 
-function safeExtension(mime: string): string {
-  switch (mime) {
-    case "image/png":
-      return "png";
-    case "image/avif":
-      return "avif";
-    case "image/jpeg":
-    default:
-      return "webp";
-  }
+/** Uploads are always re-encoded to WebP, so the extension is constant. */
+function storedExtension(): string {
+  return "webp";
 }
 
 /**
@@ -45,6 +38,8 @@ export async function storeImage(file: {
     throw new AppError("INVALID_FILE_TYPE", "Only JPG, PNG, WebP or AVIF images are allowed.");
   }
 
+  // Lazy-loaded so non-upload serverless functions skip the native sharp bundle.
+  const { default: sharp } = await import("sharp");
   let pipeline: Sharp;
   let metadata: Metadata;
   try {
@@ -73,7 +68,7 @@ export async function storeImage(file: {
   const key = path.posix.join(
     `${now.getUTCFullYear()}`,
     `${String(now.getUTCMonth() + 1).padStart(2, "0")}`,
-    `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${safeExtension("image/webp")}`,
+    `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${storedExtension()}`,
   );
 
   if (isS3Configured()) {

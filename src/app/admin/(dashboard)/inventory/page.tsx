@@ -25,6 +25,15 @@ export default async function AdminInventoryPage({
   };
   const [result, t] = await Promise.all([listInventory(filters), getDictionary()]);
 
+  const query = (overrides: Record<string, string>) => {
+    const next = new URLSearchParams();
+    if (filters.search) next.set("search", filters.search);
+    if (filters.lowOnly) next.set("low", "1");
+    if (overrides.page) next.set("page", overrides.page);
+    const queryString = next.toString();
+    return queryString ? `/admin/inventory?${queryString}` : "/admin/inventory";
+  };
+
   return (
     <div>
       <PageHeader title={t.adminPages.inventoryTitle} description={t.adminPages.inventoryDesc.replace("{total}", String(result.total))} />
@@ -75,7 +84,7 @@ export default async function AdminInventoryPage({
                 <td className="px-4 py-3 text-xs">{item.sku}</td>
                 <td className={cn("px-4 py-3 font-semibold tabular-nums", item.available === 0 && "text-[#9e342e]")}>
                   {item.available}
-                  {item.reserved > 0 && <span className="ml-1 text-xs font-normal text-ink-muted">({item.reserved} reserved)</span>}
+                  {item.reserved > 0 && <span className="ml-1 text-xs font-normal text-ink-muted">{t.adminInventoryTable.reservedNote.replace("{count}", String(item.reserved))}</span>}
                 </td>
                 <td className="px-4 py-3 tabular-nums">{item.stock}</td>
                 <td className="px-4 py-3">
@@ -85,8 +94,26 @@ export default async function AdminInventoryPage({
             ))}
           </tbody>
         </table>
-        {result.items.length === 0 && <p className="p-8 text-center text-sm text-ink-muted">No variants found.</p>}
+        {result.items.length === 0 && <p className="p-8 text-center text-sm text-ink-muted">{t.adminInventoryTable.noVariants}</p>}
       </div>
+
+      {result.totalPages > 1 && (
+        <div className="mt-4 flex items-center justify-center gap-2 text-sm">
+          {result.page > 1 && (
+            <Link href={query({ page: String(result.page - 1) })} className="btn btn-ghost min-h-10 px-4 text-xs">
+              {t.pagination.previous}
+            </Link>
+          )}
+          <span className="text-ink-muted">
+            {t.pagination.pageOf.replace("{page}", String(result.page)).replace("{total}", String(result.totalPages))}
+          </span>
+          {result.page < result.totalPages && (
+            <Link href={query({ page: String(result.page + 1) })} className="btn btn-ghost min-h-10 px-4 text-xs">
+              {t.pagination.next}
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   );
 }

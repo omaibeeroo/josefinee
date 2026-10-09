@@ -54,11 +54,13 @@ export type StoreProduct = StoreProductCard & {
 const cardInclude = Prisma.validator<Prisma.ProductInclude>()({
   // Up to 6 photos feed the card image carousel (arrows/dots/swipe).
   images: { orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }], take: 6 },
+  // Availability comes from getCardAvailability (raw SQL); only the fallback
+  // variant id is needed here — never fetch per-variant inventory rows.
   variants: {
     where: { isActive: true },
     orderBy: { position: "asc" },
     take: 1,
-    include: { inventory: true },
+    select: { id: true },
   },
   category: { select: { name: true, slug: true } },
   options: { select: { id: true }, take: 1 },
@@ -457,7 +459,7 @@ export async function getQuickAddData(productId: string): Promise<QuickAddData |
             price: true,
             compareAtPrice: true,
             optionLabel: true,
-            inventory: true,
+            inventory: { select: { stock: true, reserved: true } },
             optionValues: { select: { optionValueId: true } },
           },
         },
@@ -492,6 +494,7 @@ export async function getQuickAddData(productId: string): Promise<QuickAddData |
 }
 
 async function getRelatedProductsFresh(productId: string, categoryId: string | null, take = 8) {
+  const safeTake = Math.min(24, Math.max(1, Math.floor(take) || 8));
   const rows = await prisma.product.findMany({
     where: {
       ...storefrontProductWhere(),
@@ -500,7 +503,7 @@ async function getRelatedProductsFresh(productId: string, categoryId: string | n
     },
     include: cardInclude,
     orderBy: [{ isBestseller: "desc" }, { createdAt: "desc" }, { id: "asc" }],
-    take,
+    take: safeTake,
   });
   return mapProductCards(rows);
 }

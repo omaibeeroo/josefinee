@@ -121,7 +121,6 @@ export const ROLE_PERMISSIONS: Record<RoleNameValue, PermissionCode[]> = {
     P.MESSAGES_READ,
     P.MESSAGES_WRITE,
     P.NEWSLETTER_READ,
-    P.CONTENT_WRITE,
   ],
   ANALYST: [
     P.DASHBOARD_READ,

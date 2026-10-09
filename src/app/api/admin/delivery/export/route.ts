@@ -1,5 +1,6 @@
 import { requirePermission } from "@/lib/auth/rbac";
 import { listDeliveryRates } from "@/server/actions/admin-ops";
+import { enforceRateLimit, LIMITS } from "@/lib/rate-limit";
 import { recordAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
@@ -9,10 +10,14 @@ export async function GET() {
   let actor;
   try {
     actor = await requirePermission("delivery:read");
+    await enforceRateLimit({ ...LIMITS.export, key: `delivery-export:${actor.id}` });
   } catch (error) {
     const { isAppError } = await import("@/lib/errors");
     if (isAppError(error)) {
-      return Response.json({ ok: false, error: error.userMessage }, { status: error.status, headers: NO_STORE });
+      return Response.json(
+        { ok: false, error: error.userMessage },
+        { status: error.status, headers: NO_STORE },
+      );
     }
     return Response.json({ ok: false, error: "Something went wrong." }, { status: 500, headers: NO_STORE });
   }

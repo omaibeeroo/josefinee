@@ -157,7 +157,7 @@ export default async function AdminOrdersPage({
           </tbody>
         </table>
         {result.items.length === 0 && (
-          <p className="p-8 text-center text-sm text-ink-muted">No orders match these filters.</p>
+          <p className="p-8 text-center text-sm text-ink-muted">{t.adminOrders.noOrdersMatch}</p>
         )}
       </div>
 
@@ -165,15 +165,15 @@ export default async function AdminOrdersPage({
         <div className="mt-4 flex items-center justify-center gap-2 text-sm">
           {result.page > 1 && (
             <Link href={query({ page: String(result.page - 1) })} className="btn btn-ghost min-h-10 px-4 text-xs">
-              Previous
+              {t.pagination.previous}
             </Link>
           )}
           <span className="text-ink-muted">
-            Page {result.page} of {result.totalPages}
+            {t.pagination.pageOf.replace("{page}", String(result.page)).replace("{total}", String(result.totalPages))}
           </span>
           {result.page < result.totalPages && (
             <Link href={query({ page: String(result.page + 1) })} className="btn btn-ghost min-h-10 px-4 text-xs">
-              Next
+              {t.pagination.next}
             </Link>
           )}
         </div>

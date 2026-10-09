@@ -29,7 +29,7 @@ export default async function SearchPage({
 }) {
   const params = await searchParams;
   const raw = params.q;
-  const term = (Array.isArray(raw) ? raw[0] : raw)?.trim() ?? "";
+  const term = (Array.isArray(raw) ? raw[0] : raw)?.trim().slice(0, 80) ?? "";
 
   if (term) {
     after(async () => {

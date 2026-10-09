@@ -27,10 +27,18 @@ const globalStore = globalThis as unknown as {
 };
 const memory: Map<string, MemoryBucket> = (globalStore.__rateLimit ??= new Map());
 
+/** Bound for the dev/test in-memory fallback so attacker keys cannot grow the heap. */
+const MEMORY_BUCKET_CAP = 5000;
+
 function memoryLimit({ key, limit, windowMs }: RateLimitOptions): RateLimitResult {
   const now = Date.now();
   const bucket = memory.get(key);
   if (!bucket || bucket.resetAt <= now) {
+    if (!bucket && memory.size >= MEMORY_BUCKET_CAP) {
+      // Evict the oldest bucket (Map preserves insertion order).
+      const oldest = memory.keys().next();
+      if (!oldest.done) memory.delete(oldest.value);
+    }
     const resetAt = now + windowMs;
     memory.set(key, { count: 1, resetAt });
     return { success: true, limit, remaining: limit - 1, resetAt };
@@ -75,7 +83,9 @@ async function upstashLimit(options: RateLimitOptions): Promise<RateLimitResult 
     if (!response.ok) return null;
 
     const payload = (await response.json()) as Array<{ result: number | string }>;
-    const count = Number(payload[0]?.result ?? 1);
+    const rawCount = payload[0]?.result;
+    if (rawCount === undefined) return null;
+    const count = Number(rawCount);
     const ttl = Number(payload[2]?.result ?? options.windowMs);
     if (!Number.isFinite(count) || !Number.isFinite(ttl)) return null;
     const resetAt = Date.now() + (ttl > 0 ? ttl : options.windowMs);
@@ -177,6 +187,7 @@ export const LIMITS = {
   cartMutation: { limit: 60, windowMs: 10 * 60_000 },
   accountMutation: { limit: 60, windowMs: 15 * 60_000 },
   upload: { limit: 40, windowMs: 10 * 60_000 },
+  export: { limit: 20, windowMs: 10 * 60_000 },
   api: { limit: 120, windowMs: 60_000 },
   cspReport: { limit: 30, windowMs: 60_000 },
 } as const;

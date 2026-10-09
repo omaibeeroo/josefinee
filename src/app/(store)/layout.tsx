@@ -19,7 +19,6 @@ export default async function StoreLayout({ children }: { children: React.ReactN
   return (
     <SiteChrome
       brandName={settings.general.name}
-      tagline={settings.general.tagline}
       logoUrl={settings.general.logoUrl}
       announcement={announcement}
       categories={navigation.categories}
@@ -27,8 +26,6 @@ export default async function StoreLayout({ children }: { children: React.ReactN
       social={settings.social}
       supportEmail={settings.general.email}
       supportPhone={settings.general.phone}
-      legalName={settings.general.legalName}
-      address={settings.general.address}
       popularSearches={popularSearches}
     >
       <div id="main-content">{children}</div>

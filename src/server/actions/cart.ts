@@ -41,7 +41,7 @@ export async function getDeliveryFloorAction() {
 
 export async function addToCartAction(variantId: string, quantity = 1) {
   const tErr = await getActionT();
-  const parsed = z.object({ variantId: z.string().min(1).max(64), quantity: z.number().int().min(1).max(20) })
+  const parsed = z.object({ variantId: zId, quantity: z.number().int().min(1).max(20) })
     .safeParse({ variantId, quantity });
   if (!parsed.success) return { ok: false as const, error: tErr.validItem };
   try {
@@ -64,7 +64,7 @@ export async function addToCartAction(variantId: string, quantity = 1) {
 
 export async function updateCartItemAction(itemId: string, quantity: number) {
   const tErr = await getActionT();
-  const parsed = z.object({ itemId: z.string().min(1).max(64), quantity: z.number().int().min(0).max(20) })
+  const parsed = z.object({ itemId: zId, quantity: z.number().int().min(0).max(20) })
     .safeParse({ itemId, quantity });
   if (!parsed.success) return { ok: false as const, error: tErr.validQuantity };
   try {
@@ -79,7 +79,7 @@ export async function updateCartItemAction(itemId: string, quantity: number) {
 
 export async function removeCartItemAction(itemId: string) {
   const tErr = await getActionT();
-  const parsedId = z.string().min(1).max(64).safeParse(itemId);
+  const parsedId = zId.safeParse(itemId);
   if (!parsedId.success) return { ok: false as const, error: tErr.itemUnavailable };
   try {
     await enforceCartMutationLimit("remove");

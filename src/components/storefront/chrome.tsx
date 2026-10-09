@@ -32,7 +32,6 @@ type NavCategory = {
 
 export type ChromeProps = {
   brandName: string;
-  tagline: string;
   logoUrl: string;
   announcement: { text: string; href: string } | null;
   categories: NavCategory[];
@@ -40,8 +39,6 @@ export type ChromeProps = {
   social: { instagram: string; tiktok: string; facebook: string; whatsapp: string };
   supportEmail: string;
   supportPhone: string;
-  legalName: string;
-  address: string;
   popularSearches: string[];
 };
 
@@ -56,6 +53,7 @@ function BrandMark({
   onClick?: () => void;
   compact?: boolean;
 }) {
+  const { t } = useLocale();
   return (
     <Link
       href="/"
@@ -64,7 +62,7 @@ function BrandMark({
         "inline-flex origin-left items-center gap-2 motion-safe:transition-transform motion-safe:duration-300",
         compact && "motion-safe:scale-[0.82]",
       )}
-      aria-label={`Accueil ${brandName}`}
+      aria-label={t.header.brandHome.replace("{name}", brandName)}
     >
       {logoUrl ? (
         <Image src={logoUrl} alt={brandName} width={120} height={36} className="h-9 w-auto" />
@@ -209,7 +207,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             </div>
           </div>
           <nav
-            aria-label="Navigation principale"
+            aria-label={t.header.mainNav}
             className="flex flex-wrap items-center justify-center gap-x-3 border-t hairline px-2 py-1 xl:gap-x-6"
           >
             <Link
@@ -308,7 +306,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             <button
               type="button"
               onClick={() => setOpen(true)}
-              aria-label={`${t.header.openCart}, ${count} article${count > 1 ? "s" : ""}`}
+              aria-label={`${t.header.openCart}, ${count} ${count > 1 ? t.cart.items : t.cart.item}`}
               className="relative p-2.5"
             >
               <ShoppingBag size={20} strokeWidth={1.75} />
@@ -377,7 +375,7 @@ function MobileMenu({
       className="fixed inset-0 z-[60] lg:hidden"
       role="dialog"
       aria-modal="true"
-      aria-label="Menu"
+      aria-label={t.header.mobileMenu}
     >
       <button
         aria-label={t.header.closeMenu}
@@ -405,7 +403,7 @@ function MobileMenu({
             <X size={18} />
           </button>
         </div>
-        <nav aria-label="Navigation mobile" className="flex-1 overflow-y-auto px-6 pb-4">
+        <nav aria-label={t.header.mobileNav} className="flex-1 overflow-y-auto px-6 pb-4">
           <Link href="/shop" onClick={onClose} className={itemClass} style={stagger(0)}>
             {t.header.shop}
             <ChevronRight size={15} className="text-ink-muted" />
@@ -480,7 +478,7 @@ function MobileMenu({
                 onClick={onClose}
                 className="flex-1 py-[1.1rem] text-[0.8125rem] font-medium uppercase tracking-[0.18em]"
               >
-                Collections
+                {t.header.collections}
               </Link>
               <button
                 type="button"

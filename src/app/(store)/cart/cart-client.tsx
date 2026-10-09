@@ -41,7 +41,7 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
       await refresh();
       router.refresh();
     } catch {
-      setError("Impossible de retirer cet article. Réessayez.");
+      setError(t.cart.removeFailed);
     } finally {
       setPending(null);
     }

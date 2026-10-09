@@ -344,7 +344,16 @@ function mergeSection<K extends keyof SettingsMap>(key: K, value: unknown): Sett
     }
   }
   const parsed = settingsSchemas[key].safeParse(merged);
-  return (parsed.success ? parsed.data : defaults) as SettingsMap[K];
+  if (!parsed.success) {
+    // Corrupt stored settings must be visible, not silently papered over:
+    // the storefront falls back to defaults while admins investigate.
+    console.error(
+      `[settings] stored "${key}" failed validation, using defaults`,
+      parsed.error.issues.map((issue) => issue.path.join(".")).join(","),
+    );
+    return defaults as SettingsMap[K];
+  }
+  return parsed.data as SettingsMap[K];
 }
 
 export const getSettings = cache(async (): Promise<SettingsMap> => {

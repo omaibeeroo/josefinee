@@ -41,9 +41,9 @@ export async function validateCoupon(params: {
   const coupon = await db.coupon.findUnique({
     where: { code },
     include: {
-      products: true,
-      collections: true,
-      wilayas: true,
+      products: { select: { productId: true } },
+      collections: { select: { collectionId: true } },
+      wilayas: { select: { wilayaId: true } },
     },
   });
 

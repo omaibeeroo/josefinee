@@ -109,7 +109,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[80] focus:bg-ink focus:px-4 focus:py-2 focus:text-ivory"
         >
-          {locale === "en" ? "Skip to content" : "Aller au contenu"}
+          {dictionary.common.skipToContent}
         </a>
         <NavigationProgress />
         <LocaleProvider locale={locale} dictionary={dictionary} theme={theme}>

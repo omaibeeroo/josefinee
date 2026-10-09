@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma";
 import { AppError, toUserMessage } from "@/lib/errors";
 import { requirePermission } from "@/lib/auth/rbac";
 import { recordAudit } from "@/lib/audit";
-import { cleanRichText } from "@/lib/sanitize";
 import { setStock } from "@/server/inventory";
 import { flattenZodErrors } from "@/lib/validation/common";
 import { adminId, productListParams, productStatus, reviewStatus } from "@/lib/validation/admin";
@@ -185,6 +184,8 @@ export async function saveProductAction(input: ProductInput) {
     return { ok: false as const, error: `SKU already in use: ${conflicting[0]?.sku}.` };
   }
 
+  // Lazy-loaded to keep sanitize-html out of product-list function bundles.
+  const { cleanRichText } = await import("@/lib/sanitize");
   const description = cleanRichText(data.description);
 
   try {
@@ -469,20 +470,24 @@ export async function archiveProductAction(id: string) {
   const actor = await requirePermission("products:delete");
   const parsedId = adminId.safeParse(id);
   if (!parsedId.success) return { ok: false as const, error: "Invalid product ID." };
-  const orderItems = await prisma.orderItem.count({ where: { productId: parsedId.data } });
-  if (orderItems > 0) {
-    await prisma.product.update({
-      where: { id: parsedId.data },
-      data: { status: "ARCHIVED", archivedAt: new Date() },
-    });
-  } else {
-    await prisma.product.delete({ where: { id: parsedId.data } });
+  try {
+    const orderItems = await prisma.orderItem.count({ where: { productId: parsedId.data } });
+    if (orderItems > 0) {
+      await prisma.product.update({
+        where: { id: parsedId.data },
+        data: { status: "ARCHIVED", archivedAt: new Date() },
+      });
+    } else {
+      await prisma.product.delete({ where: { id: parsedId.data } });
+    }
+  } catch {
+    return { ok: false as const, error: "Product not found or already changed." };
   }
   await recordAudit({
     actorUserId: actor.id,
     action: "PRODUCT_DELETED",
     resource: "Product",
-    resourceId: id,
+    resourceId: parsedId.data,
   });
   revalidatePath("/admin/products");
   revalidateTag(CACHE_TAG_CATALOG);
@@ -551,34 +556,41 @@ export async function saveCategoryAction(input: unknown) {
     return { ok: false as const, error: "A category cannot be its own parent." };
   }
 
-  const saved = data.id
-    ? await prisma.category.update({
-        where: { id: data.id },
-        data: {
-          name: data.name,
-          slug,
-          description: data.description || null,
-          image: data.image || null,
-          parentId: data.parentId || null,
-          sortOrder: data.sortOrder,
-          isActive: data.isActive,
-          seoTitle: data.seoTitle || null,
-          seoDescription: data.seoDescription || null,
-        },
-      })
-    : await prisma.category.create({
-        data: {
-          name: data.name,
-          slug,
-          description: data.description || null,
-          image: data.image || null,
-          parentId: data.parentId || null,
-          sortOrder: data.sortOrder,
-          isActive: data.isActive,
-          seoTitle: data.seoTitle || null,
-          seoDescription: data.seoDescription || null,
-        },
-      });
+  let saved: { id: string };
+  try {
+    saved = data.id
+      ? await prisma.category.update({
+          where: { id: data.id },
+          data: {
+            name: data.name,
+            slug,
+            description: data.description || null,
+            image: data.image || null,
+            parentId: data.parentId || null,
+            sortOrder: data.sortOrder,
+            isActive: data.isActive,
+            seoTitle: data.seoTitle || null,
+            seoDescription: data.seoDescription || null,
+          },
+          select: { id: true },
+        })
+      : await prisma.category.create({
+          data: {
+            name: data.name,
+            slug,
+            description: data.description || null,
+            image: data.image || null,
+            parentId: data.parentId || null,
+            sortOrder: data.sortOrder,
+            isActive: data.isActive,
+            seoTitle: data.seoTitle || null,
+            seoDescription: data.seoDescription || null,
+          },
+          select: { id: true },
+        });
+  } catch {
+    return { ok: false as const, error: "Another category already uses this slug." };
+  }
 
   await recordAudit({
     actorUserId: actor.id,
@@ -594,22 +606,28 @@ export async function saveCategoryAction(input: unknown) {
 
 export async function deleteCategoryAction(id: string) {
   const actor = await requirePermission("catalog:write");
-  const [products, children] = await Promise.all([
-    prisma.product.count({ where: { categoryId: id } }),
-    prisma.category.count({ where: { parentId: id } }),
-  ]);
-  if (products > 0 || children > 0) {
-    return {
-      ok: false as const,
-      error: "This category still has products or subcategories. Move them first.",
-    };
+  const parsedId = adminId.safeParse(id);
+  if (!parsedId.success) return { ok: false as const, error: "Invalid category ID." };
+  try {
+    const [products, children] = await Promise.all([
+      prisma.product.count({ where: { categoryId: parsedId.data } }),
+      prisma.category.count({ where: { parentId: parsedId.data } }),
+    ]);
+    if (products > 0 || children > 0) {
+      return {
+        ok: false as const,
+        error: "This category still has products or subcategories. Move them first.",
+      };
+    }
+    await prisma.category.delete({ where: { id: parsedId.data } });
+  } catch {
+    return { ok: false as const, error: "Category not found or already changed." };
   }
-  await prisma.category.delete({ where: { id } });
   await recordAudit({
     actorUserId: actor.id,
     action: "CATEGORY_DELETED",
     resource: "Category",
-    resourceId: id,
+    resourceId: parsedId.data,
   });
   revalidatePath("/admin/categories");
   revalidateTag(CACHE_TAG_CATALOG);
@@ -634,7 +652,9 @@ export async function saveCollectionAction(input: unknown) {
   });
   if (clash) return { ok: false as const, error: "Another collection already uses this slug." };
 
-  const saved = await prisma.$transaction(async (tx) => {
+  let saved: { id: string; slug: string };
+  try {
+    saved = await prisma.$transaction(async (tx) => {
     const collection = data.id
       ? await tx.collection.update({
           where: { id: data.id },
@@ -681,8 +701,11 @@ export async function saveCollectionAction(input: unknown) {
         });
       }
     }
-    return collection;
-  });
+      return collection;
+    });
+  } catch {
+    return { ok: false as const, error: "Another collection already uses this slug." };
+  }
 
   await recordAudit({
     actorUserId: actor.id,
@@ -699,12 +722,18 @@ export async function saveCollectionAction(input: unknown) {
 
 export async function deleteCollectionAction(id: string) {
   const actor = await requirePermission("catalog:write");
-  await prisma.collection.delete({ where: { id } });
+  const parsedId = adminId.safeParse(id);
+  if (!parsedId.success) return { ok: false as const, error: "Invalid collection ID." };
+  try {
+    await prisma.collection.delete({ where: { id: parsedId.data } });
+  } catch {
+    return { ok: false as const, error: "Collection not found or already changed." };
+  }
   await recordAudit({
     actorUserId: actor.id,
     action: "COLLECTION_DELETED",
     resource: "Collection",
-    resourceId: id,
+    resourceId: parsedId.data,
   });
   revalidatePath("/admin/collections");
   revalidateTag(CACHE_TAG_CATALOG);
@@ -727,12 +756,13 @@ export async function listReviewsAdmin(status?: string) {
 }
 
 async function recomputeRating(productId: string) {
-  const approved = await prisma.review.findMany({
+  const stats = await prisma.review.aggregate({
     where: { productId, status: "APPROVED" },
-    select: { rating: true },
+    _avg: { rating: true },
+    _count: { rating: true },
   });
-  const count = approved.length;
-  const average = count > 0 ? approved.reduce((sum, review) => sum + review.rating, 0) / count : 0;
+  const count = stats._count.rating;
+  const average = stats._avg.rating ?? 0;
   await prisma.product.update({
     where: { id: productId },
     data: { ratingAvg: Math.round(average * 10) / 10, ratingCount: count },
@@ -746,14 +776,23 @@ export async function moderateReviewAction(id: string, status: "APPROVED" | "REJ
   if (!parsedId.success || !parsedStatus.success) {
     return { ok: false as const, error: "Invalid review moderation request." };
   }
-  const review = await prisma.review.update({ where: { id: parsedId.data }, data: { status: parsedStatus.data } });
-  await recomputeRating(review.productId);
+  let review: { id: string; productId: string };
+  try {
+    review = await prisma.review.update({
+      where: { id: parsedId.data },
+      data: { status: parsedStatus.data },
+      select: { id: true, productId: true },
+    });
+    await recomputeRating(review.productId);
+  } catch {
+    return { ok: false as const, error: "Review not found or already changed." };
+  }
   await recordAudit({
     actorUserId: actor.id,
     action: "REVIEW_MODERATED",
     resource: "Review",
-    resourceId: id,
-    metadata: { status },
+    resourceId: review.id,
+    metadata: { status: parsedStatus.data },
   });
   revalidatePath("/admin/reviews");
   revalidatePath(`/products/${review.productId}`);
@@ -765,15 +804,22 @@ export async function deleteReviewAction(id: string) {
   const actor = await requirePermission("reviews:moderate");
   const parsedId = adminId.safeParse(id);
   if (!parsedId.success) return { ok: false as const, error: "Invalid review ID." };
-  const review = await prisma.review.findUnique({ where: { id: parsedId.data } });
+  const review = await prisma.review.findUnique({
+    where: { id: parsedId.data },
+    select: { id: true, productId: true },
+  });
   if (!review) return { ok: false as const, error: "Review not found." };
-  await prisma.review.delete({ where: { id: parsedId.data } });
-  await recomputeRating(review.productId);
+  try {
+    await prisma.review.delete({ where: { id: parsedId.data } });
+    await recomputeRating(review.productId);
+  } catch {
+    return { ok: false as const, error: "Review not found or already changed." };
+  }
   await recordAudit({
     actorUserId: actor.id,
     action: "REVIEW_DELETED",
     resource: "Review",
-    resourceId: id,
+    resourceId: review.id,
   });
   revalidatePath("/admin/reviews");
   revalidateTag(CACHE_TAG_CATALOG);

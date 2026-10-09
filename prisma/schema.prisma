@@ -976,6 +976,9 @@ model Notification {
   channel   NotificationChannel
   template  String
   recipient String
+  // Stable dedupe key (order:channel:template) set on SENT rows so
+  // concurrent outbox workers cannot double-send the same notification.
+  dedupeKey String?             @unique
   status    NotificationStatus  @default(PENDING)
   provider  String?
   error     String?

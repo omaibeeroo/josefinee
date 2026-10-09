@@ -214,9 +214,9 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               role="status"
             >
               {promotion.type === "PERCENTAGE"
-                ? `${promotion.value} % de réduction`
-                : `${formatDA(promotion.value)} de réduction`}{" "}
-              avec l’offre «{promotion.name}», appliquée automatiquement lors de la commande.
+                ? t.product.promoPercent.replace("{value}", String(promotion.value))
+                : t.product.promoFixed.replace("{value}", formatDA(promotion.value))}{" "}
+              {t.product.promoWith.replace("{name}", promotion.name)}
             </p>
           )}
           {product.shortDescription && (
@@ -248,7 +248,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                 aria-hidden="true"
               />
               <div>
-                <dt className="font-medium">58 wilayas</dt>
+                <dt className="font-medium">{t.product.wilayas58}</dt>
                 <dd className="text-ink-soft">{t.product.shippingAtCheckout}</dd>
               </div>
             </div>

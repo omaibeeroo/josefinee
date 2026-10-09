@@ -1,12 +1,10 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { subscribeNewsletterAction } from "@/server/actions/engagement";
 import { useLocale } from "@/lib/i18n/provider";
-import { Accordion, Honeypot, Price, Reveal } from "@/components/ui";
+import { Accordion, Price, Reveal } from "@/components/ui";
 import { formatNumber } from "@/lib/money";
 import type { HomepageSettings } from "@/lib/settings";
 import type { StoreProductCard } from "@/server/catalog";
@@ -53,9 +51,10 @@ export function DiscoveryStrip() {
 }
 
 export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
+  const { t } = useLocale();
   const hasImage = Boolean(hero.imageDesktop);
   return (
-    <section className="relative overflow-hidden bg-cream" aria-label="En vedette">
+    <section className="relative overflow-hidden bg-cream" aria-label={t.home.heroFeatured}>
       {hasImage ? (
         <>
           <div className="relative aspect-[4/5] w-full sm:aspect-[16/10] md:aspect-[21/9]">
@@ -162,6 +161,7 @@ export function FeaturedCollection({
   href: string;
   cta: string;
 }) {
+  const { t } = useLocale();
   return (
     <section className="container-luxe" aria-label={title}>
       <Reveal>
@@ -187,7 +187,7 @@ export function FeaturedCollection({
             )}
             <div className="absolute inset-0 bg-gradient-to-t from-ink/55 via-transparent to-transparent" />
             <div className="absolute inset-x-0 bottom-0 flex flex-col items-start gap-2 p-6 overlay-text md:p-10">
-              <p className="eyebrow overlay-text-soft">Collection à découvrir</p>
+              <p className="eyebrow overlay-text-soft">{t.home.collectionToDiscover}</p>
               <h2 className="font-display text-4xl font-medium md:text-5xl">{title}</h2>
               <p className="max-w-lg text-sm overlay-text-faint md:text-base">{description}</p>
               <span className="btn mt-3 bg-[#fbfcfd] text-[#1d232b] hover:bg-[#fff]">
@@ -343,40 +343,6 @@ export function SocialProof({ deliveredCount }: { deliveredCount: number }) {
   );
 }
 
-/* -------------------------------------------------------------- Pillars */
-
-export function Pillars({ items }: { items: Array<{ title: string; text: string }> }) {
-  if (items.length === 0) return null;
-  return (
-    <section className="container-luxe" aria-label="L’expérience Hanadi Store">
-      <div className="mx-auto mb-10 max-w-xl text-center md:mb-12">
-        <p className="eyebrow">Pour nos clientes</p>
-        <h2 className="mt-3 font-display text-3xl font-medium leading-tight md:text-4xl">
-          L’expérience Hanadi Store
-        </h2>
-        <p className="mt-3 text-[0.9375rem] leading-relaxed text-ink-soft">
-          De votre première pièce préférée au moment où elle arrive chez vous.
-        </p>
-      </div>
-      <div className="mx-auto grid max-w-4xl gap-8 text-center md:grid-cols-3 md:gap-12">
-        {items.map((item, index) => (
-          <Reveal key={item.title} delay={index * 90}>
-            <div>
-              <p className="text-[0.65rem] font-medium uppercase tracking-[0.24em] text-ink-muted">
-                0{index + 1}
-              </p>
-              <h3 className="mt-2 font-display text-xl font-medium">{item.title}</h3>
-              <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-ink-soft">
-                {item.text}
-              </p>
-            </div>
-          </Reveal>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 /* ------------------------------------------------------------ FAQ teaser */
 
 export function FaqTeaser({ items }: { items: Array<{ question: string; answer: string }> }) {
@@ -399,70 +365,6 @@ export function FaqTeaser({ items }: { items: Array<{ question: string; answer: 
             content: <p className="rich-text">{item.answer}</p>,
           }))}
         />
-      </Reveal>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------ Newsletter */
-
-export function NewsletterSection() {
-  const { t } = useLocale();
-  const [email, setEmail] = useState("");
-  const [website, setWebsite] = useState("");
-  const [state, setState] = useState<{ ok: boolean; message: string } | null>(null);
-  const [pending, setPending] = useState(false);
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-    setPending(true);
-    const result = await subscribeNewsletterAction(email, "homepage", website);
-    setState({ ok: result.ok, message: result.ok ? result.message : result.error });
-    if (result.ok) setEmail("");
-    setPending(false);
-  }
-
-  return (
-    <section className="container-luxe" aria-label="Newsletter">
-      <Reveal>
-        <div className="mx-auto max-w-xl px-6 pb-6 pt-6 text-center md:pb-8 md:pt-8">
-          <p className="eyebrow">{t.home.newsletterEyebrow}</p>
-          <h2 className="mt-3 font-display text-3xl font-medium md:text-4xl">
-            {t.home.newsletterTitle}
-          </h2>
-          <p className="mx-auto mt-3 max-w-md text-[0.9375rem] leading-relaxed text-ink-soft">
-            {t.home.newsletterText}
-          </p>
-          <form onSubmit={submit} className="relative mx-auto mt-8 max-w-md">
-            <Honeypot value={website} onChange={setWebsite} />
-            <label htmlFor="homepage-newsletter" className="sr-only">
-              {t.footer.emailLabel}
-            </label>
-            <div className="flex items-center gap-3 border-b hairline pb-2 transition-colors focus-within:border-ink">
-              <input
-                id="homepage-newsletter"
-                type="email"
-                required
-                value={email}
-                onChange={(event) => setEmail(event.target.value)}
-                placeholder={t.footer.emailPlaceholder}
-                className="w-full bg-transparent text-center text-[0.9375rem] tracking-wide text-ink outline-none placeholder:text-ink-muted"
-              />
-              <button
-                type="submit"
-                disabled={pending}
-                className="shrink-0 text-[0.7rem] font-medium uppercase tracking-[0.22em] text-ink underline underline-offset-8 hover:text-gold-dark disabled:opacity-50"
-              >
-                OK
-              </button>
-            </div>
-          </form>
-          {state && (
-            <p className={`mt-3 text-sm ${state.ok ? "text-ink-soft" : "text-sale"}`} role="status">
-              {state.message}
-            </p>
-          )}
-        </div>
       </Reveal>
     </section>
   );

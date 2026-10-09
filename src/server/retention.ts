@@ -28,16 +28,69 @@ export async function purgeExpiredData(): Promise<{
   const notificationCutoff = new Date(now.getTime() - retentionDays("RETENTION_NOTIFICATION_DAYS", 180) * DAY_MS);
   const outboxCutoff = new Date(now.getTime() - retentionDays("RETENTION_OUTBOX_DAYS", 30) * DAY_MS);
 
-  const [adminSessions, customerSessions, carts, idempotencyKeys, rateLimitBuckets, analyticsEvents, notifications, outboxEvents] = await prisma.$transaction([
-    prisma.adminSession.deleteMany({ where: { expiresAt: { lt: now } } }),
-    prisma.customerSession.deleteMany({ where: { expiresAt: { lt: now } } }),
-    prisma.cart.updateMany({ where: { status: "ACTIVE", expiresAt: { lt: now } }, data: { status: "ABANDONED" } }),
-    prisma.idempotencyKey.deleteMany({ where: { expiresAt: { not: null, lt: now } } }),
-    prisma.rateLimitBucket.deleteMany({ where: { resetAt: { lt: now } } }),
-    prisma.analyticsEvent.deleteMany({ where: { createdAt: { lt: analyticsCutoff } } }),
-    prisma.notification.deleteMany({ where: { status: { in: ["SENT", "FAILED", "SKIPPED"] }, createdAt: { lt: notificationCutoff } } }),
-    prisma.orderOutboxEvent.deleteMany({ where: { status: "COMPLETED", completedAt: { lt: outboxCutoff } } }),
-  ]);
+  // Small expiry-driven tables purge in one shot. Large operational tables
+  // purge in bounded batches so a 90/180-day backlog can never lock, time
+  // out, or OOM the scheduled job.
+  const BATCH_SIZE = 1000;
+  async function deleteIdsInBatches(
+    listIds: () => Promise<Array<{ id: string }>>,
+    removeIds: (ids: string[]) => Promise<{ count: number }>,
+  ): Promise<number> {
+    let total = 0;
+    for (;;) {
+      const batch = await listIds();
+      if (batch.length === 0) break;
+      const ids = batch.map((row) => row.id);
+      total += (await removeIds(ids)).count;
+      if (batch.length < BATCH_SIZE) break;
+    }
+    return total;
+  }
+
+  const [adminSessions, customerSessions, carts, idempotencyKeys, rateLimitBuckets] =
+    await Promise.all([
+      prisma.adminSession.deleteMany({ where: { expiresAt: { lt: now } } }),
+      prisma.customerSession.deleteMany({ where: { expiresAt: { lt: now } } }),
+      prisma.cart.updateMany({
+        where: { status: "ACTIVE", expiresAt: { lt: now } },
+        data: { status: "ABANDONED" },
+      }),
+      prisma.idempotencyKey.deleteMany({ where: { expiresAt: { not: null, lt: now } } }),
+      prisma.rateLimitBucket.deleteMany({ where: { resetAt: { lt: now } } }),
+    ]);
+  const analyticsEvents = await deleteIdsInBatches(
+    () =>
+      prisma.analyticsEvent.findMany({
+        where: { createdAt: { lt: analyticsCutoff } },
+        select: { id: true },
+        orderBy: { id: "asc" },
+        take: BATCH_SIZE,
+      }),
+    (ids) => prisma.analyticsEvent.deleteMany({ where: { id: { in: ids } } }),
+  );
+  const notifications = await deleteIdsInBatches(
+    () =>
+      prisma.notification.findMany({
+        where: {
+          status: { in: ["SENT", "FAILED", "SKIPPED"] },
+          createdAt: { lt: notificationCutoff },
+        },
+        select: { id: true },
+        orderBy: { id: "asc" },
+        take: BATCH_SIZE,
+      }),
+    (ids) => prisma.notification.deleteMany({ where: { id: { in: ids } } }),
+  );
+  const outboxEvents = await deleteIdsInBatches(
+    () =>
+      prisma.orderOutboxEvent.findMany({
+        where: { status: "COMPLETED", completedAt: { lt: outboxCutoff } },
+        select: { id: true },
+        orderBy: { id: "asc" },
+        take: BATCH_SIZE,
+      }),
+    (ids) => prisma.orderOutboxEvent.deleteMany({ where: { id: { in: ids } } }),
+  );
 
   return {
     adminSessions: adminSessions.count,
@@ -45,8 +98,8 @@ export async function purgeExpiredData(): Promise<{
     carts: carts.count,
     idempotencyKeys: idempotencyKeys.count,
     rateLimitBuckets: rateLimitBuckets.count,
-    analyticsEvents: analyticsEvents.count,
-    notifications: notifications.count,
-    outboxEvents: outboxEvents.count,
+    analyticsEvents,
+    notifications,
+    outboxEvents,
   };
 }

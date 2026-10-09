@@ -12,6 +12,7 @@ import {
 } from "react";
 import { cn } from "@/lib/utils";
 import { formatDA } from "@/lib/money";
+import { useLocale } from "@/lib/i18n/provider";
 import { Star, StarHalf, Minus, Plus, X, ChevronDown } from "lucide-react";
 
 /* ------------------------------------------------------------------ Buttons */
@@ -213,6 +214,7 @@ export function QuantitySelector({
   max?: number;
   small?: boolean;
 }) {
+  const { t } = useLocale();
   return (
     <div
       className={cn(
@@ -222,7 +224,7 @@ export function QuantitySelector({
     >
       <button
         type="button"
-        aria-label="Decrease quantity"
+        aria-label={t.common.decreaseQuantity}
         disabled={value <= min}
         onClick={() => onChange(Math.max(min, value - 1))}
         className="flex h-full w-10 items-center justify-center disabled:opacity-30"
@@ -237,7 +239,7 @@ export function QuantitySelector({
       </span>
       <button
         type="button"
-        aria-label="Increase quantity"
+        aria-label={t.common.increaseQuantity}
         disabled={value >= max}
         onClick={() => onChange(Math.min(max, value + 1))}
         className="flex h-full w-10 items-center justify-center disabled:opacity-30"
@@ -354,6 +356,7 @@ export function Modal({
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   useDialogFocus(open, panelRef, onClose);
+  const { t } = useLocale();
 
   if (!open) return null;
   const headingId = labelledBy ?? `modal-${title.replace(/\s+/g, "-").toLowerCase()}`;
@@ -364,7 +367,7 @@ export function Modal({
       aria-modal="true"
       aria-labelledby={headingId}
     >
-      <button aria-label="Close" onClick={onClose} className="absolute inset-0 bg-ink/50" />
+      <button aria-label={t.common.close} onClick={onClose} className="absolute inset-0 bg-ink/50" />
       <div
         ref={panelRef}
         tabIndex={-1}
@@ -374,7 +377,7 @@ export function Modal({
           <h2 id={headingId} className="font-display text-2xl">
             {title}
           </h2>
-          <button type="button" onClick={onClose} aria-label="Close dialog" className="p-1">
+          <button type="button" onClick={onClose} aria-label={t.common.close} className="p-1">
             <X size={20} />
           </button>
         </div>
@@ -481,10 +484,14 @@ export function Accordion({
 /* -------------------------------------------------------------------- Stars */
 
 export function Stars({ value, count }: { value: number; count?: number }) {
+  const { t } = useLocale();
   const full = Math.floor(value);
   const half = value - full >= 0.5;
   return (
-    <span className="inline-flex items-center gap-0.5" aria-label={`Rated ${value} out of 5`}>
+    <span
+      className="inline-flex items-center gap-0.5"
+      aria-label={t.common.ratedOutOf5.replace("{value}", String(value))}
+    >
       {Array.from({ length: 5 }).map((_, index) => {
         if (index < full) return <Star key={index} size={13} className="fill-gold text-gold" />;
         if (index === full && half)
@@ -596,8 +603,8 @@ export function Reveal({
       ref={ref}
       style={{ transitionDelay: `${delay}ms` }}
       className={cn(
-        "transition-[opacity,transform] duration-1000 ease-[cubic-bezier(0.22,1,0.36,1)]",
-        visible ? "translate-y-0 opacity-100" : "translate-y-7 opacity-0",
+        "motion-safe:transition-[opacity,transform] motion-safe:duration-1000 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]",
+        visible ? "motion-safe:translate-y-0 motion-safe:opacity-100" : "motion-safe:translate-y-7 motion-safe:opacity-0",
         className,
       )}
     >

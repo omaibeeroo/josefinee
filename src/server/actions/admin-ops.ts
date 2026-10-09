@@ -2,12 +2,14 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { toUserMessage } from "@/lib/errors";
+import { AppError, toUserMessage } from "@/lib/errors";
 import { requirePermission } from "@/lib/auth/rbac";
 import { recordAudit } from "@/lib/audit";
 import { flattenZodErrors } from "@/lib/validation/common";
 import {
   adminId,
+  adminPage,
+  adminSearch,
   auditListParams,
   customerNotes,
   customerStatus,
@@ -67,15 +69,17 @@ export async function listCouponOptions() {
 
 export async function getCouponForEdit(id: string) {
   await requirePermission("coupons:read");
+  const parsedId = adminId.safeParse(id);
+  if (!parsedId.success) throw new AppError("INVALID_INPUT", "Invalid coupon ID.", 400);
   const coupon = await prisma.coupon.findUnique({
-    where: { id },
+    where: { id: parsedId.data },
     include: {
       products: { include: { product: { select: { sku: true } } } },
       collections: { include: { collection: { select: { slug: true } } } },
       wilayas: { include: { wilaya: { select: { code: true } } } },
     },
   });
-  if (!coupon) throw new Error("Coupon not found.");
+  if (!coupon) throw new AppError("NOT_FOUND", "Coupon not found.", 404);
   return {
     ...coupon,
     productSkus: coupon.products
@@ -222,17 +226,21 @@ export async function deleteCouponAction(id: string) {
   const actor = await requirePermission("coupons:write");
   const parsedId = adminId.safeParse(id);
   if (!parsedId.success) return { ok: false as const, error: "Invalid coupon ID." };
-  const redemptions = await prisma.couponRedemption.count({ where: { couponId: parsedId.data } });
-  if (redemptions > 0) {
-    await prisma.coupon.update({ where: { id: parsedId.data }, data: { isActive: false } });
-  } else {
-    await prisma.coupon.delete({ where: { id: parsedId.data } });
+  try {
+    const redemptions = await prisma.couponRedemption.count({ where: { couponId: parsedId.data } });
+    if (redemptions > 0) {
+      await prisma.coupon.update({ where: { id: parsedId.data }, data: { isActive: false } });
+    } else {
+      await prisma.coupon.delete({ where: { id: parsedId.data } });
+    }
+  } catch {
+    return { ok: false as const, error: "Coupon not found or already changed." };
   }
   await recordAudit({
     actorUserId: actor.id,
     action: "COUPON_DELETED",
     resource: "Coupon",
-    resourceId: id,
+    resourceId: parsedId.data,
   });
   revalidatePath("/admin/coupons");
   return { ok: true as const };
@@ -256,7 +264,7 @@ export async function listDeliveryRates() {
 }
 
 const rateSchema = z.object({
-  wilayaId: z.string().min(1),
+  wilayaId: adminId,
   method: z.enum(["HOME", "STOPDESK", "EXPRESS", "STANDARD"]),
   price: z.coerce.number().int().min(0),
   etaMinDays: z.coerce.number().int().min(0).max(30),
@@ -271,23 +279,32 @@ export async function saveDeliveryRateAction(input: z.infer<typeof rateSchema>) 
     return { ok: false as const, error: "Please review the delivery rate fields." };
   }
   const data = parsed.data;
-  await prisma.deliveryRate.upsert({
-    where: { wilayaId_method: { wilayaId: data.wilayaId, method: data.method as DeliveryMethod } },
-    create: {
-      wilayaId: data.wilayaId,
-      method: data.method as DeliveryMethod,
-      price: data.price,
-      etaMinDays: data.etaMinDays,
-      etaMaxDays: data.etaMaxDays,
-      isActive: data.isActive,
-    },
-    update: {
-      price: data.price,
-      etaMinDays: data.etaMinDays,
-      etaMaxDays: data.etaMaxDays,
-      isActive: data.isActive,
-    },
+  const wilaya = await prisma.wilaya.findUnique({
+    where: { id: data.wilayaId },
+    select: { id: true },
   });
+  if (!wilaya) return { ok: false as const, error: "Wilaya not found." };
+  try {
+    await prisma.deliveryRate.upsert({
+      where: { wilayaId_method: { wilayaId: data.wilayaId, method: data.method as DeliveryMethod } },
+      create: {
+        wilayaId: data.wilayaId,
+        method: data.method as DeliveryMethod,
+        price: data.price,
+        etaMinDays: data.etaMinDays,
+        etaMaxDays: data.etaMaxDays,
+        isActive: data.isActive,
+      },
+      update: {
+        price: data.price,
+        etaMinDays: data.etaMinDays,
+        etaMaxDays: data.etaMaxDays,
+        isActive: data.isActive,
+      },
+    });
+  } catch {
+    return { ok: false as const, error: "Could not save this delivery rate." };
+  }
   await recordAudit({
     actorUserId: actor.id,
     action: "DELIVERY_RATE_UPDATED",
@@ -401,11 +418,15 @@ export async function importDeliveryCsvAction(csv: string) {
 
 export async function listCustomersAdmin(params: { search?: string; page?: number }) {
   await requirePermission("customers:read");
-  const page = Math.max(1, params.page ?? 1);
+  const parsed = z
+    .object({ search: adminSearch, page: adminPage })
+    .safeParse(params);
+  if (!parsed.success) return { items: [], total: 0, page: 1, totalPages: 1 };
+  const page = parsed.data.page;
   const pageSize = 20;
   const where: Prisma.CustomerWhereInput = {};
-  if (params.search) {
-    const term = params.search.trim();
+  if (parsed.data.search) {
+    const term = parsed.data.search.trim();
     where.OR = [
       { phone: { contains: term } },
       { email: { contains: term, mode: "insensitive" } },
@@ -440,7 +461,7 @@ export async function listCustomersAdmin(params: { search?: string; page?: numbe
 export async function getCustomerDetail(id: string) {
   const actor = await requirePermission("customers:read");
   const parsedId = adminId.safeParse(id);
-  if (!parsedId.success) throw new Error("Invalid customer ID.");
+  if (!parsedId.success) throw new AppError("INVALID_INPUT", "Invalid customer ID.", 400);
   const customer = await prisma.customer.findUnique({
     where: { id: parsedId.data },
     select: {
@@ -464,7 +485,7 @@ export async function getCustomerDetail(id: string) {
       },
     },
   });
-  if (!customer) throw new Error("Customer not found.");
+  if (!customer) throw new AppError("NOT_FOUND", "Customer not found.", 404);
   await recordAudit({
     actorUserId: actor.id,
     action: "CUSTOMER_DETAIL_VIEWED",
@@ -479,17 +500,21 @@ export async function setCustomerStatusAction(id: string, status: "ACTIVE" | "BL
   const parsedId = adminId.safeParse(id);
   const parsedStatus = customerStatus.safeParse(status);
   if (!parsedId.success || !parsedStatus.success) return { ok: false as const, error: "Invalid customer status update." };
-  await prisma.customer.update({ where: { id: parsedId.data }, data: { status: parsedStatus.data } });
-  await prisma.customerSession.updateMany({
-    where: { customerId: parsedId.data },
-    data: { revokedAt: new Date() },
-  });
+  try {
+    await prisma.customer.update({ where: { id: parsedId.data }, data: { status: parsedStatus.data } });
+    await prisma.customerSession.updateMany({
+      where: { customerId: parsedId.data },
+      data: { revokedAt: new Date() },
+    });
+  } catch {
+    return { ok: false as const, error: "Customer not found or already changed." };
+  }
   await recordAudit({
     actorUserId: actor.id,
     action: "CUSTOMER_STATUS_CHANGED",
     resource: "Customer",
-    resourceId: id,
-    metadata: { status },
+    resourceId: parsedId.data,
+    metadata: { status: parsedStatus.data },
   });
   revalidatePath("/admin/customers");
   return { ok: true as const };
@@ -499,17 +524,21 @@ export async function updateCustomerNotesAction(id: string, notes: string) {
   const actor = await requirePermission("customers:write");
   const parsed = z.object({ id: adminId, notes: customerNotes }).safeParse({ id, notes });
   if (!parsed.success) return { ok: false as const, error: "Invalid customer notes." };
-  await prisma.customer.update({
-    where: { id: parsed.data.id },
-    data: { riskNotes: parsed.data.notes.trim() || null },
-  });
+  try {
+    await prisma.customer.update({
+      where: { id: parsed.data.id },
+      data: { riskNotes: parsed.data.notes.trim() || null },
+    });
+  } catch {
+    return { ok: false as const, error: "Customer not found or already changed." };
+  }
   await recordAudit({
     actorUserId: actor.id,
     action: "CUSTOMER_NOTES_UPDATED",
     resource: "Customer",
-    resourceId: id,
+    resourceId: parsed.data.id,
   });
-  revalidatePath(`/admin/customers/${id}`);
+  revalidatePath(`/admin/customers/${parsed.data.id}`);
   return { ok: true as const };
 }
 
@@ -526,12 +555,18 @@ export async function listSubscribersAdmin() {
 
 export async function deleteSubscriberAction(id: string) {
   const actor = await requirePermission("newsletter:write");
-  await prisma.newsletterSubscriber.delete({ where: { id } });
+  const parsedId = adminId.safeParse(id);
+  if (!parsedId.success) return { ok: false as const, error: "Invalid subscriber ID." };
+  try {
+    await prisma.newsletterSubscriber.delete({ where: { id: parsedId.data } });
+  } catch {
+    return { ok: false as const, error: "Subscriber not found or already changed." };
+  }
   await recordAudit({
     actorUserId: actor.id,
     action: "NEWSLETTER_SUBSCRIBER_DELETED",
     resource: "NewsletterSubscriber",
-    resourceId: id,
+    resourceId: parsedId.data,
   });
   revalidatePath("/admin/newsletter");
   return { ok: true as const };
@@ -541,8 +576,10 @@ export async function deleteSubscriberAction(id: string) {
 
 export async function listMessagesAdmin(status?: string) {
   await requirePermission("messages:read");
+  const parsedStatus = status ? messageStatus.safeParse(status) : null;
+  if (parsedStatus && !parsedStatus.success) return [];
   return prisma.contactMessage.findMany({
-    where: status ? { status: status as "NEW" | "IN_PROGRESS" | "RESOLVED" | "SPAM" } : {},
+    where: parsedStatus?.success ? { status: parsedStatus.data } : {},
     orderBy: { createdAt: "desc" },
     take: 100,
   });
@@ -556,13 +593,20 @@ export async function setMessageStatusAction(
   const parsedId = adminId.safeParse(id);
   const parsedStatus = messageStatus.safeParse(status);
   if (!parsedId.success || !parsedStatus.success) return { ok: false as const, error: "Invalid message status update." };
-  await prisma.contactMessage.update({ where: { id: parsedId.data }, data: { status: parsedStatus.data } });
+  try {
+    await prisma.contactMessage.update({
+      where: { id: parsedId.data },
+      data: { status: parsedStatus.data },
+    });
+  } catch {
+    return { ok: false as const, error: "Message not found or already changed." };
+  }
   await recordAudit({
     actorUserId: actor.id,
     action: "MESSAGE_STATUS_CHANGED",
     resource: "ContactMessage",
-    resourceId: id,
-    metadata: { status },
+    resourceId: parsedId.data,
+    metadata: { status: parsedStatus.data },
   });
   revalidatePath("/admin/messages");
   return { ok: true as const };
@@ -655,9 +699,10 @@ export async function saveFaqAction(input: z.infer<typeof faqSchema>) {
   const parsed = faqSchema.safeParse(input);
   if (!parsed.success) return { ok: false as const, error: "Please review the FAQ fields." };
   const data = parsed.data;
+  const { id: _faqId, ...faqData } = data;
   const saved = data.id
-    ? await prisma.faqItem.update({ where: { id: data.id }, data })
-    : await prisma.faqItem.create({ data });
+    ? await prisma.faqItem.update({ where: { id: data.id }, data: faqData })
+    : await prisma.faqItem.create({ data: faqData });
   await recordAudit({
     actorUserId: actor.id,
     action: data.id ? "FAQ_UPDATED" : "FAQ_CREATED",
@@ -671,12 +716,18 @@ export async function saveFaqAction(input: z.infer<typeof faqSchema>) {
 
 export async function deleteFaqAction(id: string) {
   const actor = await requirePermission("content:write");
-  await prisma.faqItem.delete({ where: { id } });
+  const parsedId = adminId.safeParse(id);
+  if (!parsedId.success) return { ok: false as const, error: "Invalid FAQ ID." };
+  try {
+    await prisma.faqItem.delete({ where: { id: parsedId.data } });
+  } catch {
+    return { ok: false as const, error: "FAQ not found or already changed." };
+  }
   await recordAudit({
     actorUserId: actor.id,
     action: "FAQ_DELETED",
     resource: "FaqItem",
-    resourceId: id,
+    resourceId: parsedId.data,
   });
   revalidatePath("/admin/content");
   return { ok: true as const };
@@ -719,12 +770,13 @@ export async function saveAnnouncementAction(input: z.infer<typeof announcementS
       };
     }
   }
+  const { id: _announcementId, ...announcementData } = data;
   const saved = data.id
     ? await prisma.announcement.update({
         where: { id: data.id },
-        data: { ...data, href: data.href || null },
+        data: { ...announcementData, href: data.href || null },
       })
-    : await prisma.announcement.create({ data: { ...data, href: data.href || null } });
+    : await prisma.announcement.create({ data: { ...announcementData, href: data.href || null } });
   await recordAudit({
     actorUserId: actor.id,
     action: data.id ? "ANNOUNCEMENT_UPDATED" : "ANNOUNCEMENT_CREATED",
@@ -740,12 +792,16 @@ export async function deleteAnnouncementAction(id: string) {
   const actor = await requirePermission("content:write");
   const parsedId = adminId.safeParse(id);
   if (!parsedId.success) return { ok: false as const, error: "Invalid announcement ID." };
-  await prisma.announcement.delete({ where: { id: parsedId.data } });
+  try {
+    await prisma.announcement.delete({ where: { id: parsedId.data } });
+  } catch {
+    return { ok: false as const, error: "Announcement not found or already changed." };
+  }
   await recordAudit({
     actorUserId: actor.id,
     action: "ANNOUNCEMENT_DELETED",
     resource: "Announcement",
-    resourceId: id,
+    resourceId: parsedId.data,
   });
   revalidatePath("/admin/content");
   return { ok: true as const };
@@ -904,17 +960,21 @@ export async function deletePromotionAction(id: string) {
   const actor = await requirePermission("promotions:write");
   const parsedId = adminId.safeParse(id);
   if (!parsedId.success) return { ok: false as const, error: "Invalid promotion ID." };
-  const orders = await prisma.order.count({ where: { promotionId: parsedId.data } });
-  if (orders > 0) {
-    await prisma.promotion.update({ where: { id: parsedId.data }, data: { isActive: false } });
-  } else {
-    await prisma.promotion.delete({ where: { id: parsedId.data } });
+  try {
+    const orders = await prisma.order.count({ where: { promotionId: parsedId.data } });
+    if (orders > 0) {
+      await prisma.promotion.update({ where: { id: parsedId.data }, data: { isActive: false } });
+    } else {
+      await prisma.promotion.delete({ where: { id: parsedId.data } });
+    }
+  } catch {
+    return { ok: false as const, error: "Promotion not found or already changed." };
   }
   await recordAudit({
     actorUserId: actor.id,
     action: "PROMOTION_DELETED",
     resource: "Promotion",
-    resourceId: id,
+    resourceId: parsedId.data,
   });
   revalidatePath("/admin/promotions");
   return { ok: true as const };

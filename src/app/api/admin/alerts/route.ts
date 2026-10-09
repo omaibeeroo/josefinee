@@ -1,10 +1,12 @@
 import { requirePermission } from "@/lib/auth/rbac";
+import { enforceRateLimit, LIMITS } from "@/lib/rate-limit";
 
 const NO_STORE = { "Cache-Control": "no-store" };
 
 export async function GET() {
   try {
-    await requirePermission("orders:read");
+    const actor = await requirePermission("orders:read");
+    await enforceRateLimit({ ...LIMITS.api, key: `alerts:${actor.id}` });
   } catch {
     return Response.json({ error: "Forbidden" }, { status: 403, headers: NO_STORE });
   }

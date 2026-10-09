@@ -51,7 +51,7 @@ export default async function ConfirmationPage({
       <PixelEvent
         name="Purchase"
         params={{
-          value: order.total / 100,
+          value: order.total,
           currency: "DZD",
           eventID: `purchase-${order.orderNumber}`,
           event_id: `purchase-${order.orderNumber}`,

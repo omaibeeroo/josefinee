@@ -145,6 +145,10 @@ export async function changeOrderStatusAction(
     })
     .safeParse({ orderId, status, note, notify });
   if (!parsedInput.success) return { ok: false as const, error: "Invalid order status update." };
+  // Use validated values from here on (never the raw arguments).
+  orderId = parsedInput.data.orderId;
+  status = parsedInput.data.status;
+  notify = parsedInput.data.notify;
   note = parsedInput.data.note;
 
   const order = await prisma.order.findUnique({
@@ -256,17 +260,21 @@ export async function updateAdminNotesAction(orderId: string, notes: string) {
   const actor = await requirePermission("orders:write");
   const parsed = z.object({ orderId: adminId, notes: z.string().max(4000) }).safeParse({ orderId, notes });
   if (!parsed.success) return { ok: false as const, error: "Invalid order note." };
-  await prisma.order.update({
-    where: { id: parsed.data.orderId },
-    data: { adminNotes: parsed.data.notes.trim() || null },
-  });
+  try {
+    await prisma.order.update({
+      where: { id: parsed.data.orderId },
+      data: { adminNotes: parsed.data.notes.trim() || null },
+    });
+  } catch {
+    return { ok: false as const, error: "Order not found or already changed." };
+  }
   await recordAudit({
     actorUserId: actor.id,
     action: "ORDER_NOTES_UPDATED",
     resource: "Order",
-    resourceId: orderId,
+    resourceId: parsed.data.orderId,
   });
-  revalidatePath(`/admin/orders/${orderId}`);
+  revalidatePath(`/admin/orders/${parsed.data.orderId}`);
   return { ok: true as const };
 }
 

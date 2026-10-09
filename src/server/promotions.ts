@@ -32,6 +32,8 @@ async function getActivePromotions(now = new Date(), db: DbClient = prisma) {
       collection: { select: { id: true } },
     },
     orderBy: { createdAt: "desc" },
+    // Active promotions are a handful of rows; the cap only bounds abuse.
+    take: 50,
   });
 }
 

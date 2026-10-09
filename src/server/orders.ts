@@ -70,18 +70,29 @@ export async function createOrder(
     60_000,
     Math.max(5_000, Number(process.env.CHECKOUT_TX_TIMEOUT_MS) || 5_000),
   );
+  // Non-database work stays outside the interactive transaction so the DB
+  // connection is held for the shortest possible time.
+  // Argon2 hashing (~100ms CPU) also happens up front when signup is requested.
+  let passwordHash: string | null = null;
+  if (data.createAccount) {
+    if (!data.email) throw new AppError("EMAIL_REQUIRED", tErr.emailRequired);
+    if (!data.password || passwordIssues(data.password).length > 0) {
+      throw new AppError("WEAK_PASSWORD", tErr.weakPasswordSignup);
+    }
+    passwordHash = await hashPassword(data.password);
+  }
+  const session = await getCustomerSession();
+  const secret = process.env.AUTH_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new AppError("CONFIG", tErr.configDown, 503);
+  }
   const placed = await prisma.$transaction(async (tx) => {
     // Read the cart even if it is already converted so a lost response can be recovered.
     const { cartId, customerId: cartCustomerId, status: cartStatus, lines } = await getCartForCheckout(tx, {
       includeInactive: true,
     });
-    const session = await getCustomerSession();
     if (cartCustomerId && session && cartCustomerId !== session.customer.id) {
       throw new AppError("CART_NOT_OWNED", tErr.cartNotOwned, 403);
-    }
-    const secret = process.env.AUTH_SECRET;
-    if (!secret || secret.length < 32) {
-      throw new AppError("CONFIG", tErr.configDown, 503);
     }
     const idempotencyKey = `checkout:${createHmac("sha256", secret)
       .update(`${cartId}:${data.idempotencyKey}`)
@@ -217,22 +228,23 @@ export async function createOrder(
     });
     const subtotal = freshLines.reduce((sum, line) => sum + line.lineTotal, 0);
 
-    const promotion = await resolveBestPromotion(
-      freshLines.map((line) => ({
-        productId: line.productId,
-        collectionIds: line.collectionIds,
-        unitPrice: line.unitPrice,
-        quantity: line.quantity,
-      })),
-      new Date(),
-      tx,
-    );
+    // Independent reads: promotion and delivery rate resolve concurrently.
+    const [promotion, rate] = await Promise.all([
+      resolveBestPromotion(
+        freshLines.map((line) => ({
+          productId: line.productId,
+          collectionIds: line.collectionIds,
+          unitPrice: line.unitPrice,
+          quantity: line.quantity,
+        })),
+        new Date(),
+        tx,
+      ),
+      resolveDeliveryRate(wilaya.id, data.deliveryMethod, tx),
+    ]);
     const promotionDiscount = promotion?.discount ?? 0;
     const promotionId = promotion?.promotionId ?? null;
     const postPromoSubtotal = Math.max(0, subtotal - promotionDiscount);
-
-    // The free-shipping threshold is evaluated after the promotion, per the pricing rules.
-    const rate = await resolveDeliveryRate(wilaya.id, data.deliveryMethod, tx);
     const shipping =
       settings.commerce.freeDeliveryThreshold > 0 &&
       postPromoSubtotal >= settings.commerce.freeDeliveryThreshold
@@ -290,6 +302,8 @@ export async function createOrder(
           createdAt: { gte: new Date(Date.now() - DUPLICATE_WINDOW_MS) },
           status: { in: [...OPEN_FOR_DUPLICATE] },
         },
+        orderBy: { createdAt: "desc" },
+        take: 25,
         select: { orderNumber: true, total: true },
       });
       const match = recent.find((order) => order.total === total);
@@ -311,24 +325,12 @@ export async function createOrder(
       db: tx,
     });
 
-    let passwordHash: string | null = null;
-    if (data.createAccount) {
-      if (!data.email)
-        throw new AppError("EMAIL_REQUIRED", tErr.emailRequired);
-      if (!data.password || passwordIssues(data.password).length > 0) {
-        throw new AppError(
-          "WEAK_PASSWORD",
-          tErr.weakPasswordSignup,
-        );
-      }
-      if (customer?.passwordHash) {
-        throw new AppError(
-          "ACCOUNT_EXISTS",
-          "An account already exists with this phone number. Please sign in instead.",
-          409,
-        );
-      }
-      passwordHash = await hashPassword(data.password);
+    if (data.createAccount && customer?.passwordHash) {
+      throw new AppError(
+        "ACCOUNT_EXISTS",
+        "An account already exists with this phone number. Please sign in instead.",
+        409,
+      );
     }
 
     let customerId: string | null = customer?.id ?? null;
@@ -554,9 +556,30 @@ export async function getOrderConfirmation(orderNumber: string): Promise<OrderCo
   try {
     const order = await prisma.order.findUnique({
       where: { orderNumber },
-      include: {
+      select: {
+        orderNumber: true,
+        status: true,
+        firstName: true,
+        lastName: true,
+        phone: true,
+        wilayaName: true,
+        communeName: true,
+        address: true,
+        deliveryMethod: true,
+        subtotal: true,
+        discount: true,
+        promotionDiscount: true,
+        shipping: true,
+        total: true,
+        placedAt: true,
         items: {
-          include: {
+          select: {
+            productName: true,
+            variantLabel: true,
+            imageUrl: true,
+            unitPrice: true,
+            quantity: true,
+            lineTotal: true,
             product: {
               select: {
                 images: { select: { url: true }, orderBy: { sortOrder: "asc" }, take: 1 },
@@ -568,6 +591,7 @@ export async function getOrderConfirmation(orderNumber: string): Promise<OrderCo
         statusHistory: {
           where: { isCustomerVisible: true },
           orderBy: { createdAt: "asc" },
+          select: { status: true, note: true, createdAt: true },
         },
       },
     });

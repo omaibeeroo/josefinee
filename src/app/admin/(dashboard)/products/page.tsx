@@ -25,6 +25,16 @@ export default async function AdminProductsPage({
   };
   const [result, t] = await Promise.all([listAdminProducts(filters), getDictionary()]);
 
+  const query = (overrides: Record<string, string>) => {
+    const next = new URLSearchParams();
+    for (const [key, value] of Object.entries({ ...filters, ...overrides })) {
+      if (value && key !== "page") next.set(key, String(value));
+    }
+    if (overrides.page) next.set("page", overrides.page);
+    const queryString = next.toString();
+    return queryString ? `/admin/products?${queryString}` : "/admin/products";
+  };
+
   return (
     <div>
       <PageHeader
@@ -104,9 +114,19 @@ export default async function AdminProductsPage({
 
       {result.totalPages > 1 && (
         <div className="mt-4 flex items-center justify-center gap-2 text-sm">
+          {result.page > 1 && (
+            <Link href={query({ page: String(result.page - 1) })} className="btn btn-ghost min-h-10 px-4 text-xs">
+              {t.pagination.previous}
+            </Link>
+          )}
           <span className="text-ink-muted">
-            Page {result.page} of {result.totalPages}
+            {t.pagination.pageOf.replace("{page}", String(result.page)).replace("{total}", String(result.totalPages))}
           </span>
+          {result.page < result.totalPages && (
+            <Link href={query({ page: String(result.page + 1) })} className="btn btn-ghost min-h-10 px-4 text-xs">
+              {t.pagination.next}
+            </Link>
+          )}
         </div>
       )}
     </div>

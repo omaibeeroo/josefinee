@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { zEmail, zHoneypot, zOptionalString, zPhone } from "./common";
+import { zEmail, zHoneypot, zId, zOptionalString, zPhone } from "./common";
 import { passwordIssues } from "@/lib/auth/password";
 
 export const adminLoginSchema = z.object({
@@ -36,19 +36,14 @@ export const newsletterSchema = z.object({
 export const contactSchema = z.object({
   name: z.string().trim().min(2).max(80),
   email: zEmail,
-  phone: z
-    .string()
-    .trim()
-    .max(30)
-    .optional()
-    .or(z.literal("").transform(() => undefined)),
+  phone: zOptionalString(30),
   subject: z.string().trim().min(2).max(160),
   message: z.string().trim().min(10, "Please write a longer message.").max(4000),
   website: zHoneypot,
 });
 
 export const reviewSchema = z.object({
-  productId: z.string().min(1),
+  productId: zId,
   rating: z.coerce.number().int().min(1).max(5),
   title: zOptionalString(120),
   body: z.string().trim().min(5, "Please write a short review.").max(2000),

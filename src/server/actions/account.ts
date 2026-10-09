@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { toUserMessage } from "@/lib/errors";
+import { AppError, toUserMessage } from "@/lib/errors";
 import { getCustomerSession } from "@/lib/auth/session";
 import { signOrderToken } from "@/lib/order-token";
 import { z } from "zod";
@@ -14,7 +14,7 @@ import { storefrontProductWhere } from "@/server/catalog";
 
 async function requireCustomer() {
   const session = await getCustomerSession();
-  if (!session) throw new Error("Please sign in.");
+  if (!session) throw new AppError("UNAUTHORIZED", "Please sign in.", 401);
   return session.customer;
 }
 
@@ -91,13 +91,18 @@ export async function getWishlistItems() {
     orderBy: { createdAt: "desc" },
     include: {
       product: {
-        include: {
+        select: {
+          id: true,
+          slug: true,
+          name: true,
+          price: true,
+          compareAtPrice: true,
           images: { orderBy: [{ isPrimary: "desc" }, { sortOrder: "asc" }], take: 1 },
           variants: {
             where: { isActive: true },
             orderBy: { position: "asc" },
             take: 1,
-            include: { inventory: true },
+            select: { id: true, inventory: { select: { stock: true, reserved: true } } },
           },
         },
       },
@@ -208,7 +213,7 @@ export async function deleteAddressAction(id: string) {
         where: { id: parsedId.data, customerId: customer.id },
         select: { id: true, isDefault: true },
       });
-      if (!address) return;
+      if (!address) throw new AppError("NOT_FOUND", tErr.addressMissing, 404);
       await tx.address.delete({ where: { id: address.id } });
       if (address.isDefault) {
         const next = await tx.address.findFirst({

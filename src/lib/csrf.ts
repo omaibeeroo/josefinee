@@ -12,9 +12,28 @@ export async function assertSameOrigin(): Promise<void> {
   const origin = headerList.get("origin");
   const host = headerList.get("host");
 
+  // Fetch metadata: a browser-asserted cross-site request is rejected even
+  // when Origin is stripped by the client.
+  const secFetchSite = headerList.get("sec-fetch-site");
+  if (secFetchSite && secFetchSite !== "same-origin" && secFetchSite !== "none") {
+    throw new AppError("CSRF", "Invalid request origin.", 403);
+  }
+
   // Non-browser requests (server-to-server) are allowed to reach the handler;
-  // authentication still applies. Browser cross-site requests carry Origin.
-  if (!origin) return;
+  // authentication still applies. Browser requests carry Origin or Referer.
+  if (!origin) {
+    const referer = headerList.get("referer");
+    if (!referer || !host) return;
+    try {
+      if (new URL(referer).host !== host) {
+        throw new AppError("CSRF", "Invalid request origin.", 403);
+      }
+    } catch (error) {
+      if (error instanceof AppError) throw error;
+      throw new AppError("CSRF", "Invalid request origin.", 403);
+    }
+    return;
+  }
   if (!host) throw new AppError("CSRF", "Invalid request.", 403);
 
   try {

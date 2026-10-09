@@ -52,9 +52,19 @@ const nextConfig: NextConfig = {
     remotePatterns: storageRemotePatterns(),
   },
   experimental: {
+    optimizePackageImports: ["lucide-react"],
     serverActions: {
       bodySizeLimit: "8mb",
     },
+  },
+  outputFileTracingExcludes: {
+    "*": [
+      "public/uploads/**",
+      "prisma/data/**",
+      "**/*.test.ts",
+      "vendor/**",
+      ".next/cache/**",
+    ],
   },
   async headers() {
     return [

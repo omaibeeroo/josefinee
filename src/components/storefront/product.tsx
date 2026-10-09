@@ -458,6 +458,7 @@ export function ProductCarousel({
   products: StoreProductCard[];
   viewAllHref?: string;
 }) {
+  const { t } = useLocale();
   const trackRef = useRef<HTMLDivElement>(null);
 
   function scrollBy(direction: 1 | -1) {
@@ -481,12 +482,12 @@ export function ProductCarousel({
               href={viewAllHref}
               className="mr-2 hidden text-xs font-medium uppercase tracking-[0.18em] underline underline-offset-4 sm:inline"
             >
-              Voir tout
+              {t.common.viewAll}
             </Link>
           )}
           <button
             type="button"
-            aria-label="Faire défiler vers la gauche"
+            aria-label={t.product.scrollLeft}
             onClick={() => scrollBy(-1)}
             className="flex h-10 w-10 items-center justify-center border hairline bg-white"
           >
@@ -494,7 +495,7 @@ export function ProductCarousel({
           </button>
           <button
             type="button"
-            aria-label="Faire défiler vers la droite"
+            aria-label={t.product.scrollRight}
             onClick={() => scrollBy(1)}
             className="flex h-10 w-10 items-center justify-center border hairline bg-white"
           >
@@ -560,7 +561,7 @@ export function ProductGallery({
           )}
         </div>
         <span className="product-zoom-hint pointer-events-none absolute bottom-4 left-4 inline-flex items-center gap-2 rounded-full bg-white/85 px-3 py-2 text-[0.625rem] font-medium uppercase tracking-[0.18em] text-ink-soft opacity-0 backdrop-blur transition-opacity duration-300 group-hover:opacity-100">
-          Survoler pour agrandir
+          {t.product.zoomHint}
         </span>
       </button>
       {images.length > 1 && (

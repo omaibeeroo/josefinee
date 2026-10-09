@@ -39,7 +39,10 @@ export const BRAND_CONFIG = {
     whatsapp: env("NEXT_PUBLIC_WHATSAPP_NUMBER", ""),
   },
   /** Free delivery threshold in DA. 0 disables the free-delivery promise. */
-  freeDeliveryThreshold: Number(env("NEXT_PUBLIC_FREE_DELIVERY_THRESHOLD", "0")) || 0,
+  freeDeliveryThreshold: (() => {
+    const parsed = Number(env("NEXT_PUBLIC_FREE_DELIVERY_THRESHOLD", "0"));
+    return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 0;
+  })(),
 } as const;
 
 export const isS3Configured = (): boolean =>

@@ -1,7 +1,4 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { ADMIN_COOKIE } from "@/lib/auth/session";
-import { hashToken } from "@/lib/auth/tokens";
 
 export async function middleware(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
@@ -34,39 +31,6 @@ export async function middleware(request: NextRequest) {
     if (!adminPreview) return maintenanceResponse(csp);
   }
 
-  if (pathname.startsWith("/products/")) {
-    let slug: string;
-    try {
-      slug = decodeURIComponent(request.nextUrl.pathname.slice("/products/".length));
-    } catch {
-      slug = "";
-    }
-    if (!slug || slug.includes("/")) {
-      return productNotFound(csp);
-    }
-    try {
-      const [{ prisma }, { storefrontProductWhere }] = await Promise.all([
-        import("@/lib/prisma"),
-        import("@/server/catalog"),
-      ]);
-      const product = await prisma.product.findFirst({
-        where: { ...storefrontProductWhere(), slug },
-        select: { id: true },
-      });
-      if (!product) return productNotFound(csp);
-    } catch {
-      return new NextResponse("Service temporairement indisponible.", {
-        status: 503,
-        headers: {
-          "Content-Type": "text/plain; charset=utf-8",
-          "Cache-Control": "no-store",
-          "Content-Security-Policy": csp,
-          "Retry-After": "30",
-        },
-      });
-    }
-  }
-
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
   if (pathname.startsWith("/order/") || pathname.startsWith("/newsletter/unsubscribe/")) {
@@ -76,6 +40,13 @@ export async function middleware(request: NextRequest) {
 }
 
 async function hasActiveAdminSession(request: NextRequest): Promise<boolean> {
+  // Lazy-loaded so the hot middleware path stays free of Prisma/auth bundles.
+  // Only runs when PUBLIC_SITE_MAINTENANCE=true (off by default).
+  const [{ ADMIN_COOKIE }, { hashToken }, { prisma }] = await Promise.all([
+    import("@/lib/auth/session"),
+    import("@/lib/auth/tokens"),
+    import("@/lib/prisma"),
+  ]);
   const token = request.cookies.get(ADMIN_COOKIE)?.value;
   if (!token) return false;
 
@@ -105,21 +76,6 @@ function maintenanceResponse(csp: string): NextResponse {
         "Content-Type": "text/html; charset=utf-8",
         "Cache-Control": "no-store, max-age=0",
         "Retry-After": "300",
-        "Content-Security-Policy": csp,
-        "X-Content-Type-Options": "nosniff",
-      },
-    },
-  );
-}
-
-function productNotFound(csp: string): NextResponse {
-  return new NextResponse(
-    '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Produit introuvable | Hanadi Store</title></head><body><main><h1>Produit introuvable</h1><p>Ce produit n’existe plus ou n’est pas disponible.</p><a href="/shop">Retour à la boutique</a></main></body></html>',
-    {
-      status: 404,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store",
         "Content-Security-Policy": csp,
         "X-Content-Type-Options": "nosniff",
       },

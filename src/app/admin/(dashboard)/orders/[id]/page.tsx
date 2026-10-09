@@ -27,7 +27,7 @@ export default async function AdminOrderDetailPage({
     <div>
       <PageHeader
         title={order.orderNumber}
-        description={`Passée le ${formatDateTimeFR(order.placedAt)} · IP ${order.ip ?? "—"}`}
+        description={`${t.adminOrderDetail.orderPlacedOn.replace("{date}", formatDateTimeFR(order.placedAt))} · IP ${order.ip ?? "—"}`}
         action={
           <div className="flex gap-2">
             <OrderStatusBadge status={order.status} label={t.status[order.status]} />
@@ -41,7 +41,7 @@ export default async function AdminOrderDetailPage({
 
       {order.riskLevel !== "LOW" && (
         <div className="mb-4 border border-amber-300 bg-amber-50 p-4 text-sm">
-          <p className="font-medium">Risk score {order.riskScore} — review before shipping.</p>
+          <p className="font-medium">{t.adminOrderDetail.riskReview.replace("{score}", String(order.riskScore))}</p>
           {order.riskFlags.length > 0 && (
             <ul className="mt-1 list-disc pl-5 text-ink-soft">
               {order.riskFlags.map((flag) => (
@@ -55,7 +55,7 @@ export default async function AdminOrderDetailPage({
       <div className="grid gap-4 xl:grid-cols-[1fr_340px]">
         <div className="space-y-4">
           <Card>
-            <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">Items</h2>
+            <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminOrderDetail.orderItems}</h2>
             <ul className="divide-y divide-line">
               {order.items.map((item) => (
                 <li key={item.id} className="flex items-center gap-4 py-3">

@@ -42,4 +42,18 @@ describe("checkoutSchema", () => {
     const result = checkoutSchema.safeParse({ ...valid, communeId: "" });
     expect(result.success).toBe(false);
   });
+
+  it("treats the string 'false' as false for boolean checkboxes", () => {
+    expect(checkoutSchema.safeParse({ ...valid, acceptTerms: "false" }).success).toBe(
+      false,
+    );
+    const accepted = checkoutSchema.safeParse({ ...valid, acceptTerms: "true" });
+    expect(accepted.success).toBe(true);
+  });
+
+  it("treats an empty-string email as absent", () => {
+    const result = checkoutSchema.safeParse({ ...valid, email: "" });
+    expect(result.success).toBe(true);
+    if (result.success) expect(result.data.email).toBeUndefined();
+  });
 });

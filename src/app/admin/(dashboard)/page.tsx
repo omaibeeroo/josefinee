@@ -110,7 +110,7 @@ export default async function AdminDashboard({
             </Link>
           </div>
           {lowStock.length === 0 ? (
-            <p className="text-sm text-ink-muted">Stock levels look healthy.</p>
+            <p className="text-sm text-ink-muted">{t.adminDash.stockHealthy}</p>
           ) : (
             <ul className="space-y-2.5 text-sm">
               {lowStock.map((item) => (
@@ -120,7 +120,7 @@ export default async function AdminDashboard({
                     {item.optionLabel ? ` · ${item.optionLabel}` : ""}
                   </span>
                   <span className={`shrink-0 font-semibold tabular-nums ${item.stock === 0 ? "text-[#9e342e]" : "text-amber-700"}`}>
-                    {item.stock} left
+                    {t.adminDash.stockLeft.replace("{count}", String(item.stock))}
                   </span>
                 </li>
               ))}

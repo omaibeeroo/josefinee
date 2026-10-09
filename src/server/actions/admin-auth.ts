@@ -22,6 +22,7 @@ import {
   verifyTotp,
 } from "@/lib/auth/totp";
 import { getSettings } from "@/lib/settings";
+import { getActionT } from "@/lib/i18n/server";
 import { z } from "zod";
 import { adminId, userStatus } from "@/lib/validation/admin";
 
@@ -33,9 +34,10 @@ function redirectIfPasswordChangeRequired(mustChangePassword: boolean): void {
 }
 
 export async function adminLoginAction(input: { email: string; password: string; totp?: string }) {
+  const t = await getActionT();
   const parsed = adminLoginSchema.safeParse(input);
   if (!parsed.success) {
-    return { ok: false as const, error: "Enter your email and password." };
+    return { ok: false as const, error: t.enterCredentials };
   }
 
   const ip = await clientIp();
@@ -43,7 +45,7 @@ export async function adminLoginAction(input: { email: string; password: string;
     await enforceRateLimit({ ...LIMITS.adminLogin, key: `admin-login:${ip}` });
     await enforceRateLimit({ ...LIMITS.adminLogin, key: `admin-login-account:${parsed.data.email}` });
   } catch {
-    return { ok: false as const, error: "Too many attempts. Please try again later." };
+    return { ok: false as const, error: t.rateLimited };
   }
 
   const user = await prisma.user.findUnique({
@@ -52,11 +54,11 @@ export async function adminLoginAction(input: { email: string; password: string;
   });
 
   if (!user) {
-    return { ok: false as const, error: "Email or password is incorrect." };
+    return { ok: false as const, error: t.badCredentials };
   }
 
   if (user.status === "DISABLED") {
-    return { ok: false as const, error: "Email or password is incorrect." };
+    return { ok: false as const, error: t.badCredentials };
   }
   if (user.status === "LOCKED" && user.lockedUntil && user.lockedUntil <= new Date()) {
     await prisma.user.update({
@@ -64,7 +66,7 @@ export async function adminLoginAction(input: { email: string; password: string;
       data: { status: "ACTIVE", failedLoginCount: 0, lockedUntil: null },
     });
   } else if (user.status === "LOCKED" || (user.lockedUntil && user.lockedUntil > new Date())) {
-    return { ok: false as const, error: "Account temporarily locked. Try again later." };
+    return { ok: false as const, error: t.lockedOut };
   }
 
   const valid = user.passwordHash
@@ -97,14 +99,14 @@ export async function adminLoginAction(input: { email: string; password: string;
       resourceId: user.id,
       ip,
     });
-    return { ok: false as const, error: "Email or password is incorrect." };
+    return { ok: false as const, error: t.badCredentials };
   }
 
   if (user.twoFactorEnabled && user.twoFactorSecret) {
     if (!parsed.data.totp) {
       return {
         ok: false as const,
-        error: "Enter your 6-digit authenticator code.",
+        error: t.enterTotp,
         needsTotp: true as const,
       };
     }
@@ -114,7 +116,7 @@ export async function adminLoginAction(input: { email: string; password: string;
     } catch {
       return {
         ok: false as const,
-        error: "Two-factor configuration is invalid. Contact a super admin.",
+        error: t.totpInvalidConfig,
       };
     }
     if (!verifyTotp(secret, parsed.data.totp)) {
@@ -126,7 +128,7 @@ export async function adminLoginAction(input: { email: string; password: string;
         resourceId: user.id,
         ip,
       });
-      return { ok: false as const, error: "Invalid authenticator code.", needsTotp: true as const };
+      return { ok: false as const, error: t.totpInvalid, needsTotp: true as const };
     }
   }
 
@@ -160,17 +162,23 @@ const firstLoginSchema = z.object({
 export async function adminFirstLoginAction(input: { current: string; next: string }) {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
+  const t = await getActionT();
+  try {
+    await enforceRateLimit({ ...LIMITS.login, key: `first-login:${session.user.id}` });
+  } catch {
+    return { ok: false as const, error: t.rateLimited };
+  }
 
   const parsed = firstLoginSchema.safeParse(input);
   if (!parsed.success || !isStrongPassword(parsed.data.next)) {
     return {
       ok: false as const,
-      error: "Choose a stronger password (10+ chars, mixed case, number).",
+      error: t.weakPassword,
     };
   }
 
   const valid = await verifyPassword(session.user.passwordHash, parsed.data.current);
-  if (!valid) return { ok: false as const, error: "Your current password is incorrect." };
+  if (!valid) return { ok: false as const, error: t.wrongCurrent };
 
   await prisma.user.update({
     where: { id: session.user.id },
@@ -190,15 +198,21 @@ export async function adminChangePasswordAction(input: { current: string; next: 
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
   redirectIfPasswordChangeRequired(session.user.mustChangePassword);
+  const t = await getActionT();
+  try {
+    await enforceRateLimit({ ...LIMITS.login, key: `change-password:${session.user.id}` });
+  } catch {
+    return { ok: false as const, error: t.rateLimited };
+  }
   const parsed = firstLoginSchema.safeParse(input);
   if (!parsed.success || !isStrongPassword(parsed.data.next)) {
     return {
       ok: false as const,
-      error: "Choose a stronger password (10+ chars, mixed case, number).",
+      error: t.weakPassword,
     };
   }
   const valid = await verifyPassword(session.user.passwordHash, parsed.data.current);
-  if (!valid) return { ok: false as const, error: "Your current password is incorrect." };
+  if (!valid) return { ok: false as const, error: t.wrongCurrent };
   await prisma.user.update({
     where: { id: session.user.id },
     data: { passwordHash: await hashPassword(parsed.data.next) },
@@ -210,7 +224,7 @@ export async function adminChangePasswordAction(input: { current: string; next: 
     resource: "User",
     resourceId: session.user.id,
   });
-  return { ok: true as const, message: "Your password has been updated." };
+  return { ok: true as const, message: (await getActionT()).passwordUpdated };
 }
 
 /* ------------------------------------------------------------ 2FA setup */
@@ -221,12 +235,18 @@ export async function start2faSetupAction(input: { currentPassword: string }) {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
   redirectIfPasswordChangeRequired(session.user.mustChangePassword);
+  const tSetup = await getActionT();
+  try {
+    await enforceRateLimit({ ...LIMITS.login, key: `2fa-setup:${session.user.id}` });
+  } catch {
+    return { ok: false as const, error: tSetup.rateLimited };
+  }
   const parsed = stepUpSchema.safeParse(input);
   if (
     !parsed.success ||
     !(await verifyPassword(session.user.passwordHash, parsed.data.currentPassword))
   ) {
-    return { ok: false as const, error: "Current password is incorrect." };
+    return { ok: false as const, error: tSetup.wrongCurrent };
   }
 
   const secret = createTotpSecret();
@@ -253,17 +273,27 @@ export async function confirm2faSetupAction(token: string) {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
   redirectIfPasswordChangeRequired(session.user.mustChangePassword);
-  if (!session.user.twoFactorSecret) return { ok: false as const, error: "Start setup first." };
+  const t = await getActionT();
+  const parsedToken = z.string().regex(/^\d{6}$/).safeParse(token);
+  if (!parsedToken.success) {
+    return { ok: false as const, error: t.invalidCode };
+  }
+  try {
+    await enforceRateLimit({ ...LIMITS.login, key: `2fa-confirm:${session.user.id}` });
+  } catch {
+    return { ok: false as const, error: t.rateLimited };
+  }
+  if (!session.user.twoFactorSecret) return { ok: false as const, error: t.startSetupFirst };
 
   let secret: string;
   try {
     secret = decryptSecret(session.user.twoFactorSecret);
   } catch {
-    return { ok: false as const, error: "Setup expired. Start again." };
+    return { ok: false as const, error: t.setupExpired };
   }
 
   if (!verifyTotp(secret, token)) {
-    return { ok: false as const, error: "Invalid code. Check your authenticator app time." };
+    return { ok: false as const, error: t.invalidCode };
   }
 
   await prisma.user.update({
@@ -283,6 +313,12 @@ export async function disable2faAction(input: { currentPassword: string; token: 
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
   redirectIfPasswordChangeRequired(session.user.mustChangePassword);
+  const t = await getActionT();
+  try {
+    await enforceRateLimit({ ...LIMITS.login, key: `2fa-disable:${session.user.id}` });
+  } catch {
+    return { ok: false as const, error: t.rateLimited };
+  }
   const parsed = z
     .object({ currentPassword: z.string().min(1).max(200), token: z.string().regex(/^\d{6}$/) })
     .safeParse(input);
@@ -290,15 +326,15 @@ export async function disable2faAction(input: { currentPassword: string; token: 
     !parsed.success ||
     !(await verifyPassword(session.user.passwordHash, parsed.data.currentPassword))
   ) {
-    return { ok: false as const, error: "Current password is incorrect." };
+    return { ok: false as const, error: t.wrongCurrent };
   }
   if (!session.user.twoFactorSecret)
-    return { ok: false as const, error: "Two-factor authentication is not enabled." };
+    return { ok: false as const, error: t.totpNotEnabled };
   try {
     if (!verifyTotp(decryptSecret(session.user.twoFactorSecret), parsed.data.token))
-      return { ok: false as const, error: "Authenticator code is invalid." };
+      return { ok: false as const, error: t.totpInvalid };
   } catch {
-    return { ok: false as const, error: "Two-factor configuration is invalid." };
+    return { ok: false as const, error: t.totpConfigInvalid };
   }
   await prisma.user.update({
     where: { id: session.user.id },
@@ -349,15 +385,15 @@ const createUserSchema = z.object({
 
 export async function createUserAction(input: z.infer<typeof createUserSchema>) {
   const actor = await requirePermission("users:manage");
+  const t = await getActionT();
   const parsed = createUserSchema.safeParse(input);
   if (!parsed.success || !isStrongPassword(parsed.data.password)) {
-    return { ok: false as const, error: "Provide a valid email, name and strong password." };
+    return { ok: false as const, error: t.validUserFields };
   }
   const existing = await prisma.user.findUnique({ where: { email: parsed.data.email } });
-  if (existing) return { ok: false as const, error: "A user with this email already exists." };
-
+  if (existing) return { ok: false as const, error: t.accountExists };
   const role = await prisma.role.findUnique({ where: { name: parsed.data.roleName } });
-  if (!role) return { ok: false as const, error: "Unknown role." };
+  if (!role) return { ok: false as const, error: t.unknownRole };
 
   const user = await prisma.user.create({
     data: {
@@ -384,11 +420,20 @@ export async function setUserStatusAction(userId: string, status: "ACTIVE" | "DI
   if (!parsed.success) return { ok: false as const, error: "Invalid user status update." };
   if (actor.id === parsed.data.userId)
     return { ok: false as const, error: "You cannot disable your own account." };
-  await prisma.user.update({
-    where: { id: parsed.data.userId },
-    data: { status: parsed.data.status, failedLoginCount: 0, lockedUntil: null },
-  });
-  await prisma.adminSession.updateMany({ where: { userId: parsed.data.userId }, data: { revokedAt: new Date() } });
+  try {
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: parsed.data.userId },
+        data: { status: parsed.data.status, failedLoginCount: 0, lockedUntil: null },
+      }),
+      prisma.adminSession.updateMany({
+        where: { userId: parsed.data.userId },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
+  } catch {
+    return { ok: false as const, error: "User not found or already changed." };
+  }
   await recordAudit({
     actorUserId: actor.id,
     action: "USER_STATUS_CHANGED",
@@ -408,16 +453,25 @@ export async function resetUserPasswordAction(userId: string, password: string) 
       error: "Password must be 10+ chars with mixed case and a number.",
     };
   }
-  await prisma.user.update({
-    where: { id: parsed.data.userId },
-    data: {
-      passwordHash: await hashPassword(parsed.data.password),
-      mustChangePassword: true,
-      failedLoginCount: 0,
-      lockedUntil: null,
-    },
-  });
-  await prisma.adminSession.updateMany({ where: { userId: parsed.data.userId }, data: { revokedAt: new Date() } });
+  try {
+    await prisma.$transaction([
+      prisma.user.update({
+        where: { id: parsed.data.userId },
+        data: {
+          passwordHash: await hashPassword(parsed.data.password),
+          mustChangePassword: true,
+          failedLoginCount: 0,
+          lockedUntil: null,
+        },
+      }),
+      prisma.adminSession.updateMany({
+        where: { userId: parsed.data.userId },
+        data: { revokedAt: new Date() },
+      }),
+    ]);
+  } catch {
+    return { ok: false as const, error: "User not found or already changed." };
+  }
   await recordAudit({
     actorUserId: actor.id,
     action: "USER_PASSWORD_RESET",

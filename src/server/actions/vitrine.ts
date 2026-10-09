@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { revalidateTag } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { CACHE_TAG_CATALOG } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 import { requirePermission } from "@/lib/auth/rbac";
@@ -88,6 +88,9 @@ export async function saveVitrineSections(input: unknown): Promise<{ ok: boolean
     resourceId: "homepage",
     metadata: { sections },
   });
+  // Homepage block order feeds cached storefront queries.
+  revalidateTag(CACHE_TAG_CATALOG);
+  revalidatePath("/");
   return { ok: true };
 }
 
@@ -123,6 +126,9 @@ export async function setSpotlightProduct(
     resourceId: "homepage",
     metadata: { spotlightProductId: productId },
   });
+  // Spotlight feeds cached homepage queries.
+  revalidateTag(CACHE_TAG_CATALOG);
+  revalidatePath("/");
   return { ok: true };
 }
 

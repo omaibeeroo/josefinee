@@ -42,9 +42,10 @@ export async function getDashboardStats(range: DateRange) {
       _avg: { total: true },
     }),
     prisma.order.count({ where: { status: "PENDING" } }),
-    prisma.inventory.count({
-      where: { stock: { gt: 0 }, reserved: 0 },
-    }),
+    prisma.$queryRaw<Array<{ count: number }>>`
+      SELECT COUNT(*)::int AS count FROM "Inventory"
+      WHERE stock - reserved > 0 AND stock - reserved <= "lowStockThreshold"
+    `.then((rows) => rows[0]?.count ?? 0),
     prisma.inventory.count({ where: { stock: 0 } }),
     prisma.product.findMany({
       where: { status: "ACTIVE" },
@@ -129,10 +130,17 @@ export async function getOrdersSeries(range: DateRange): Promise<Array<{ date: s
 }
 
 export async function getLowStockProducts(limit = 20) {
+  const safeLimit = Math.min(100, Math.max(1, Math.floor(limit) || 20));
+  const lowIds = await prisma.$queryRaw<Array<{ variantId: string }>>`
+    SELECT "variantId" FROM "Inventory"
+    WHERE stock - reserved <= "lowStockThreshold"
+    ORDER BY (stock - reserved) ASC
+    LIMIT ${safeLimit}
+  `;
+  if (lowIds.length === 0) return [];
+  const order = new Map(lowIds.map((row, index) => [row.variantId, index]));
   const rows = await prisma.inventory.findMany({
-    where: { stock: { lte: 5 } },
-    orderBy: { stock: "asc" },
-    take: limit,
+    where: { variantId: { in: lowIds.map((row) => row.variantId) } },
     include: {
       variant: {
         select: {
@@ -144,6 +152,7 @@ export async function getLowStockProducts(limit = 20) {
       },
     },
   });
+  rows.sort((a, b) => (order.get(a.variantId) ?? 0) - (order.get(b.variantId) ?? 0));
   return rows.map((row) => ({
     variantId: row.variantId,
     sku: row.variant.sku,

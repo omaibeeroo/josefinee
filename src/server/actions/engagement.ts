@@ -17,7 +17,7 @@ import { attachCartToCustomer } from "@/server/cart";
 import { enforceRateLimit, LIMITS, clientIp } from "@/lib/rate-limit";
 import { customerLoginSchema, customerRegisterSchema } from "@/lib/validation/auth";
 import { getActionT } from "@/lib/i18n/server";
-import { flattenZodErrors, isBotSubmission } from "@/lib/validation/common";
+import { flattenZodErrors, isBotSubmission, zId } from "@/lib/validation/common";
 import { recordAudit } from "@/lib/audit";
 import { storefrontProductWhere } from "@/server/catalog";
 import { Prisma } from "@prisma/client";
@@ -136,8 +136,14 @@ export async function submitReviewAction(input: {
   }
   const session = await getCustomerSession();
   const ip = await clientIp();
+  // Fail closed: without AUTH_SECRET the guest hash would be predictable.
+  const authSecret = process.env.AUTH_SECRET;
+  if (!authSecret) {
+    console.error("[review] AUTH_SECRET is not configured");
+    return { ok: false as const, error: t.wentWrong };
+  }
   const guestIdentityHash = !session?.customer
-    ? createHmac("sha256", process.env.AUTH_SECRET ?? "review-identity-fallback").update(ip).digest("hex")
+    ? createHmac("sha256", authSecret).update(ip).digest("hex")
     : null;
 
   try {
@@ -185,7 +191,7 @@ export async function submitReviewAction(input: {
 
 export async function toggleWishlistAction(productId: string) {
   const t = await getActionT();
-  const parsedId = z.string().min(1).max(64).safeParse(productId);
+  const parsedId = zId.safeParse(productId);
   if (!parsedId.success) return { ok: false as const, error: t.productUnavailable };
   const session = await getCustomerSession();
   if (!session) {
@@ -197,28 +203,55 @@ export async function toggleWishlistAction(productId: string) {
     return { ok: false as const, error: t.rateLimited };
   }
 
-  const visibleProduct = await prisma.product.findFirst({
-    where: { AND: [storefrontProductWhere(), { id: parsedId.data }] },
-    select: { id: true },
-  });
-  if (!visibleProduct) return { ok: false as const, error: t.productUnavailable };
+  try {
+    const visibleProduct = await prisma.product.findFirst({
+      where: { AND: [storefrontProductWhere(), { id: parsedId.data }] },
+      select: { id: true },
+    });
+    if (!visibleProduct) return { ok: false as const, error: t.productUnavailable };
 
-  let wishlist = await prisma.wishlist.findUnique({
-    where: { customerId: session.customer.id },
-  });
-  if (!wishlist) {
-    wishlist = await prisma.wishlist.create({ data: { customerId: session.customer.id } });
-  }
+    let wishlist = await prisma.wishlist.findUnique({
+      where: { customerId: session.customer.id },
+    });
+    if (!wishlist) {
+      try {
+        wishlist = await prisma.wishlist.create({ data: { customerId: session.customer.id } });
+      } catch (error) {
+        // Concurrent first-toggle race: another request created it.
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+          wishlist = await prisma.wishlist.findUnique({
+            where: { customerId: session.customer.id },
+          });
+          if (!wishlist) return { ok: false as const, error: t.wentWrong };
+        } else {
+          throw error;
+        }
+      }
+    }
 
-  const existing = await prisma.wishlistItem.findUnique({
-    where: { wishlistId_productId: { wishlistId: wishlist.id, productId: parsedId.data } },
-  });
-  if (existing) {
-    await prisma.wishlistItem.delete({ where: { id: existing.id } });
-    return { ok: true as const, saved: false };
+    const existing = await prisma.wishlistItem.findUnique({
+      where: { wishlistId_productId: { wishlistId: wishlist.id, productId: parsedId.data } },
+    });
+    if (existing) {
+      await prisma.wishlistItem.delete({ where: { id: existing.id } });
+      return { ok: true as const, saved: false };
+    }
+    try {
+      await prisma.wishlistItem.create({
+        data: { wishlistId: wishlist.id, productId: parsedId.data },
+      });
+    } catch (error) {
+      // Double-tap race: item already saved counts as saved.
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+        return { ok: true as const, saved: true };
+      }
+      throw error;
+    }
+    return { ok: true as const, saved: true };
+  } catch (error) {
+    console.error("[wishlist] toggle failed", error instanceof Error ? error.name : "unknown");
+    return { ok: false as const, error: t.wentWrong };
   }
-  await prisma.wishlistItem.create({ data: { wishlistId: wishlist.id, productId: parsedId.data } });
-  return { ok: true as const, saved: true };
 }
 
 /** IDs saved in the server wishlist (empty when logged out). */
@@ -237,7 +270,7 @@ export async function mergeWishlistAction(productIds: string[]) {
   const t = await getActionT();
   const session = await getCustomerSession();
   if (!session) return { ok: false as const, error: t.signIn };
-  const parsedIds = z.array(z.string().min(1).max(64)).max(100).safeParse(productIds);
+  const parsedIds = z.array(zId).max(100).safeParse(productIds);
   if (!parsedIds.success) return { ok: false as const, error: t.wishlistFailed };
   try {
     await enforceRateLimit({ ...LIMITS.wishlist, key: `wishlist:${session.customer.id}` });
@@ -247,37 +280,61 @@ export async function mergeWishlistAction(productIds: string[]) {
   const ids = [...new Set(parsedIds.data)];
   if (ids.length === 0) return { ok: true as const, added: 0 };
 
-  const products = await prisma.product.findMany({
-    where: { AND: [storefrontProductWhere(), { id: { in: ids } }] },
-    select: { id: true },
-  });
-  const valid = new Set(products.map((product) => product.id));
-
-  let wishlist = await prisma.wishlist.findUnique({ where: { customerId: session.customer.id } });
-  if (!wishlist) {
-    wishlist = await prisma.wishlist.create({ data: { customerId: session.customer.id } });
-  }
-  const existing = await prisma.wishlistItem.findMany({
-    where: { wishlistId: wishlist.id },
-    select: { productId: true },
-  });
-  const existingIds = new Set(existing.map((item) => item.productId));
-  const toAdd = [...valid].filter((id) => !existingIds.has(id));
-  if (toAdd.length > 0) {
-    await prisma.wishlistItem.createMany({
-      data: toAdd.map((productId) => ({ wishlistId: wishlist!.id, productId })),
-      skipDuplicates: true,
+  try {
+    const products = await prisma.product.findMany({
+      where: { AND: [storefrontProductWhere(), { id: { in: ids } }] },
+      select: { id: true },
     });
+    const valid = new Set(products.map((product) => product.id));
+
+    let wishlist = await prisma.wishlist.findUnique({
+      where: { customerId: session.customer.id },
+    });
+    if (!wishlist) {
+      try {
+        wishlist = await prisma.wishlist.create({ data: { customerId: session.customer.id } });
+      } catch (error) {
+        if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+          wishlist = await prisma.wishlist.findUnique({
+            where: { customerId: session.customer.id },
+          });
+          if (!wishlist) return { ok: false as const, error: t.wentWrong };
+        } else {
+          throw error;
+        }
+      }
+    }
+    const existing = await prisma.wishlistItem.findMany({
+      where: { wishlistId: wishlist.id },
+      select: { productId: true },
+    });
+    const existingIds = new Set(existing.map((item) => item.productId));
+    const toAdd = [...valid].filter((id) => !existingIds.has(id));
+    if (toAdd.length > 0) {
+      await prisma.wishlistItem.createMany({
+        data: toAdd.map((productId) => ({ wishlistId: wishlist.id, productId })),
+        skipDuplicates: true,
+      });
+    }
+    return { ok: true as const, added: toAdd.length };
+  } catch (error) {
+    console.error("[wishlist] merge failed", error instanceof Error ? error.name : "unknown");
+    return { ok: false as const, error: t.wentWrong };
   }
-  return { ok: true as const, added: toAdd.length };
 }
 
 /** Public product data for rendering a guest (localStorage) wishlist. */
 export async function getWishlistProductsAction(productIds: string[]) {
-  const parsedIds = z.array(z.string().min(1).max(64)).max(100).safeParse(productIds);
+  const parsedIds = z.array(zId).max(100).safeParse(productIds);
   if (!parsedIds.success) return [];
   const ids = [...new Set(parsedIds.data)];
   if (ids.length === 0) return [];
+  try {
+    const ip = await clientIp();
+    await enforceRateLimit({ ...LIMITS.wishlist, key: `wishlist-public:${ip}` });
+  } catch {
+    return [];
+  }
   const products = await prisma.product.findMany({
     where: { AND: [storefrontProductWhere(), { id: { in: ids } }] },
     include: {

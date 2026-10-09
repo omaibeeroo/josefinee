@@ -17,7 +17,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { hash } from "@node-rs/argon2";
 import { ROLE_PERMISSIONS, ROLES } from "../src/lib/auth/permissions";
-import { slugify } from "../src/lib/slug";
 
 // Local copy of the Argon2id parameters (src/lib/auth/password cannot be
 // imported here — it pulls in the `server-only` guard, which throws under
@@ -591,7 +590,6 @@ async function main() {
     });
   }
   for (const [index, faq] of FAQS.entries()) {
-    const slug = slugify(faq.question).slice(0, 60);
     const exists = await prisma.faqItem.findFirst({
       where: { category: faq.category, question: faq.question },
     });
@@ -600,7 +598,6 @@ async function main() {
         data: { category: faq.category, question: faq.question, answer: faq.answer, sortOrder: index },
       });
     }
-    void slug;
   }
   await prisma.announcement.upsert({
     where: { id: "seed_default_announcement" },

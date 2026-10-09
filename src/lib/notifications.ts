@@ -2,8 +2,22 @@ import "server-only";
 import { prisma } from "@/lib/prisma";
 import { BRAND_CONFIG } from "@/config/brand";
 import { formatDA } from "@/lib/money";
-import { formatPhoneDisplay } from "@/lib/phone";
+import { formatPhoneDisplay, normalizeAlgerianPhone } from "@/lib/phone";
 import type { NotificationChannel } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+
+/**
+ * Single E.164 conversion for all providers. Stored phones are local
+ * `0XXXXXXXXX`, but this also tolerates `+213…`/`213…` input instead of
+ * passing it through malformed.
+ */
+export function toInternationalPhone(phone: string, withPlus: boolean): string {
+  const normalized = normalizeAlgerianPhone(phone) ?? phone.replace(/[\s().-]/g, "");
+  const digits = normalized.startsWith("0")
+    ? `213${normalized.slice(1)}`
+    : normalized.replace(/^\+/, "");
+  return withPlus ? `+${digits}` : digits;
+}
 
 const PROVIDER_TIMEOUT_MS = 8_000;
 
@@ -148,7 +162,7 @@ const whatsappProvider: NotificationProvider = {
           },
           body: JSON.stringify({
             messaging_product: "whatsapp",
-            to: message.to.replace(/^0/, "213"),
+            to: toInternationalPhone(message.to, false),
             ...(process.env.WHATSAPP_TEMPLATE_NAME
               ? {
                   type: "template",
@@ -255,7 +269,9 @@ async function dispatch(options: DispatchOptions): Promise<NotificationDispatchR
   for (const provider of providers) {
     if (!enabled.includes(provider.channel)) continue;
     const recipient =
-      provider.channel === "EMAIL" ? (options.email ?? "") : options.phone.replace(/^0/, "+213");
+      provider.channel === "EMAIL"
+        ? (options.email ?? "")
+        : toInternationalPhone(options.phone, true);
     if (!recipient) continue;
 
     const alreadySent = await prisma.notification.findFirst({
@@ -272,6 +288,9 @@ async function dispatch(options: DispatchOptions): Promise<NotificationDispatchR
       continue;
     }
 
+    // Stable key so a concurrent worker racing this send loses on the
+    // unique constraint instead of double-sending (at-least-once safe).
+    const dedupeKey = `${options.orderId ?? "guest"}:${provider.channel}:${options.template}`;
     try {
       await provider.send({
         to: recipient,
@@ -282,17 +301,27 @@ async function dispatch(options: DispatchOptions): Promise<NotificationDispatchR
           ? `${options.idempotencyKey}:${provider.channel.toLowerCase()}`
           : undefined,
       });
-      await prisma.notification.create({
-        data: {
-          orderId: options.orderId,
-          channel: provider.channel,
-          template: options.template,
-          recipient,
-          status: "SENT",
-          provider: provider.name,
-          sentAt: new Date(),
-        },
-      });
+      try {
+        await prisma.notification.create({
+          data: {
+            orderId: options.orderId,
+            channel: provider.channel,
+            template: options.template,
+            recipient,
+            status: "SENT",
+            provider: provider.name,
+            sentAt: new Date(),
+            dedupeKey,
+          },
+        });
+      } catch (error) {
+        // Lost the race: the other worker already recorded this send.
+        if (
+          !(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
+        ) {
+          throw error;
+        }
+      }
       result.sent.push(provider.channel);
     } catch (error) {
       result.failed.push(provider.channel);

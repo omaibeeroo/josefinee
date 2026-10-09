@@ -9,8 +9,10 @@ import {
   start2faSetupAction,
 } from "@/server/actions/admin-auth";
 import { Button, Field, Input } from "@/components/ui";
+import { useLocale } from "@/lib/i18n/provider";
 
 export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolean }) {
+  const { t } = useLocale();
   const [qr, setQr] = useState<string | null>(null);
   const [manualKey, setManualKey] = useState<string | null>(null);
   const [token, setToken] = useState("");
@@ -40,7 +42,7 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
     setPending(false);
     setState({
       ok: result.ok,
-      message: result.ok ? "Two-factor authentication is now on." : result.error,
+      message: result.ok ? t.adminSecurity.enabledNow : result.error,
     });
     if (result.ok) {
       setQr(null);
@@ -49,8 +51,7 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
   }
 
   async function disable() {
-    if (!window.confirm("Turn off two-factor authentication? This weakens your account security."))
-      return;
+    if (!window.confirm(t.adminSecurity.disableConfirm)) return;
     const result = await disable2faAction({ currentPassword: mfaPassword, token: disableToken });
     if (!result.ok) {
       setState({ ok: false, message: result.error });
@@ -72,20 +73,23 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
   return (
     <div className="grid gap-4 lg:grid-cols-2">
       <div className="border hairline bg-white p-5">
-        <h2 className="font-display text-2xl">Two-factor authentication</h2>
+        <h2 className="font-display text-2xl">{t.adminSecurity.mfaTitle}</h2>
         <p className="mt-2 text-sm text-ink-soft">
-          Status: <span className="font-medium">{twoFactorEnabled ? "Enabled" : "Disabled"}</span>
+          {t.adminSecurity.status}:{" "}
+          <span className="font-medium">
+            {twoFactorEnabled ? t.adminStaff.on : t.adminStaff.off}
+          </span>
         </p>
         {twoFactorEnabled ? (
           <div className="mt-4 space-y-3">
-            <Field label="Current password">
+            <Field label={t.adminSecurity.currentPassword}>
               <Input
                 type="password"
                 value={mfaPassword}
                 onChange={(event) => setMfaPassword(event.target.value)}
               />
             </Field>
-            <Field label="Current authenticator code">
+            <Field label={t.adminSecurity.authenticatorCode}>
               <Input
                 inputMode="numeric"
                 maxLength={6}
@@ -94,20 +98,19 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
               />
             </Field>
             <Button variant="outline" size="sm" onClick={() => void disable()}>
-              Disable 2FA
+              {t.adminSecurity.disable2fa}
             </Button>
           </div>
         ) : qr ? (
           <form onSubmit={confirm} className="mt-4 space-y-3">
-            <p className="text-sm text-ink-soft">
-              Scan this code with your authenticator app (Google Authenticator, 1Password, …), then
-              enter the 6-digit code.
-            </p>
-            <Image src={qr} alt="Authenticator QR code" width={220} height={220} />
+            <p className="text-sm text-ink-soft">{t.adminSecurity.scanHow}</p>
+            <Image src={qr} alt={t.adminSecurity.qrAlt} width={220} height={220} />
             {manualKey && (
-              <p className="break-all font-mono text-xs text-ink-muted">Manual key: {manualKey}</p>
+              <p className="break-all font-mono text-xs text-ink-muted">
+                {t.adminSecurity.manualKey} {manualKey}
+              </p>
             )}
-            <Field label="6-digit code" required>
+            <Field label={t.adminSecurity.code6} required>
               <Input
                 value={token}
                 onChange={(event) => setToken(event.target.value)}
@@ -122,12 +125,12 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
               </p>
             )}
             <Button type="submit" disabled={pending} size="sm">
-              {pending ? "Verifying…" : "Verify & enable"}
+              {pending ? t.adminSecurity.verifying : t.adminSecurity.verifyEnable}
             </Button>
           </form>
         ) : (
           <div className="mt-4 space-y-3">
-            <Field label="Current password">
+            <Field label={t.adminSecurity.currentPassword}>
               <Input
                 type="password"
                 value={mfaPassword}
@@ -135,15 +138,15 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
               />
             </Field>
             <Button size="sm" disabled={pending} onClick={() => void start()}>
-              {pending ? "…" : "Set up 2FA"}
+              {pending ? "…" : t.adminSecurity.setup2fa}
             </Button>
           </div>
         )}
       </div>
 
       <form onSubmit={changePassword} className="space-y-4 border hairline bg-white p-5">
-        <h2 className="font-display text-2xl">Change password</h2>
-        <Field label="Current password">
+        <h2 className="font-display text-2xl">{t.adminSecurity.changePassword}</h2>
+        <Field label={t.adminSecurity.currentPassword}>
           <Input
             type="password"
             value={current}
@@ -152,7 +155,7 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
             required
           />
         </Field>
-        <Field label="New password" hint="10+ characters, upper & lower case, a number">
+        <Field label={t.adminSecurity.newPassword} hint={t.adminSecurity.passwordHint}>
           <Input
             type="password"
             value={next}
@@ -170,7 +173,7 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
           </p>
         )}
         <Button type="submit" size="sm">
-          Update password
+          {t.adminSecurity.updatePassword}
         </Button>
       </form>
     </div>

@@ -1,19 +1,27 @@
 import { requirePermission } from "@/lib/auth/rbac";
 import { exportOrdersCsv } from "@/server/actions/admin-orders";
+import { enforceRateLimit, LIMITS } from "@/lib/rate-limit";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 const NO_STORE = { "Cache-Control": "no-store" };
 
 export async function GET(request: Request) {
+  let actorId: string;
   try {
-    await requirePermission("orders:export");
+    const actor = await requirePermission("orders:export");
+    actorId = actor.id;
   } catch (error) {
     const { isAppError } = await import("@/lib/errors");
     if (isAppError(error)) {
       return Response.json({ ok: false, error: error.userMessage }, { status: error.status, headers: NO_STORE });
     }
     return Response.json({ ok: false, error: "Something went wrong." }, { status: 500, headers: NO_STORE });
+  }
+  try {
+    await enforceRateLimit({ ...LIMITS.export, key: `orders-export:${actorId}` });
+  } catch {
+    return Response.json({ ok: false, error: "Too many export requests." }, { status: 429, headers: NO_STORE });
   }
   const { searchParams } = new URL(request.url);
   const parsed = z

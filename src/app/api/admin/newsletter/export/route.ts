@@ -10,17 +10,19 @@ export async function GET() {
   let actor;
   try {
     actor = await requirePermission("newsletter:export");
-    await enforceRateLimit({ ...LIMITS.adminLogin, key: `newsletter-export:${actor.id}` });
+    await enforceRateLimit({ ...LIMITS.export, key: `newsletter-export:${actor.id}` });
   } catch {
     return Response.json({ error: "Forbidden" }, { status: 403, headers: NO_STORE });
   }
 
+  // Cap in the query so a huge list can never OOM the function.
   const subscribers = await prisma.newsletterSubscriber.findMany({
     orderBy: { createdAt: "desc" },
+    take: 5001,
     select: { email: true, createdAt: true, unsubscribedAt: true },
   });
 
-  if (subscribers.length >= 5000)
+  if (subscribers.length > 5000)
     return Response.json({ error: "Export too large." }, { status: 413, headers: NO_STORE });
   const lines = ["email,subscribed_at,status"];
   const escape = (value: string) =>

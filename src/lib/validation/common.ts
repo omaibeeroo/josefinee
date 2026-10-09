@@ -16,7 +16,12 @@ export const zPhone = z
   .transform((value) => normalizeAlgerianPhone(value))
   .refine((value): value is string => value !== null, { message: phoneError });
 
-export const zId = z.string().trim().min(1, "Required.").max(64);
+export const zId = z
+  .string()
+  .trim()
+  .min(1, "Required.")
+  .max(64)
+  .regex(/^[A-Za-z0-9_-]+$/, "Invalid identifier.");
 
 /**
  * Honeypot anti-spam field. Rendered off-screen; humans never fill it.
@@ -40,9 +45,17 @@ export const zOptionalString = (max = 300) =>
     .trim()
     .max(max)
     .optional()
-    .or(z.literal("").transform(() => undefined));
+    .transform((value) => (value === undefined || value === "" ? undefined : value));
 
-export const zPrice = z.coerce.number().int().min(0).max(100_000_000);
+/**
+ * Strict integer-dinars price: accepts numbers and digit strings.
+ * Unlike z.coerce.number(), "" and booleans are rejected instead of
+ * silently becoming 0/1.
+ */
+export const zPrice = z
+  .union([z.number(), z.string().trim().regex(/^\d+$/)])
+  .transform((value) => (typeof value === "number" ? value : Number(value)))
+  .pipe(z.number().int().min(0).max(100_000_000));
 
 export function flattenZodErrors(error: z.ZodError): Record<string, string> {
   const result: Record<string, string> = {};
