@@ -65,11 +65,11 @@ export default async function AdminDashboard({
       <div className="mt-4 grid gap-3 xl:grid-cols-[1.6fr_1fr]">
         <Card>
           <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminDash.overTime}</h2>
-          <LineChart data={series.map((point) => ({ date: point.date.slice(5), value: point.orders }))} />
+          <LineChart data={series.map((point) => ({ date: point.date.slice(5), value: point.orders }))} label={t.adminAnalytics.trendChart} />
         </Card>
         <Card>
           <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminDash.revenueOverTime}</h2>
-          <LineChart data={series.map((point) => ({ date: point.date.slice(5), value: point.revenue }))} />
+          <LineChart data={series.map((point) => ({ date: point.date.slice(5), value: point.revenue }))} label={t.adminAnalytics.trendChart} />
         </Card>
       </div>
 

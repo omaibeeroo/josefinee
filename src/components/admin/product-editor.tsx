@@ -505,7 +505,7 @@ export function ProductEditor({
           </div>
         </section>
 
-        <section className="border hairline bg-white p-5" aria-label="Variants">
+        <section className="border hairline bg-white p-5" aria-label={t.adminEditor.variantsLabel}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-medium uppercase tracking-[0.14em]">{t.adminEditor.variantsStock}</h2>
             <button type="button" onClick={addVariant} className="btn btn-ghost min-h-10 px-4 text-xs">

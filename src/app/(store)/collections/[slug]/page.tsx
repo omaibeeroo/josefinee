@@ -131,6 +131,7 @@ export default async function CollectionPage({
                   href={(page) => `/collections/${slug}${withPage(queryParams, page)}`}
                   prevLabel={t.pagination.previous}
                   nextLabel={t.pagination.next}
+                  navLabel={t.pagination.navLabel}
                 />
               </>
             )}

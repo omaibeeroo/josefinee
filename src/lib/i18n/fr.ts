@@ -502,6 +502,7 @@ const fr = {
     previous: "Précédent",
     next: "Suivant",
     pageOf: "Page {page} sur {total}",
+    navLabel: "Pagination",
   },
   unsubscribe: {
     title: "Désinscription",
@@ -783,6 +784,7 @@ const fr = {
     topProducts: "Meilleures ventes",
     noSales: "Aucune vente pour l’instant.",
     soldSuffix: "vendus",
+    trendChart: "Graphique de tendance",
   },
   adminCustomer: {
     profile: "Profil",
@@ -978,6 +980,7 @@ const fr = {
     swatch: "Couleur d’échantillon",
     removeValue: "Retirer la valeur",
     variantsStock: "Variantes & stock",
+    variantsLabel: "Variantes",
     addVariant: "Ajouter une variante",
     priceOverride: "Prix forcé",
     inherit: "hérité",
@@ -1185,6 +1188,7 @@ const fr = {
     colRisk: "Risque",
     colPlaced: "Passée le",
     noOrdersMatch: "Aucune commande ne correspond à ces filtres.",
+    wilayaLabel: "Wilaya",
   },
   adminPages: {
     dashboardDesc: "Seules les commandes livrées comptent dans le chiffre d’affaires.",

@@ -97,7 +97,7 @@ export function AdminShell({
         {/* Sidebar (desktop) */}
         <aside
           className="hidden w-60 shrink-0 border-r hairline bg-white lg:block print:hidden"
-          aria-label="Admin navigation"
+          aria-label={t.admin.openNav}
         >
           <nav className="sticky top-[53px] max-h-[calc(100vh-53px)] overflow-y-auto p-3">
             <SidebarNav sections={sections} pathname={pathname} />
@@ -110,10 +110,10 @@ export function AdminShell({
             className="fixed inset-0 z-50 lg:hidden print:hidden"
             role="dialog"
             aria-modal="true"
-            aria-label="Admin navigation"
+            aria-label={t.admin.openNav}
           >
             <button
-              aria-label="Close navigation"
+              aria-label={t.admin.closeNav}
               onClick={() => setMenuOpen(false)}
               className="absolute inset-0 bg-ink/50"
             />

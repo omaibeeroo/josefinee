@@ -35,7 +35,7 @@ export default async function AccountOrdersPage() {
                 {order.orderNumber}
               </Link>
               <p className="mt-0.5 text-xs text-ink-muted">
-                {formatDateFR(order.createdAt)}
+                {formatDateFR(order.createdAt, t.locale)}
               </p>
             </div>
             <span className="text-xs font-medium uppercase tracking-[0.14em]">

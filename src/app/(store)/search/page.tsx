@@ -89,6 +89,7 @@ export default async function SearchPage({
                     href={(page) => `/search${withPage({ ...params, q: term }, page)}`}
                     prevLabel={t.pagination.previous}
                     nextLabel={t.pagination.next}
+                    navLabel={t.pagination.navLabel}
                   />
                 </>
               )}

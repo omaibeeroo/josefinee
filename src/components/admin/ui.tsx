@@ -94,7 +94,7 @@ export function Card({ children, className }: { children: ReactNode; className?:
   return <div className={cn("admin-card border hairline bg-white p-5", className)}>{children}</div>;
 }
 
-export function LineChart({ data }: { data: Array<{ date: string; value: number }> }) {
+export function LineChart({ data, label }: { data: Array<{ date: string; value: number }>; label: string }) {
   const width = 640;
   const height = 180;
   const padding = 24;
@@ -109,7 +109,7 @@ export function LineChart({ data }: { data: Array<{ date: string; value: number 
 
   return (
     <div className="w-full overflow-x-auto">
-      <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[480px]" role="img" aria-label="Trend chart">
+      <svg viewBox={`0 0 ${width} ${height}`} className="min-w-[480px]" role="img" aria-label={label}>
         <polyline
           points={points.join(" ")}
           fill="none"

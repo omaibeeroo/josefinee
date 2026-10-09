@@ -1,4 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
+import { LOCALE_COOKIE } from "@/lib/i18n/locales";
 
 export async function middleware(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
@@ -28,7 +29,7 @@ export async function middleware(request: NextRequest) {
   const isAdminRoute = pathname === "/admin" || pathname.startsWith("/admin/");
   if (maintenanceEnabled && !isAdminRoute) {
     const adminPreview = await hasActiveAdminSession(request);
-    if (!adminPreview) return maintenanceResponse(csp);
+    if (!adminPreview) return maintenanceResponse(csp, request.cookies.get(LOCALE_COOKIE)?.value);
   }
 
   // Unknown product slugs must 404 here, before streaming starts: a
@@ -105,9 +106,24 @@ async function hasActiveAdminSession(request: NextRequest): Promise<boolean> {
   }
 }
 
-function maintenanceResponse(csp: string): NextResponse {
+function maintenanceResponse(csp: string, localeCookie?: string): NextResponse {
+  const lang = localeCookie === "ar" ? "ar" : localeCookie === "en" ? "en" : "fr";
+  const title =
+    lang === "ar"
+      ? "المتجر مغلق مؤقتًا | Hanadi Store"
+      : lang === "en"
+        ? "Shop temporarily closed | Hanadi Store"
+        : "Boutique temporairement fermée | Hanadi Store";
+  const heading =
+    lang === "ar" ? "سيعود المتجر قريبًا" : lang === "en" ? "The boutique is coming back soon" : "La boutique revient bientôt";
+  const body =
+    lang === "ar"
+      ? "متجرنا غير متاح مؤقتًا بسبب تحديث. يرجى العودة بعد قليل."
+      : lang === "en"
+        ? "Our boutique is temporarily unavailable during an update. Please come back in a few moments."
+        : "Notre boutique est temporairement indisponible pendant une mise à jour. Merci de revenir dans quelques instants.";
   return new NextResponse(
-    '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>Boutique temporairement fermée | Hanadi Store</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#faf8f4;color:#1c1a17;font-family:Arial,sans-serif;text-align:center}main{max-width:38rem;padding:2rem}strong{display:block;margin-bottom:2rem;color:#b08d57;font-family:Georgia,serif;font-size:2.2rem;letter-spacing:.08em}p{color:#665f56;line-height:1.7}</style></head><body><main><strong>Hanadi Store</strong><h1>La boutique revient bientôt</h1><p>Notre boutique est temporairement indisponible pendant une mise à jour. Merci de revenir dans quelques instants.</p></main></body></html>',
+    `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex,nofollow"><title>${title}</title><style>body{margin:0;min-height:100vh;display:grid;place-items:center;background:#faf8f4;color:#1c1a17;font-family:Arial,sans-serif;text-align:center}main{max-width:38rem;padding:2rem}strong{display:block;margin-bottom:2rem;color:#b08d57;font-family:Georgia,serif;font-size:2.2rem;letter-spacing:.08em}p{color:#665f56;line-height:1.7}</style></head><body><main><strong>Hanadi Store</strong><h1>${heading}</h1><p>${body}</p></main></body></html>`,
     {
       status: 503,
       headers: {

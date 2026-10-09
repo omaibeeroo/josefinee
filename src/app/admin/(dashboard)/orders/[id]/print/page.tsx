@@ -27,7 +27,7 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
         <div className="text-right">
           <p className="text-lg font-bold">{t.adminPrint.packingSlip}</p>
           <p>{order.orderNumber}</p>
-          <p className="text-xs">{formatDateTimeFR(order.placedAt)}</p>
+          <p className="text-xs">{formatDateTimeFR(order.placedAt, t.locale)}</p>
         </div>
       </div>
 

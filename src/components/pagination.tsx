@@ -8,22 +8,24 @@ export function Pagination({
   href,
   prevLabel,
   nextLabel,
+  navLabel,
 }: {
   page: number;
   totalPages: number;
   href: (page: number) => string;
-  prevLabel?: string;
-  nextLabel?: string;
+  prevLabel: string;
+  nextLabel: string;
+  navLabel: string;
 }) {
   if (totalPages <= 1) return null;
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
     (entry) => entry === 1 || entry === totalPages || Math.abs(entry - page) <= 1,
   );
   return (
-    <nav aria-label="Pagination" className="mt-10 flex items-center justify-center gap-2">
+    <nav aria-label={navLabel} className="mt-10 flex items-center justify-center gap-2">
       {page > 1 && (
         <Link href={href(page - 1)} className="btn btn-ghost min-h-10 px-4 text-xs">
-          {prevLabel ?? "Précédent"}
+          {prevLabel}
         </Link>
       )}
       {pages.map((entry) => (
@@ -41,7 +43,7 @@ export function Pagination({
       ))}
       {page < totalPages && (
         <Link href={href(page + 1)} className="btn btn-ghost min-h-10 px-4 text-xs">
-          {nextLabel ?? "Suivant"}
+          {nextLabel}
         </Link>
       )}
     </nav>

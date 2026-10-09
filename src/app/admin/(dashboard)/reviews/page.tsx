@@ -64,7 +64,7 @@ export default async function AdminReviewsPage({
             </div>
             <p className="mt-2 text-sm text-ink-soft">{review.body}</p>
             <p className="mt-2 text-xs text-ink-muted">
-                  {review.authorName} · {formatDateTimeFR(review.createdAt)}
+                  {review.authorName} · {formatDateTimeFR(review.createdAt, t.locale)}
                   {review.isVerifiedPurchase ? ` · ${t.product.verified}` : ""}
             </p>
           </li>

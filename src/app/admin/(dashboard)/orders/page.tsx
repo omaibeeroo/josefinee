@@ -88,7 +88,7 @@ export default async function AdminOrdersPage({
             </option>
           ))}
         </select>
-        <select name="wilayaId" defaultValue={filters.wilayaId ?? ""} className="field min-h-10" aria-label="Wilaya">
+        <select name="wilayaId" defaultValue={filters.wilayaId ?? ""} className="field min-h-10" aria-label={t.adminOrders.wilayaLabel}>
           <option value="">{t.adminOrders.allWilayas}</option>
           {wilayas.map((wilaya) => (
             <option key={wilaya.id} value={wilaya.id}>
@@ -150,7 +150,7 @@ export default async function AdminOrdersPage({
                   <RiskBadge level={order.riskLevel} />
                 </td>
                 <td className="px-4 py-3 text-xs text-ink-muted">
-                  {formatDateFR(order.createdAt)}
+                  {formatDateFR(order.createdAt, t.locale)}
                 </td>
               </tr>
             ))}

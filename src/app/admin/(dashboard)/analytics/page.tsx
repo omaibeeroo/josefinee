@@ -60,11 +60,11 @@ export default async function AdminAnalyticsPage({
       <div className="mt-4 grid gap-3 xl:grid-cols-2">
         <Card>
           <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminAnalytics.orders}</h2>
-          <LineChart data={series.map((point) => ({ date: point.date.slice(5), value: point.orders }))} />
+          <LineChart data={series.map((point) => ({ date: point.date.slice(5), value: point.orders }))} label={t.adminAnalytics.trendChart} />
         </Card>
         <Card>
           <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminAnalytics.revenue}</h2>
-          <LineChart data={series.map((point) => ({ date: point.date.slice(5), value: point.revenue }))} />
+          <LineChart data={series.map((point) => ({ date: point.date.slice(5), value: point.revenue }))} label={t.adminAnalytics.trendChart} />
         </Card>
         <Card>
           <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminAnalytics.topProducts}</h2>

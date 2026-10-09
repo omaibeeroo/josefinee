@@ -45,7 +45,7 @@ export default async function AccountOverviewPage() {
                     {order.orderNumber}
                   </Link>
                   <p className="text-xs text-ink-muted">
-                    {formatDateFR(order.createdAt)} · {t.status[order.status]}
+                    {formatDateFR(order.createdAt, t.locale)} · {t.status[order.status]}
                   </p>
                 </div>
                 <p className="font-medium">{formatDA(order.total)}</p>

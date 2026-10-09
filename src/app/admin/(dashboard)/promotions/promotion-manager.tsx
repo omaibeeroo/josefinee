@@ -34,7 +34,7 @@ export function PromotionManager({
   collections: Array<{ slug: string; name: string }>;
 }) {
   const router = useRouter();
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [editing, setEditing] = useState<{
     id?: string;
     name: string;
@@ -142,8 +142,8 @@ export function PromotionManager({
                   {promotion.type === "PERCENTAGE" ? `${promotion.value}%` : `${promotion.value} DA`}
                 </td>
                 <td className="px-4 py-3 text-xs text-ink-muted">
-                  {formatDateFR(promotion.startsAt)} →{" "}
-                  {formatDateFR(promotion.endsAt)}
+                  {formatDateFR(promotion.startsAt, locale)} →{" "}
+                  {formatDateFR(promotion.endsAt, locale)}
                 </td>
                 <td className="px-4 py-3 text-xs font-medium uppercase tracking-[0.1em]">
                   {isLive(promotion) ? t.adminPromo.live : promotion.isActive ? t.adminPromo.scheduled : t.adminPromo.off}

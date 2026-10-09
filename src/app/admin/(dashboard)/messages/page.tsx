@@ -60,7 +60,7 @@ export default async function AdminMessagesPage({
                 {message.subject}
                 <span className="ml-2 text-xs font-normal text-ink-muted">
                   {message.name} · {message.email}
-                  {message.phone ? ` · ${message.phone}` : ""} · {formatDateTimeFR(message.createdAt)}
+                  {message.phone ? ` · ${message.phone}` : ""} · {formatDateTimeFR(message.createdAt, t.locale)}
                 </span>
               </p>
               <MessageActions id={message.id} status={message.status} />

@@ -9,7 +9,7 @@ import { formatDateTimeFR } from "@/lib/money";
 
 export function StockAdjuster({ variantId, current }: { variantId: string; current: number }) {
   const router = useRouter();
-  const { t } = useLocale();
+  const { locale, t } = useLocale();
   const [stock, setStock] = useState(String(current));
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -62,7 +62,7 @@ export function StockAdjuster({ variantId, current }: { variantId: string; curre
         <ul className="mt-2 max-h-40 space-y-1 overflow-y-auto text-xs text-ink-soft">
           {history.map((entry) => (
             <li key={entry.id}>
-              {formatDateTimeFR(entry.createdAt)} · {entry.type} {entry.quantity > 0 ? "+" : ""}
+              {formatDateTimeFR(entry.createdAt, locale)} · {entry.type} {entry.quantity > 0 ? "+" : ""}
               {entry.quantity} → {t.adminInventory.stockAfter} {entry.stockAfter}
               {entry.reason ? ` · ${entry.reason}` : ""}
               {entry.user ? ` · ${t.adminInventory.by} ${entry.user.name}` : ""}

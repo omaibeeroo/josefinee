@@ -46,7 +46,7 @@ export default async function AdminAuditPage({
             {result.items.map((entry) => (
               <tr key={entry.id}>
                 <td className="px-4 py-3 text-xs text-ink-muted">
-                  {formatDateTimeFR(entry.createdAt)}
+                  {formatDateTimeFR(entry.createdAt, t.locale)}
                 </td>
                 <td className="px-4 py-3 text-xs">
                   {entry.actor ? `${entry.actor.name} (${entry.actor.email})` : entry.actorType}

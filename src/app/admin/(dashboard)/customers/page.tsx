@@ -57,7 +57,7 @@ export default async function AdminCustomersPage({
                   <RiskBadge level={customer.riskLevel} />
                 </td>
                 <td className="px-4 py-3 text-xs text-ink-muted">
-                  {customer.lastOrderAt ? formatDateFR(customer.lastOrderAt) : "—"}
+                  {customer.lastOrderAt ? formatDateFR(customer.lastOrderAt, t.locale) : "—"}
                 </td>
                 <td className="px-4 py-3 text-xs uppercase tracking-[0.1em]">{customer.status}</td>
               </tr>

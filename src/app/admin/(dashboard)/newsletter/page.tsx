@@ -40,7 +40,7 @@ export default async function AdminNewsletterPage() {
                 <td className="px-4 py-3">{subscriber.email}</td>
                 <td className="px-4 py-3 text-xs">{subscriber.source ?? "—"}</td>
                 <td className="px-4 py-3 text-xs text-ink-muted">
-                  {formatDateFR(subscriber.createdAt)}
+                  {formatDateFR(subscriber.createdAt, t.locale)}
                 </td>
                 <td className="px-4 py-3 text-xs">{subscriber.unsubscribedAt ? t.adminNewsletterTable.unsubscribed : t.adminNewsletterTable.active}</td>
                 <td className="px-4 py-3 text-right">

@@ -2,7 +2,6 @@ import "server-only";
 import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { AppError } from "@/lib/errors";
-import { DELIVERY_METHOD_LABELS } from "@/lib/constants";
 import type { DeliveryMethod } from "@prisma/client";
 
 type DbClient = typeof prisma | Prisma.TransactionClient;
@@ -19,7 +18,6 @@ export type CommuneOption = { id: string; name: string };
 
 export type DeliveryOption = {
   method: DeliveryMethod;
-  label: string;
   price: number;
   etaMinDays: number;
   etaMaxDays: number;
@@ -48,9 +46,10 @@ export async function getDeliveryOptions(wilayaId: string): Promise<DeliveryOpti
     where: { wilayaId, isActive: true },
     orderBy: { price: "asc" },
   });
+  // Labels are localized client-side via t.delivery[method]; the server
+  // never ships display copy (keeps payloads small and unilingual-free).
   return rates.map((rate) => ({
     method: rate.method,
-    label: DELIVERY_METHOD_LABELS[rate.method],
     price: rate.price,
     etaMinDays: rate.etaMinDays,
     etaMaxDays: rate.etaMaxDays,

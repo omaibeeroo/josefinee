@@ -504,6 +504,7 @@ const en: FrDictionary = {
     previous: "Previous",
     next: "Next",
     pageOf: "Page {page} of {total}",
+    navLabel: "Pagination",
   },
   unsubscribe: {
     title: "Unsubscribe",
@@ -785,6 +786,7 @@ const en: FrDictionary = {
     topProducts: "Top products",
     noSales: "No sales yet.",
     soldSuffix: "sold",
+    trendChart: "Trend chart",
   },
   adminCustomer: {
     profile: "Profile",
@@ -980,6 +982,7 @@ const en: FrDictionary = {
     swatch: "Swatch color",
     removeValue: "Remove value",
     variantsStock: "Variants & stock",
+    variantsLabel: "Variants",
     addVariant: "Add variant",
     priceOverride: "Price override",
     inherit: "inherit",
@@ -1187,6 +1190,7 @@ const en: FrDictionary = {
     colRisk: "Risk",
     colPlaced: "Placed",
     noOrdersMatch: "No orders match these filters.",
+    wilayaLabel: "Wilaya",
   },
   adminPages: {
     dashboardDesc: "Revenue counts delivered orders only.",

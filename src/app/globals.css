@@ -196,8 +196,8 @@
   /* Premium silver chrome for the sticky header + footer (translucent). */
   --color-chrome: rgb(233 236 239 / 0.88);
 
-  --font-display: var(--font-display), "Cormorant Garamond", Georgia, serif;
-  --font-sans: var(--font-sans), Inter, system-ui, -apple-system, sans-serif;
+  --font-display: var(--font-display), "Cormorant Garamond", Georgia, "Segoe UI", "Amiri", "Noto Naskh Arabic", serif;
+  --font-sans: var(--font-sans), Inter, system-ui, -apple-system, "Segoe UI", Tahoma, "Noto Sans Arabic", sans-serif;
 
   --tracking-luxe: 0.24em;
   --tracking-wide-sm: 0.12em;
@@ -358,6 +358,20 @@ html.theme-switching *::after {
   :focus-visible {
     outline: 2px solid var(--color-gold-dark);
     outline-offset: 2px;
+  }
+
+  /*
+   * Right-to-left (Arabic) safeguards. The Arabic script is cursive: any
+   * letter-spacing disconnects letterforms and breaks readability, so it is
+   * neutralized on text surfaces when the page is RTL. Unlayered author CSS
+   * wins over Tailwind's layered utilities without !important.
+   */
+  [dir="rtl"] .eyebrow,
+  [dir="rtl"] h1,
+  [dir="rtl"] h2,
+  [dir="rtl"] h3,
+  [dir="rtl"] .font-display {
+    letter-spacing: normal;
   }
 
   img,

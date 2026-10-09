@@ -1,4 +1,4 @@
-import type { DeliveryMethod, OrderStatus } from "@prisma/client";
+import type { OrderStatus } from "@prisma/client";
 
 /**
  * Status badge tones (presentation only). Human labels live in the i18n
@@ -28,22 +28,15 @@ export const CUSTOMER_ORDER_FLOW: OrderStatus[] = [
   "DELIVERED",
 ];
 
-export const DELIVERY_METHOD_LABELS: Record<DeliveryMethod, string> = {
-  HOME: "Livraison à domicile",
-  STOPDESK: "Point de retrait",
-  EXPRESS: "Livraison express",
-  STANDARD: "Livraison standard",
-};
-
 export const PRODUCT_SORT_OPTIONS = [
-  { value: "featured", label: "Notre sélection" },
-  { value: "newest", label: "Nouveautés" },
-  { value: "price-asc", label: "Prix croissant" },
-  { value: "price-desc", label: "Prix décroissant" },
-  { value: "best-selling", label: "Meilleures ventes" },
+  "featured",
+  "newest",
+  "price-asc",
+  "price-desc",
+  "best-selling",
 ] as const;
 
-export type ProductSort = (typeof PRODUCT_SORT_OPTIONS)[number]["value"];
+export type ProductSort = (typeof PRODUCT_SORT_OPTIONS)[number];
 
 export const PAGE_SIZE = 12;
 

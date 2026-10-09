@@ -27,7 +27,7 @@ export default async function AdminOrderDetailPage({
     <div>
       <PageHeader
         title={order.orderNumber}
-        description={`${t.adminOrderDetail.orderPlacedOn.replace("{date}", formatDateTimeFR(order.placedAt))} · IP ${order.ip ?? "—"}`}
+        description={`${t.adminOrderDetail.orderPlacedOn.replace("{date}", formatDateTimeFR(order.placedAt, t.locale))} · IP ${order.ip ?? "—"}`}
         action={
           <div className="flex gap-2">
             <OrderStatusBadge status={order.status} label={t.status[order.status]} />
@@ -111,7 +111,7 @@ export default async function AdminOrderDetailPage({
                 <li key={entry.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
                   <OrderStatusBadge status={entry.status} label={t.status[entry.status]} />
                   <span className="text-xs text-ink-muted">
-                    {formatDateTimeFR(entry.createdAt)}
+                    {formatDateTimeFR(entry.createdAt, t.locale)}
                     {entry.changedByUser ? ` · ${entry.changedByUser.name}` : ""}
                   </span>
                   {entry.note && <p className="w-full text-ink-soft">{entry.note}</p>}
@@ -134,7 +134,7 @@ export default async function AdminOrderDetailPage({
                       {notification.status}
                     </span>
                     <span className="text-xs text-ink-muted">
-                      {formatDateTimeFR(notification.createdAt)}
+                      {formatDateTimeFR(notification.createdAt, t.locale)}
                     </span>
                   </li>
                 ))}

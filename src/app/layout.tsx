@@ -5,6 +5,7 @@ import { cookies } from "next/headers";
 import { getSettings } from "@/lib/settings";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
 import { THEME_COOKIE, parseTheme } from "@/lib/i18n/theme";
+import { localeDir } from "@/lib/i18n/locales";
 import { LocaleProvider } from "@/lib/i18n/provider";
 import { BRAND_CONFIG, appUrl } from "@/config/brand";
 import { CartProvider } from "@/components/storefront/cart-ui";
@@ -103,7 +104,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   ) as React.CSSProperties | undefined;
 
   return (
-    <html lang={locale} data-theme={theme} className={`${display.variable} ${sans.variable}`}>
+    <html lang={locale} dir={localeDir(locale)} data-theme={theme} className={`${display.variable} ${sans.variable}`}>
       <body style={style} className="min-h-screen">
         <a
           href="#main-content"

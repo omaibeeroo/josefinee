@@ -47,7 +47,7 @@ export default async function ShopPage({
         ) : (
           <>
             <ProductGrid products={result.items} />
-            <Pagination page={result.page} totalPages={result.totalPages} href={(page) => `/shop${withPage(params, page)}`} prevLabel={t.pagination.previous} nextLabel={t.pagination.next} />
+            <Pagination page={result.page} totalPages={result.totalPages} href={(page) => `/shop${withPage(params, page)}`} prevLabel={t.pagination.previous} nextLabel={t.pagination.next} navLabel={t.pagination.navLabel} />
           </>
         )}
       </div>

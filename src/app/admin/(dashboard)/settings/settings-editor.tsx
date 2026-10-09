@@ -85,8 +85,8 @@ export function SettingsEditor({ initial }: { initial: SettingsMap }) {
               <Field label={t.adminSettings.tagline}><Input value={general.tagline} onChange={(event) => set("general.tagline", event.target.value)} /></Field>
               <Field label={t.adminSettings.supportEmail}><Input value={general.email} onChange={(event) => set("general.email", event.target.value)} /></Field>
               <Field label={t.adminSettings.supportPhone}><Input value={general.phone} onChange={(event) => set("general.phone", event.target.value)} /></Field>
-              <Field label="Logo URL"><Input value={general.logoUrl} onChange={(event) => set("general.logoUrl", event.target.value)} placeholder="https://…" /></Field>
-              <Field label="Favicon URL"><Input value={general.faviconUrl} onChange={(event) => set("general.faviconUrl", event.target.value)} placeholder="https://…" /></Field>
+              <Field label={t.adminSettings.logoUrl}><Input value={general.logoUrl} onChange={(event) => set("general.logoUrl", event.target.value)} placeholder="https://…" /></Field>
+              <Field label={t.adminSettings.faviconUrl}><Input value={general.faviconUrl} onChange={(event) => set("general.faviconUrl", event.target.value)} placeholder="https://…" /></Field>
             </div>
             <Field label={t.adminSettings.address}><Input value={general.address} onChange={(event) => set("general.address", event.target.value)} /></Field>
             <Field label={t.adminSettings.description}><Textarea value={general.description} onChange={(event) => set("general.description", event.target.value)} rows={3} /></Field>

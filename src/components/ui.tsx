@@ -410,6 +410,7 @@ export function Drawer({
 }) {
   const panelRef = useRef<HTMLElement>(null);
   useDialogFocus(open, panelRef, onClose);
+  const { t } = useLocale();
 
   if (!open) return null;
   const headingId = labelledBy ?? `drawer-${title.replace(/\s+/g, "-").toLowerCase()}`;
@@ -421,7 +422,7 @@ export function Drawer({
       aria-labelledby={headingId}
     >
       <button
-        aria-label="Close"
+        aria-label={t.common.close}
         onClick={onClose}
         className="absolute inset-0 bg-ink/50 animate-fade-in"
       />
@@ -437,7 +438,7 @@ export function Drawer({
           <h2 id={headingId} className="text-xs font-medium uppercase tracking-[0.2em]">
             {title}
           </h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="p-1">
+          <button type="button" onClick={onClose} aria-label={t.common.close} className="p-1">
             <X size={20} />
           </button>
         </div>
