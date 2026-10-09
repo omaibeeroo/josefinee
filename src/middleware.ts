@@ -31,6 +31,44 @@ export async function middleware(request: NextRequest) {
     if (!adminPreview) return maintenanceResponse(csp);
   }
 
+  // Unknown product slugs must 404 here, before streaming starts: a
+  // page-level notFound() fires after the shell + loading fallbacks have
+  // already flushed with status 200, so it can no longer set the 404 status
+  // (and would register as a soft-404). The page keeps its own notFound()
+  // as a second layer; the DB read here is a minimal id-only lookup.
+  if (pathname.startsWith("/products/")) {
+    let slug: string;
+    try {
+      slug = decodeURIComponent(request.nextUrl.pathname.slice("/products/".length));
+    } catch {
+      slug = "";
+    }
+    if (!slug || slug.includes("/")) {
+      return productNotFound(csp);
+    }
+    try {
+      const [{ prisma }, { storefrontProductWhere }] = await Promise.all([
+        import("@/lib/prisma"),
+        import("@/server/catalog"),
+      ]);
+      const product = await prisma.product.findFirst({
+        where: { ...storefrontProductWhere(), slug },
+        select: { id: true },
+      });
+      if (!product) return productNotFound(csp);
+    } catch {
+      return new NextResponse("Service temporairement indisponible.", {
+        status: 503,
+        headers: {
+          "Content-Type": "text/plain; charset=utf-8",
+          "Cache-Control": "no-store",
+          "Content-Security-Policy": csp,
+          "Retry-After": "30",
+        },
+      });
+    }
+  }
+
   const response = NextResponse.next({ request: { headers: requestHeaders } });
   response.headers.set("Content-Security-Policy", csp);
   if (pathname.startsWith("/order/") || pathname.startsWith("/newsletter/unsubscribe/")) {
@@ -76,6 +114,21 @@ function maintenanceResponse(csp: string): NextResponse {
         "Content-Type": "text/html; charset=utf-8",
         "Cache-Control": "no-store, max-age=0",
         "Retry-After": "300",
+        "Content-Security-Policy": csp,
+        "X-Content-Type-Options": "nosniff",
+      },
+    },
+  );
+}
+
+function productNotFound(csp: string): NextResponse {
+  return new NextResponse(
+    '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Produit introuvable | Hanadi Store</title></head><body><main><h1>Produit introuvable</h1><p>Ce produit n’existe plus ou n’est pas disponible.</p><a href="/shop">Retour à la boutique</a></main></body></html>',
+    {
+      status: 404,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Cache-Control": "no-store",
         "Content-Security-Policy": csp,
         "X-Content-Type-Options": "nosniff",
       },
