@@ -293,7 +293,7 @@ export function CheckoutForm({
   }
 
   return (
-    <div className="checkout-form-layout grid gap-10 lg:grid-cols-[1fr_400px]">
+    <div dir="ltr" className="checkout-form-layout grid gap-10 lg:grid-cols-[1fr_400px]">
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -308,7 +308,7 @@ export function CheckoutForm({
             className="flex flex-wrap items-center justify-between gap-3 border hairline bg-white px-4 py-3 text-sm"
             role="status"
           >
-            <span>
+            <span dir="auto">
               {t.checkout.draftRestored}
             </span>
             <Button type="button" variant="outline" size="sm" onClick={clearSavedDraft}>
@@ -318,6 +318,7 @@ export function CheckoutForm({
         )}
         {formError && (
           <p
+            dir="auto"
             className="border border-[#9e342e]/30 bg-[#9e342e]/5 px-4 py-3 text-sm text-[#9e342e]"
             role="alert"
           >
@@ -326,10 +327,10 @@ export function CheckoutForm({
         )}
         {duplicateOrder && (
           <div className="border border-gold/50 bg-gold/10 px-4 py-3 text-sm" role="alert">
-            <p className="font-medium">
+            <p dir="auto" className="font-medium">
               {t.checkout.dupTitle}
             </p>
-            <p className="mt-1 text-ink-soft">
+            <p dir="auto" className="mt-1 text-ink-soft">
               {t.checkout.dupBody.replace("{order}", duplicateOrder)}
             </p>
             <Button
@@ -349,12 +350,13 @@ export function CheckoutForm({
         )}
 
         <section aria-labelledby="contact-heading">
-          <h2 id="contact-heading" className="mb-4 text-center font-display text-2xl">
+          <h2 dir="auto" id="contact-heading" className="mb-4 text-center font-display text-2xl">
             {t.checkout.stepContact}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t.auth.firstName} required error={fields.firstName}>
               <Input
+                dir="auto"
                 value={firstName}
                 onChange={(event) => setFirstName(event.target.value)}
                 invalid={Boolean(fields.firstName)}
@@ -364,6 +366,7 @@ export function CheckoutForm({
             </Field>
             <Field label={t.auth.lastName} required error={fields.lastName}>
               <Input
+                dir="auto"
                 value={lastName}
                 onChange={(event) => setLastName(event.target.value)}
                 invalid={Boolean(fields.lastName)}
@@ -381,6 +384,7 @@ export function CheckoutForm({
             >
               <Input
                 value={phone}
+                dir="ltr"
                 onChange={(event) => setPhone(event.target.value)}
                 invalid={Boolean(fields.phone)}
                 autoComplete="tel"
@@ -392,6 +396,7 @@ export function CheckoutForm({
             <Field label={t.checkout.emailOptional} error={fields.email}>
               <Input
                 type="email"
+                dir="ltr"
                 value={email}
                 onChange={(event) => setEmail(event.target.value)}
                 invalid={Boolean(fields.email)}
@@ -402,12 +407,13 @@ export function CheckoutForm({
         </section>
 
         <section aria-labelledby="delivery-heading" aria-busy={loadingRegion}>
-          <h2 id="delivery-heading" className="mb-4 text-center font-display text-2xl">
+          <h2 dir="auto" id="delivery-heading" className="mb-4 text-center font-display text-2xl">
             {t.checkout.stepDelivery}
           </h2>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t.account.wilaya} required error={fields.wilayaId}>
               <Select
+                dir="ltr"
                 value={wilayaId}
                 onChange={(event) => setWilayaId(event.target.value)}
                 required
@@ -422,6 +428,7 @@ export function CheckoutForm({
             </Field>
             <Field label={t.account.commune} required error={fields.communeId}>
               <Select
+                dir="ltr"
                 value={communeId}
                 onChange={(event) => setCommuneId(event.target.value)}
                 required
@@ -447,7 +454,7 @@ export function CheckoutForm({
               className="mt-3 flex flex-wrap items-center gap-3 text-sm text-[#9e342e]"
               role="alert"
             >
-              <span>{regionError}</span>
+              <span dir="auto">{regionError}</span>
               {wilayaId && (
                 <Button
                   type="button"
@@ -469,6 +476,7 @@ export function CheckoutForm({
               hint={t.checkout.addressHint}
             >
               <Textarea
+                dir="auto"
                 value={address}
                 onChange={(event) => setAddress(event.target.value)}
                 required
@@ -479,7 +487,7 @@ export function CheckoutForm({
 
           {deliveryOptions.length > 0 && (
             <fieldset className="mt-5">
-              <legend className="field-label">{t.checkout.deliveryMode}</legend>
+            <legend dir="auto" className="field-label">{t.checkout.deliveryMode}</legend>
               <div className="grid gap-2 sm:grid-cols-2">
                 {deliveryOptions.map((option) => (
                   <label
@@ -499,7 +507,7 @@ export function CheckoutForm({
                         onChange={() => setDeliveryMethod(option.method)}
                         className="h-4 w-4 accent-[#1c1a17]"
                       />
-                      <span>
+                      <span dir="auto">
                         <span className="block font-medium">
                           {t.delivery[option.method]}
                         </span>
@@ -508,7 +516,7 @@ export function CheckoutForm({
                         </span>
                       </span>
                     </span>
-                      <span className="font-medium">
+                      <span dir="auto" className="font-medium">
                         {freeDelivery ? t.checkout.free : formatDA(option.price, t.locale)}
                       </span>
                   </label>
@@ -520,6 +528,7 @@ export function CheckoutForm({
           <div className="mt-4">
             <Field label={t.checkout.notes}>
               <Textarea
+                dir="auto"
                 value={notes}
                 onChange={(event) => setNotes(event.target.value)}
                 rows={2}
@@ -530,7 +539,7 @@ export function CheckoutForm({
         </section>
 
         <section aria-labelledby="account-heading" className="text-center">
-          <h2 id="account-heading" className="mb-4 font-display text-2xl">
+          <h2 dir="auto" id="account-heading" className="mb-4 font-display text-2xl">
             {t.checkout.stepLast}
           </h2>
           {!createAccount ? (
@@ -546,7 +555,7 @@ export function CheckoutForm({
             </Button>
           ) : (
             <div id="checkout-create-account">
-              <p className="text-sm text-ink-muted">{t.checkout.createAccountHint}</p>
+              <p dir="auto" className="text-sm text-ink-muted">{t.checkout.createAccountHint}</p>
               <div className="mx-auto mt-3 max-w-sm text-start">
                 <Field
                   label={t.auth.password}
@@ -556,6 +565,7 @@ export function CheckoutForm({
                 >
                   <Input
                     type="password"
+                    dir="ltr"
                     value={password}
                     onChange={(event) => setPassword(event.target.value)}
                     autoComplete="new-password"
@@ -584,7 +594,7 @@ export function CheckoutForm({
               className="mt-0.5 h-4 w-4 accent-[#1c1a17]"
               required
             />
-            <span>
+            <span dir="auto">
               {t.checkout.acceptPrefix}{" "}
               <Link href="/pages/terms" target="_blank" className="underline underline-offset-2">
                 {t.checkout.termsLink}
@@ -597,7 +607,7 @@ export function CheckoutForm({
             </span>
           </label>
           {fields.acceptTerms && (
-            <p className="mt-1.5 text-sm text-[#9e342e]" role="alert">
+            <p dir="auto" className="mt-1.5 text-sm text-[#9e342e]" role="alert">
               {fields.acceptTerms}
             </p>
           )}
@@ -624,7 +634,7 @@ export function CheckoutForm({
         aria-label={t.checkout.summary}
       >
         <div className="checkout-summary border hairline bg-white p-6">
-          <h2 className="text-xs font-medium uppercase tracking-[0.2em]">
+          <h2 dir="auto" className="text-xs font-medium uppercase tracking-[0.2em]">
             {t.checkout.summary}
           </h2>
           <ul className="mt-4 space-y-4">
@@ -646,18 +656,18 @@ export function CheckoutForm({
                   </span>
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm font-medium leading-tight">{item.productName}</p>
+                  <p dir="auto" className="text-sm font-medium leading-tight">{item.productName}</p>
                   {item.variantLabel && (
-                    <p className="text-xs text-ink-muted">{item.variantLabel}</p>
+                    <p dir="auto" className="text-xs text-ink-muted">{item.variantLabel}</p>
                   )}
                 </div>
-                <p className="text-sm font-medium">{formatDA(item.lineTotal, t.locale)}</p>
+                <p dir="ltr" className="text-sm font-medium">{formatDA(item.lineTotal, t.locale)}</p>
               </li>
             ))}
           </ul>
 
           <div className="mt-5 border-t hairline pt-4">
-            <label htmlFor="coupon" className="field-label">
+            <label htmlFor="coupon" className="field-label" dir="auto">
               {t.checkout.coupon}
             </label>
             <div className="flex gap-2">
@@ -680,7 +690,7 @@ export function CheckoutForm({
               </Button>
             </div>
             {couponMessage && (
-              <p className={`mt-2 text-sm ${coupon ? "text-ink-soft" : "text-sale"}`} role="status">
+              <p dir="auto" className={`mt-2 text-sm ${coupon ? "text-ink-soft" : "text-sale"}`} role="status">
                 {couponMessage}
               </p>
             )}
@@ -688,32 +698,32 @@ export function CheckoutForm({
 
           <dl className="mt-4 space-y-1.5 border-t hairline pt-4 text-sm">
             <div className="flex justify-between">
-              <dt className="text-ink-soft">{t.order.subtotal}</dt>
-              <dd>{formatDA(initialCart.subtotal, t.locale)}</dd>
+              <dt dir="auto" className="text-ink-soft">{t.order.subtotal}</dt>
+              <dd dir="ltr">{formatDA(initialCart.subtotal, t.locale)}</dd>
             </div>
             {promotion && promotion.discount > 0 && (
               <div className="flex justify-between text-success">
-                <dt>{t.order.promotion} ({promotion.name})</dt>
-                <dd>−{formatDA(promotion.discount, t.locale)}</dd>
+                <dt dir="auto">{t.order.promotion} ({promotion.name})</dt>
+                <dd dir="ltr">−{formatDA(promotion.discount, t.locale)}</dd>
               </div>
             )}
             {discount > 0 && (
               <div className="flex justify-between text-success">
-                <dt>{t.order.discount}{coupon ? ` (${coupon.code})` : ""}</dt>
-                <dd>−{formatDA(discount, t.locale)}</dd>
+                <dt dir="auto">{t.order.discount}{coupon ? ` (${coupon.code})` : ""}</dt>
+                <dd dir="ltr">−{formatDA(discount, t.locale)}</dd>
               </div>
             )}
             <div className="flex justify-between">
-              <dt className="text-ink-soft">{t.order.delivery}</dt>
-              <dd>{selectedRate ? (freeDelivery ? t.checkout.free : formatDA(shipping, t.locale)) : "—"}</dd>
+              <dt dir="auto" className="text-ink-soft">{t.order.delivery}</dt>
+              <dd dir={freeDelivery ? "auto" : "ltr"}>{selectedRate ? (freeDelivery ? t.checkout.free : formatDA(shipping, t.locale)) : "—"}</dd>
             </div>
             <div className="flex justify-between border-t hairline pt-2 text-base font-medium">
-              <dt>{t.checkout.totalToPay}</dt>
-              <dd>{formatDA(total, t.locale)}</dd>
+              <dt dir="auto">{t.checkout.totalToPay}</dt>
+              <dd dir="ltr">{formatDA(total, t.locale)}</dd>
             </div>
           </dl>
           {remainingForFree > 0 && (
-            <p className="mt-3 text-xs text-ink-muted">
+            <p dir="auto" className="mt-3 text-xs text-ink-muted">
               {t.checkout.freeShipPrefix} {formatDA(remainingForFree, t.locale)} {t.checkout.freeShipHint}
             </p>
           )}

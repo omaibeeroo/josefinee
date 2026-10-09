@@ -92,18 +92,18 @@ export function Field({
   return (
     <div>
       <FieldControlContext.Provider value={context}>
-        <label className="field-label" htmlFor={id}>
+        <label className="field-label" htmlFor={id} dir="auto">
           {label}
           {required && <span aria-hidden="true"> *</span>}
         </label>
         <div data-field={id}>{children}</div>
         {hint && (
-          <p id={hintId} className="mt-1.5 text-sm text-ink-muted">
+          <p id={hintId} className="mt-1.5 text-sm text-ink-muted" dir="auto">
             {hint}
           </p>
         )}
         {error && (
-          <p id={errorId} className="mt-1.5 text-sm text-[#9e342e]" role="alert">
+          <p id={errorId} className="mt-1.5 text-sm text-[#9e342e]" role="alert" dir="auto">
             {error}
           </p>
         )}
