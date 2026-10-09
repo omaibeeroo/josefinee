@@ -301,7 +301,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         </div>
 
         {/* Mobile */}
-        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-0 px-1 lg:hidden">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-0 px-1.5 py-1.5 lg:hidden">
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
@@ -314,6 +314,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             <BrandMark brandName={brandName} logoUrl={props.logoUrl} compact={scrolled} mobile />
           </div>
           <div className="flex items-center gap-0">
+            <LocaleToggle className="lg:hidden !shrink-0 !gap-1 !px-1 !text-[0.55rem] !tracking-[0.08em]" />
             <ThemeToggle className="lg:hidden !p-1.5" />
             <button
               type="button"
@@ -339,7 +340,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <div className="h-[3.75rem] lg:h-[6.8rem]" aria-hidden="true" />
+      <div className="h-[4.25rem] lg:h-[6.8rem]" aria-hidden="true" />
 
       <MobileMenu
         open={menuOpen}
@@ -840,15 +841,15 @@ function SiteFooter(props: ChromeProps) {
     : null;
   return (
     <footer className="site-footer mt-3 border-t hairline bg-chrome">
-      <div className="container-luxe flex items-center justify-between gap-3 py-4 text-left md:block md:py-8 md:text-center">
+      <div className="container-luxe flex flex-col items-center gap-2 py-4 text-center md:block md:py-8">
         <div className="min-w-0">
           <p className="font-display text-lg tracking-[0.28em] md:text-xl">{props.brandName}</p>
-          <p className="mt-1 max-w-[10rem] text-[0.65rem] leading-relaxed text-ink-soft md:mx-auto md:mt-2 md:max-w-xs md:text-xs">
+          <p className="mx-auto mt-1 max-w-xs text-[0.65rem] leading-relaxed text-ink-soft md:mt-2 md:text-xs">
             {t.footer.tagline}
           </p>
         </div>
         {(socialLinks.length > 0 || whatsappHref) && (
-          <div className="flex max-w-[9rem] flex-wrap justify-end gap-x-3 gap-y-1 text-right text-[0.55rem] uppercase tracking-[0.14em] md:mx-auto md:mt-4 md:max-w-none md:justify-center md:gap-x-5 md:gap-y-2 md:text-[0.625rem] md:tracking-[0.18em]">
+          <div className="flex max-w-none flex-wrap justify-center gap-x-3 gap-y-1 text-center text-[0.55rem] uppercase tracking-[0.14em] md:mx-auto md:mt-4 md:gap-x-5 md:gap-y-2 md:text-[0.625rem] md:tracking-[0.18em]">
             {socialLinks.map((social) => (
               <a
                 key={social.label}
