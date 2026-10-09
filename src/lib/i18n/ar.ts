@@ -131,7 +131,6 @@ const ar: FrDictionary = {
     cookies: "ملفات الارتباط",
   },
   home: {
-    discovery: "اكتشفي متجر هنادي",
     featuredEyebrow: "اختاري قطعتك القادمة",
     featuredTitle: "مختارات متجر هنادي",
     signatureEyebrow: "القطعة المميزة",
@@ -1048,7 +1047,6 @@ const ar: FrDictionary = {
     noProducts: "لا توجد منتجات في هذه المجموعة.",
     blockNames: "الأقسام",
     names: {
-      discovery: "اكتشاف (روابط)",
       featured: "سلايدر المختارات",
       spotlight: "المنتج المميز",
       featuredCollection: "المجموعة المميزة",

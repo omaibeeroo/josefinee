@@ -129,7 +129,6 @@ const fr = {
     cookies: "Cookies",
   },
   home: {
-    discovery: "Découvrir Hanadi Store",
     featuredEyebrow: "Choisissez votre prochaine pièce",
     featuredTitle: "La sélection Hanadi Store",
     signatureEyebrow: "La pièce signature",
@@ -1046,7 +1045,6 @@ const fr = {
     noProducts: "Aucun produit dans cette collection.",
     blockNames: "Blocs",
     names: {
-      discovery: "Découverte (liens)",
       featured: "Carrousel sélection",
       spotlight: "Produit vedette",
       featuredCollection: "Collection vedette",

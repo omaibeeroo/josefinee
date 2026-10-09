@@ -131,7 +131,6 @@ const en: FrDictionary = {
     cookies: "Cookies",
   },
   home: {
-    discovery: "Discover Hanadi Store",
     featuredEyebrow: "Choose your next piece",
     featuredTitle: "The Hanadi Store selection",
     signatureEyebrow: "The signature piece",
@@ -1048,7 +1047,6 @@ const en: FrDictionary = {
     noProducts: "No products in this collection.",
     blockNames: "Blocks",
     names: {
-      discovery: "Discovery (links)",
       featured: "Selection carousel",
       spotlight: "Spotlight product",
       featuredCollection: "Featured collection",
