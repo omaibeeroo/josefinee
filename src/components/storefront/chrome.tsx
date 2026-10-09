@@ -22,7 +22,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { LocaleToggle } from "@/components/locale-toggle";
 import { useLocale } from "@/lib/i18n/provider";
 import { subscribeNewsletterAction } from "@/server/actions/engagement";
-import { Honeypot, useDialogFocus } from "@/components/ui";
+import { Accordion, Honeypot, useDialogFocus } from "@/components/ui";
 import { openCookieSettings } from "@/components/cookie-consent";
 import { cn } from "@/lib/utils";
 
@@ -42,6 +42,7 @@ export type ChromeProps = {
   supportEmail: string;
   supportPhone: string;
   popularSearches: string[];
+  faqItems: Array<{ question: string; answer: string }>;
 };
 
 function BrandMark({
@@ -80,7 +81,7 @@ function BrandMark({
         <span
           className={cn(
             "whitespace-nowrap font-display text-[1.7rem] font-medium tracking-[0.32em]",
-            mobile && "text-[1.18rem] tracking-[0.18em]",
+            mobile && "text-[1.22rem] tracking-[0.18em]",
           )}
         >
           {brandName}
@@ -301,36 +302,36 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         </div>
 
         {/* Mobile */}
-        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-0 px-1.5 py-1.5 lg:hidden">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-0 px-2 py-2.5 lg:hidden">
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-label={t.header.openMenu}
-            className="p-2.5"
+            className="flex min-h-11 min-w-11 items-center justify-center p-3"
           >
-            <Menu size={22} strokeWidth={1.75} />
+            <Menu size={23} strokeWidth={1.75} />
           </button>
           <div className="flex min-w-0 justify-center px-1">
             <BrandMark brandName={brandName} logoUrl={props.logoUrl} compact={scrolled} mobile />
           </div>
           <div className="flex items-center gap-0">
-            <LocaleToggle className="lg:hidden !shrink-0 !gap-1 !px-1 !text-[0.55rem] !tracking-[0.08em]" />
-            <ThemeToggle className="lg:hidden !p-1.5" />
+            <LocaleToggle className="lg:hidden !min-h-11 !min-w-11 !shrink-0 !justify-center !gap-1 !px-2 !text-[0.62rem] !tracking-[0.08em]" />
+            <ThemeToggle className="lg:hidden !min-h-11 !min-w-11 !p-2.5" />
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
               aria-label={t.header.search}
-              className="p-2"
+              className="flex min-h-11 min-w-11 items-center justify-center p-2.5"
             >
-              <Search size={20} strokeWidth={1.75} />
+              <Search size={21} strokeWidth={1.75} />
             </button>
             <button
               type="button"
               onClick={() => setOpen(true)}
               aria-label={`${t.header.openCart}, ${count} ${count > 1 ? t.cart.items : t.cart.item}`}
-              className="relative p-2"
+              className="relative flex min-h-11 min-w-11 items-center justify-center p-2.5"
             >
-              <ShoppingBag size={20} strokeWidth={1.75} />
+              <ShoppingBag size={21} strokeWidth={1.75} />
               {count > 0 && (
                 <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.625rem] font-semibold text-ivory">
                   {count}
@@ -340,7 +341,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <div className="h-[4.25rem] lg:h-[6.8rem]" aria-hidden="true" />
+      <div className="h-[5.25rem] lg:h-[6.8rem]" aria-hidden="true" />
 
       <MobileMenu
         open={menuOpen}
@@ -359,7 +360,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         key={pathname}
         className={cn(
           "page-enter",
-          !mobileNavHidden && "pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0",
+          !mobileNavHidden && "pb-[calc(5.75rem+env(safe-area-inset-bottom))] lg:pb-0",
         )}
       >
         {children}
@@ -388,7 +389,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
 
   const itemClass = (active: boolean) =>
     cn(
-      "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 whitespace-nowrap px-0.5 pt-1.5 text-[0.5rem] font-medium uppercase tracking-[0.06em] transition-colors",
+      "flex min-h-[4.75rem] min-w-0 flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap px-0.5 pt-2 text-[0.58rem] font-medium uppercase tracking-[0.06em] transition-colors",
       active ? "text-ink" : "text-ink-muted hover:text-ink",
     );
 
@@ -397,13 +398,13 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
       aria-label={t.header.mobileNav}
       className="fixed inset-x-0 bottom-0 z-50 border-t hairline bg-chrome/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-14px_35px_-28px_rgb(29_35_43/0.65)] backdrop-blur-xl lg:hidden"
     >
-      <div className="mx-auto flex h-[4.1rem] max-w-lg items-stretch px-1">
+      <div className="mx-auto flex h-[4.75rem] max-w-lg items-stretch px-1">
         <Link
           href="/"
           className={itemClass(isActive("/"))}
           aria-current={isActive("/") ? "page" : undefined}
         >
-          <Home size={18} strokeWidth={isActive("/") ? 2 : 1.5} />
+          <Home size={21} strokeWidth={isActive("/") ? 2 : 1.5} />
           <span>{t.header.home}</span>
         </Link>
         <Link
@@ -411,7 +412,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           className={itemClass(isActive("/shop"))}
           aria-current={isActive("/shop") ? "page" : undefined}
         >
-          <LayoutGrid size={18} strokeWidth={isActive("/shop") ? 2 : 1.5} />
+          <LayoutGrid size={21} strokeWidth={isActive("/shop") ? 2 : 1.5} />
           <span>{t.header.shop}</span>
         </Link>
         <button
@@ -421,7 +422,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           className={itemClass(false)}
         >
           <span className="relative">
-            <ShoppingBag size={18} strokeWidth={1.5} />
+            <ShoppingBag size={21} strokeWidth={1.5} />
             {count > 0 && (
               <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.55rem] font-semibold text-ivory">
                 {count}
@@ -435,7 +436,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           className={itemClass(isActive("/wishlist"))}
           aria-current={isActive("/wishlist") ? "page" : undefined}
         >
-          <Heart size={18} strokeWidth={isActive("/wishlist") ? 2 : 1.5} />
+          <Heart size={21} strokeWidth={isActive("/wishlist") ? 2 : 1.5} />
           <span>{t.header.wishlist}</span>
         </Link>
         <Link
@@ -443,7 +444,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           className={itemClass(isActive("/account"))}
           aria-current={isActive("/account") ? "page" : undefined}
         >
-          <User size={18} strokeWidth={isActive("/account") ? 2 : 1.5} />
+          <User size={21} strokeWidth={isActive("/account") ? 2 : 1.5} />
           <span>{t.header.account.replace(/^Mon |^My /, "")}</span>
         </Link>
       </div>
@@ -874,6 +875,29 @@ function SiteFooter(props: ChromeProps) {
           </div>
         )}
       </div>
+      {props.faqItems.length > 0 && (
+        <div className="border-t hairline">
+          <div className="container-luxe py-3 md:py-4">
+            <Accordion
+              compact
+              items={[
+                {
+                  title: t.footer.faq,
+                  content: (
+                    <Accordion
+                      compact
+                      items={props.faqItems.map((item) => ({
+                        title: item.question,
+                        content: <p className="rich-text">{item.answer}</p>,
+                      }))}
+                    />
+                  ),
+                },
+              ]}
+            />
+          </div>
+        </div>
+      )}
       <div className="border-t hairline">
         <div className="container-luxe grid min-w-0 grid-cols-3 gap-3 py-4 text-left md:gap-6 md:py-6">
           <nav aria-label={t.footer.shop}>
@@ -906,11 +930,6 @@ function SiteFooter(props: ChromeProps) {
               <li>
                 <Link href="/pages/shipping" className="text-ink-soft hover:text-ink">
                   {t.footer.shipping}
-                </Link>
-              </li>
-              <li>
-                <Link href="/faq" className="text-ink-soft hover:text-ink">
-                  {t.footer.faq}
                 </Link>
               </li>
               <li>

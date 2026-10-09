@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useLocale } from "@/lib/i18n/provider";
-import { Accordion, Price, Reveal } from "@/components/ui";
+import { Price, Reveal } from "@/components/ui";
 import { formatNumber } from "@/lib/money";
 import type { HomepageSettings } from "@/lib/settings";
 import type { StoreProductCard } from "@/server/catalog";
@@ -347,32 +347,6 @@ export function SocialProof({ deliveredCount }: { deliveredCount: number }) {
         </p>
         <p className="text-xs uppercase tracking-[0.24em] text-ivory/70">{t.home.deliveredCount}</p>
       </div>
-    </section>
-  );
-}
-
-/* ------------------------------------------------------------ FAQ teaser */
-
-export function FaqTeaser({ items }: { items: Array<{ question: string; answer: string }> }) {
-  const { t } = useLocale();
-  if (items.length === 0) return null;
-  return (
-    <section className="container-luxe max-w-3xl" aria-label={t.home.faqTitle}>
-      <Reveal>
-        <div className="mb-3 text-center md:mb-5">
-          <p className="eyebrow mb-1 text-[0.58rem] md:mb-2 md:text-xs">{t.home.faqEyebrow}</p>
-          <h2 className="font-display text-base font-medium md:text-xl">{t.home.faqTitle}</h2>
-        </div>
-      </Reveal>
-      <Reveal delay={100}>
-        <Accordion
-          compact
-          items={items.map((item) => ({
-            title: item.question,
-            content: <p className="rich-text">{item.answer}</p>,
-          }))}
-        />
-      </Reveal>
     </section>
   );
 }

@@ -10,11 +10,7 @@ import { getProductBySlug, getRelatedProducts } from "@/server/catalog";
 import { getProductPromotion } from "@/server/promotions";
 import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
 import { getSettings } from "@/lib/settings";
-import {
-  AddToBagPanel,
-  ProductGallery,
-  ProductCarousel,
-} from "@/components/storefront/product";
+import { AddToBagPanel, ProductGallery, ProductCarousel } from "@/components/storefront/product";
 import { Accordion, Stars } from "@/components/ui";
 import { getDictionary } from "@/lib/i18n/server";
 import { PixelEvent } from "@/components/pixels";
@@ -324,29 +320,32 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </div>
       </div>
 
-      <section className="mx-auto mt-8 max-w-2xl text-center md:mt-10" aria-label={t.product.reviews}>
-        <p className="eyebrow mb-2">{t.product.speakers}</p>
-        <h2 className="font-display text-3xl font-medium md:text-4xl">
-          {t.product.reviews}{reviews.length > 0 ? ` · ${reviews.length}` : ""}
-        </h2>
-        {reviews.length === 0 ? (
-          <p className="mt-3 text-[0.9375rem] text-ink-soft">
-            {t.product.noReviews}
-          </p>
-        ) : (
-          <ul className="mt-8 space-y-0">
-            {reviews.map((review) => (
-              <li key={review.id} className="border-t hairline py-6 text-left last:border-b">
-                <Stars value={review.rating} />
-                {review.title && <p className="mt-2 font-display text-lg">{review.title}</p>}
-                <p className="mt-1 text-[0.9375rem] leading-relaxed text-ink-soft">{review.body}</p>
-                <p className="mt-2 text-xs uppercase tracking-[0.12em] text-ink-muted">
-                  {review.authorName}
-                  {review.isVerifiedPurchase ? ` · ${t.product.verified}` : ""}
-                </p>
-              </li>
-            ))}
-          </ul>
+      <section
+        className="mx-auto mt-8 max-w-2xl text-center md:mt-10"
+        aria-label={t.product.reviews}
+      >
+        {reviews.length > 0 && (
+          <>
+            <p className="eyebrow mb-2">{t.product.speakers}</p>
+            <h2 className="font-display text-3xl font-medium md:text-4xl">
+              {t.product.reviews} · {reviews.length}
+            </h2>
+            <ul className="mt-8 space-y-0">
+              {reviews.map((review) => (
+                <li key={review.id} className="border-t hairline py-6 text-left last:border-b">
+                  <Stars value={review.rating} />
+                  {review.title && <p className="mt-2 font-display text-lg">{review.title}</p>}
+                  <p className="mt-1 text-[0.9375rem] leading-relaxed text-ink-soft">
+                    {review.body}
+                  </p>
+                  <p className="mt-2 text-xs uppercase tracking-[0.12em] text-ink-muted">
+                    {review.authorName}
+                    {review.isVerifiedPurchase ? ` · ${t.product.verified}` : ""}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </>
         )}
         <ReviewToggle>
           <ReviewForm productId={product.id} />

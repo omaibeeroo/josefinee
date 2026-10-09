@@ -13,7 +13,6 @@ import { prisma } from "@/lib/prisma";
 import {
   CategoryGrid,
   DiscoveryStrip,
-  FaqTeaser,
   FeaturedCollection,
   Hero,
   ProductSpotlight,
@@ -41,7 +40,6 @@ async function getHomeData() {
     bestSellersResult,
     categoriesResult,
     deliveredResult,
-    faqResult,
   ] = await Promise.all([
     getSettings(),
     getFeaturedProducts(10).then(
@@ -90,23 +88,6 @@ async function getHomeData() {
         return { status: "rejected" as const, value: 0 };
       },
     ),
-    prisma.faqItem
-      .findMany({
-        where: { isPublished: true },
-        orderBy: [{ sortOrder: "asc" }],
-        select: { question: true, answer: true },
-        take: 5,
-      })
-      .then(
-        (value) => ({ status: "fulfilled" as const, value }),
-        (error: unknown) => {
-          console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
-          return {
-            status: "rejected" as const,
-            value: [] as Array<{ question: string; answer: string }>,
-          };
-        },
-      ),
   ]);
   const featured = featuredResult.value;
   const newIn = newInResult.value;
@@ -147,7 +128,6 @@ async function getHomeData() {
     settings.homepage.socialProofOverride > 0
       ? settings.homepage.socialProofOverride
       : deliveredResult.value;
-  const faqs = faqResult.value;
   const t = await getDictionary();
 
   // Hand-picked spotlight product from Admin → Vitrine, else first featured.
@@ -171,7 +151,6 @@ async function getHomeData() {
     categoryTiles,
     featuredCollection,
     deliveredCount,
-    faqs,
     spotlight,
     t,
   };
@@ -187,7 +166,6 @@ export default async function HomePage() {
     categoryTiles,
     featuredCollection,
     deliveredCount,
-    faqs,
     spotlight,
     t,
   } = await getHomeData();
@@ -250,11 +228,7 @@ export default async function HomePage() {
     socialProof: settings.homepage.showSocialProof ? (
       <SocialProof deliveredCount={deliveredCount} />
     ) : null,
-    faq: (
-      <div className="section-space pb-0 pt-0">
-        <FaqTeaser items={faqs} />
-      </div>
-    ),
+    faq: null,
   };
   const visibleSections = settings.homepage.sections.filter((entry) => entry.visible);
 
