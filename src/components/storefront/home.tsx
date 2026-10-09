@@ -217,6 +217,14 @@ export function ProductSpotlight({ product }: { product: StoreProductCard }) {
 
 export type CategoryTile = { name: string; slug: string; image: string | null; count: number };
 
+/** Editorial placeholders so a category tile never renders empty. */
+const CATEGORY_PLACEHOLDERS = [
+  "/banners/cat-bags.webp",
+  "/banners/cat-jewelry.webp",
+  "/banners/cat-bags-wallets.webp",
+  "/banners/cat-clothing.webp",
+];
+
 export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
   const { t } = useLocale();
   if (categories.length === 0) return null;
@@ -236,27 +244,23 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
         </div>
       </Reveal>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
-        {categories.map((category, index) => (
+        {categories.map((category, index) => {
+          const image = category.image ?? CATEGORY_PLACEHOLDERS[index % CATEGORY_PLACEHOLDERS.length]!;
+          return (
           <Reveal key={category.slug} delay={Math.min(index, 5) * 70}>
             <Link
               href={`/categories/${category.slug}`}
               className="group relative block overflow-hidden bg-cream transition-[transform,box-shadow] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:shadow-[0_30px_60px_-30px_rgb(29_35_43/0.45)]"
             >
               <div className="relative aspect-[3/4] w-full">
-                {category.image ? (
-                  <Image
-                    src={category.image}
-                    alt={category.name}
-                    fill
-                    sizes="(max-width: 768px) 50vw, 16vw"
-                    unoptimized
-                    className="object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
-                  />
-                ) : (
-                  <span className="flex h-full w-full items-center justify-center font-display text-5xl text-ink-muted/60">
-                    {category.name.charAt(0)}
-                  </span>
-                )}
+                <Image
+                  src={image}
+                  alt={category.name}
+                  fill
+                  sizes="(max-width: 768px) 50vw, 16vw"
+                  unoptimized
+                  className="object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
+                />
                 <div className="absolute inset-0 bg-gradient-to-t from-ink/50 to-transparent" />
                 <div className="absolute inset-x-0 bottom-0 p-3 overlay-text md:p-4">
                   <p className="text-sm font-medium md:text-base">{category.name}</p>
@@ -267,7 +271,8 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
               </div>
             </Link>
           </Reveal>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
