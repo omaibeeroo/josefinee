@@ -175,7 +175,6 @@ export default async function HomePage() {
     featured: hasCatalog ? (
       <div className="section-space pt-0">
         <ProductCarousel
-          eyebrow={t.home.featuredEyebrow}
           title={t.home.featuredTitle}
           products={featured}
           viewAllHref="/shop"

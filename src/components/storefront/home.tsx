@@ -226,7 +226,7 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
         <div className="mb-4 flex items-end justify-between gap-6 md:mb-6">
           <div>
             <p className="eyebrow mb-2">{t.home.forYou}</p>
-            <h2 className="font-display text-3xl font-medium md:text-4xl">
+            <h2 className="font-display text-3xl font-medium uppercase md:text-4xl">
               {t.home.shopByCategory}
             </h2>
           </div>

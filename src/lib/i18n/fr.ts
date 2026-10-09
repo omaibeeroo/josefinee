@@ -141,7 +141,6 @@ const fr = {
     cookies: "Cookies",
   },
   home: {
-    featuredEyebrow: "Choisissez votre prochaine pièce",
     featuredTitle: "La sélection Hanadi Store",
     signatureEyebrow: "La pièce signature",
     spotlightText: "Une pièce choisie pour accompagner les moments qui comptent, avec la douceur et la présence propres à Hanadi Store.",

@@ -143,7 +143,6 @@ const en: FrDictionary = {
     cookies: "Cookies",
   },
   home: {
-    featuredEyebrow: "Choose your next piece",
     featuredTitle: "The Hanadi Store selection",
     signatureEyebrow: "The signature piece",
     spotlightText: "A piece chosen to accompany the moments that matter, with the softness and presence of Hanadi Store.",

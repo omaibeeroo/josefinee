@@ -848,7 +848,17 @@ function SiteFooter(props: ChromeProps) {
     <footer className="site-footer mt-3 border-t hairline bg-chrome">
       <div className="container-luxe flex flex-col items-center gap-2 py-4 text-center md:block md:py-8">
         <div className="min-w-0">
-          <p className="font-display text-lg tracking-[0.28em] md:text-xl">{props.brandName}</p>
+          <div className="relative mx-auto aspect-[16/9] w-full max-w-md overflow-hidden">
+            <Image
+              src="/banners/footer-brand.webp"
+              alt={`${props.brandName} — ${t.footer.tagline}`}
+              fill
+              sizes="(max-width: 768px) 90vw, 480px"
+              unoptimized
+              className="object-cover"
+            />
+          </div>
+          <p className="mt-3 font-display text-lg tracking-[0.28em] md:mt-4 md:text-xl">{props.brandName}</p>
           <p className="mx-auto mt-1 max-w-xs text-[0.65rem] leading-relaxed text-ink-soft md:mt-2 md:text-xs">
             {t.footer.tagline}
           </p>

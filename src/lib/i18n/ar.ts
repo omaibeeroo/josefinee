@@ -143,7 +143,6 @@ const ar: FrDictionary = {
     cookies: "ملفات الارتباط",
   },
   home: {
-    featuredEyebrow: "اختاري قطعتك القادمة",
     featuredTitle: "مختارات متجر هنادي",
     signatureEyebrow: "القطعة المميزة",
     spotlightText: "قطعة مختارة لترافق لحظاتك المهمة، بالنعومة والحضور الخاصين بمتجر هنادي.",

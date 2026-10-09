@@ -347,7 +347,6 @@ html.theme-switching *::after {
     line-height: 1.7;
     font-synthesis-weight: none;
     text-rendering: optimizeLegibility;
-    -webkit-font-smoothing: antialiased;
     min-width: 20rem;
     overflow-x: hidden;
     overflow-x: clip;

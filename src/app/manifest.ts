@@ -28,9 +28,9 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     dir: "ltr",
     icons: [
       {
-        src: "/icon.svg",
-        sizes: "64x64",
-        type: "image/svg+xml",
+        src: "/icon.png",
+        sizes: "512x512",
+        type: "image/png",
         purpose: "any",
       },
     ],

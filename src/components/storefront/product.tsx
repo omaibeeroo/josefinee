@@ -477,7 +477,7 @@ export function ProductCarousel({
       <div className="mb-4 flex items-end justify-between gap-4 border-b hairline pb-4 md:mb-6">
         <div>
           {eyebrow && <p className="eyebrow mb-2">{eyebrow}</p>}
-          <h2 className="font-display text-3xl font-medium md:text-4xl">{title}</h2>
+          <h2 className="font-display text-3xl font-medium uppercase md:text-4xl">{title}</h2>
         </div>
         <div className="flex items-center gap-2">
           {viewAllHref && (
