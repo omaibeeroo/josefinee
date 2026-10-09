@@ -806,7 +806,7 @@ function NewsletterMini() {
       <label htmlFor="footer-newsletter" className="sr-only">
         {t.footer.emailLabel}
       </label>
-      <div className="flex items-center gap-3 border-b hairline pb-2 transition-colors focus-within:border-ink">
+      <div className="flex items-center gap-3 border-b border-white/30 pb-2 transition-colors focus-within:border-white">
         <input
           id="footer-newsletter"
           type="email"
@@ -814,18 +814,18 @@ function NewsletterMini() {
           value={email}
           onChange={(event) => setEmail(event.target.value)}
           placeholder={t.footer.emailPlaceholder}
-          className="w-full bg-transparent text-[13px] tracking-wide text-ink outline-none placeholder:text-ink-muted"
+          className="w-full bg-transparent text-center text-[0.9375rem] tracking-wide text-white outline-none placeholder:text-white/60"
         />
         <button
           type="submit"
           disabled={pending}
-          className="shrink-0 text-[0.7rem] font-medium uppercase tracking-[0.22em] text-ink underline underline-offset-8 hover:text-gold-dark disabled:opacity-50"
+          className="shrink-0 text-[0.7rem] font-medium uppercase tracking-[0.22em] text-white underline underline-offset-8 hover:text-gold-dark disabled:opacity-50"
         >
           OK
         </button>
       </div>
       {state && (
-        <p className={`mt-2 text-sm ${state.ok ? "text-ink-soft" : "text-sale"}`} role="status">
+        <p className={`mt-3 text-sm ${state.ok ? "overlay-text-soft" : "text-sale"}`} role="status">
           {state.message}
         </p>
       )}
@@ -845,21 +845,24 @@ function SiteFooter(props: ChromeProps) {
     ? `https://wa.me/${props.social.whatsapp.replace(/\D/g, "")}`
     : null;
   return (
-    <footer className="site-footer mt-3 border-t hairline bg-chrome">
+    <footer className="site-footer relative mt-3 overflow-hidden">
+      {/* Full-bleed photo banner behind the whole footer, like the top hero. */}
+      <div className="absolute inset-0" aria-hidden="true">
+        <Image
+          src="/banners/footer-brand.webp"
+          alt=""
+          fill
+          sizes="100vw"
+          unoptimized
+          className="object-cover"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/45 to-ink/60" />
+      </div>
+      <div className="relative overlay-text">
       <div className="container-luxe flex flex-col items-center gap-2 py-4 text-center md:block md:py-8">
         <div className="min-w-0">
-          <div className="relative mx-auto aspect-[16/9] w-full max-w-md overflow-hidden">
-            <Image
-              src="/banners/footer-brand.webp"
-              alt={`${props.brandName} — ${t.footer.tagline}`}
-              fill
-              sizes="(max-width: 768px) 90vw, 480px"
-              unoptimized
-              className="object-cover"
-            />
-          </div>
-          <p className="mt-3 font-display text-lg tracking-[0.28em] md:mt-4 md:text-xl">{props.brandName}</p>
-          <p className="mx-auto mt-1 max-w-xs text-[0.65rem] leading-relaxed text-ink-soft md:mt-2 md:text-xs">
+          <p className="font-display text-lg tracking-[0.28em] md:text-xl">{props.brandName}</p>
+          <p className="mx-auto mt-1 max-w-xs text-[0.65rem] leading-relaxed overlay-text-soft md:mt-2 md:text-xs">
             {t.footer.tagline}
           </p>
         </div>
@@ -871,7 +874,7 @@ function SiteFooter(props: ChromeProps) {
                 href={social.href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-ink-soft hover:text-ink"
+                className="overlay-text-soft hover:text-white"
               >
                 {social.label}
               </a>
@@ -881,7 +884,7 @@ function SiteFooter(props: ChromeProps) {
                 href={whatsappHref}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-ink-soft hover:text-ink"
+                className="overlay-text-soft hover:text-white"
               >
                 WhatsApp
               </a>
@@ -890,16 +893,18 @@ function SiteFooter(props: ChromeProps) {
         )}
       </div>
       {props.faqItems.length > 0 && (
-        <div className="border-t hairline">
+        <div className="border-t border-white/20">
           <div className="container-luxe py-3 md:py-4">
             <Accordion
               compact
+              light
               items={[
                 {
                   title: t.footer.faq,
                   content: (
                     <Accordion
                       compact
+                      light
                       items={props.faqItems.map((item) => ({
                         title: item.question,
                         content: <p className="rich-text">{item.answer}</p>,
@@ -912,56 +917,56 @@ function SiteFooter(props: ChromeProps) {
           </div>
         </div>
       )}
-      <div className="border-t hairline">
+      <div className="border-t border-white/20">
         <div className="container-luxe grid min-w-0 grid-cols-3 gap-3 py-4 text-start md:gap-6 md:py-6">
           <nav aria-label={t.footer.shop}>
-            <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] text-ink-muted md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
+            <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] overlay-text-soft md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
               {t.footer.shop}
             </p>
             <ul className="space-y-1.5 text-[0.68rem] leading-tight md:space-y-2 md:text-xs">
               <li>
-                <Link href="/shop" className="text-ink-soft hover:text-ink">
+                <Link href="/shop" className="overlay-text-soft hover:text-white">
                   {t.footer.shopAll}
                 </Link>
               </li>
               <li>
-                <Link href="/collections/new-in" className="text-ink-soft hover:text-ink">
+                <Link href="/collections/new-in" className="overlay-text-soft hover:text-white">
                   {t.footer.newIn}
                 </Link>
               </li>
               <li>
-                <Link href="/collections/best-sellers" className="text-ink-soft hover:text-ink">
+                <Link href="/collections/best-sellers" className="overlay-text-soft hover:text-white">
                   {t.footer.bestSellers}
                 </Link>
               </li>
             </ul>
           </nav>
           <nav aria-label={t.footer.help}>
-            <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] text-ink-muted md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
+            <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] overlay-text-soft md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
               {t.footer.help}
             </p>
             <ul className="space-y-1.5 text-[0.68rem] leading-tight md:space-y-2 md:text-xs">
               <li>
-                <Link href="/pages/shipping" className="text-ink-soft hover:text-ink">
+                <Link href="/pages/shipping" className="overlay-text-soft hover:text-white">
                   {t.footer.shipping}
                 </Link>
               </li>
               <li>
-                <Link href="/contact" className="text-ink-soft hover:text-ink">
+                <Link href="/contact" className="overlay-text-soft hover:text-white">
                   {t.footer.contactUs}
                 </Link>
               </li>
             </ul>
           </nav>
           <div className="min-w-0">
-            <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] text-ink-muted md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
+            <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] overlay-text-soft md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
               {t.footer.newsletter}
             </p>
             <NewsletterMini />
             {(props.supportEmail || props.supportPhone) && (
-              <p className="mt-2 break-words text-[9px] leading-tight text-ink-muted md:mt-3 md:text-[11px] md:leading-relaxed">
+              <p className="mt-2 break-words text-[9px] leading-tight overlay-text-soft md:mt-3 md:text-[11px] md:leading-relaxed">
                 {props.supportEmail && (
-                  <a href={`mailto:${props.supportEmail}`} className="hover:text-ink">
+                  <a href={`mailto:${props.supportEmail}`} className="hover:text-white">
                     {props.supportEmail}
                   </a>
                 )}
@@ -969,7 +974,7 @@ function SiteFooter(props: ChromeProps) {
                 {props.supportPhone && (
                   <a
                     href={`tel:${props.supportPhone.replace(/\s/g, "")}`}
-                    className="hover:text-ink"
+                    className="hover:text-white"
                   >
                     {props.supportPhone}
                   </a>
@@ -979,23 +984,24 @@ function SiteFooter(props: ChromeProps) {
           </div>
         </div>
       </div>
-      <div className="border-t hairline">
-        <div className="container-luxe flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 text-start text-[0.6rem] text-ink-muted md:text-[0.68rem]">
+      <div className="border-t border-white/20">
+        <div className="container-luxe flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 text-start text-[0.6rem] overlay-text-soft md:text-[0.68rem]">
           <p>
             © {year} {props.brandName}
           </p>
           <div className="flex flex-wrap justify-end gap-x-3 gap-y-1 md:gap-x-5">
-            <Link href="/pages/privacy-policy" className="hover:text-ink">
+            <Link href="/pages/privacy-policy" className="hover:text-white">
               {t.footer.privacy}
             </Link>
-            <Link href="/pages/terms" className="hover:text-ink">
+            <Link href="/pages/terms" className="hover:text-white">
               {t.footer.terms}
             </Link>
-            <button type="button" onClick={openCookieSettings} className="hover:text-ink">
+            <button type="button" onClick={openCookieSettings} className="hover:text-white">
               {t.footer.cookies}
             </button>
           </div>
         </div>
+      </div>
       </div>
     </footer>
   );

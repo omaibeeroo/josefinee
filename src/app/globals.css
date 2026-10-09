@@ -801,6 +801,16 @@ html.theme-switching *::after {
     text-underline-offset: 3px;
   }
 
+  /* Light-on-photo tone for rich text inside photo overlays. */
+  [data-tone="light"] .rich-text {
+    color: rgb(251 252 253 / 0.85);
+  }
+
+  [data-tone="light"] .rich-text h2,
+  [data-tone="light"] .rich-text h3 {
+    color: #fbfcfd;
+  }
+
   .motion-stagger > * {
     animation: fade-up 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
   }

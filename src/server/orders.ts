@@ -16,7 +16,7 @@ import { signOrderToken } from "@/lib/order-token";
 import { getActionT } from "@/lib/i18n/server";
 import { processPendingOrderOutbox } from "@/server/order-outbox";
 import { after } from "next/server";
-import type { DeliveryMethod } from "@prisma/client";
+import { Prisma, type DeliveryMethod } from "@prisma/client";
 
 export type CreateOrderResult = {
   orderId: string;
@@ -45,6 +45,40 @@ type CreateOrderContext = {
   ip: string | null;
   userAgent: string | null;
 };
+
+/**
+ * Customer-linking rules for checkout. Pure helper (unit-tested) so the
+ * guest-checkout account-claiming behavior stays locked:
+ *
+ * - A guest (no authenticated session) must never overwrite an existing
+ *   customer's name/email, and must never assign a password to an existing
+ *   phone record. Repeat guest orders only refresh `lastOrderAt`.
+ * - Only an authenticated session for the same customer may update PII or
+ *   set an initial password. Claiming any existing record as a "new account"
+ *   is rejected, matching `registerAction` (email OR phone uniqueness).
+ */
+export type CustomerWriteDecision = "create" | "update-owned" | "touch-only" | "reject-exists";
+
+export function decideCustomerWrite(input: {
+  authenticatedCustomerId: string | null;
+  customer: { id: string; passwordHash: string | null } | null;
+  createAccount: boolean;
+}): CustomerWriteDecision {
+  if (!input.customer) return "create";
+  // Guest claiming an existing phone record as a new account — reject, even
+  // when the record has no password yet (otherwise anyone knowing a phone
+  // number could set a password and take over the account).
+  if (input.createAccount && !input.authenticatedCustomerId) return "reject-exists";
+  if (input.createAccount && input.customer.passwordHash) return "reject-exists";
+  if (input.authenticatedCustomerId && input.customer.id === input.authenticatedCustomerId) {
+    return "update-owned";
+  }
+  return "touch-only";
+}
+
+function isUniqueViolation(error: unknown): boolean {
+  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002";
+}
 
 export async function createOrder(
   rawInput: CheckoutInput,
@@ -258,9 +292,12 @@ export async function createOrder(
     // locks serialize only competing checkouts for the same normalized phone.
     await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${data.phone}, 0))`;
 
-    const sessionCustomerId = session?.customer.id ?? cartCustomerId ?? null;
-    const customer = sessionCustomerId
-      ? await tx.customer.findUnique({ where: { id: sessionCustomerId } })
+    // Only an authenticated session proves account ownership. A cart linked to
+    // a customer without a session must NOT confer update rights — guests
+    // resolve purely by phone and may never overwrite stored PII.
+    const authenticatedCustomerId = session?.customer.id ?? null;
+    const customer = authenticatedCustomerId
+      ? await tx.customer.findUnique({ where: { id: authenticatedCustomerId } })
       : await tx.customer.findUnique({ where: { phone: data.phone } });
 
     let discount = 0;
@@ -324,34 +361,60 @@ export async function createOrder(
       db: tx,
     });
 
-    if (data.createAccount && customer?.passwordHash) {
+    const customerDecision = decideCustomerWrite({
+      authenticatedCustomerId,
+      customer: customer ? { id: customer.id, passwordHash: customer.passwordHash } : null,
+      createAccount: data.createAccount,
+    });
+    if (customerDecision === "reject-exists") {
       throw new AppError("ACCOUNT_EXISTS", tErr.accountExists, 409);
     }
 
     let customerId: string | null = customer?.id ?? null;
-    if (customerId) {
+    if (customerId && customerDecision === "update-owned") {
+      try {
+        await tx.customer.update({
+          where: { id: customerId },
+          data: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            email: data.email ?? undefined,
+            lastOrderAt: new Date(),
+            ...(passwordHash ? { passwordHash } : {}),
+          },
+        });
+      } catch (error) {
+        if (isUniqueViolation(error)) {
+          throw new AppError("ACCOUNT_EXISTS", tErr.accountExists, 409);
+        }
+        throw error;
+      }
+    } else if (customerId) {
+      // Repeat guest order for an existing phone: link the order but leave
+      // stored names, email and credentials untouched.
       await tx.customer.update({
         where: { id: customerId },
-        data: {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email ?? undefined,
-          lastOrderAt: new Date(),
-          ...(passwordHash ? { passwordHash } : {}),
-        },
+        data: { lastOrderAt: new Date() },
       });
     } else {
-      const created = await tx.customer.create({
-        data: {
-          firstName: data.firstName,
-          lastName: data.lastName,
-          phone: data.phone,
-          email: data.email ?? null,
-          passwordHash,
-          riskLevel: risk.level,
-        },
-      });
-      customerId = created.id;
+      try {
+        const created = await tx.customer.create({
+          data: {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            phone: data.phone,
+            email: data.email ?? null,
+            passwordHash,
+            riskLevel: risk.level,
+          },
+        });
+        customerId = created.id;
+      } catch (error) {
+        if (isUniqueViolation(error)) {
+          throw new AppError("ACCOUNT_EXISTS", tErr.accountExists, 409);
+        }
+        throw error;
+      }
     }
 
     const year = new Date().getFullYear();

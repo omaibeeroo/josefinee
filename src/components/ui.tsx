@@ -453,9 +453,12 @@ export function Drawer({
 export function Accordion({
   items,
   compact = false,
+  light = false,
 }: {
   items: Array<{ title: string; content: ReactNode; defaultOpen?: boolean }>;
   compact?: boolean;
+  /** Light-on-photo tone (footer FAQ over the brand banner). */
+  light?: boolean;
 }) {
   const [open, setOpen] = useState<number | null>(
     items.findIndex((item) => item.defaultOpen) === -1
@@ -463,7 +466,13 @@ export function Accordion({
       : items.findIndex((item) => item.defaultOpen),
   );
   return (
-    <div className="divide-y divide-line border-y hairline">
+    <div
+      data-tone={light ? "light" : undefined}
+      className={cn(
+        "divide-y border-y",
+        light ? "divide-white/20 border-white/20 overlay-text" : "divide-line border-y hairline",
+      )}
+    >
       {items.map((item, index) => {
         const isOpen = open === index;
         return (
@@ -488,7 +497,8 @@ export function Accordion({
               <ChevronDown
                 size={14}
                 className={cn(
-                  "shrink-0 text-ink-muted transition-transform",
+                  "shrink-0 transition-transform",
+                  light ? "text-white/70" : "text-ink-muted",
                   isOpen && "rotate-180",
                 )}
               />
