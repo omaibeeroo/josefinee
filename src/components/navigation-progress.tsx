@@ -52,15 +52,17 @@ export function NavigationProgress() {
 }
 
 /**
- * Route transition: replays a short motion-safe page-enter (fade + 8px rise)
- * on every navigation. Pure CSS, no libraries; `motion-safe:` keeps it off
+ * Route transition: replays a short motion-safe fade on every navigation.
+ * Keep transforms off this outer wrapper: transformed ancestors change the
+ * containing block for fixed storefront controls such as the app header.
+ * Pure CSS, no libraries; `motion-safe:` keeps it off
  * for reduced-motion visitors. Remount is scoped to the template boundary so
  * layout-level state (cart, locale, theme) is preserved.
  */
 export function PageTransition({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   return (
-    <div key={pathname} className="motion-safe:animate-page-enter">
+    <div key={pathname} className="motion-safe:animate-fade-in">
       {children}
     </div>
   );
