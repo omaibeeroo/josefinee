@@ -367,7 +367,11 @@ export function Modal({
       aria-modal="true"
       aria-labelledby={headingId}
     >
-      <button aria-label={t.common.close} onClick={onClose} className="absolute inset-0 bg-ink/50" />
+      <button
+        aria-label={t.common.close}
+        onClick={onClose}
+        className="absolute inset-0 bg-ink/50"
+      />
       <div
         ref={panelRef}
         tabIndex={-1}
@@ -447,8 +451,10 @@ export function Drawer({
 
 export function Accordion({
   items,
+  compact = false,
 }: {
   items: Array<{ title: string; content: ReactNode; defaultOpen?: boolean }>;
+  compact?: boolean;
 }) {
   const [open, setOpen] = useState<number | null>(
     items.findIndex((item) => item.defaultOpen) === -1
@@ -465,15 +471,30 @@ export function Accordion({
               type="button"
               aria-expanded={isOpen}
               onClick={() => setOpen(isOpen ? null : index)}
-              className="flex w-full items-center justify-between gap-4 py-3 text-left"
+              className={cn(
+                "flex w-full items-center justify-between gap-4 text-left",
+                compact ? "py-2" : "py-3",
+              )}
             >
-              <span className="text-xs font-medium uppercase tracking-[0.12em]">{item.title}</span>
+              <span
+                className={cn(
+                  "font-medium uppercase tracking-[0.12em]",
+                  compact ? "text-[0.65rem] leading-tight" : "text-xs",
+                )}
+              >
+                {item.title}
+              </span>
               <ChevronDown
                 size={14}
-                className={cn("shrink-0 text-ink-muted transition-transform", isOpen && "rotate-180")}
+                className={cn(
+                  "shrink-0 text-ink-muted transition-transform",
+                  isOpen && "rotate-180",
+                )}
               />
             </button>
-            {isOpen && <div className="motion-expand pb-4">{item.content}</div>}
+            {isOpen && (
+              <div className={cn("motion-expand", compact ? "pb-3" : "pb-4")}>{item.content}</div>
+            )}
           </div>
         );
       })}
@@ -604,7 +625,9 @@ export function Reveal({
       style={{ transitionDelay: `${delay}ms` }}
       className={cn(
         "motion-safe:transition-[opacity,transform] motion-safe:duration-1000 motion-safe:ease-[cubic-bezier(0.22,1,0.36,1)]",
-        visible ? "motion-safe:translate-y-0 motion-safe:opacity-100" : "motion-safe:translate-y-7 motion-safe:opacity-0",
+        visible
+          ? "motion-safe:translate-y-0 motion-safe:opacity-100"
+          : "motion-safe:translate-y-7 motion-safe:opacity-0",
         className,
       )}
     >

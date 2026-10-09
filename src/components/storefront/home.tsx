@@ -26,23 +26,21 @@ export function DiscoveryStrip() {
 
   return (
     <section aria-label={t.home.discovery}>
-      <div className="container-luxe grid gap-6 py-2 text-center sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-[var(--color-line)]">
+      <div className="container-luxe grid grid-cols-3 gap-0 divide-x divide-[var(--color-line)] py-2 text-center">
         {items.map((item, index) => (
-          <Link
-            key={item.label}
-            href={item.href}
-            className="group block sm:px-6"
-          >
+          <Link key={item.label} href={item.href} className="group block min-w-0 px-1.5 sm:px-6">
             <span
-              className="text-[0.65rem] font-medium uppercase tracking-[0.24em] text-ink-muted"
+              className="text-[0.56rem] font-medium uppercase tracking-[0.12em] text-ink-muted sm:text-[0.65rem] sm:tracking-[0.24em]"
               aria-hidden="true"
             >
               0{index + 1}
             </span>
-            <span className="mt-1.5 block text-[0.7rem] font-medium uppercase tracking-[0.2em] group-hover:text-gold-dark">
+            <span className="mt-1 block text-[0.55rem] font-medium uppercase leading-tight tracking-[0.08em] group-hover:text-gold-dark sm:mt-1.5 sm:text-[0.7rem] sm:tracking-[0.2em]">
               {item.label}
             </span>
-            <span className="mt-1 block text-sm text-ink-soft">{item.detail}</span>
+            <span className="mt-1 block text-[0.65rem] leading-tight text-ink-soft sm:text-sm">
+              {item.detail}
+            </span>
           </Link>
         ))}
       </div>
@@ -169,7 +167,13 @@ export function FeaturedCollection({
           href={href}
           className="group relative block overflow-hidden bg-cream transition-[transform,box-shadow] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:shadow-[0_30px_60px_-30px_rgb(29_35_43/0.45)]"
         >
-          <div className={image ? "relative aspect-[16/10] w-full md:aspect-[21/8]" : "relative min-h-[18rem] w-full md:min-h-[22rem]"}>
+          <div
+            className={
+              image
+                ? "relative aspect-[16/10] w-full md:aspect-[21/8]"
+                : "relative min-h-[18rem] w-full md:min-h-[22rem]"
+            }
+          >
             {image ? (
               <Image
                 src={image}
@@ -254,7 +258,9 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
         <div className="mb-4 flex items-end justify-between gap-6 md:mb-6">
           <div>
             <p className="eyebrow mb-2">{t.home.forYou}</p>
-            <h2 className="font-display text-3xl font-medium md:text-4xl">{t.home.shopByCategory}</h2>
+            <h2 className="font-display text-3xl font-medium md:text-4xl">
+              {t.home.shopByCategory}
+            </h2>
           </div>
           <span className="hidden text-xs uppercase tracking-[0.18em] text-ink-muted sm:block">
             {t.home.wardobeNote}
@@ -314,11 +320,15 @@ export function TrustBar() {
   const items = useTrustItems();
   return (
     <section aria-label={t.home.whyUs}>
-      <div className="container-luxe grid grid-cols-1 gap-6 py-2 text-center sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-[var(--color-line)]">
+      <div className="container-luxe grid grid-cols-3 gap-0 divide-x divide-[var(--color-line)] py-2 text-center">
         {items.map((item) => (
-          <div key={item.title} className="sm:px-6">
-            <p className="text-[0.7rem] font-medium uppercase tracking-[0.2em]">{item.title}</p>
-            <p className="mt-1 text-sm text-ink-soft">{item.text}</p>
+          <div key={item.title} className="min-w-0 px-1.5 sm:px-6">
+            <p className="text-[0.52rem] font-medium uppercase leading-tight tracking-[0.07em] sm:text-[0.7rem] sm:tracking-[0.2em]">
+              {item.title}
+            </p>
+            <p className="mt-1 text-[0.65rem] leading-tight text-ink-soft sm:text-sm">
+              {item.text}
+            </p>
           </div>
         ))}
       </div>
@@ -335,9 +345,7 @@ export function SocialProof({ deliveredCount }: { deliveredCount: number }) {
         <p className="font-display text-5xl font-medium md:text-6xl">
           +{formatNumber(deliveredCount)}
         </p>
-        <p className="text-xs uppercase tracking-[0.24em] text-ivory/70">
-          {t.home.deliveredCount}
-        </p>
+        <p className="text-xs uppercase tracking-[0.24em] text-ivory/70">{t.home.deliveredCount}</p>
       </div>
     </section>
   );
@@ -351,15 +359,14 @@ export function FaqTeaser({ items }: { items: Array<{ question: string; answer: 
   return (
     <section className="container-luxe max-w-3xl" aria-label={t.home.faqTitle}>
       <Reveal>
-        <div className="mb-5 text-center">
-          <p className="eyebrow mb-2">{t.home.faqEyebrow}</p>
-          <h2 className="font-display text-lg font-medium md:text-xl">
-            {t.home.faqTitle}
-          </h2>
+        <div className="mb-3 text-center md:mb-5">
+          <p className="eyebrow mb-1 text-[0.58rem] md:mb-2 md:text-xs">{t.home.faqEyebrow}</p>
+          <h2 className="font-display text-base font-medium md:text-xl">{t.home.faqTitle}</h2>
         </div>
       </Reveal>
       <Reveal delay={100}>
         <Accordion
+          compact
           items={items.map((item) => ({
             title: item.question,
             content: <p className="rich-text">{item.answer}</p>,

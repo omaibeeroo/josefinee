@@ -1638,6 +1638,23 @@ html.theme-switching *::after {
   }
 }
 
+/* Keep the commerce controls attached to the viewport. The explicit rule
+   avoids browser-specific sticky behavior when the storefront contains
+   animated sections or nested scroll containers. */
+.mobile-persistent-header {
+  position: fixed !important;
+  inset-inline: 0;
+  z-index: 50;
+  background-color: rgb(233 236 239 / 0.96);
+  box-shadow: 0 8px 28px -20px rgb(29 35 43 / 0.72);
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
+}
+
+[data-theme="dark"] .mobile-persistent-header {
+  background-color: rgb(24 30 38 / 0.96);
+}
+
 /* Touch devices do not have a meaningful hover state. Avoid leaving hover
    transforms/colors latched after a tap, including touch tablets wider than
    the mobile breakpoint. */

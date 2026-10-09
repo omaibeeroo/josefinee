@@ -8,6 +8,8 @@ import {
   ChevronDown,
   ChevronRight,
   Heart,
+  Home,
+  LayoutGrid,
   Menu,
   PackageSearch,
   Search,
@@ -47,11 +49,13 @@ function BrandMark({
   logoUrl,
   onClick,
   compact,
+  mobile,
 }: {
   brandName: string;
   logoUrl: string;
   onClick?: () => void;
   compact?: boolean;
+  mobile?: boolean;
 }) {
   const { t } = useLocale();
   return (
@@ -59,15 +63,26 @@ function BrandMark({
       href="/"
       onClick={onClick}
       className={cn(
-        "inline-flex origin-left items-center gap-2 motion-safe:transition-transform motion-safe:duration-300",
+        "inline-flex min-w-0 origin-left items-center gap-2 motion-safe:transition-transform motion-safe:duration-300",
         compact && "motion-safe:scale-[0.82]",
       )}
       aria-label={t.header.brandHome.replace("{name}", brandName)}
     >
       {logoUrl ? (
-        <Image src={logoUrl} alt={brandName} width={120} height={36} className="h-9 w-auto" />
+        <Image
+          src={logoUrl}
+          alt={brandName}
+          width={120}
+          height={36}
+          className={cn("h-9 w-auto", mobile && "h-7 max-w-[7.5rem]")}
+        />
       ) : (
-        <span className="font-display text-[1.7rem] font-medium tracking-[0.32em]">
+        <span
+          className={cn(
+            "whitespace-nowrap font-display text-[1.7rem] font-medium tracking-[0.32em]",
+            mobile && "text-[1.18rem] tracking-[0.18em]",
+          )}
+        >
           {brandName}
         </span>
       )}
@@ -130,6 +145,10 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+  const mobileNavHidden =
+    pathname.startsWith("/products/") ||
+    pathname.startsWith("/checkout") ||
+    pathname.startsWith("/cart");
 
   useEffect(() => {
     setMenuOpen(false);
@@ -158,7 +177,8 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
 
       <header
         className={cn(
-          "sticky top-0 z-50 border-b bg-chrome backdrop-blur-md transition-shadow",
+          "mobile-persistent-header fixed inset-x-0 z-50 border-b bg-chrome backdrop-blur-md transition-[box-shadow,top]",
+          !scrolled && announcement ? "top-8" : "top-0",
           scrolled ? "hairline shadow-[0_8px_30px_-18px_rgba(28,26,23,0.4)]" : "border-transparent",
         )}
       >
@@ -281,25 +301,26 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         </div>
 
         {/* Mobile */}
-        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 px-2 py-1 lg:hidden">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-0 px-1.5 py-1.5 lg:hidden">
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-label={t.header.openMenu}
-            className="p-3"
+            className="p-2.5"
           >
             <Menu size={22} strokeWidth={1.75} />
           </button>
-          <div className="flex justify-center">
-            <BrandMark brandName={brandName} logoUrl={props.logoUrl} compact={scrolled} />
+          <div className="flex min-w-0 justify-center px-1">
+            <BrandMark brandName={brandName} logoUrl={props.logoUrl} compact={scrolled} mobile />
           </div>
-          <div className="flex items-center">
-            <ThemeToggle className="lg:hidden" />
+          <div className="flex items-center gap-0">
+            <LocaleToggle className="lg:hidden !shrink-0 !gap-1 !px-1 !text-[0.55rem] !tracking-[0.08em]" />
+            <ThemeToggle className="lg:hidden !p-1.5" />
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
               aria-label={t.header.search}
-              className="p-2.5"
+              className="p-2"
             >
               <Search size={20} strokeWidth={1.75} />
             </button>
@@ -307,7 +328,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
               type="button"
               onClick={() => setOpen(true)}
               aria-label={`${t.header.openCart}, ${count} ${count > 1 ? t.cart.items : t.cart.item}`}
-              className="relative p-2.5"
+              className="relative p-2"
             >
               <ShoppingBag size={20} strokeWidth={1.75} />
               {count > 0 && (
@@ -319,6 +340,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
           </div>
         </div>
       </header>
+      <div className="h-[4.25rem] lg:h-[6.8rem]" aria-hidden="true" />
 
       <MobileMenu
         open={menuOpen}
@@ -333,11 +355,99 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         onClose={() => setSearchOpen(false)}
         popularSearches={props.popularSearches}
       />
-      <main key={pathname} className="page-enter">
+      <main
+        key={pathname}
+        className={cn(
+          "page-enter",
+          !mobileNavHidden && "pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0",
+        )}
+      >
         {children}
       </main>
       <SiteFooter {...props} />
+      {!mobileNavHidden && <MobileAppNav count={count} onCart={() => setOpen(true)} />}
     </>
+  );
+}
+
+/* ---------------------------------------------------- Mobile app navigation */
+
+function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) {
+  const pathname = usePathname();
+  const { t } = useLocale();
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    if (href === "/shop") {
+      return ["/shop", "/search", "/collections", "/categories"].some(
+        (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+      );
+    }
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
+
+  const itemClass = (active: boolean) =>
+    cn(
+      "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 whitespace-nowrap px-0.5 pt-1.5 text-[0.5rem] font-medium uppercase tracking-[0.06em] transition-colors",
+      active ? "text-ink" : "text-ink-muted hover:text-ink",
+    );
+
+  return (
+    <nav
+      aria-label={t.header.mobileNav}
+      className="fixed inset-x-0 bottom-0 z-50 border-t hairline bg-chrome/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-14px_35px_-28px_rgb(29_35_43/0.65)] backdrop-blur-xl lg:hidden"
+    >
+      <div className="mx-auto flex h-[4.1rem] max-w-lg items-stretch px-1">
+        <Link
+          href="/"
+          className={itemClass(isActive("/"))}
+          aria-current={isActive("/") ? "page" : undefined}
+        >
+          <Home size={18} strokeWidth={isActive("/") ? 2 : 1.5} />
+          <span>{t.header.home}</span>
+        </Link>
+        <Link
+          href="/shop"
+          className={itemClass(isActive("/shop"))}
+          aria-current={isActive("/shop") ? "page" : undefined}
+        >
+          <LayoutGrid size={18} strokeWidth={isActive("/shop") ? 2 : 1.5} />
+          <span>{t.header.shop}</span>
+        </Link>
+        <button
+          type="button"
+          onClick={onCart}
+          aria-label={`${t.header.openCart}, ${count} ${count > 1 ? t.cart.items : t.cart.item}`}
+          className={itemClass(false)}
+        >
+          <span className="relative">
+            <ShoppingBag size={18} strokeWidth={1.5} />
+            {count > 0 && (
+              <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.55rem] font-semibold text-ivory">
+                {count}
+              </span>
+            )}
+          </span>
+          <span>{t.header.openCart.replace(/^Ouvrir |^Open /, "")}</span>
+        </button>
+        <Link
+          href="/wishlist"
+          className={itemClass(isActive("/wishlist"))}
+          aria-current={isActive("/wishlist") ? "page" : undefined}
+        >
+          <Heart size={18} strokeWidth={isActive("/wishlist") ? 2 : 1.5} />
+          <span>{t.header.wishlist}</span>
+        </Link>
+        <Link
+          href="/account"
+          className={itemClass(isActive("/account"))}
+          aria-current={isActive("/account") ? "page" : undefined}
+        >
+          <User size={18} strokeWidth={isActive("/account") ? 2 : 1.5} />
+          <span>{t.header.account.replace(/^Mon |^My /, "")}</span>
+        </Link>
+      </div>
+    </nav>
   );
 }
 
@@ -590,7 +700,12 @@ function SearchOverlay({
   }
 
   return (
-    <div className="fixed inset-0 z-[60]" role="dialog" aria-modal="true" aria-label={t.header.search}>
+    <div
+      className="fixed inset-0 z-[60]"
+      role="dialog"
+      aria-modal="true"
+      aria-label={t.header.search}
+    >
       <button
         aria-label={t.header.closeSearch}
         onClick={onClose}
@@ -726,13 +841,15 @@ function SiteFooter(props: ChromeProps) {
     : null;
   return (
     <footer className="site-footer mt-3 border-t hairline bg-chrome">
-      <div className="container-luxe py-6 text-center md:py-8">
-        <p className="font-display text-xl tracking-[0.28em]">{props.brandName}</p>
-        <p className="mx-auto mt-2 max-w-xs text-xs leading-relaxed text-ink-soft">
-          {t.footer.tagline}
-        </p>
+      <div className="container-luxe flex flex-col items-center gap-2 py-4 text-center md:block md:py-8">
+        <div className="min-w-0">
+          <p className="font-display text-lg tracking-[0.28em] md:text-xl">{props.brandName}</p>
+          <p className="mx-auto mt-1 max-w-xs text-[0.65rem] leading-relaxed text-ink-soft md:mt-2 md:text-xs">
+            {t.footer.tagline}
+          </p>
+        </div>
         {(socialLinks.length > 0 || whatsappHref) && (
-          <div className="mt-4 flex flex-wrap justify-center gap-x-5 gap-y-2 text-[0.625rem] uppercase tracking-[0.18em]">
+          <div className="flex max-w-none flex-wrap justify-center gap-x-3 gap-y-1 text-center text-[0.55rem] uppercase tracking-[0.14em] md:mx-auto md:mt-4 md:gap-x-5 md:gap-y-2 md:text-[0.625rem] md:tracking-[0.18em]">
             {socialLinks.map((social) => (
               <a
                 key={social.label}
@@ -758,12 +875,12 @@ function SiteFooter(props: ChromeProps) {
         )}
       </div>
       <div className="border-t hairline">
-        <div className="container-luxe grid gap-6 py-6 text-left sm:grid-cols-2 md:grid-cols-3">
+        <div className="container-luxe grid min-w-0 grid-cols-3 gap-3 py-4 text-left md:gap-6 md:py-6">
           <nav aria-label={t.footer.shop}>
-            <p className="mb-3 text-[0.6rem] font-medium uppercase tracking-[0.2em] text-ink-muted">
+            <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] text-ink-muted md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
               {t.footer.shop}
             </p>
-            <ul className="space-y-2 text-xs">
+            <ul className="space-y-1.5 text-[0.68rem] leading-tight md:space-y-2 md:text-xs">
               <li>
                 <Link href="/shop" className="text-ink-soft hover:text-ink">
                   {t.footer.shopAll}
@@ -782,10 +899,10 @@ function SiteFooter(props: ChromeProps) {
             </ul>
           </nav>
           <nav aria-label={t.footer.help}>
-            <p className="mb-3 text-[0.6rem] font-medium uppercase tracking-[0.2em] text-ink-muted">
+            <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] text-ink-muted md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
               {t.footer.help}
             </p>
-            <ul className="space-y-2 text-xs">
+            <ul className="space-y-1.5 text-[0.68rem] leading-tight md:space-y-2 md:text-xs">
               <li>
                 <Link href="/pages/shipping" className="text-ink-soft hover:text-ink">
                   {t.footer.shipping}
@@ -803,13 +920,13 @@ function SiteFooter(props: ChromeProps) {
               </li>
             </ul>
           </nav>
-          <div>
-            <p className="mb-3 text-[0.6rem] font-medium uppercase tracking-[0.2em] text-ink-muted">
+          <div className="min-w-0">
+            <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] text-ink-muted md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
               {t.footer.newsletter}
             </p>
             <NewsletterMini />
             {(props.supportEmail || props.supportPhone) && (
-              <p className="mt-3 text-[11px] leading-relaxed text-ink-muted">
+              <p className="mt-2 break-words text-[9px] leading-tight text-ink-muted md:mt-3 md:text-[11px] md:leading-relaxed">
                 {props.supportEmail && (
                   <a href={`mailto:${props.supportEmail}`} className="hover:text-ink">
                     {props.supportEmail}
@@ -830,9 +947,11 @@ function SiteFooter(props: ChromeProps) {
         </div>
       </div>
       <div className="border-t hairline">
-        <div className="container-luxe flex flex-col gap-1.5 py-3 text-center text-[0.68rem] text-ink-muted sm:flex-row sm:items-center sm:justify-between sm:text-left">
-          <p>© {year} {props.brandName}</p>
-          <div className="flex flex-wrap justify-center gap-x-5 gap-y-1">
+        <div className="container-luxe flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 text-left text-[0.6rem] text-ink-muted md:text-[0.68rem]">
+          <p>
+            © {year} {props.brandName}
+          </p>
+          <div className="flex flex-wrap justify-end gap-x-3 gap-y-1 md:gap-x-5">
             <Link href="/pages/privacy-policy" className="hover:text-ink">
               {t.footer.privacy}
             </Link>
