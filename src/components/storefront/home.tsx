@@ -181,7 +181,7 @@ export function ProductSpotlight({ product }: { product: StoreProductCard }) {
 
   return (
     <section className="container-luxe" aria-label={`${t.home.signatureEyebrow} : ${product.name}`}>
-      <div className="feature-spotlight grid overflow-hidden border hairline bg-white md:grid-cols-[1.08fr_0.92fr]">
+      <div className="feature-spotlight grid overflow-hidden bg-white md:grid-cols-[1.08fr_0.92fr]">
         <div className="relative aspect-[4/5] bg-cream md:aspect-auto md:min-h-[34rem]">
           <ProductImage
             url={image?.url ?? null}
