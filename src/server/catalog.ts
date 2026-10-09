@@ -2,6 +2,7 @@ import "server-only";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE, type ProductSort } from "@/lib/constants";
+import { getSettings } from "@/lib/settings";
 import { CACHE_TAG_CATALOG, CATALOG_REVALIDATE_SECONDS, stableCatalogQueryKey } from "@/lib/cache";
 import { Prisma } from "@prisma/client";
 
@@ -227,7 +228,10 @@ async function getStorefrontProductsFresh(query: CatalogQuery): Promise<{
   totalPages: number;
 }> {
   const page = Math.max(1, query.page ?? 1);
-  const pageSize = Math.min(48, query.pageSize ?? PAGE_SIZE);
+  // Listing density comes from Admin → Vitrine (commerce settings), clamped here too.
+  const settings = await getSettings();
+  const configured = settings.commerce.catalogPageSize;
+  const pageSize = Math.min(48, query.pageSize ?? configured ?? PAGE_SIZE);
   let where = buildWhere(query);
 
   try {

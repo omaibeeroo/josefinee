@@ -834,7 +834,7 @@ html.theme-switching *::after {
 --------------------------------------------------------------------------- */
 @layer base {
   body {
-    background: linear-gradient(180deg, #fbfcfd 0%, #f7f9fb 48%, #fbfcfd 100%);
+    background: #fff;
     letter-spacing: -0.01em;
   }
 
@@ -922,7 +922,7 @@ html.theme-switching *::after {
   .product-card-media {
     border: 1px solid rgb(220 225 230 / 0.75);
     border-radius: 1rem;
-    background: linear-gradient(145deg, #f5f7f9, #e8edf1);
+    background: #fff;
     box-shadow: 0 8px 30px -28px rgb(29 35 43 / 0.6);
   }
 
@@ -934,24 +934,7 @@ html.theme-switching *::after {
   }
 
   .product-card-media::before {
-    position: absolute;
-    inset: 0;
-    z-index: 1;
-    content: "";
-    pointer-events: none;
-    background: linear-gradient(
-      135deg,
-      rgb(255 255 255 / 0.22),
-      transparent 38%,
-      rgb(135 148 163 / 0.08)
-    );
-    opacity: 0;
-    transition: opacity 0.45s ease;
-  }
-
-  .product-card:hover .product-card-media::before,
-  .product-card:focus-within .product-card-media::before {
-    opacity: 1;
+    content: none;
   }
 
   .product-card-media .btn,
@@ -960,7 +943,7 @@ html.theme-switching *::after {
   }
 
   .editorial-image {
-    filter: saturate(0.78) contrast(1.02);
+    filter: saturate(1) contrast(1.02);
   }
 
   header {
@@ -978,14 +961,14 @@ html.theme-switching *::after {
 
   .silver-panel {
     border: 1px solid #dce1e6;
-    background: linear-gradient(135deg, #ffffff, #eef2f5);
+    background: #fff;
     box-shadow: 0 30px 80px -60px rgb(29 35 43 / 0.55);
   }
 
   .silver-rule {
     height: 1px;
     transform-origin: left;
-    background: linear-gradient(90deg, transparent, #8794a3, transparent);
+    background: #dce1e6;
   }
 
   .shopify-rail {

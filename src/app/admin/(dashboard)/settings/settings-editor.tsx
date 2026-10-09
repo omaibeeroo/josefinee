@@ -143,14 +143,18 @@ export function SettingsEditor({ initial }: { initial: SettingsMap }) {
               </Field>
               <Field label={t.adminSettings.defaultMethod}>
                 <Select value={commerce.defaultDeliveryMethod} onChange={(event) => set("commerce.defaultDeliveryMethod", event.target.value)}>
-                  <option value="HOME">Home delivery</option>
-                  <option value="STOPDESK">Stopdesk</option>
-                  <option value="EXPRESS">Express</option>
-                  <option value="STANDARD">Standard</option>
+                  {(["HOME", "STOPDESK", "EXPRESS", "STANDARD"] as const).map((method) => (
+                    <option key={method} value={method}>
+                      {t.delivery[method]}
+                    </option>
+                  ))}
                 </Select>
               </Field>
               <Field label={t.adminSettings.lowStock}>
                 <Input type="number" min={0} value={commerce.lowStockThresholdDefault} onChange={(event) => set("commerce.lowStockThresholdDefault", Number(event.target.value) || 0)} />
+              </Field>
+              <Field label={t.adminSettings.pageSize}>
+                <Input type="number" min={6} max={48} step={6} value={commerce.catalogPageSize} onChange={(event) => set("commerce.catalogPageSize", Math.min(48, Math.max(6, Number(event.target.value) || 12)))} />
               </Field>
             </div>
             <label className="flex items-center gap-2 text-sm">

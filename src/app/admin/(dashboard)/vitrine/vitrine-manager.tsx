@@ -9,6 +9,8 @@ import { cn } from "@/lib/utils";
 import {
   getVitrineData,
   moveCollectionProduct,
+  saveAnnouncementScheduleAction,
+  saveHomepageDisplayAction,
   saveVitrineSections,
   setSpotlightProduct,
 } from "@/server/actions/vitrine";
@@ -22,6 +24,15 @@ export function VitrineManager({ data }: { data: VitrineData }) {
   const [sections, setSections] = useState(data.sections);
   const [spotlight, setSpotlight] = useState<string | null>(data.spotlightProductId);
   const [collectionId, setCollectionId] = useState(data.collections[0]?.id ?? "");
+  const [display, setDisplay] = useState({
+    featuredCount: data.display.featuredCount,
+    bestSellersCount: data.display.bestSellersCount,
+    newInCount: data.display.newInCount,
+    categoryCount: data.display.categoryCount,
+    catalogPageSize: data.catalogPageSize,
+  });
+  const [schedStart, setSchedStart] = useState(data.announcement.startsAt?.slice(0, 16) ?? "");
+  const [schedEnd, setSchedEnd] = useState(data.announcement.endsAt?.slice(0, 16) ?? "");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -63,6 +74,41 @@ export function VitrineManager({ data }: { data: VitrineData }) {
     setError(null);
     setMessage(null);
     const result = await setSpotlightProduct(spotlight);
+    setPending(false);
+    if (!result.ok) {
+      setError(result.error ?? t.actions.wentWrong);
+      return;
+    }
+    setMessage(t.adminVitrine.saved);
+    router.refresh();
+  }
+
+  async function saveDisplay() {
+    setPending(true);
+    setError(null);
+    setMessage(null);
+    const result = await saveHomepageDisplayAction({
+      featuredCount: Number(display.featuredCount) || 0,
+      bestSellersCount: Number(display.bestSellersCount) || 0,
+      newInCount: Number(display.newInCount) || 0,
+      categoryCount: Number(display.categoryCount) || 0,
+      catalogPageSize: Number(display.catalogPageSize) || 0,
+    });
+    setPending(false);
+    if (!result.ok) {
+      setError(result.error ?? t.actions.wentWrong);
+      return;
+    }
+    setMessage(t.adminVitrine.saved);
+    router.refresh();
+  }
+
+  /** datetime-local gives "YYYY-MM-DDTHH:mm" (no offset); the server parses it. */
+  async function saveSchedule() {
+    setPending(true);
+    setError(null);
+    setMessage(null);
+    const result = await saveAnnouncementScheduleAction({ startsAt: schedStart, endsAt: schedEnd });
     setPending(false);
     if (!result.ok) {
       setError(result.error ?? t.actions.wentWrong);
@@ -163,6 +209,119 @@ export function VitrineManager({ data }: { data: VitrineData }) {
           <Button type="button" size="sm" disabled={pending} onClick={() => void saveSpotlight()} className="mt-3">
             {pending ? "…" : t.adminVitrine.saveSpotlight}
           </Button>
+        </section>
+
+        <section className="border hairline bg-white p-5" aria-label={t.adminVitrine.displayTitle}>
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">
+            {t.adminVitrine.displayTitle}
+          </h2>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="mb-1 block text-xs text-ink-muted">{t.adminVitrine.featuredCount}</span>
+              <input
+                type="number"
+                min={2}
+                max={24}
+                value={display.featuredCount}
+                onChange={(event) => setDisplay({ ...display, featuredCount: Number(event.target.value) })}
+                className="field min-h-10"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block text-xs text-ink-muted">{t.adminVitrine.bestSellersCount}</span>
+              <input
+                type="number"
+                min={2}
+                max={24}
+                value={display.bestSellersCount}
+                onChange={(event) => setDisplay({ ...display, bestSellersCount: Number(event.target.value) })}
+                className="field min-h-10"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block text-xs text-ink-muted">{t.adminVitrine.newInCount}</span>
+              <input
+                type="number"
+                min={2}
+                max={24}
+                value={display.newInCount}
+                onChange={(event) => setDisplay({ ...display, newInCount: Number(event.target.value) })}
+                className="field min-h-10"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block text-xs text-ink-muted">{t.adminVitrine.categoryCount}</span>
+              <input
+                type="number"
+                min={2}
+                max={12}
+                value={display.categoryCount}
+                onChange={(event) => setDisplay({ ...display, categoryCount: Number(event.target.value) })}
+                className="field min-h-10"
+              />
+            </label>
+            <label className="block text-sm sm:col-span-2">
+              <span className="mb-1 block text-xs text-ink-muted">{t.adminVitrine.catalogPageSize}</span>
+              <input
+                type="number"
+                min={6}
+                max={48}
+                step={6}
+                value={display.catalogPageSize}
+                onChange={(event) => setDisplay({ ...display, catalogPageSize: Number(event.target.value) })}
+                className="field min-h-10"
+              />
+            </label>
+          </div>
+          <Button type="button" size="sm" disabled={pending} onClick={() => void saveDisplay()} className="mt-3">
+            {pending ? "…" : t.adminVitrine.saveDisplay}
+          </Button>
+        </section>
+
+        <section className="border hairline bg-white p-5" aria-label={t.adminVitrine.schedTitle}>
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">
+            {t.adminVitrine.schedTitle}
+          </h2>
+          <p className="mb-3 text-xs text-ink-muted">{t.adminVitrine.schedHint}</p>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block text-sm">
+              <span className="mb-1 block text-xs text-ink-muted">{t.adminVitrine.schedStart}</span>
+              <input
+                type="datetime-local"
+                value={schedStart}
+                onChange={(event) => setSchedStart(event.target.value)}
+                className="field min-h-10"
+              />
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block text-xs text-ink-muted">{t.adminVitrine.schedEnd}</span>
+              <input
+                type="datetime-local"
+                value={schedEnd}
+                onChange={(event) => setSchedEnd(event.target.value)}
+                className="field min-h-10"
+              />
+            </label>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <Button type="button" size="sm" disabled={pending} onClick={() => void saveSchedule()}>
+              {pending ? "…" : t.adminVitrine.saveSchedule}
+            </Button>
+            {(schedStart || schedEnd) && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                disabled={pending}
+                onClick={() => {
+                  setSchedStart("");
+                  setSchedEnd("");
+                }}
+              >
+                {t.adminVitrine.schedClear}
+              </Button>
+            )}
+          </div>
         </section>
 
         <section className="border hairline bg-white p-5" aria-label={t.adminVitrine.collectionOrder}>

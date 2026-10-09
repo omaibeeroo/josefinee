@@ -232,7 +232,7 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
         </div>
       </Reveal>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
-        {categories.slice(0, 6).map((category, index) => (
+        {categories.map((category, index) => (
           <Reveal key={category.slug} delay={Math.min(index, 5) * 70}>
             <Link
               href={`/categories/${category.slug}`}

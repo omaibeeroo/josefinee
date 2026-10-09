@@ -54,6 +54,9 @@ export async function getVitrineData() {
   return {
     sections: settings.homepage.sections,
     spotlightProductId: settings.homepage.spotlightProductId,
+    display: settings.homepage.display,
+    catalogPageSize: settings.commerce.catalogPageSize,
+    announcement: settings.homepage.announcement,
     products,
     collections,
   };
@@ -127,6 +130,106 @@ export async function setSpotlightProduct(
     metadata: { spotlightProductId: productId },
   });
   // Spotlight feeds cached homepage queries.
+  revalidateTag(CACHE_TAG_CATALOG);
+  revalidatePath("/");
+  return { ok: true };
+}
+
+const displaySchema = z.object({
+  featuredCount: z.number().int().min(2).max(24),
+  bestSellersCount: z.number().int().min(2).max(24),
+  newInCount: z.number().int().min(2).max(24),
+  categoryCount: z.number().int().min(2).max(12),
+  catalogPageSize: z.number().int().min(6).max(48),
+});
+
+const emptyToNull = (value: unknown): string | null =>
+  typeof value === "string" && value.trim() !== "" ? value : null;
+
+const scheduleSchema = z.object({
+  startsAt: z.preprocess(emptyToNull, z.string().max(30).nullable()),
+  endsAt: z.preprocess(emptyToNull, z.string().max(30).nullable()),
+});
+
+/** Catalog display density (carousel sizes, category count, listing page size). */
+export async function saveHomepageDisplayAction(
+  input: unknown,
+): Promise<{ ok: boolean; error?: string }> {
+  const actor = await requirePermission("catalog:write");
+  const t = await getActionT();
+  const parsed = displaySchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: t.reviewFields };
+  const current = (await getSettings()).homepage;
+  await updateSettingsSection("homepage", {
+    announcement: current.announcement,
+    hero: current.hero,
+    featuredCollectionSlug: current.featuredCollectionSlug,
+    sections: current.sections,
+    spotlightProductId: current.spotlightProductId,
+    showSocialProof: current.showSocialProof,
+    socialProofOverride: current.socialProofOverride,
+    pillars: current.pillars,
+    display: {
+      featuredCount: parsed.data.featuredCount,
+      bestSellersCount: parsed.data.bestSellersCount,
+      newInCount: parsed.data.newInCount,
+      categoryCount: parsed.data.categoryCount,
+    },
+  });
+  const commerce = (await getSettings()).commerce;
+  await updateSettingsSection("commerce", {
+    ...commerce,
+    catalogPageSize: parsed.data.catalogPageSize,
+  });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "VITRINE_DISPLAY_SAVED",
+    resource: "Setting",
+    resourceId: "homepage",
+    metadata: { display: parsed.data },
+  });
+  revalidateTag(CACHE_TAG_CATALOG);
+  revalidatePath("/");
+  return { ok: true };
+}
+
+/** Announcement scheduling window (null/empty = unbounded on that side). */
+export async function saveAnnouncementScheduleAction(
+  input: unknown,
+): Promise<{ ok: boolean; error?: string }> {
+  const actor = await requirePermission("catalog:write");
+  const t = await getActionT();
+  const parsed = scheduleSchema.safeParse(input);
+  if (!parsed.success) return { ok: false, error: t.reviewFields };
+  const cleanDate = (value: string | null): string | null => {
+    if (!value) return null;
+    const time = Date.parse(value);
+    return Number.isFinite(time) ? new Date(time).toISOString() : null;
+  };
+  const startsAt = cleanDate(parsed.data.startsAt);
+  const endsAt = cleanDate(parsed.data.endsAt);
+  if (startsAt && endsAt && Date.parse(endsAt) < Date.parse(startsAt)) {
+    return { ok: false, error: t.reviewFields };
+  }
+  const current = (await getSettings()).homepage;
+  await updateSettingsSection("homepage", {
+    announcement: { ...current.announcement, startsAt, endsAt },
+    hero: current.hero,
+    featuredCollectionSlug: current.featuredCollectionSlug,
+    sections: current.sections,
+    spotlightProductId: current.spotlightProductId,
+    showSocialProof: current.showSocialProof,
+    socialProofOverride: current.socialProofOverride,
+    pillars: current.pillars,
+    display: current.display,
+  });
+  await recordAudit({
+    actorUserId: actor.id,
+    action: "VITRINE_ANNOUNCEMENT_SCHEDULED",
+    resource: "Setting",
+    resourceId: "homepage",
+    metadata: { startsAt, endsAt },
+  });
   revalidateTag(CACHE_TAG_CATALOG);
   revalidatePath("/");
   return { ok: true };

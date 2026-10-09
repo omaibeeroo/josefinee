@@ -32,7 +32,21 @@ export const HOMEPAGE_SECTION_IDS = [
 export type HomepageSectionId = (typeof HOMEPAGE_SECTION_IDS)[number];
 
 export type HomepageSettings = {
-  announcement: { text: string; href: string; isActive: boolean };
+  announcement: {
+    text: string;
+    href: string;
+    isActive: boolean;
+    /** ISO datetimes bounding the bar; null = unbounded on that side. */
+    startsAt: string | null;
+    endsAt: string | null;
+  };
+  /** Display density knobs, edited in Admin → Vitrine (no copy, locale-safe). */
+  display: {
+    featuredCount: number;
+    bestSellersCount: number;
+    newInCount: number;
+    categoryCount: number;
+  };
   /** Ordered homepage blocks; hidden ones are skipped when rendering. */
   sections: Array<{ id: HomepageSectionId; visible: boolean }>;
   /** Hand-picked spotlight product; null = first featured product. */
@@ -63,6 +77,8 @@ type CommerceSettings = {
   lowStockThresholdDefault: number;
   orderPrefix: string;
   defaultDeliveryMethod: "HOME" | "STOPDESK" | "EXPRESS" | "STANDARD";
+  /** Products per listing page (shop/search/categories/collections). */
+  catalogPageSize: number;
 };
 
 type SeoSettings = {
@@ -118,6 +134,14 @@ export const DEFAULT_SETTINGS: SettingsMap = {
       text: "Livraison partout en Algérie · Paiement à la livraison",
       href: "/collections/new-in",
       isActive: true,
+      startsAt: null,
+      endsAt: null,
+    },
+    display: {
+      featuredCount: 10,
+      bestSellersCount: 10,
+      newInCount: 10,
+      categoryCount: 6,
     },
     hero: {
       eyebrow: "Nouvelle collection",
@@ -169,6 +193,7 @@ export const DEFAULT_SETTINGS: SettingsMap = {
     lowStockThresholdDefault: 3,
     orderPrefix: BRAND_CONFIG.orderPrefix,
     defaultDeliveryMethod: "HOME",
+    catalogPageSize: 12,
   },
   seo: {
     titleSuffix: BRAND_CONFIG.defaultTitleSuffix,
@@ -219,7 +244,19 @@ const settingsSchemas = {
     }),
   }),
   homepage: z.object({
-    announcement: z.object({ text: z.string().max(240), href: safeLink, isActive: z.boolean() }),
+    announcement: z.object({
+      text: z.string().max(240),
+      href: safeLink,
+      isActive: z.boolean(),
+      startsAt: z.string().max(30).nullable(),
+      endsAt: z.string().max(30).nullable(),
+    }),
+    display: z.object({
+      featuredCount: z.number().int().min(2).max(24),
+      bestSellersCount: z.number().int().min(2).max(24),
+      newInCount: z.number().int().min(2).max(24),
+      categoryCount: z.number().int().min(2).max(12),
+    }),
     hero: z.object({
       eyebrow: z.string().max(120),
       headline: z.string().max(240),
@@ -253,6 +290,7 @@ const settingsSchemas = {
     lowStockThresholdDefault: z.number().int().nonnegative(),
     orderPrefix: z.string().regex(/^[A-Z0-9-]{1,20}$/),
     defaultDeliveryMethod: z.enum(["HOME", "STOPDESK", "EXPRESS", "STANDARD"]),
+    catalogPageSize: z.number().int().min(6).max(48),
   }),
   seo: z.object({
     titleSuffix: z.string().max(160),
@@ -277,7 +315,7 @@ const settingsSchemas = {
   }),
 } satisfies { [K in keyof SettingsMap]: z.ZodType<SettingsMap[K]> };
 
-function mergeSection<K extends keyof SettingsMap>(key: K, value: unknown): SettingsMap[K] {
+export function mergeSection<K extends keyof SettingsMap>(key: K, value: unknown): SettingsMap[K] {
   const defaults = DEFAULT_SETTINGS[key] as SettingsMap[K];
   if (!value || typeof value !== "object") return defaults;
   const stored = value as Record<string, unknown>;
@@ -334,6 +372,52 @@ function mergeSection<K extends keyof SettingsMap>(key: K, value: unknown): Sett
     if (typeof home.spotlightProductId !== "string" || home.spotlightProductId.length === 0) {
       home.spotlightProductId = null;
     }
+    // Display density knobs: coerce to safe integers within bounds so a bad
+    // stored value can never break listing queries.
+    {
+      const def = DEFAULT_SETTINGS.homepage.display;
+      const storedDisplay = (stored.display ?? {}) as Partial<HomepageSettings["display"]>;
+      const clampInt = (value: unknown, min: number, max: number, fallback: number): number => {
+        const n = typeof value === "number" ? Math.floor(value) : Number.NaN;
+        if (!Number.isFinite(n)) return fallback;
+        return Math.min(max, Math.max(min, n));
+      };
+      home.display = {
+        featuredCount: clampInt(storedDisplay.featuredCount, 2, 24, def.featuredCount),
+        bestSellersCount: clampInt(storedDisplay.bestSellersCount, 2, 24, def.bestSellersCount),
+        newInCount: clampInt(storedDisplay.newInCount, 2, 24, def.newInCount),
+        categoryCount: clampInt(storedDisplay.categoryCount, 2, 12, def.categoryCount),
+      };
+    }
+    // Announcement schedule: keep only parseable datetimes; an inverted
+    // window disables the schedule rather than hiding the bar forever.
+    {
+      const cleanDate = (value: unknown): string | null => {
+        if (typeof value !== "string" || value.trim() === "") return null;
+        const time = Date.parse(value);
+        return Number.isFinite(time) ? new Date(time).toISOString() : null;
+      };
+      const announcement = home.announcement as unknown as {
+        startsAt?: unknown;
+        endsAt?: unknown;
+      };
+      const startsAt = cleanDate(announcement.startsAt);
+      let endsAt = cleanDate(announcement.endsAt);
+      if (startsAt && endsAt && Date.parse(endsAt) < Date.parse(startsAt)) endsAt = null;
+      announcement.startsAt = startsAt;
+      announcement.endsAt = endsAt;
+    }
+  }
+  if (key === "commerce") {
+    const commerce = merged as unknown as CommerceSettings;
+    const fallback = DEFAULT_SETTINGS.commerce.catalogPageSize;
+    const n =
+      typeof commerce.catalogPageSize === "number"
+        ? Math.floor(commerce.catalogPageSize)
+        : Number.NaN;
+    commerce.catalogPageSize = Number.isFinite(n)
+      ? Math.min(48, Math.max(6, n))
+      : fallback;
   }
   if (key === "social") {
     const social = merged as unknown as SocialSettings;
@@ -371,6 +455,21 @@ export const getSettings = cache(async (): Promise<SettingsMap> => {
   }
   return result;
 });
+
+/**
+ * Announcement bar visibility: the toggle plus an optional scheduling
+ * window (either bound may be null for open-ended).
+ */
+export function isAnnouncementVisible(
+  announcement: HomepageSettings["announcement"],
+  now = new Date(),
+): boolean {
+  if (!announcement.isActive) return false;
+  const time = now.getTime();
+  if (announcement.startsAt && Date.parse(announcement.startsAt) > time) return false;
+  if (announcement.endsAt && Date.parse(announcement.endsAt) < time) return false;
+  return true;
+}
 
 export async function updateSettingsSection<K extends keyof SettingsMap>(
   key: K,

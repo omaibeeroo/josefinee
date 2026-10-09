@@ -1,4 +1,4 @@
-import { getSettings } from "@/lib/settings";
+import { getSettings, isAnnouncementVisible } from "@/lib/settings";
 import { getNavigation, getPopularSearches } from "@/server/navigation";
 import { SiteChrome } from "@/components/storefront/chrome";
 import { prisma } from "@/lib/prisma";
@@ -16,7 +16,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
     }),
   ]);
 
-  const announcement = settings.homepage.announcement.isActive
+  const announcement = isAnnouncementVisible(settings.homepage.announcement)
     ? {
         text: settings.homepage.announcement.text,
         href: settings.homepage.announcement.href || "/shop",

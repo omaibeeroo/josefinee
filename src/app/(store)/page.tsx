@@ -30,26 +30,27 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 async function getHomeData() {
-  // One wave: settings, catalog trio, and every settings-independent Prisma read
-  // launch together. Only the featured-collection lookup waits on settings.
+  // Settings first (React-cached single-row reads), then one catalog wave
+  // sized by the Admin → Vitrine display density knobs. Only the
+  // featured-collection lookup waits on settings below.
+  const settings = await getSettings();
+  const display = settings.homepage.display;
   const [
-    settings,
     featuredResult,
     newInResult,
     bestSellersResult,
     categoriesResult,
     deliveredResult,
   ] = await Promise.all([
-    getSettings(),
-    getFeaturedProducts(10).then(
+    getFeaturedProducts(display.featuredCount).then(
       (value) => ({ status: "fulfilled" as const, value }),
       () => ({ status: "rejected" as const, value: [] }),
     ),
-    getNewInProducts(10).then(
+    getNewInProducts(display.newInCount).then(
       (value) => ({ status: "fulfilled" as const, value }),
       () => ({ status: "rejected" as const, value: [] }),
     ),
-    getBestSellers(10).then(
+    getBestSellers(display.bestSellersCount).then(
       (value) => ({ status: "fulfilled" as const, value }),
       () => ({ status: "rejected" as const, value: [] }),
     ),
@@ -63,7 +64,7 @@ async function getHomeData() {
           image: true,
           _count: { select: { products: { where: { status: "ACTIVE" } } } },
         },
-        take: 6,
+        take: display.categoryCount,
       })
       .then(
         (value) => ({ status: "fulfilled" as const, value }),
