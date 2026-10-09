@@ -1638,17 +1638,15 @@ html.theme-switching *::after {
   }
 }
 
-/* Keep the mobile commerce controls attached to the viewport. The explicit
-   rule avoids browser-specific sticky behavior when the storefront contains
+/* Keep the commerce controls attached to the viewport. The explicit rule
+   avoids browser-specific sticky behavior when the storefront contains
    animated sections or nested scroll containers. */
-@media (max-width: 1023px) {
-  .mobile-persistent-header {
-    position: fixed !important;
-    inset-inline: 0;
-    z-index: 50;
-    transform: translate3d(0, 0, 0);
-    will-change: transform;
-  }
+.mobile-persistent-header {
+  position: fixed !important;
+  inset-inline: 0;
+  z-index: 50;
+  transform: translate3d(0, 0, 0);
+  will-change: transform;
 }
 
 /* Touch devices do not have a meaningful hover state. Avoid leaving hover
