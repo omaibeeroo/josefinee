@@ -150,6 +150,10 @@
   --tw-gradient-from: rgb(10 14 18 / 0.72) var(--tw-gradient-from-position);
 }
 
+[data-theme="dark"] .from-ink\/75 {
+  --tw-gradient-from: rgb(10 14 18 / 0.76) var(--tw-gradient-from-position);
+}
+
 [data-theme="dark"] .from-ink\/55 {
   --tw-gradient-from: rgb(10 14 18 / 0.6) var(--tw-gradient-from-position);
 }
@@ -160,6 +164,14 @@
 
 [data-theme="dark"] .via-ink\/15 {
   --tw-gradient-via: rgb(10 14 18 / 0.18) var(--tw-gradient-via-position);
+}
+
+[data-theme="dark"] .via-ink\/45 {
+  --tw-gradient-via: rgb(10 14 18 / 0.48) var(--tw-gradient-via-position);
+}
+
+[data-theme="dark"] .to-ink\/60 {
+  --tw-gradient-to: rgb(10 14 18 / 0.62) var(--tw-gradient-to-position);
 }
 
 /* Photo overlay copy stays ivory in both modes (photos don't flip themes).
