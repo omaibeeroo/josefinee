@@ -147,31 +147,31 @@
 }
 
 [data-theme="dark"] .from-ink\/70 {
-  --tw-gradient-from: rgb(10 14 18 / 0.72) var(--tw-gradient-from-position);
+  --tw-gradient-from: rgb(10 14 18 / 0.72);
 }
 
 [data-theme="dark"] .from-ink\/75 {
-  --tw-gradient-from: rgb(10 14 18 / 0.76) var(--tw-gradient-from-position);
+  --tw-gradient-from: rgb(10 14 18 / 0.76);
 }
 
 [data-theme="dark"] .from-ink\/55 {
-  --tw-gradient-from: rgb(10 14 18 / 0.6) var(--tw-gradient-from-position);
+  --tw-gradient-from: rgb(10 14 18 / 0.6);
 }
 
 [data-theme="dark"] .from-ink\/50 {
-  --tw-gradient-from: rgb(10 14 18 / 0.55) var(--tw-gradient-from-position);
+  --tw-gradient-from: rgb(10 14 18 / 0.55);
 }
 
 [data-theme="dark"] .via-ink\/15 {
-  --tw-gradient-via: rgb(10 14 18 / 0.18) var(--tw-gradient-via-position);
+  --tw-gradient-via: rgb(10 14 18 / 0.18);
 }
 
 [data-theme="dark"] .via-ink\/45 {
-  --tw-gradient-via: rgb(10 14 18 / 0.48) var(--tw-gradient-via-position);
+  --tw-gradient-via: rgb(10 14 18 / 0.48);
 }
 
 [data-theme="dark"] .to-ink\/60 {
-  --tw-gradient-to: rgb(10 14 18 / 0.62) var(--tw-gradient-to-position);
+  --tw-gradient-to: rgb(10 14 18 / 0.62);
 }
 
 /* Photo overlay copy stays ivory in both modes (photos don't flip themes).
