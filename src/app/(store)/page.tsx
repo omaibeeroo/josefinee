@@ -268,7 +268,7 @@ export default async function HomePage() {
         </>
       )}
 
-      <section className="container-luxe pb-2 pt-3 text-center md:pb-3 md:pt-4">
+      <section className="container-luxe pb-1 pt-2 text-center md:pb-1 md:pt-2">
         <Link
           href="/shop"
           className="text-[0.62rem] font-medium uppercase tracking-[0.16em] underline underline-offset-4 md:text-xs md:tracking-[0.24em] md:underline-offset-8"

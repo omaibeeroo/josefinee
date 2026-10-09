@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { productionEnvironmentIssues } from "./production-env";
+import { isLowEntropySecret, productionEnvironmentIssues } from "./production-env";
 
 const validProductionEnv = {
   NODE_ENV: "production",
@@ -71,6 +71,13 @@ describe("productionEnvironmentIssues", () => {
     expect(issues).toContain("EMAIL_FROM must be configured when EMAIL_PROVIDER is resend");
     expect(issues).toContain("SMS_ACCOUNT_SID must be configured when SMS_PROVIDER is twilio");
     expect(issues).toContain("WHATSAPP_API_KEY must be configured when WHATSAPP_PROVIDER is meta");
+  });
+
+  it("flags low-entropy secrets without failing length checks", () => {
+    expect(isLowEntropySecret("a".repeat(32))).toBe(true);
+    expect(isLowEntropySecret("unit-test-secret-value-that-is-not-used-outside-tests")).toBe(false);
+    expect(isLowEntropySecret(undefined)).toBe(false);
+    expect(isLowEntropySecret("short")).toBe(false);
   });
 
   it("rejects unknown notification providers", () => {

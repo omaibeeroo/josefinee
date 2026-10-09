@@ -350,6 +350,7 @@ html.theme-switching *::after {
     -webkit-font-smoothing: antialiased;
     min-width: 20rem;
     overflow-x: hidden;
+    overflow-x: clip;
   }
 
   ::selection {
@@ -376,11 +377,14 @@ html.theme-switching *::after {
     letter-spacing: normal;
   }
 
-  /* Premium Arabic faces: Amiri for display, Plex Sans Arabic for body.
+  /* Premium Arabic faces: El Messiri for display, Almarai for body.
    * They precede the Latin stacks so Arabic glyphs use them while Latin
-   * text keeps Inter/Cormorant. */
+   * text keeps Inter/Cormorant. Body runs slightly larger with generous
+   * line-height for Arabic readability. */
   [dir="rtl"] body {
     font-family: var(--font-sans-ar), var(--font-sans);
+    font-size: 1.125rem;
+    line-height: 1.8;
   }
 
   [dir="rtl"] .font-display,

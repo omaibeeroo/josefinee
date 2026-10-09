@@ -60,4 +60,14 @@ describe("admin RBAC", () => {
     expect(can(productManager, PERMISSIONS.PROMOTIONS_READ)).toBe(true);
     expect(can(productManager, PERMISSIONS.PROMOTIONS_WRITE)).toBe(true);
   });
+
+  it("splits content reads from writes", () => {
+    const productManager = user("PRODUCT_MANAGER", ROLE_PERMISSIONS.PRODUCT_MANAGER);
+    const support = user("CUSTOMER_SUPPORT", ROLE_PERMISSIONS.CUSTOMER_SUPPORT);
+
+    expect(can(productManager, PERMISSIONS.CONTENT_READ)).toBe(true);
+    expect(can(productManager, PERMISSIONS.CONTENT_WRITE)).toBe(true);
+    expect(can(support, PERMISSIONS.CONTENT_READ)).toBe(false);
+    expect(can(support, PERMISSIONS.CONTENT_WRITE)).toBe(false);
+  });
 });

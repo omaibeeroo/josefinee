@@ -30,6 +30,7 @@ export const PERMISSIONS = {
   CUSTOMERS_WRITE: "customers:write",
 
   REVIEWS_MODERATE: "reviews:moderate",
+  CONTENT_READ: "content:read",
   CONTENT_WRITE: "content:write",
   MESSAGES_READ: "messages:read",
   MESSAGES_WRITE: "messages:write",
@@ -109,6 +110,7 @@ export const ROLE_PERMISSIONS: Record<RoleNameValue, PermissionCode[]> = {
     P.PROMOTIONS_READ,
     P.PROMOTIONS_WRITE,
     P.REVIEWS_MODERATE,
+    P.CONTENT_READ,
     P.CONTENT_WRITE,
     P.DELIVERY_READ,
   ],

@@ -178,7 +178,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
 
       <header
         className={cn(
-          "mobile-persistent-header fixed inset-x-0 z-50 border-b bg-chrome backdrop-blur-md transition-[box-shadow,top]",
+          "mobile-persistent-header fixed inset-x-0 z-50 border-b bg-chrome backdrop-blur-md transition-shadow",
           !scrolled && announcement ? "top-8" : "top-0",
           scrolled ? "hairline shadow-[0_8px_30px_-18px_rgba(28,26,23,0.4)]" : "border-transparent",
         )}
@@ -315,7 +315,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
             <BrandMark brandName={brandName} logoUrl={props.logoUrl} compact={scrolled} mobile />
           </div>
           <div className="flex items-center gap-0">
-            <LocaleToggle className="lg:hidden !min-h-11 !min-w-11 !shrink-0 !justify-center !gap-1 !px-2 !text-[0.62rem] !tracking-[0.08em]" />
+            <LocaleToggle variant="cycle" className="lg:hidden" />
             <ThemeToggle className="lg:hidden !min-h-11 !min-w-11 !p-2.5" />
             <button
               type="button"
@@ -341,7 +341,10 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
           </div>
         </div>
       </header>
-      <div className="h-[5.25rem] lg:h-[6.8rem]" aria-hidden="true" />
+      <div
+        className={announcement ? "h-24 lg:h-[8.8rem]" : "h-16 lg:h-[6.8rem]"}
+        aria-hidden="true"
+      />
 
       <MobileMenu
         open={menuOpen}

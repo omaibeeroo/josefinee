@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { after } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
-import { toUserMessage } from "@/lib/errors";
+import { localizeAppError } from "@/lib/errors";
 import { zId } from "@/lib/validation/common";
 import { getActionT } from "@/lib/i18n/server";
 import {
@@ -58,7 +58,7 @@ export async function addToCartAction(variantId: string, quantity = 1) {
     revalidatePath("/cart");
     return { ok: true as const, added, count };
   } catch (error) {
-    return { ok: false as const, error: toUserMessage(error) };
+    return { ok: false as const, error: localizeAppError(error, tErr) };
   }
 }
 
@@ -73,7 +73,7 @@ export async function updateCartItemAction(itemId: string, quantity: number) {
     revalidatePath("/cart");
     return { ok: true as const };
   } catch (error) {
-    return { ok: false as const, error: toUserMessage(error) };
+    return { ok: false as const, error: localizeAppError(error, tErr) };
   }
 }
 
@@ -87,18 +87,19 @@ export async function removeCartItemAction(itemId: string) {
     revalidatePath("/cart");
     return { ok: true as const };
   } catch (error) {
-    return { ok: false as const, error: toUserMessage(error) };
+    return { ok: false as const, error: localizeAppError(error, tErr) };
   }
 }
 
 export async function clearCartAction() {
+  const tErr = await getActionT();
   try {
     await enforceCartMutationLimit("clear");
     await clearCart();
     revalidatePath("/cart");
     return { ok: true as const };
   } catch (error) {
-    return { ok: false as const, error: toUserMessage(error) };
+    return { ok: false as const, error: localizeAppError(error, tErr) };
   }
 }
 
@@ -152,6 +153,7 @@ export async function previewCouponAction(code: string) {
     });
     return { ok: true as const, discount: result.discount, code: result.code };
   } catch (error) {
-    return { ok: false as const, error: toUserMessage(error) };
+    return { ok: false as const, error: localizeAppError(error, tErr) };
   }
 }
+

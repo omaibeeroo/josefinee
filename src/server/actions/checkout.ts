@@ -3,7 +3,7 @@
 import { headers } from "next/headers";
 import { after } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { isAppError, toUserMessage } from "@/lib/errors";
+import { isAppError, localizeAppError, toUserMessage } from "@/lib/errors";
 import { flattenZodErrors, isBotSubmission } from "@/lib/validation/common";
 import { zId } from "@/lib/validation/common";
 import { getActionT } from "@/lib/i18n/server";
@@ -63,7 +63,7 @@ export async function submitOrderAction(input: CheckoutInput): Promise<SubmitOrd
     if (isAppError(error)) {
       return {
         ok: false,
-        error: error.userMessage,
+        error: localizeAppError(error, tErr),
         code: error.code,
         orderNumber: (error.meta?.orderNumber as string | undefined) ?? undefined,
       };

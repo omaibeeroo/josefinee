@@ -200,7 +200,7 @@ export async function createOrder(
       ) {
         throw new AppError(
           "PRODUCT_UNAVAILABLE",
-          `"${line.productName}" is no longer available.`,
+          tErr.productGone.replace("{name}", line.productName),
           409,
         );
       }
@@ -208,7 +208,9 @@ export async function createOrder(
       if (available < line.quantity) {
         throw new AppError(
           "OUT_OF_STOCK",
-          `"${line.productName}" only has ${available} left in stock.`,
+          tErr.outOfStock
+            .replace("{name}", line.productName)
+            .replace("{count}", String(Math.max(0, available))),
           409,
         );
       }
@@ -308,12 +310,9 @@ export async function createOrder(
       });
       const match = recent.find((order) => order.total === total);
       if (match) {
-        throw new AppError(
-          "DUPLICATE_ORDER",
-          "We already received a similar order from this number a moment ago. Tick “order anyway” to place it again.",
-          409,
-          { orderNumber: match.orderNumber },
-        );
+        throw new AppError("DUPLICATE_ORDER", tErr.duplicateOrder, 409, {
+          orderNumber: match.orderNumber,
+        });
       }
     }
 
@@ -326,11 +325,7 @@ export async function createOrder(
     });
 
     if (data.createAccount && customer?.passwordHash) {
-      throw new AppError(
-        "ACCOUNT_EXISTS",
-        "An account already exists with this phone number. Please sign in instead.",
-        409,
-      );
+      throw new AppError("ACCOUNT_EXISTS", tErr.accountExists, 409);
     }
 
     let customerId: string | null = customer?.id ?? null;

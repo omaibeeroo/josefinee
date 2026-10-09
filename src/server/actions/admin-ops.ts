@@ -630,7 +630,7 @@ const pageSchema = z.object({
 });
 
 export async function listPagesAdmin() {
-  await requirePermission("content:write");
+  await requirePermission("content:read");
   return prisma.page.findMany({ orderBy: { slug: "asc" } });
 }
 
@@ -690,7 +690,7 @@ const faqSchema = z.object({
 });
 
 export async function listFaqAdmin() {
-  await requirePermission("content:write");
+  await requirePermission("content:read");
   return prisma.faqItem.findMany({ orderBy: [{ category: "asc" }, { sortOrder: "asc" }] });
 }
 
@@ -742,7 +742,7 @@ const announcementSchema = z.object({
 });
 
 export async function listAnnouncementsAdmin() {
-  await requirePermission("content:write");
+  await requirePermission("content:read");
   return prisma.announcement.findMany({ orderBy: [{ sortOrder: "asc" }] });
 }
 

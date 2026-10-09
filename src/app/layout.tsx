@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import localFont from "next/font/local";
-import { Amiri, IBM_Plex_Sans_Arabic } from "next/font/google";
+import { Almarai, El_Messiri } from "next/font/google";
 import "./globals.css";
 import { cookies } from "next/headers";
 import { getSettings } from "@/lib/settings";
@@ -37,19 +37,19 @@ const sans = localFont({
   display: "swap",
 });
 
-// Premium Arabic faces, used only when the page is RTL: Amiri (editorial
-// serif matching Cormorant's voice) for display, IBM Plex Sans Arabic for
-// body. Subset-limited weights keep the download small.
-const displayAr = Amiri({
+// Premium Arabic faces, used only when the page is RTL: El Messiri
+// (elegant high-contrast display) for headings, Almarai (clean, highly
+// readable) for body. Subset-limited weights keep the download small.
+const displayAr = El_Messiri({
   subsets: ["arabic"],
-  weight: ["400", "700"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-display-ar",
   display: "swap",
 });
 
-const sansAr = IBM_Plex_Sans_Arabic({
+const sansAr = Almarai({
   subsets: ["arabic"],
-  weight: ["400", "500", "700"],
+  weight: ["400", "700"],
   variable: "--font-sans-ar",
   display: "swap",
 });

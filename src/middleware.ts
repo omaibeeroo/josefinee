@@ -32,31 +32,42 @@ export async function middleware(request: NextRequest) {
     if (!adminPreview) return maintenanceResponse(csp, request.cookies.get(LOCALE_COOKIE)?.value);
   }
 
-  // Unknown product slugs must 404 here, before streaming starts: a
-  // page-level notFound() fires after the shell + loading fallbacks have
-  // already flushed with status 200, so it can no longer set the 404 status
-  // (and would register as a soft-404). The page keeps its own notFound()
-  // as a second layer; the DB read here is a minimal id-only lookup.
-  if (pathname.startsWith("/products/")) {
-    let slug: string;
-    try {
-      slug = decodeURIComponent(request.nextUrl.pathname.slice("/products/".length));
-    } catch {
-      slug = "";
-    }
-    if (!slug || slug.includes("/")) {
-      return productNotFound(csp);
-    }
+  // Unknown slugs must 404 here, before streaming starts: a page-level
+  // notFound() fires after the shell + loading fallbacks have already
+  // flushed with status 200, so it can no longer set the 404 status (and
+  // would register as a soft-404). Pages keep their own notFound() as a
+  // second layer; the DB reads here are minimal id-only lookups.
+  const lang = request.cookies.get(LOCALE_COOKIE)?.value;
+  const slugRoute = slugPrefix(pathname);
+  if (slugRoute) {
+    const slug = slugRoute.slug;
+    if (!slug) return slugNotFound(csp, lang, slugRoute.kind);
     try {
       const [{ prisma }, { storefrontProductWhere }] = await Promise.all([
         import("@/lib/prisma"),
         import("@/server/catalog"),
       ]);
-      const product = await prisma.product.findFirst({
-        where: { ...storefrontProductWhere(), slug },
-        select: { id: true },
-      });
-      if (!product) return productNotFound(csp);
+      const exists =
+        slugRoute.kind === "products"
+          ? await prisma.product.findFirst({
+              where: { ...storefrontProductWhere(), slug },
+              select: { id: true },
+            })
+          : slugRoute.kind === "collections"
+            ? await prisma.collection.findFirst({
+                where: { slug, isActive: true },
+                select: { id: true },
+              })
+            : slugRoute.kind === "categories"
+              ? await prisma.category.findFirst({
+                  where: { slug, isActive: true },
+                  select: { id: true },
+                })
+              : await prisma.page.findFirst({
+                  where: { slug, isPublished: true },
+                  select: { id: true },
+                });
+      if (!exists) return slugNotFound(csp, lang, slugRoute.kind);
     } catch {
       return new NextResponse("Service temporairement indisponible.", {
         status: 503,
@@ -137,9 +148,44 @@ function maintenanceResponse(csp: string, localeCookie?: string): NextResponse {
   );
 }
 
-function productNotFound(csp: string): NextResponse {
+type SlugKind = "products" | "collections" | "categories" | "pages";
+
+/** Extracts a single-segment slug for storefront detail routes, if matched. */
+function slugPrefix(pathname: string): { kind: SlugKind; slug: string } | null {
+  for (const kind of ["products", "collections", "categories", "pages"] as const) {
+    const prefix = `/${kind}/`;
+    if (pathname.startsWith(prefix)) {
+      let slug: string;
+      try {
+        slug = decodeURIComponent(pathname.slice(prefix.length));
+      } catch {
+        slug = "";
+      }
+      if (!slug || slug.includes("/")) return { kind, slug: "" };
+      return { kind, slug };
+    }
+  }
+  return null;
+}
+
+function slugNotFound(csp: string, localeCookie: string | undefined, kind: SlugKind): NextResponse {
+  const lang = localeCookie === "ar" ? "ar" : localeCookie === "en" ? "en" : "fr";
+  const copy =
+    kind === "products"
+      ? {
+          title: lang === "ar" ? "المنتج غير موجود | Hanadi Store" : lang === "en" ? "Product not found | Hanadi Store" : "Produit introuvable | Hanadi Store",
+          heading: lang === "ar" ? "المنتج غير موجود" : lang === "en" ? "Product not found" : "Produit introuvable",
+          body: lang === "ar" ? "هذا المنتج لم يعد موجودًا أو غير متاح." : lang === "en" ? "This product no longer exists or is unavailable." : "Ce produit n’existe plus ou n’est pas disponible.",
+          back: lang === "ar" ? "العودة إلى المتجر" : lang === "en" ? "Back to the shop" : "Retour à la boutique",
+        }
+      : {
+          title: lang === "ar" ? "الصفحة غير موجودة | Hanadi Store" : lang === "en" ? "Page not found | Hanadi Store" : "Page introuvable | Hanadi Store",
+          heading: lang === "ar" ? "الصفحة غير موجودة" : lang === "en" ? "Page not found" : "Page introuvable",
+          body: lang === "ar" ? "الصفحة المطلوبة غير موجودة." : lang === "en" ? "The requested page does not exist." : "La page demandée n’existe pas.",
+          back: lang === "ar" ? "العودة إلى المتجر" : lang === "en" ? "Back to the shop" : "Retour à la boutique",
+        };
   return new NextResponse(
-    '<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>Produit introuvable | Hanadi Store</title></head><body><main><h1>Produit introuvable</h1><p>Ce produit n’existe plus ou n’est pas disponible.</p><a href="/shop">Retour à la boutique</a></main></body></html>',
+    `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${copy.title}</title></head><body><main><h1>${copy.heading}</h1><p>${copy.body}</p><a href="/shop">${copy.back}</a></main></body></html>`,
     {
       status: 404,
       headers: {

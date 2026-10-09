@@ -128,9 +128,25 @@ export function productionEnvironmentIssues(env: Environment = process.env): str
   return issues;
 }
 
+/** A long secret with almost no distinct characters (e.g. 32× "a") has no
+ *  real entropy despite passing length checks. */
+export function isLowEntropySecret(value: string | undefined): boolean {
+  if (!value || value.length < 32) return false;
+  return new Set(value).size < 10;
+}
+
 export function assertProductionEnvironment(env: Environment = process.env): void {
   const issues = productionEnvironmentIssues(env);
   if (issues.length > 0) {
     throw new Error(`Production environment is not ready:\n- ${issues.join("\n- ")}`);
+  }
+  // Warning only (never a boot blocker): rotating a live secret on short
+  // notice would be worse than flagging it for the next maintenance window.
+  for (const name of ["AUTH_SECRET", "ORDER_OUTBOX_SECRET", "RETENTION_JOB_SECRET"] as const) {
+    if (isLowEntropySecret(env[name])) {
+      console.error(
+        `[security] ${name} looks low-entropy; rotate it to 32+ random bytes when convenient.`,
+      );
+    }
   }
 }
