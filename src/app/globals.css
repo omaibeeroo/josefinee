@@ -1783,7 +1783,8 @@ html.theme-switching *::after {
 }
 
 /* Safari versions without backdrop-filter keep the same readable opaque
-   surfaces instead of rendering translucent text over page content. */@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+   surfaces instead of rendering translucent text over page content. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   header {
     background: #fbfcfd;
   }
