@@ -8,6 +8,8 @@ import {
   ChevronDown,
   ChevronRight,
   Heart,
+  Home,
+  LayoutGrid,
   Menu,
   PackageSearch,
   Search,
@@ -130,6 +132,8 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const pathname = usePathname();
+  const mobileNavHidden =
+    pathname.startsWith("/products/") || pathname.startsWith("/checkout") || pathname.startsWith("/cart");
 
   useEffect(() => {
     setMenuOpen(false);
@@ -333,11 +337,92 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         onClose={() => setSearchOpen(false)}
         popularSearches={props.popularSearches}
       />
-      <main key={pathname} className="page-enter">
+      <main
+        key={pathname}
+        className={cn("page-enter", !mobileNavHidden && "pb-[calc(5rem+env(safe-area-inset-bottom))] lg:pb-0")}
+      >
         {children}
       </main>
       <SiteFooter {...props} />
+      {!mobileNavHidden && <MobileAppNav count={count} onCart={() => setOpen(true)} />}
     </>
+  );
+}
+
+/* ---------------------------------------------------- Mobile app navigation */
+
+function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) {
+  const pathname = usePathname();
+  const { t } = useLocale();
+
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    if (href === "/shop") {
+      return ["/shop", "/search", "/collections", "/categories"].some(
+        (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+      );
+    }
+    return pathname === href || pathname.startsWith(`${href}/`);
+  };
+
+  const itemClass = (active: boolean) =>
+    cn(
+      "flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 pt-2 text-[0.58rem] font-medium uppercase tracking-[0.12em] transition-colors",
+      active ? "text-ink" : "text-ink-muted hover:text-ink",
+    );
+
+  return (
+    <nav
+      aria-label={t.header.mobileNav}
+      className="fixed inset-x-0 bottom-0 z-50 border-t hairline bg-chrome/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-14px_35px_-28px_rgb(29_35_43/0.65)] backdrop-blur-xl lg:hidden"
+    >
+      <div className="mx-auto flex h-[4.35rem] max-w-lg items-stretch px-2">
+        <Link href="/" className={itemClass(isActive("/"))} aria-current={isActive("/") ? "page" : undefined}>
+          <Home size={19} strokeWidth={isActive("/") ? 2 : 1.5} />
+          <span>{t.header.home}</span>
+        </Link>
+        <Link
+          href="/shop"
+          className={itemClass(isActive("/shop"))}
+          aria-current={isActive("/shop") ? "page" : undefined}
+        >
+          <LayoutGrid size={19} strokeWidth={isActive("/shop") ? 2 : 1.5} />
+          <span>{t.header.shop}</span>
+        </Link>
+        <button
+          type="button"
+          onClick={onCart}
+          aria-label={`${t.header.openCart}, ${count} ${count > 1 ? t.cart.items : t.cart.item}`}
+          className={itemClass(false)}
+        >
+          <span className="relative">
+            <ShoppingBag size={19} strokeWidth={1.5} />
+            {count > 0 && (
+              <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.55rem] font-semibold text-ivory">
+                {count}
+              </span>
+            )}
+          </span>
+          <span>{t.header.openCart.replace(/^Ouvrir |^Open /, "")}</span>
+        </button>
+        <Link
+          href="/wishlist"
+          className={itemClass(isActive("/wishlist"))}
+          aria-current={isActive("/wishlist") ? "page" : undefined}
+        >
+          <Heart size={19} strokeWidth={isActive("/wishlist") ? 2 : 1.5} />
+          <span>{t.header.wishlist}</span>
+        </Link>
+        <Link
+          href="/account"
+          className={itemClass(isActive("/account"))}
+          aria-current={isActive("/account") ? "page" : undefined}
+        >
+          <User size={19} strokeWidth={isActive("/account") ? 2 : 1.5} />
+          <span>{t.header.account.replace(/^Mon |^My /, "")}</span>
+        </Link>
+      </div>
+    </nav>
   );
 }
 
