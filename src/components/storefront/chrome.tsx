@@ -49,11 +49,13 @@ function BrandMark({
   logoUrl,
   onClick,
   compact,
+  mobile,
 }: {
   brandName: string;
   logoUrl: string;
   onClick?: () => void;
   compact?: boolean;
+  mobile?: boolean;
 }) {
   const { t } = useLocale();
   return (
@@ -61,15 +63,26 @@ function BrandMark({
       href="/"
       onClick={onClick}
       className={cn(
-        "inline-flex origin-left items-center gap-2 motion-safe:transition-transform motion-safe:duration-300",
+        "inline-flex min-w-0 origin-left items-center gap-2 motion-safe:transition-transform motion-safe:duration-300",
         compact && "motion-safe:scale-[0.82]",
       )}
       aria-label={t.header.brandHome.replace("{name}", brandName)}
     >
       {logoUrl ? (
-        <Image src={logoUrl} alt={brandName} width={120} height={36} className="h-9 w-auto" />
+        <Image
+          src={logoUrl}
+          alt={brandName}
+          width={120}
+          height={36}
+          className={cn("h-9 w-auto", mobile && "h-7 max-w-[7.5rem]")}
+        />
       ) : (
-        <span className="font-display text-[1.7rem] font-medium tracking-[0.32em]">
+        <span
+          className={cn(
+            "whitespace-nowrap font-display text-[1.7rem] font-medium tracking-[0.32em]",
+            mobile && "text-[1.18rem] tracking-[0.18em]",
+          )}
+        >
           {brandName}
         </span>
       )}
@@ -288,25 +301,25 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         </div>
 
         {/* Mobile */}
-        <div className="grid grid-cols-[auto_1fr_auto] items-center gap-2 px-2 py-1 lg:hidden">
+        <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-0 px-1 lg:hidden">
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
             aria-label={t.header.openMenu}
-            className="p-3"
+            className="p-2.5"
           >
             <Menu size={22} strokeWidth={1.75} />
           </button>
-          <div className="flex justify-center">
-            <BrandMark brandName={brandName} logoUrl={props.logoUrl} compact={scrolled} />
+          <div className="flex min-w-0 justify-center px-1">
+            <BrandMark brandName={brandName} logoUrl={props.logoUrl} compact={scrolled} mobile />
           </div>
-          <div className="flex items-center">
-            <ThemeToggle className="lg:hidden" />
+          <div className="flex items-center gap-0">
+            <ThemeToggle className="lg:hidden !p-1.5" />
             <button
               type="button"
               onClick={() => setSearchOpen(true)}
               aria-label={t.header.search}
-              className="p-2.5"
+              className="p-2"
             >
               <Search size={20} strokeWidth={1.75} />
             </button>
@@ -314,7 +327,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
               type="button"
               onClick={() => setOpen(true)}
               aria-label={`${t.header.openCart}, ${count} ${count > 1 ? t.cart.items : t.cart.item}`}
-              className="relative p-2.5"
+              className="relative p-2"
             >
               <ShoppingBag size={20} strokeWidth={1.75} />
               {count > 0 && (
@@ -374,7 +387,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
 
   const itemClass = (active: boolean) =>
     cn(
-      "flex min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 pt-2 text-[0.58rem] font-medium uppercase tracking-[0.12em] transition-colors",
+      "flex min-w-0 flex-1 flex-col items-center justify-center gap-0.5 whitespace-nowrap px-0.5 pt-1.5 text-[0.5rem] font-medium uppercase tracking-[0.06em] transition-colors",
       active ? "text-ink" : "text-ink-muted hover:text-ink",
     );
 
@@ -383,13 +396,13 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
       aria-label={t.header.mobileNav}
       className="fixed inset-x-0 bottom-0 z-50 border-t hairline bg-chrome/95 pb-[env(safe-area-inset-bottom)] shadow-[0_-14px_35px_-28px_rgb(29_35_43/0.65)] backdrop-blur-xl lg:hidden"
     >
-      <div className="mx-auto flex h-[4.35rem] max-w-lg items-stretch px-2">
+      <div className="mx-auto flex h-[4.1rem] max-w-lg items-stretch px-1">
         <Link
           href="/"
           className={itemClass(isActive("/"))}
           aria-current={isActive("/") ? "page" : undefined}
         >
-          <Home size={19} strokeWidth={isActive("/") ? 2 : 1.5} />
+          <Home size={18} strokeWidth={isActive("/") ? 2 : 1.5} />
           <span>{t.header.home}</span>
         </Link>
         <Link
@@ -397,7 +410,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           className={itemClass(isActive("/shop"))}
           aria-current={isActive("/shop") ? "page" : undefined}
         >
-          <LayoutGrid size={19} strokeWidth={isActive("/shop") ? 2 : 1.5} />
+          <LayoutGrid size={18} strokeWidth={isActive("/shop") ? 2 : 1.5} />
           <span>{t.header.shop}</span>
         </Link>
         <button
@@ -407,7 +420,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           className={itemClass(false)}
         >
           <span className="relative">
-            <ShoppingBag size={19} strokeWidth={1.5} />
+            <ShoppingBag size={18} strokeWidth={1.5} />
             {count > 0 && (
               <span className="absolute -right-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.55rem] font-semibold text-ivory">
                 {count}
@@ -421,7 +434,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           className={itemClass(isActive("/wishlist"))}
           aria-current={isActive("/wishlist") ? "page" : undefined}
         >
-          <Heart size={19} strokeWidth={isActive("/wishlist") ? 2 : 1.5} />
+          <Heart size={18} strokeWidth={isActive("/wishlist") ? 2 : 1.5} />
           <span>{t.header.wishlist}</span>
         </Link>
         <Link
@@ -429,7 +442,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           className={itemClass(isActive("/account"))}
           aria-current={isActive("/account") ? "page" : undefined}
         >
-          <User size={19} strokeWidth={isActive("/account") ? 2 : 1.5} />
+          <User size={18} strokeWidth={isActive("/account") ? 2 : 1.5} />
           <span>{t.header.account.replace(/^Mon |^My /, "")}</span>
         </Link>
       </div>
