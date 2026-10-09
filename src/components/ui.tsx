@@ -469,8 +469,7 @@ export function Accordion({
     <div
       data-tone={light ? "light" : undefined}
       className={cn(
-        "divide-y border-y",
-        light ? "divide-[#fff]/20 border-[#fff]/20 overlay-text" : "divide-line border-y hairline",
+        light ? "overlay-text" : "divide-y border-y divide-line hairline",
       )}
     >
       {items.map((item, index) => {

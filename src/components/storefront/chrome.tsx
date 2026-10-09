@@ -899,7 +899,7 @@ function SiteFooter(props: ChromeProps) {
         )}
       </div>
       {props.faqItems.length > 0 && (
-        <div className="border-t border-[#fff]/20">
+        <div>
           <div className="container-luxe py-3 md:py-4">
             <Accordion
               compact
@@ -923,7 +923,7 @@ function SiteFooter(props: ChromeProps) {
           </div>
         </div>
       )}
-      <div className="border-t border-[#fff]/20">
+      <div>
         <div className="container-luxe grid min-w-0 grid-cols-3 gap-3 py-4 text-start md:gap-6 md:py-6">
           <nav aria-label={t.footer.shop}>
             <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] overlay-text-soft md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
@@ -990,7 +990,7 @@ function SiteFooter(props: ChromeProps) {
           </div>
         </div>
       </div>
-      <div className="border-t border-[#fff]/20">
+      <div>
         <div className="container-luxe flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 text-start text-[0.6rem] overlay-text-soft md:text-[0.68rem]">
           <p>
             © {year} {props.brandName}
