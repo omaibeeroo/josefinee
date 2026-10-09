@@ -1774,11 +1774,19 @@ html.theme-switching *::after {
 /* Desktop reading scale: roomier type and larger product presence on large
    screens only. Every rem-based size, spacing token and the rem-wide
    container grow together, so text, buttons, fields and grid columns scale
-   as one. Mobile and tablet keep the base 16px scale, and the 16px iOS
-   anti-zoom rule further below is untouched. */
+   as one. Two steps so the 7-column header nav never bursts: 18px from
+   laptop widths, 20px where there is room to spare. Mobile and tablet keep
+   the base 16px scale, and the 16px iOS anti-zoom rule further below is
+   untouched. */
 @media (min-width: 1024px) {
   html {
     font-size: 18px;
+  }
+}
+
+@media (min-width: 1280px) {
+  html {
+    font-size: 20px;
   }
 }
 
