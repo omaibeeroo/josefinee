@@ -455,11 +455,13 @@ export function ProductCarousel({
   title,
   products,
   viewAllHref,
+  mobileGrid = false,
 }: {
   eyebrow?: string;
   title: string;
   products: StoreProductCard[];
   viewAllHref?: string;
+  mobileGrid?: boolean;
 }) {
   const { t } = useLocale();
   const trackRef = useRef<HTMLDivElement>(null);
@@ -492,7 +494,10 @@ export function ProductCarousel({
             type="button"
             aria-label={t.product.scrollLeft}
             onClick={() => scrollBy(-1)}
-            className="flex h-10 w-10 items-center justify-center border hairline bg-white"
+            className={cn(
+              "flex h-10 w-10 items-center justify-center border hairline bg-white",
+              mobileGrid && "hidden md:flex",
+            )}
           >
             <ChevronLeft size={18} className="rtl-flip" />
           </button>
@@ -500,15 +505,27 @@ export function ProductCarousel({
             type="button"
             aria-label={t.product.scrollRight}
             onClick={() => scrollBy(1)}
-            className="flex h-10 w-10 items-center justify-center border hairline bg-white"
+            className={cn(
+              "flex h-10 w-10 items-center justify-center border hairline bg-white",
+              mobileGrid && "hidden md:flex",
+            )}
           >
             <ChevronRight size={18} className="rtl-flip" />
           </button>
         </div>
       </div>
-      <div ref={trackRef} className="shopify-rail motion-stagger -mx-4 px-4 md:mx-0 md:px-0">
+      <div
+        ref={trackRef}
+        className={cn(
+          "shopify-rail motion-stagger -mx-4 px-4 md:mx-0 md:px-0",
+          mobileGrid && "mobile-product-grid",
+        )}
+      >
         {products.map((product) => (
-          <div key={product.id} className="w-[46%] shrink-0 md:w-[18rem]">
+          <div
+            key={product.id}
+            className={cn("w-[46%] shrink-0 md:w-[18rem]", mobileGrid && "w-full")}
+          >
             <ProductCard product={product} />
           </div>
         ))}

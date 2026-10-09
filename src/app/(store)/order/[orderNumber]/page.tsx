@@ -47,7 +47,7 @@ export default async function ConfirmationPage({
   const activeIndex = reachedIndex === -1 ? 0 : reachedIndex;
 
   return (
-    <div className="container-luxe max-w-3xl py-12 md:py-16">
+    <div dir="ltr" className="order-confirmation-page container-luxe max-w-3xl py-12 md:py-16">
       <PixelEvent
         name="Purchase"
         params={{
@@ -59,11 +59,11 @@ export default async function ConfirmationPage({
       />
       <div className="text-center">
         <CheckCircle2 size={44} strokeWidth={1.25} className="mx-auto text-success" />
-        <p className="eyebrow mt-4">{d.order.confirmed}</p>
-        <h1 className="mt-2 font-display text-4xl font-medium md:text-5xl">
+        <p dir="auto" className="eyebrow mt-4">{d.order.confirmed}</p>
+        <h1 dir="auto" className="mt-2 font-display text-4xl font-medium md:text-5xl">
           {d.order.thanks.replace("{name}", order.firstName)}
         </h1>
-        <p className="mx-auto mt-3 max-w-md text-ink-soft">
+        <p dir="auto" className="mx-auto mt-3 max-w-md text-ink-soft">
           {d.order.prepareNote.replace("{phone}", formatPhoneDisplay(order.phone))}
         </p>
         <p className="mt-4 inline-block border hairline bg-white px-5 py-2.5 text-sm tracking-[0.12em]">
@@ -90,7 +90,7 @@ export default async function ConfirmationPage({
                   <span className={cn("h-8 w-px", done ? "bg-ink" : "bg-line")} aria-hidden="true" />
                 )}
               </div>
-              <p className={cn("pb-6 text-sm", done ? "font-medium" : "text-ink-muted")}>
+              <p dir="auto" className={cn("pb-6 text-sm", done ? "font-medium" : "text-ink-muted")}>
                 {d.customerStatus[status]}
                 {index === activeIndex && <span className="ms-2 text-xs text-gold-dark">· {d.order.current}</span>}
               </p>
@@ -100,7 +100,7 @@ export default async function ConfirmationPage({
       </ol>
 
       <div className="border hairline bg-white p-6">
-        <h2 className="text-xs font-medium uppercase tracking-[0.2em]">{d.order.summary}</h2>
+        <h2 dir="auto" className="text-xs font-medium uppercase tracking-[0.2em]">{d.order.summary}</h2>
         <ul className="mt-4 space-y-3">
           {order.items.map((item, index) => (
             <li key={`${item.productName}-${index}`} className="flex items-center gap-3">
@@ -109,47 +109,52 @@ export default async function ConfirmationPage({
                   <Image src={item.imageUrl} alt={item.productName} fill sizes="48px" unoptimized className="object-cover" />
                 )}
               </div>
-              <div className="flex-1">
-                <p className="text-sm font-medium">{item.productName}</p>
-                <p className="text-xs text-ink-muted">
+              <div className="min-w-0 flex-1">
+                <p dir="auto" className="text-sm font-medium">{item.productName}</p>
+                <p dir="auto" className="text-xs text-ink-muted">
                   {item.variantLabel ? `${item.variantLabel} · ` : ""}{d.order.qty} {item.quantity}
                 </p>
               </div>
-                <p className="text-sm font-medium">{formatDA(item.lineTotal, d.locale)}</p>
+              <p
+                dir="ltr"
+                className="w-20 shrink-0 whitespace-nowrap text-right text-sm font-medium"
+              >
+                {formatDA(item.lineTotal, d.locale)}
+              </p>
             </li>
           ))}
         </ul>
         <dl className="mt-4 space-y-1.5 border-t hairline pt-4 text-sm">
           <div className="flex justify-between">
-            <dt className="text-ink-soft">{d.order.subtotal}</dt>
+            <dt dir="auto" className="text-ink-soft">{d.order.subtotal}</dt>
               <dd>{formatDA(order.subtotal, d.locale)}</dd>
           </div>
           {order.promotionDiscount > 0 && (
             <div className="flex justify-between">
-              <dt className="text-ink-soft">{d.order.promotion}{order.promotionName ? ` (${order.promotionName})` : ""}</dt>
+              <dt dir="auto" className="text-ink-soft">{d.order.promotion}{order.promotionName ? ` (${order.promotionName})` : ""}</dt>
               <dd>−{formatDA(order.promotionDiscount, d.locale)}</dd>
             </div>
           )}
           {order.discount > 0 && (
             <div className="flex justify-between">
-              <dt className="text-ink-soft">{d.order.discount}</dt>
+              <dt dir="auto" className="text-ink-soft">{d.order.discount}</dt>
               <dd>−{formatDA(order.discount, d.locale)}</dd>
             </div>
           )}
           <div className="flex justify-between">
-            <dt className="text-ink-soft">{d.order.delivery} ({d.delivery[order.deliveryMethod]})</dt>
+            <dt dir="auto" className="text-ink-soft">{d.order.delivery} ({d.delivery[order.deliveryMethod]})</dt>
               <dd>{formatDA(order.shipping, d.locale)}</dd>
           </div>
           <div className="flex justify-between text-base font-medium">
-            <dt>{d.order.totalCod}</dt>
+            <dt dir="auto">{d.order.totalCod}</dt>
               <dd>{formatDA(order.total, d.locale)}</dd>
           </div>
         </dl>
         <div className="mt-4 border-t hairline pt-4 text-sm text-ink-soft">
-          <p>
+          <p dir="auto">
             {order.firstName} {order.lastName} · <bdi>{formatPhoneDisplay(order.phone)}</bdi>
           </p>
-          <p className="mt-1">
+          <p dir="auto" className="mt-1">
             {order.address}, {order.communeName}, {order.wilayaName}
           </p>
         </div>

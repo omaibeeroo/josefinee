@@ -974,6 +974,10 @@ html.theme-switching *::after {
     background: rgb(251 252 253 / 0.84);
   }
 
+  .mobile-brand-mark {
+    width: 100%;
+  }
+
   .page-enter {
     animation-duration: 0.35s;
   }
@@ -1010,6 +1014,22 @@ html.theme-switching *::after {
   .shopify-rail > * {
     min-width: min(72vw, 18rem);
     scroll-snap-align: start;
+  }
+
+  @media (max-width: 767px) {
+    .shopify-rail.mobile-product-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2rem 0.75rem;
+      margin-inline: 0;
+      overflow: visible;
+      padding: 0;
+    }
+
+    .shopify-rail.mobile-product-grid > * {
+      width: auto;
+      min-width: 0;
+    }
   }
 
   .announcement-bar {
@@ -1709,6 +1729,16 @@ html.theme-switching *::after {
   will-change: transform;
 }
 
+.mobile-menu-panel {
+  border-color: #dce1e6;
+  background: var(--color-ivory);
+}
+
+.mobile-menu-panel > div:first-child {
+  border-bottom-color: #dce1e6;
+  background: rgb(255 255 255 / 0.72);
+}
+
 [data-theme="dark"] .mobile-persistent-header {
   background-color: rgb(24 30 38 / 0.96);
 }
@@ -1774,6 +1804,25 @@ html.theme-switching *::after {
 
   .site-footer {
     border-top-color: #e3e5e7;
+  }
+
+  .mobile-menu-backdrop {
+    animation: mobile-menu-backdrop-in 280ms ease-out both;
+  }
+
+  .mobile-menu-panel {
+    animation: mobile-menu-panel-in 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    transform-origin: left center;
+  }
+
+  @keyframes mobile-menu-backdrop-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+
+  @keyframes mobile-menu-panel-in {
+    from { opacity: 0.96; transform: translate3d(-102%, 0, 0); }
+    to { opacity: 1; transform: translate3d(0, 0, 0); }
   }
 
   @media (min-width: 768px) {
@@ -2001,6 +2050,7 @@ html.theme-switching *::after {
 }
 
 [data-theme="dark"] .cart-drawer > div:first-child,
+[data-theme="dark"] .mobile-menu-panel > div:first-child,
 [data-theme="dark"] .cart-drawer > div:last-child,
 [data-theme="dark"] .cart-page aside > div,
 [data-theme="dark"] .checkout-summary,
@@ -2347,6 +2397,7 @@ html[data-theme="light"] {
 }
 
 [data-theme="dark"] .cart-drawer,
+[data-theme="dark"] .mobile-menu-panel,
 [data-theme="dark"] [role="dialog"] > div:not([aria-hidden="true"]),
 [data-theme="dark"] dialog {
   border-color: var(--dark-border);
@@ -2407,6 +2458,11 @@ html[data-theme="light"] {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .mobile-menu-backdrop,
+  .mobile-menu-panel {
+    animation: none !important;
+  }
+
   html.theme-switching,
   html.theme-switching *,
   html.theme-switching *::before,
