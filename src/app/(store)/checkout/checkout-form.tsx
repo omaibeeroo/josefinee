@@ -655,13 +655,18 @@ export function CheckoutForm({
                     {item.quantity}
                   </span>
                 </div>
-                <div className="flex-1">
+                <div className="min-w-0 flex-1">
                   <p dir="auto" className="text-sm font-medium leading-tight">{item.productName}</p>
                   {item.variantLabel && (
                     <p dir="auto" className="text-xs text-ink-muted">{item.variantLabel}</p>
                   )}
                 </div>
-                <p dir="ltr" className="text-sm font-medium">{formatDA(item.lineTotal, t.locale)}</p>
+                <p
+                  dir="ltr"
+                  className="w-20 shrink-0 whitespace-nowrap text-right text-sm font-medium"
+                >
+                  {formatDA(item.lineTotal, t.locale)}
+                </p>
               </li>
             ))}
           </ul>

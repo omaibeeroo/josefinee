@@ -109,13 +109,18 @@ export default async function ConfirmationPage({
                   <Image src={item.imageUrl} alt={item.productName} fill sizes="48px" unoptimized className="object-cover" />
                 )}
               </div>
-              <div className="flex-1">
+              <div className="min-w-0 flex-1">
                 <p dir="auto" className="text-sm font-medium">{item.productName}</p>
                 <p dir="auto" className="text-xs text-ink-muted">
                   {item.variantLabel ? `${item.variantLabel} · ` : ""}{d.order.qty} {item.quantity}
                 </p>
               </div>
-                <p className="text-sm font-medium">{formatDA(item.lineTotal, d.locale)}</p>
+              <p
+                dir="ltr"
+                className="w-20 shrink-0 whitespace-nowrap text-right text-sm font-medium"
+              >
+                {formatDA(item.lineTotal, d.locale)}
+              </p>
             </li>
           ))}
         </ul>
