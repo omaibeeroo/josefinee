@@ -82,7 +82,7 @@ export function LocaleToggle({
           onClick={() => void switchTo(code)}
           aria-pressed={shown === code}
           className={cn(
-            "underline-offset-4 disabled:opacity-50",
+            "flex h-11 w-11 shrink-0 items-center justify-center text-center whitespace-nowrap underline-offset-4 disabled:opacity-50",
             shown === code ? "text-ink underline" : "text-ink-muted hover:text-ink",
           )}
         >
