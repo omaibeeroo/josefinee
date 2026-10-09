@@ -10,7 +10,7 @@ function Skeleton({ className = "" }: { className?: string }) {
 
 function ProductGridSkeleton({ count = 8 }: { count?: number }) {
   return (
-    <div className="grid grid-cols-2 gap-x-3 gap-y-8 md:grid-cols-3 md:gap-x-5 lg:grid-cols-3" aria-hidden="true">
+    <div className="grid grid-cols-2 gap-x-3 gap-y-8 md:grid-cols-3 md:gap-x-5 lg:grid-cols-2" aria-hidden="true">
       {Array.from({ length: count }).map((_, index) => (
         <div key={index}>
           <Skeleton className="aspect-[3/4] w-full" />

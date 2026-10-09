@@ -7,7 +7,7 @@ import type { StoreProductCard } from "@/server/catalog";
 
 export function ProductGrid({ products }: { products: StoreProductCard[] }) {
   return (
-    <div className="motion-stagger grid grid-cols-2 gap-x-3 gap-y-8 md:grid-cols-3 md:gap-x-5 lg:grid-cols-3">
+    <div className="motion-stagger grid grid-cols-2 gap-x-3 gap-y-8 md:grid-cols-3 md:gap-x-5 lg:grid-cols-2">
       {products.map((product) => (
         <ProductCard key={product.id} product={product} />
       ))}
