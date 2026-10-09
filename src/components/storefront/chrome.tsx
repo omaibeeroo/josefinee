@@ -66,6 +66,7 @@ function BrandMark({
       className={cn(
         "inline-flex min-w-0 origin-left items-center gap-2 motion-safe:transition-transform motion-safe:duration-300",
         compact && "motion-safe:scale-[0.82]",
+        mobile && "mobile-brand-mark max-w-full justify-center overflow-hidden",
       )}
       aria-label={t.header.brandHome.replace("{name}", brandName)}
     >
@@ -82,7 +83,7 @@ function BrandMark({
         <span
           className={cn(
             "whitespace-nowrap font-display text-[1.7rem] font-medium tracking-[0.32em]",
-            mobile && "text-[1.22rem] tracking-[0.18em]",
+            mobile && "max-w-full truncate text-[clamp(0.78rem,4vw,0.92rem)] tracking-[0.08em]",
           )}
         >
           {brandName}
@@ -364,7 +365,10 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         key={pathname}
         className={cn(
           "page-enter",
-          !mobileNavHidden && "pb-[calc(5.75rem+env(safe-area-inset-bottom))] lg:pb-0",
+          !mobileNavHidden &&
+            (pathname === "/"
+              ? "pb-4 lg:pb-0"
+              : "pb-[calc(5.75rem+env(safe-area-inset-bottom))] lg:pb-0"),
         )}
       >
         {children}
@@ -393,7 +397,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
 
   const itemClass = (active: boolean) =>
     cn(
-      "flex min-h-[4.75rem] min-w-0 flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap px-0.5 pt-2 text-[0.58rem] font-medium uppercase tracking-[0.06em] transition-colors",
+      "flex min-h-[4.75rem] min-w-0 flex-1 flex-col items-center justify-center gap-1 whitespace-nowrap px-0.5 pt-2 text-[0.64rem] font-medium uppercase tracking-[0.04em] transition-colors",
       active ? "text-ink" : "text-ink-muted hover:text-ink",
     );
 
@@ -408,7 +412,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           className={itemClass(isActive("/"))}
           aria-current={isActive("/") ? "page" : undefined}
         >
-          <Home size={21} strokeWidth={isActive("/") ? 2 : 1.5} />
+          <Home size={22} strokeWidth={isActive("/") ? 2 : 1.5} />
           <span>{t.header.home}</span>
         </Link>
         <Link
@@ -416,7 +420,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           className={itemClass(isActive("/shop"))}
           aria-current={isActive("/shop") ? "page" : undefined}
         >
-          <LayoutGrid size={21} strokeWidth={isActive("/shop") ? 2 : 1.5} />
+          <LayoutGrid size={22} strokeWidth={isActive("/shop") ? 2 : 1.5} />
           <span>{t.header.shop}</span>
         </Link>
         <button
@@ -426,7 +430,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           className={itemClass(false)}
         >
           <span className="relative">
-            <ShoppingBag size={21} strokeWidth={1.5} />
+            <ShoppingBag size={22} strokeWidth={1.5} />
             {count > 0 && (
               <span className="absolute -end-2 -top-2 flex h-4 min-w-4 items-center justify-center rounded-full bg-ink px-1 text-[0.55rem] font-semibold text-ivory">
                 {count}
@@ -440,7 +444,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           className={itemClass(isActive("/wishlist"))}
           aria-current={isActive("/wishlist") ? "page" : undefined}
         >
-          <Heart size={21} strokeWidth={isActive("/wishlist") ? 2 : 1.5} />
+          <Heart size={22} strokeWidth={isActive("/wishlist") ? 2 : 1.5} />
           <span>{t.header.wishlist}</span>
         </Link>
         <Link
@@ -448,7 +452,7 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           className={itemClass(isActive("/account"))}
           aria-current={isActive("/account") ? "page" : undefined}
         >
-          <User size={21} strokeWidth={isActive("/account") ? 2 : 1.5} />
+          <User size={22} strokeWidth={isActive("/account") ? 2 : 1.5} />
           <span>{t.header.account.replace(/^Mon |^My /, "")}</span>
         </Link>
       </div>
@@ -481,9 +485,8 @@ function MobileMenu({
 
   if (!open) return null;
 
-  const stagger = (index: number) => ({ animationDelay: `${60 + index * 45}ms` });
   const itemClass =
-    "animate-menu-item flex items-center justify-between border-b hairline py-[1.1rem] text-[0.8125rem] font-medium uppercase tracking-[0.18em]";
+    "flex items-center justify-between border-b hairline py-4 text-[0.8125rem] font-medium uppercase tracking-[0.12em]";
 
   return (
     <div
@@ -495,17 +498,17 @@ function MobileMenu({
       <button
         aria-label={t.header.closeMenu}
         onClick={onClose}
-        className="absolute inset-0 animate-fade-in bg-ink/55 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-ink/45"
       />
       <aside
         ref={panelRef}
         tabIndex={-1}
-        className="absolute start-0 top-0 flex h-full w-[86%] max-w-sm animate-slide-in-left flex-col bg-ivory pb-[env(safe-area-inset-bottom)] shadow-drawer"
+        className="absolute start-0 top-0 flex h-full w-[86%] max-w-sm flex-col border-e hairline bg-[#fbfcfd] pb-[env(safe-area-inset-bottom)] shadow-[16px_0_40px_-28px_rgb(29_35_43/0.5)]"
       >
-        <div className="flex items-center justify-between border-b hairline px-6 pb-5 pt-6">
+        <div className="flex items-center justify-between border-b hairline px-6 pb-5 pt-[max(1.25rem,env(safe-area-inset-top))]">
           <div>
-            <p className="font-display text-[1.35rem] leading-none tracking-[0.3em]">{brandName}</p>
-            <p className="mt-1.5 text-[0.625rem] uppercase tracking-[0.28em] text-ink-muted">
+            <p className="font-display text-[1.25rem] leading-none tracking-[0.2em]">{brandName}</p>
+            <p className="mt-1.5 text-[0.625rem] uppercase tracking-[0.18em] text-ink-muted">
               {t.common.currencyNote} · 58 wilayas
             </p>
           </div>
@@ -513,13 +516,13 @@ function MobileMenu({
             type="button"
             onClick={onClose}
             aria-label={t.header.closeMenu}
-            className="flex h-10 w-10 items-center justify-center rounded-full border hairline"
+            className="flex h-10 w-10 items-center justify-center border hairline bg-white/70"
           >
             <X size={18} />
           </button>
         </div>
         <nav aria-label={t.header.mobileNav} className="flex-1 overflow-y-auto px-6 pb-4">
-          <Link href="/shop" onClick={onClose} className={itemClass} style={stagger(0)}>
+          <Link href="/shop" onClick={onClose} className={itemClass}>
             {t.header.shop}
             <ChevronRight size={15} className="text-ink-muted rtl-flip" />
           </Link>
@@ -527,22 +530,20 @@ function MobileMenu({
             href="/collections/new-in"
             onClick={onClose}
             className={itemClass}
-            style={stagger(1)}
           >
             {t.header.newIn}
             <ChevronRight size={15} className="text-ink-muted rtl-flip" />
           </Link>
-          {categories.map((category, index) => (
+          {categories.map((category) => (
             <div
               key={category.slug}
-              className="animate-menu-item border-b hairline"
-              style={stagger(index + 2)}
+              className="border-b hairline"
             >
               <div className="flex items-center justify-between">
                 <Link
                   href={`/categories/${category.slug}`}
                   onClick={onClose}
-                  className="flex-1 py-[1.1rem] text-[0.8125rem] font-medium uppercase tracking-[0.18em]"
+                  className="flex-1 py-4 text-[0.8125rem] font-medium uppercase tracking-[0.12em]"
                 >
                   {category.name}
                 </Link>
@@ -584,14 +585,13 @@ function MobileMenu({
             </div>
           ))}
           <div
-            className="animate-menu-item border-b hairline"
-            style={stagger(categories.length + 2)}
+            className="border-b hairline"
           >
             <div className="flex items-center justify-between">
               <Link
                 href="/collections"
                 onClick={onClose}
-                className="flex-1 py-[1.1rem] text-[0.8125rem] font-medium uppercase tracking-[0.18em]"
+                className="flex-1 py-4 text-[0.8125rem] font-medium uppercase tracking-[0.12em]"
               >
                 {t.header.collections}
               </Link>
@@ -630,14 +630,13 @@ function MobileMenu({
             href="/collections/sale"
             onClick={onClose}
             className={itemClass}
-            style={stagger(categories.length + 3)}
           >
             <span className="text-sale">{t.header.sale}</span>
             <ChevronRight size={15} className="text-sale/60 rtl-flip" />
           </Link>
 
           <div className="mb-1 mt-6 flex items-center justify-between">
-            <p className="text-[0.625rem] uppercase tracking-[0.28em] text-ink-muted">
+            <p className="text-[0.625rem] uppercase tracking-[0.18em] text-ink-muted">
               {t.header.mySpace}
             </p>
             <LocaleToggle />
@@ -659,7 +658,7 @@ function MobileMenu({
           ))}
         </nav>
         {supportPhone && (
-          <div className="border-t hairline bg-cream/60 px-6 py-4">
+          <div className="border-t hairline bg-cream/35 px-6 py-4">
             <p className="text-[0.625rem] uppercase tracking-[0.24em] text-ink-muted">
               {t.header.needHelp}
             </p>

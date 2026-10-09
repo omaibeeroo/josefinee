@@ -173,11 +173,12 @@ export default async function HomePage() {
 
   const blocks: Record<string, React.ReactNode> = {
     featured: hasCatalog ? (
-      <div className="section-space pt-0">
+      <div className="section-space pt-4 md:pt-0">
         <ProductCarousel
           title={t.home.featuredTitle}
           products={featured}
           viewAllHref="/shop"
+          mobileGrid
         />
       </div>
     ) : null,
@@ -204,6 +205,7 @@ export default async function HomePage() {
           title={t.home.bestSellersTitle}
           products={bestSellers}
           viewAllHref="/collections/best-sellers"
+          mobileGrid
         />
       </div>
     ),
@@ -214,6 +216,7 @@ export default async function HomePage() {
           title={t.home.newInTitle}
           products={newIn}
           viewAllHref="/collections/new-in"
+          mobileGrid
         />
       </div>
     ),

@@ -964,6 +964,10 @@ html.theme-switching *::after {
     background: rgb(251 252 253 / 0.84);
   }
 
+  .mobile-brand-mark {
+    width: 100%;
+  }
+
   .page-enter {
     animation-duration: 0.35s;
   }
@@ -1000,6 +1004,22 @@ html.theme-switching *::after {
   .shopify-rail > * {
     min-width: min(72vw, 18rem);
     scroll-snap-align: start;
+  }
+
+  @media (max-width: 767px) {
+    .shopify-rail.mobile-product-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 2rem 0.75rem;
+      margin-inline: 0;
+      overflow: visible;
+      padding: 0;
+    }
+
+    .shopify-rail.mobile-product-grid > * {
+      width: auto;
+      min-width: 0;
+    }
   }
 
   .announcement-bar {
