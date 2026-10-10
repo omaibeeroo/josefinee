@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
 import Image from "next/image";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   getCommunesAction,
@@ -60,10 +59,6 @@ export function CheckoutForm({
   const [address, setAddress] = useState("");
   const [deliveryMethod, setDeliveryMethod] = useState(defaultDeliveryMethod);
   const [deliveryOptions, setDeliveryOptions] = useState<DeliveryOption[]>([]);
-  const [notes, setNotes] = useState("");
-  const [createAccount, setCreateAccount] = useState(false);
-  const [password, setPassword] = useState("");
-  const [acceptTerms, setAcceptTerms] = useState(false);
   const [allowDuplicate, setAllowDuplicate] = useState(false);
 
   const [couponInput, setCouponInput] = useState("");
@@ -191,13 +186,9 @@ export function CheckoutForm({
     setCommuneId("");
     setAddress("");
     setDeliveryMethod(defaultDeliveryMethod);
-    setNotes("");
     setCouponInput("");
     setCoupon(null);
     setCouponMessage(null);
-    setPassword("");
-    setCreateAccount(false);
-    setAcceptTerms(false);
     setAllowDuplicate(false);
     setWebsite("");
     setDraftRestored(false);
@@ -255,11 +246,10 @@ export function CheckoutForm({
         communeId,
         address,
         deliveryMethod: deliveryMethod as "HOME" | "STOPDESK" | "EXPRESS" | "STANDARD",
-        notes: notes || undefined,
+        notes: undefined,
         couponCode: coupon?.code,
-        createAccount,
-        password: createAccount ? password : undefined,
-        acceptTerms,
+        createAccount: false,
+        acceptTerms: true,
         allowDuplicate: forceDuplicate || allowDuplicate,
         idempotencyKey: requestKey,
         website,
@@ -484,7 +474,7 @@ export function CheckoutForm({
                 value={address}
                 onChange={(event) => setAddress(event.target.value)}
                 required
-                rows={2}
+                rows={1}
               />
             </Field>
           </div>
@@ -529,92 +519,6 @@ export function CheckoutForm({
             </fieldset>
           )}
 
-          <div className="mt-4">
-            <Field label={t.checkout.notes}>
-              <Textarea
-                dir="auto"
-                value={notes}
-                onChange={(event) => setNotes(event.target.value)}
-                rows={2}
-                placeholder={t.checkout.notesPlaceholder}
-              />
-            </Field>
-          </div>
-        </section>
-
-        <section aria-labelledby="account-heading" className="text-center">
-          <h2 dir="auto" id="account-heading" className="mb-4 font-display text-2xl">
-            {t.checkout.stepLast}
-          </h2>
-          {!createAccount ? (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => setCreateAccount(true)}
-              aria-expanded={false}
-              aria-controls="checkout-create-account"
-            >
-              {t.checkout.createAccount}
-            </Button>
-          ) : (
-            <div id="checkout-create-account">
-              <p dir="auto" className="text-sm text-ink-muted">{t.checkout.createAccountHint}</p>
-              <div className="mx-auto mt-3 max-w-sm text-start">
-                <Field
-                  label={t.auth.password}
-                  required
-                  error={fields.password}
-                  hint={t.auth.passwordHint}
-                >
-                  <Input
-                    type="password"
-                    dir="ltr"
-                    value={password}
-                    onChange={(event) => setPassword(event.target.value)}
-                    autoComplete="new-password"
-                  />
-                </Field>
-              </div>
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                className="mt-2"
-                onClick={() => {
-                  setCreateAccount(false);
-                  setPassword("");
-                }}
-              >
-                {t.common.cancel}
-              </Button>
-            </div>
-          )}
-          <label className="mt-4 flex cursor-pointer items-start justify-center gap-3 text-start text-sm">
-            <input
-              type="checkbox"
-              checked={acceptTerms}
-              onChange={(event) => setAcceptTerms(event.target.checked)}
-              className="mt-0.5 h-4 w-4 accent-[#1c1a17]"
-              required
-            />
-            <span dir="auto">
-              {t.checkout.acceptPrefix}{" "}
-              <Link href="/pages/terms" target="_blank" className="underline underline-offset-2">
-                {t.checkout.termsLink}
-              </Link>{" "}
-              {t.checkout.acceptMiddle}{" "}
-              <Link href="/pages/returns" target="_blank" className="underline underline-offset-2">
-                {t.checkout.returnsLink}
-              </Link>
-              .
-            </span>
-          </label>
-          {fields.acceptTerms && (
-            <p dir="auto" className="mt-1.5 text-sm text-[#9e342e]" role="alert">
-              {fields.acceptTerms}
-            </p>
-          )}
         </section>
 
         <Button
