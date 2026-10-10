@@ -1,8 +1,8 @@
 # Hanadi Store — Premium COD E-Commerce for Algeria
 
 A complete, production-ready e-commerce application for a fashion/jewelry brand
-selling in **Algeria** with **Cash on Delivery (COD)**. Mobile-first, bilingual
-(FR default, EN toggle) storefront plus a full admin back office.
+selling in **Algeria** with **Cash on Delivery (COD)**. Mobile-first, trilingual
+(FR default, EN + AR toggle) storefront plus a full admin back office.
 
 > **Brand:** every brand value (name, logo, colors, copy, social links) lives in
 > `src/config/brand.ts` and the database `Setting` table. The storefront brand is
@@ -65,6 +65,9 @@ SEED_ADMIN_PASSWORD=<set-a-unique-strong-password>
 
 The seeded admin **must change its password on first login**. Create real staff
 accounts under **Admin → Staff** afterwards and disable the demo account.
+Re-running the seed never rotates the admin password (`upsert` with an empty
+update) — to apply a new `SEED_ADMIN_PASSWORD`, delete the seeded user or
+reset its password manually.
 
 ## Environment variables
 
@@ -168,10 +171,12 @@ third-party assets or copy):
 - Always-visible sticky header: travels with you while scrolling; the brand
   mark smoothly scales to 82% once scrolled (transform-only, no layout
   shift), disabled under `prefers-reduced-motion`.
-- Tighter vertical rhythm via the shared `.section-space` token (1.5rem
-  mobile / 1.75rem desktop). The announcement bar is off (Admin → Réglages)
-  and the homepage experience-pillars block was removed.
-- Fully bilingual UI (FR/EN dictionaries in `src/lib/i18n/`, cookie-persisted
+- Tighter vertical rhythm via the shared `.section-space` token (effective
+  2.5rem mobile / 3rem desktop from the editorial layer; earlier base layers
+  keep larger values but lose the cascade). The announcement bar ships active
+  from the seed — toggle it in Admin → Réglages — and the homepage
+  experience-pillars block was removed.
+- Fully trilingual UI (FR/EN/AR dictionaries in `src/lib/i18n/`, cookie-persisted
   toggle in the header and admin topbar, `<html lang>` follows; key parity
   enforced by `dictionaries.test.ts`). Covers storefront, admin, statuses,
   and server-action messages. DB merchandising content (product names, FAQ,

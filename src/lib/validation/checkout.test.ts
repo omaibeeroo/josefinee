@@ -56,4 +56,17 @@ describe("checkoutSchema", () => {
     expect(result.success).toBe(true);
     if (result.success) expect(result.data.email).toBeUndefined();
   });
+
+  it("requires a strong password only when creating an account", () => {
+    const base = {
+      ...valid,
+      createAccount: true,
+      email: "buyer@example.com",
+    };
+    expect(checkoutSchema.safeParse({ ...base, password: "weakpass12" }).success).toBe(false);
+    expect(
+      checkoutSchema.safeParse({ ...base, password: "StrongPass12" }).success,
+    ).toBe(true);
+    expect(checkoutSchema.safeParse(valid).success).toBe(true);
+  });
 });

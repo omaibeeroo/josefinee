@@ -20,7 +20,9 @@ import {
 } from "@/components/storefront/home";
 import { ProductCarousel } from "@/components/storefront/product";
 
-export const revalidate = 60;
+// Route ISR is intentionally absent: the cookie locale toggle (FR/EN/AR)
+// cannot vary a shared cached page, so the homepage always renders live.
+// Display data underneath still uses short-lived unstable_cache entries.
 
 export async function generateMetadata(): Promise<Metadata> {
   const settings = await getSettings();

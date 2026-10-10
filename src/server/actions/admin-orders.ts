@@ -203,39 +203,72 @@ export async function changeOrderStatusAction(
             });
           }
           if (item.productId) {
-            await tx.product.update({
-              where: { id: item.productId },
+            // Guarded decrement: historical drift must never push soldCount
+            // negative and corrupt best-seller ordering. Clamp + audit trail.
+            const decremented = await tx.product.updateMany({
+              where: { id: item.productId, soldCount: { gte: item.quantity } },
               data: { soldCount: { decrement: item.quantity } },
             });
+            if (decremented.count !== 1) {
+              await tx.product.update({
+                where: { id: item.productId },
+                data: { soldCount: 0 },
+              });
+              await tx.auditLog.create({
+                data: {
+                  actorUserId: actor.id,
+                  action: "SOLD_COUNT_CLAMPED",
+                  resource: "Product",
+                  resourceId: item.productId,
+                  metadata: { orderId, quantity: item.quantity },
+                },
+              });
+            }
           }
         }
       }
     });
 
+    let notified = true;
     if (notify) {
       const label = t.customerStatus[status];
-      if (status === "SHIPPED") {
-        await sendShippingNotification({
-          orderId,
-          phone: order.phone,
-          email: order.email,
-          orderNumber: order.orderNumber,
-          firstName: order.firstName,
-          total: order.total,
-          idempotencyKey: `order-status:${orderId}:${status}`,
-        }).catch(() => undefined);
-      } else {
-        await sendOrderStatusUpdate({
-          orderId,
-          phone: order.phone,
-          email: order.email,
-          orderNumber: order.orderNumber,
-          firstName: order.firstName,
-          total: order.total,
-          status: label,
-          note,
-          idempotencyKey: `order-status:${orderId}:${status}`,
-        }).catch(() => undefined);
+      try {
+        if (status === "SHIPPED") {
+          await sendShippingNotification({
+            orderId,
+            phone: order.phone,
+            email: order.email,
+            orderNumber: order.orderNumber,
+            firstName: order.firstName,
+            total: order.total,
+            locale: locale === "en" ? "en" : "fr",
+            idempotencyKey: `order-status:${orderId}:${status}`,
+          });
+        } else {
+          await sendOrderStatusUpdate({
+            orderId,
+            phone: order.phone,
+            email: order.email,
+            orderNumber: order.orderNumber,
+            firstName: order.firstName,
+            total: order.total,
+            status: label,
+            note,
+            locale: locale === "en" ? "en" : "fr",
+            idempotencyKey: `order-status:${orderId}:${status}`,
+          });
+        }
+      } catch {
+        notified = false;
+      }
+      if (!notified) {
+        await recordAudit({
+          actorUserId: actor.id,
+          action: "ORDER_NOTIFICATION_FAILED",
+          resource: "Order",
+          resourceId: orderId,
+          metadata: { to: status },
+        });
       }
     }
 
@@ -249,7 +282,7 @@ export async function changeOrderStatusAction(
 
     revalidatePath("/admin/orders");
     revalidatePath(`/admin/orders/${orderId}`);
-    return { ok: true as const };
+    return { ok: true as const, notified };
   } catch (error) {
     console.error("[admin] status change failed", error instanceof Error ? error.name : "unknown");
     return { ok: false as const, error: toUserMessage(error) };
@@ -280,6 +313,9 @@ export async function updateAdminNotesAction(orderId: string, notes: string) {
 
 export async function exportOrdersCsv(filters: OrderFilters): Promise<string> {
   const actor = await requirePermission("orders:export");
+  // Paging delegates to listOrders, which requires orders:read. Demand both
+  // up front with an explicit denial instead of a silent empty file.
+  await requirePermission("orders:read");
   const parsedFilters = orderFilters.safeParse(filters);
   if (!parsedFilters.success) return "";
   filters = parsedFilters.data;

@@ -3,6 +3,7 @@ import { AppError } from "@/lib/errors";
 import { UPLOAD_ALLOWED_MIME, UPLOAD_MAX_BYTES } from "@/lib/constants";
 import { isS3Configured } from "@/config/brand";
 import path from "node:path";
+import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import type { Metadata, Sharp } from "sharp";
 
@@ -118,7 +119,7 @@ export async function storeImage(file: {
   const key = path.posix.join(
     `${now.getUTCFullYear()}`,
     `${String(now.getUTCMonth() + 1).padStart(2, "0")}`,
-    `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${storedExtension()}`,
+    `${Date.now()}-${randomUUID().replace(/-/g, "").slice(0, 12)}.${storedExtension()}`,
   );
 
   if (isS3Configured()) {

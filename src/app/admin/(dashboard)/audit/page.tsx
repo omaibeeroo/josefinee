@@ -61,21 +61,21 @@ export default async function AdminAuditPage({
             ))}
           </tbody>
         </table>
-        {result.items.length === 0 && <p className="p-8 text-center text-sm text-ink-muted">No entries.</p>}
+        {result.items.length === 0 && <p className="p-8 text-center text-sm text-ink-muted">{t.adminAuditTable.empty}</p>}
       </div>
       {result.totalPages > 1 && (
         <div className="mt-4 flex items-center justify-center gap-2 text-sm">
           {result.page > 1 && (
             <Link href={`/admin/audit?page=${result.page - 1}`} className="btn btn-ghost min-h-10 px-4 text-xs">
-              Previous
+              {t.adminAuditTable.previous}
             </Link>
           )}
           <span className="text-ink-muted">
-            Page {result.page} of {result.totalPages}
+            {t.adminAuditTable.pageOf.replace("{page}", String(result.page)).replace("{total}", String(result.totalPages))}
           </span>
           {result.page < result.totalPages && (
             <Link href={`/admin/audit?page=${result.page + 1}`} className="btn btn-ghost min-h-10 px-4 text-xs">
-              Next
+              {t.adminAuditTable.next}
             </Link>
           )}
         </div>

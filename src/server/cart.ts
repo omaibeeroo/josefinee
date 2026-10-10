@@ -170,11 +170,32 @@ export async function addToCart(
   const cart = await getOrCreateCart();
 
   const result = await prisma.$transaction(async (tx) => {
+    // Re-read availability inside the transaction: the pre-check above is a
+    // fast path only, and concurrent checkouts can move stock in between.
+    const live = await tx.productVariant.findFirst({
+      where: { id: variantId, isActive: true },
+      include: {
+        product: { select: { status: true, publishedAt: true } },
+        inventory: true,
+      },
+    });
+    const liveAvailable = computeAvailable(
+      live?.inventory?.stock ?? 0,
+      live?.inventory?.reserved ?? 0,
+    );
+    if (
+      !live ||
+      live.product.status !== "ACTIVE" ||
+      (live.product.publishedAt !== null && live.product.publishedAt > new Date()) ||
+      liveAvailable <= 0
+    ) {
+      throw new AppError("PRODUCT_UNAVAILABLE", "This item is no longer available.", 404);
+    }
     const existing = await tx.cartItem.findUnique({
       where: { cartId_variantId: { cartId: cart.id, variantId } },
     });
 
-    const desired = Math.min(available, (existing?.quantity ?? 0) + quantity);
+    const desired = Math.min(liveAvailable, (existing?.quantity ?? 0) + quantity);
 
     if (existing) {
       await tx.cartItem.update({ where: { id: existing.id }, data: { quantity: desired } });
@@ -201,22 +222,32 @@ export async function setCartItemQuantity(itemId: string, quantity: number): Pro
   });
   if (!item) throw new AppError("CART_ITEM_NOT_FOUND", "This item is no longer in your bag.", 404);
 
-  if (quantity <= 0) {
-    await prisma.cartItem.delete({ where: { id: item.id } });
-    return;
-  }
+  // Read and write inside one transaction so racing updates cannot both
+  // pass the availability cap (checkout revalidates regardless).
+  await prisma.$transaction(async (tx) => {
+    const live = await tx.cartItem.findFirst({
+      where: { id: item.id },
+      include: { variant: { include: { inventory: true } } },
+    });
+    if (!live) throw new AppError("CART_ITEM_NOT_FOUND", "This item is no longer in your bag.", 404);
 
-  const available = computeAvailable(
-    item.variant.inventory?.stock ?? 0,
-    item.variant.inventory?.reserved ?? 0,
-  );
-  if (available <= 0) {
-    await prisma.cartItem.delete({ where: { id: item.id } });
-    throw new AppError("OUT_OF_STOCK", "This item is out of stock and was removed.", 409);
-  }
+    if (quantity <= 0) {
+      await tx.cartItem.delete({ where: { id: live.id } });
+      return;
+    }
 
-  const capped = Math.min(quantity, available, 20);
-  await prisma.cartItem.update({ where: { id: item.id }, data: { quantity: capped } });
+    const available = computeAvailable(
+      live.variant.inventory?.stock ?? 0,
+      live.variant.inventory?.reserved ?? 0,
+    );
+    if (available <= 0) {
+      await tx.cartItem.delete({ where: { id: live.id } });
+      throw new AppError("OUT_OF_STOCK", "This item is out of stock and was removed.", 409);
+    }
+
+    const capped = Math.min(quantity, available, 20);
+    await tx.cartItem.update({ where: { id: live.id }, data: { quantity: capped } });
+  });
 }
 
 export async function removeCartItem(itemId: string): Promise<void> {

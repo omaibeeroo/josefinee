@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { zId, zOptionalString, zPrice, zSlug } from "./common";
+import { zId, zOptionalString, zPrice, zSlug, zStrictBoolean } from "./common";
 
 /**
  * Product image locations: absolute http(s) URLs (S3/R2/CDN) or app-relative
@@ -61,7 +61,7 @@ const variantSchema = z.object({
     .default([]),
   stock: z.coerce.number().int().min(0).default(0),
   lowStockThreshold: z.coerce.number().int().min(0).default(3),
-  isActive: z.coerce.boolean().default(true),
+  isActive: zStrictBoolean.default(true),
 });
 
 export const productSchema = z.object({
@@ -79,9 +79,9 @@ export const productSchema = z.object({
   tags: z.array(z.string().trim().min(1).max(50)).max(30).default([]),
   status: z.enum(["DRAFT", "ACTIVE", "ARCHIVED"]).default("DRAFT"),
   sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
-  isFeatured: z.coerce.boolean().default(false),
-  isBestseller: z.coerce.boolean().default(false),
-  isNew: z.coerce.boolean().default(false),
+  isFeatured: zStrictBoolean.default(false),
+  isBestseller: zStrictBoolean.default(false),
+  isNew: zStrictBoolean.default(false),
   // soldCount is derived from orders server-side and never accepted from input.
   publishedAt: z.coerce.date().nullable().optional(),
   material: zOptionalString(200),
@@ -106,7 +106,7 @@ export const productSchema = z.object({
         width: z.coerce.number().int().min(1).max(10000).optional(),
         height: z.coerce.number().int().min(1).max(10000).optional(),
         sortOrder: z.coerce.number().int().min(0).default(0),
-        isPrimary: z.coerce.boolean().default(false),
+        isPrimary: zStrictBoolean.default(false),
       }),
     )
     .max(20)
@@ -124,7 +124,7 @@ export const categorySchema = z
     image: optionalImageUrl,
     parentId: zId.optional(),
     sortOrder: z.coerce.number().int().min(0).default(0),
-    isActive: z.coerce.boolean().default(true),
+    isActive: zStrictBoolean.default(true),
     seoTitle: zOptionalString(160),
     seoDescription: zOptionalString(320),
   })
@@ -141,9 +141,9 @@ export const collectionSchema = z.object({
   image: optionalImageUrl,
   type: z.enum(["MANUAL", "NEW_IN", "BEST_SELLERS", "SALE"]).default("MANUAL"),
   sortOrder: z.coerce.number().int().min(0).default(0),
-  isActive: z.coerce.boolean().default(true),
-  isFeatured: z.coerce.boolean().default(false),
-  showInNav: z.coerce.boolean().default(true),
+  isActive: zStrictBoolean.default(true),
+  isFeatured: zStrictBoolean.default(false),
+  showInNav: zStrictBoolean.default(true),
   seoTitle: zOptionalString(160),
   seoDescription: zOptionalString(320),
   productIds: z.array(zId).max(500).default([]),

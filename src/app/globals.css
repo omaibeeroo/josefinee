@@ -1224,15 +1224,6 @@ html.theme-switching *::after {
   }
 }
 
-@keyframes metallic-button-flow {
-  from {
-    background-position: 0% 50%;
-  }
-  to {
-    background-position: 100% 50%;
-  }
-}
-
 /* ---------------------------------------------------------------------------
    Immersive product-detail system
 --------------------------------------------------------------------------- */

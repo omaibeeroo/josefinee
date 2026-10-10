@@ -33,6 +33,17 @@ function redirectIfPasswordChangeRequired(mustChangePassword: boolean): void {
   if (mustChangePassword) redirect("/admin/first-login");
 }
 
+/**
+ * Credential material is fetched on demand, never carried on the session:
+ * the session lookup selects identity + role only.
+ */
+async function getUserCredentials(userId: string) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    select: { passwordHash: true, twoFactorSecret: true },
+  });
+}
+
 export async function adminLoginAction(input: { email: string; password: string; totp?: string }) {
   const t = await getActionT();
   const parsed = adminLoginSchema.safeParse(input);
@@ -177,7 +188,9 @@ export async function adminFirstLoginAction(input: { current: string; next: stri
     };
   }
 
-  const valid = await verifyPassword(session.user.passwordHash, parsed.data.current);
+  const credentials = await getUserCredentials(session.user.id);
+  const valid =
+    credentials !== null && (await verifyPassword(credentials.passwordHash, parsed.data.current));
   if (!valid) return { ok: false as const, error: t.wrongCurrent };
 
   await prisma.user.update({
@@ -211,8 +224,11 @@ export async function adminChangePasswordAction(input: { current: string; next: 
       error: t.weakPassword,
     };
   }
-  const valid = await verifyPassword(session.user.passwordHash, parsed.data.current);
-  if (!valid) return { ok: false as const, error: t.wrongCurrent };
+  const changeCredentials = await getUserCredentials(session.user.id);
+  const changeValid =
+    changeCredentials !== null &&
+    (await verifyPassword(changeCredentials.passwordHash, parsed.data.current));
+  if (!changeValid) return { ok: false as const, error: t.wrongCurrent };
   await prisma.user.update({
     where: { id: session.user.id },
     data: { passwordHash: await hashPassword(parsed.data.next) },
@@ -242,9 +258,11 @@ export async function start2faSetupAction(input: { currentPassword: string }) {
     return { ok: false as const, error: tSetup.rateLimited };
   }
   const parsed = stepUpSchema.safeParse(input);
+  const stepUpCredentials = await getUserCredentials(session.user.id);
   if (
     !parsed.success ||
-    !(await verifyPassword(session.user.passwordHash, parsed.data.currentPassword))
+    stepUpCredentials === null ||
+    !(await verifyPassword(stepUpCredentials.passwordHash, parsed.data.currentPassword))
   ) {
     return { ok: false as const, error: tSetup.wrongCurrent };
   }
@@ -283,11 +301,12 @@ export async function confirm2faSetupAction(token: string) {
   } catch {
     return { ok: false as const, error: t.rateLimited };
   }
-  if (!session.user.twoFactorSecret) return { ok: false as const, error: t.startSetupFirst };
+  const pendingCredentials = await getUserCredentials(session.user.id);
+  if (!pendingCredentials?.twoFactorSecret) return { ok: false as const, error: t.startSetupFirst };
 
   let secret: string;
   try {
-    secret = decryptSecret(session.user.twoFactorSecret);
+    secret = decryptSecret(pendingCredentials.twoFactorSecret);
   } catch {
     return { ok: false as const, error: t.setupExpired };
   }
@@ -322,16 +341,18 @@ export async function disable2faAction(input: { currentPassword: string; token: 
   const parsed = z
     .object({ currentPassword: z.string().min(1).max(200), token: z.string().regex(/^\d{6}$/) })
     .safeParse(input);
+  const disableCredentials = await getUserCredentials(session.user.id);
   if (
     !parsed.success ||
-    !(await verifyPassword(session.user.passwordHash, parsed.data.currentPassword))
+    disableCredentials === null ||
+    !(await verifyPassword(disableCredentials.passwordHash, parsed.data.currentPassword))
   ) {
     return { ok: false as const, error: t.wrongCurrent };
   }
-  if (!session.user.twoFactorSecret)
+  if (!disableCredentials.twoFactorSecret)
     return { ok: false as const, error: t.totpNotEnabled };
   try {
-    if (!verifyTotp(decryptSecret(session.user.twoFactorSecret), parsed.data.token))
+    if (!verifyTotp(decryptSecret(disableCredentials.twoFactorSecret), parsed.data.token))
       return { ok: false as const, error: t.totpInvalid };
   } catch {
     return { ok: false as const, error: t.totpConfigInvalid };

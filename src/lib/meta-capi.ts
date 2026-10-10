@@ -1,5 +1,6 @@
 import "server-only";
 import { createHash } from "crypto";
+import { normalizeAlgerianPhone } from "@/lib/phone";
 
 /**
  * Meta Conversions API (server-side Purchase events).
@@ -13,11 +14,13 @@ function sha256(value: string): string {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function hashPhone(phone: string): string {
+function hashPhone(phone: string): string | null {
+  // Canonical Algerian normalization first: anything that is not a valid
+  // local mobile number is rejected instead of hashed and sent to Meta.
+  const normalized = normalizeAlgerianPhone(phone);
+  if (!normalized) return null;
   // 0XXXXXXXXX -> 213XXXXXXXXX (digits only, no plus).
-  const digits = phone.replace(/\D/g, "");
-  const normalized = digits.startsWith("0") ? `213${digits.slice(1)}` : digits;
-  return sha256(normalized);
+  return sha256(`213${normalized.slice(1)}`);
 }
 
 export async function sendMetaPurchase(input: {
@@ -35,31 +38,34 @@ export async function sendMetaPurchase(input: {
   const eventId = `purchase-${input.orderNumber}`;
   const userData: Record<string, string | string[]> = {};
   if (input.email) userData.em = [sha256(input.email.trim().toLowerCase())];
-  if (input.phone) userData.ph = [hashPhone(input.phone)];
+  const phoneHash = input.phone ? hashPhone(input.phone) : null;
+  if (phoneHash) userData.ph = [phoneHash];
   if (input.ip) userData.client_ip_address = input.ip;
   if (input.userAgent) userData.client_user_agent = input.userAgent;
 
   try {
-    const response = await fetch(
-      `https://graph.facebook.com/v20.0/${pixelId}/events?access_token=${encodeURIComponent(token)}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: AbortSignal.timeout(8000),
-        body: JSON.stringify({
-          data: [
-            {
-              event_name: "Purchase",
-              event_time: Math.floor(Date.now() / 1000),
-              event_id: eventId,
-              action_source: "website",
-              user_data: userData,
-              custom_data: { currency: "DZD", value: input.total, order_id: input.orderNumber },
-            },
-          ],
-        }),
+    // Access token travels in the Authorization header, never the URL:
+    // URLs are logged by proxies/CDNs far more often than headers.
+    const response = await fetch(`https://graph.facebook.com/v20.0/${pixelId}/events`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
       },
-    );
+      signal: AbortSignal.timeout(8000),
+      body: JSON.stringify({
+        data: [
+          {
+            event_name: "Purchase",
+            event_time: Math.floor(Date.now() / 1000),
+            event_id: eventId,
+            action_source: "website",
+            user_data: userData,
+            custom_data: { currency: "DZD", value: input.total, order_id: input.orderNumber },
+          },
+        ],
+      }),
+    });
     if (!response.ok) {
       console.error("[meta-capi] rejected", response.status);
       return false;

@@ -36,7 +36,10 @@ export const newsletterSchema = z.object({
 export const contactSchema = z.object({
   name: z.string().trim().min(2).max(80),
   email: zEmail,
-  phone: zOptionalString(30),
+  phone: z.preprocess(
+    (value) => (value === "" || value === undefined ? undefined : value),
+    zPhone.optional(),
+  ),
   subject: z.string().trim().min(2).max(160),
   message: z.string().trim().min(10, "Please write a longer message.").max(4000),
   website: zHoneypot,

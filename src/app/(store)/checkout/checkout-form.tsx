@@ -289,7 +289,11 @@ export function CheckoutForm({
     }
     setFormError(result.error);
     if (result.fields) setFields(result.fields);
-    window.scrollTo({ top: 0, behavior: "smooth" });
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
   }
 
   return (

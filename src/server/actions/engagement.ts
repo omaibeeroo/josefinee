@@ -467,11 +467,15 @@ export async function changePasswordAction(input: { current: string; next: strin
     return { ok: false as const, error: t.weakPassword };
   }
 
-  if (!session.customer.passwordHash) {
+  const storedCustomer = await prisma.customer.findUnique({
+    where: { id: session.customer.id },
+    select: { passwordHash: true },
+  });
+  if (!storedCustomer?.passwordHash) {
     return { ok: false as const, error: t.noPassword };
   }
 
-  const valid = await verifyPassword(session.customer.passwordHash, parsed.data.current);
+  const valid = await verifyPassword(storedCustomer.passwordHash, parsed.data.current);
   if (!valid) return { ok: false as const, error: t.wrongCurrent };
 
   await prisma.customer.update({

@@ -17,7 +17,6 @@ import { getActionT } from "@/lib/i18n/server";
 import { processPendingOrderOutbox } from "@/server/order-outbox";
 import { after } from "next/server";
 import { Prisma, type DeliveryMethod } from "@prisma/client";
-
 export type CreateOrderResult = {
   orderId: string;
   orderNumber: string;
@@ -45,6 +44,56 @@ type CreateOrderContext = {
   ip: string | null;
   userAgent: string | null;
 };
+
+type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
+
+/** Short pause between idempotency-settlement polls (kept inside the tx budget). */
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/**
+ * Reads a settled idempotent result: either a stored response from a
+ * completed attempt or an order row committed by one. Returns null while a
+ * sibling attempt is still in flight.
+ */
+async function readSettledCheckout(
+  tx: TxClient,
+  idempotencyKey: string,
+): Promise<CreateOrderResult | null> {
+  const settled = await tx.idempotencyKey.findUnique({ where: { key: idempotencyKey } });
+  const saved = settled?.response as unknown as Partial<CreateOrderResult> | null;
+  if (saved && typeof saved.orderNumber === "string" && typeof saved.total === "number") {
+    return {
+      ...(saved as CreateOrderResult),
+      trackingToken: signOrderToken(saved.orderNumber),
+      isDuplicate: true,
+    };
+  }
+  const existing = await tx.order.findUnique({
+    where: { idempotencyKey },
+    include: { promotion: { select: { name: true } } },
+  });
+  if (!existing) return null;
+  return {
+    orderId: existing.id,
+    orderNumber: existing.orderNumber,
+    total: existing.total,
+    subtotal: existing.subtotal,
+    discount: existing.discount,
+    promotionDiscount: existing.promotionDiscount,
+    promotionName: existing.promotion?.name ?? null,
+    shipping: existing.shipping,
+    firstName: existing.firstName,
+    phone: existing.phone,
+    wilayaName: existing.wilayaName,
+    communeName: existing.communeName,
+    address: existing.address,
+    deliveryMethod: existing.deliveryMethod,
+    trackingToken: signOrderToken(existing.orderNumber),
+    isDuplicate: true,
+  };
+}
 
 /**
  * Customer-linking rules for checkout. Pure helper (unit-tested) so the
@@ -186,13 +235,30 @@ export async function createOrder(
     if (cartStatus !== "ACTIVE") {
       throw new AppError("CART_ALREADY_CHECKED_OUT", tErr.alreadyCheckedOut, 409);
     }
-    await tx.idempotencyKey.create({
-      data: {
-        key: idempotencyKey,
-        scope: "checkout",
-        expiresAt: new Date(Date.now() + 24 * 60 * 60_000),
-      },
-    });
+    try {
+      await tx.idempotencyKey.create({
+        data: {
+          key: idempotencyKey,
+          scope: "checkout",
+          expiresAt: new Date(Date.now() + 24 * 60 * 60_000),
+        },
+      });
+    } catch (error) {
+      // A racing double-submit passed the null check above and lost the
+      // unique-key insert. Never 500: wait briefly for the winner to settle
+      // and replay it, otherwise ask the client to retry into the replay.
+      if (
+        !(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
+      ) {
+        throw error;
+      }
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        await sleep(400);
+        const replayed = await readSettledCheckout(tx, idempotencyKey);
+        if (replayed) return { replay: true as const, result: replayed };
+      }
+      throw new AppError("CHECKOUT_IN_PROGRESS", tErr.checkoutInProgress, 409);
+    }
 
     // All authoritative cart, catalog, delivery, promotion and coupon reads use tx.
 
@@ -342,10 +408,13 @@ export async function createOrder(
           status: { in: [...OPEN_FOR_DUPLICATE] },
         },
         orderBy: { createdAt: "desc" },
-        take: 25,
-        select: { orderNumber: true, total: true },
+        take: 50,
+        select: { orderNumber: true, total: true, _count: { select: { items: true } } },
       });
-      const match = recent.find((order) => order.total === total);
+      const itemCount = freshLines.length;
+      const match = recent.find(
+        (order) => order.total === total && order._count.items === itemCount,
+      );
       if (match) {
         throw new AppError("DUPLICATE_ORDER", tErr.duplicateOrder, 409, {
           orderNumber: match.orderNumber,

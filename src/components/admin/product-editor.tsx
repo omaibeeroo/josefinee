@@ -304,13 +304,13 @@ export function ProductEditor({
                 </Select>
               </Field>
               <Field label={t.adminEditor.tags}>
-                <Input value={state.tags} onChange={(event) => set("tags", event.target.value)} placeholder="gold, necklace" />
+                <Input value={state.tags} onChange={(event) => set("tags", event.target.value)} placeholder={t.adminEditor.tagPlaceholder} />
               </Field>
             </div>
             <Field label={t.adminEditor.shortDesc}>
               <Textarea value={state.shortDescription} onChange={(event) => set("shortDescription", event.target.value)} rows={2} maxLength={300} />
             </Field>
-            <Field label={t.adminEditor.descHtml} hint="Only headings, lists, bold, links survive — scripts are stripped.">
+            <Field label={t.adminEditor.descHtml} hint={t.adminEditor.descHint}>
               <Textarea value={state.description} onChange={(event) => set("description", event.target.value)} rows={8} />
             </Field>
           </div>
@@ -320,7 +320,7 @@ export function ProductEditor({
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-medium uppercase tracking-[0.14em]">Images ({state.images.length}/20)</h2>
             <label className="btn btn-ghost min-h-10 cursor-pointer px-4 text-xs">
-              {uploading ? "Uploading…" : "Upload"}
+              {uploading ? t.adminEditor.uploading : t.adminEditor.upload}
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/avif"
@@ -348,12 +348,12 @@ export function ProductEditor({
                       set("images", images);
                     }}
                     placeholder={t.adminEditor.altText}
-                    aria-label={`Alt text for image ${index + 1}`}
+                    aria-label={t.adminEditor.altTextFor.replace("{index}", String(index + 1))}
                     className="w-full border-t hairline bg-white px-2 py-1 text-xs"
                   />
                   <div className="flex items-center justify-between bg-white px-1 py-1">
                     <span className="px-1 text-[0.6875rem] uppercase tracking-[0.1em] text-ink-muted">
-                      {index === 0 ? "Primary" : `#${index + 1}`}
+                      {index === 0 ? t.adminEditor.primary : `#${index + 1}`}
                     </span>
                     <div className="flex">
                       <button type="button" aria-label={t.adminEditor.moveUp} disabled={index === 0} onClick={() => moveImage(index, -1)} className="p-1 disabled:opacity-30">

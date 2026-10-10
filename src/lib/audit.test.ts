@@ -65,4 +65,28 @@ describe("recordAudit", () => {
 
     errorSpy.mockRestore();
   });
+
+  it("redacts secret-shaped metadata keys but keeps business identifiers", async () => {
+    await recordAudit({
+      action: "ADMIN_CREATED",
+      resource: "User",
+      metadata: {
+        email: "admin@example.com",
+        orderNumber: "HS-2026-000001",
+        passwordHash: "argon2id$should-never-land-here",
+        nested: { apiKey: "sk-should-never-land-here", count: 2 },
+      },
+    });
+
+    expect(create).toHaveBeenCalledWith({
+      data: expect.objectContaining({
+        metadata: {
+          email: "admin@example.com",
+          orderNumber: "HS-2026-000001",
+          passwordHash: "[redacted]",
+          nested: { apiKey: "[redacted]", count: 2 },
+        },
+      }),
+    });
+  });
 });

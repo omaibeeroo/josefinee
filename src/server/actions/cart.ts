@@ -111,6 +111,7 @@ export async function previewCouponAction(code: string) {
   try {
     const ip = await clientIp();
     await enforceRateLimit({ ...LIMITS.coupon, key: `coupon:${ip}` });
+    await enforceRateLimit({ ...LIMITS.coupon, key: `coupon-code:${normalized}` });
     const { validateCoupon, isFirstOrder } = await import("@/server/coupons");
     const { resolveBestPromotion } = await import("@/server/promotions");
     const cart = await getCartSummary();

@@ -70,7 +70,7 @@ export default async function AdminReviewsPage({
           </li>
         ))}
       </ul>
-      {reviews.length === 0 && <p className="border hairline bg-white p-8 text-center text-sm text-ink-muted">Nothing here.</p>}
+      {reviews.length === 0 && <p className="border hairline bg-white p-8 text-center text-sm text-ink-muted">{t.adminMisc.nothingHere}</p>}
     </div>
   );
 }

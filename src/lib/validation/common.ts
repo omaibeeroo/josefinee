@@ -24,6 +24,16 @@ export const zId = z
   .regex(/^[A-Za-z0-9_-]+$/, "Invalid identifier.");
 
 /**
+ * Strict boolean: accepts real booleans (JSON actions) and "true"/"false"
+ * strings (FormData). Unlike z.coerce.boolean(), the string "false" maps to
+ * false instead of true.
+ */
+export const zStrictBoolean = z.union([
+  z.boolean(),
+  z.enum(["true", "false"]).transform((value) => value === "true"),
+]);
+
+/**
  * Honeypot anti-spam field. Rendered off-screen; humans never fill it.
  * Any value means a bot — the action must silently discard the submission.
  */

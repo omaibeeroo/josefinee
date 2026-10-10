@@ -5,9 +5,9 @@ This file orients AI coding agents. Humans: see `README.md`.
 ## What this is
 
 Premium fashion/jewelry e-commerce for Algeria. Cash on delivery (COD),
-mobile-first bilingual (FR default, EN toggle) storefront + full admin back
-office. Real orders, real inventory, real money — treat every change like it
-ships to production.
+mobile-first trilingual (FR default, EN + AR toggle) storefront + full admin
+back office. Real orders, real inventory, real money — treat every change
+like it ships to production.
 
 ## Stack
 
@@ -125,8 +125,29 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
     do not add `revalidate` expecting edge-cached HTML. Every
     catalog-affecting admin mutation calls `revalidateTag()` next to its
     existing `revalidatePath()`. A stale badge can never oversell or
-    misprice because cart/checkout revalidate availability and recompute
-    prices server-side.
+  misprice because cart/checkout revalidate availability and recompute
+  prices server-side.
+
+## October 2026 audit additions (verified fixes — preserve these)
+
+- **Idempotency losers never 500.** Concurrent same-key checkouts race on the
+  `IdempotencyKey` insert; the loser polls for the winner's settled result and
+  replays it, else returns `CHECKOUT_IN_PROGRESS` (409) for a client retry.
+  Never remove the `P2002` catch in `createOrder` without a replacement.
+- **Sessions carry identity only.** `getAdminSession`/`getCustomerSession`
+  select ids, status, and role — never `passwordHash`/`twoFactorSecret`.
+  Password and 2FA actions re-query credentials by id on demand.
+- **Notifications are locale-aware (FR/EN).** `templates()` renders from
+  `notifyStrings(locale)`; admin status changes pass the admin's locale, the
+  order outbox defaults to FR (customer locale is not stored). AR falls back
+  to FR until native-speaker templates land.
+- **Retention purges CartItem orphans and dead outbox events.** Abandoned-cart
+  lines older than the outbox window are batch-deleted; terminal `FAILED`
+  outbox events are purged like `COMPLETED` ones. Orders and audit logs are
+  never purged.
+- **Audit metadata is scrubbed.** `recordAudit` redacts `password*`, `*token*`,
+  `*secret*`, `api*key*` keys recursively. Business identifiers (order numbers,
+  resource IDs, emails) pass through intentionally.
 
 ## Database workflow
 
@@ -155,10 +176,12 @@ not exist.
 
 Minimal direction (October 2026 refresh, do not regress):
 
-- **Buttons stay flat.** No gradients, shine sweeps, lift/scale/glow hovers,
-  or global hover recoloring. Sharp corners (`border-radius: 0`) everywhere,
-  including product-detail overrides. Variants: ink primary, gold accent,
-  ink-fill outline, border-only ghost.
+- **Buttons are pill-shaped (silver-white system).** The shipped design uses
+  `border-radius: 999px` buttons, `0.75rem` fields, `1rem` product cards, and
+  flat ink/gold surfaces — the earlier sharp-corner direction is superseded,
+  do not "restore" it without an explicit owner decision. Variants: ink
+  primary, gold accent, ink-fill outline, border-only ghost. No shine sweeps
+  or lift/scale/glow hovers; icon circles and badges stay circular.
 - **Header always travels.** Sticky and permanently visible (never hides);
   the brand mark smoothly scales to 82% once scrolled (`scrolled` state,
   transform-only so layout never shifts), disabled under reduced-motion.
@@ -166,9 +189,9 @@ Minimal direction (October 2026 refresh, do not regress):
 - **Vertical rhythm lives in `.section-space`** (currently 2.5rem mobile /
   3rem desktop, bottom-weighted via `pt-0` siblings). Tighten/loosen the
   token, never individual sections, unless a seam needs a local override.
-- **French by default, English on toggle.** Every user-facing string lives in
-  `src/lib/i18n/fr.ts` + `en.ts` (identical shape, enforced by
-  `dictionaries.test.ts` — never add a key to one without the other).
+- **French by default, English and Arabic on toggle.** Every user-facing string lives in
+  `src/lib/i18n/fr.ts` + `en.ts` + `ar.ts` (identical shape, enforced by
+  `dictionaries.test.ts` — never add a key to one without the others).
   Server components use `getDictionary()`; client components use
   `useLocale()`; server actions use `getActionT()` (locale cookie
   `hanadi-locale`, `setLocaleAction`, `<html lang>` follows). URL slugs stay

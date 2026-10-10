@@ -12,10 +12,12 @@ import { Prisma } from "@prisma/client";
  * passing it through malformed.
  */
 export function toInternationalPhone(phone: string, withPlus: boolean): string {
-  const normalized = normalizeAlgerianPhone(phone) ?? phone.replace(/[\s().-]/g, "");
-  const digits = normalized.startsWith("0")
-    ? `213${normalized.slice(1)}`
-    : normalized.replace(/^\+/, "");
+  // Canonical normalization first: anything that is not a valid local mobile
+  // number passes through digits-only so the provider rejects it instead of
+  // receiving a fabricated country-code number.
+  const normalized = normalizeAlgerianPhone(phone);
+  if (!normalized) return phone.replace(/[\s().-]/g, "");
+  const digits = `213${normalized.slice(1)}`;
   return withPlus ? `+${digits}` : digits;
 }
 
@@ -69,6 +71,7 @@ type OrderEmailData = {
   trackingUrl?: string;
   status?: string;
   trackingNote?: string;
+  locale?: NotificationLocale;
 };
 
 async function consoleSend(channel: NotificationChannel) {
@@ -191,8 +194,122 @@ const whatsappProvider: NotificationProvider = {
 
 const providers = [emailProvider, smsProvider, whatsappProvider];
 
+export type NotificationLocale = "fr" | "en";
+
+type NotifyStrings = {
+  greeting: (firstName: string) => string;
+  order: string;
+  items: string;
+  noItems: string;
+  subtotal: string;
+  promotion: string;
+  discount: string;
+  delivery: string;
+  homeDelivery: string;
+  totalPayable: string;
+  receivedSubject: (orderNumber: string, brand: string) => string;
+  receivedLead: string;
+  beforeShipment: string;
+  receivedTitle: string;
+  receivedIntroHtml: string;
+  viewOrder: string;
+  orderSummary: string;
+  shippingRow: string;
+  total: string;
+  paidToday: string;
+  customerInfo: string;
+  shippingAddress: string;
+  algeria: string;
+  payment: string;
+  cod: string;
+  shippingMethod: string;
+  questions: string;
+  orContactUs: string;
+  statusSubject: (orderNumber: string) => string;
+  statusBody: (orderNumber: string, status: string) => string;
+  shippedSubject: (orderNumber: string) => string;
+  shippedBody: (orderNumber: string, firstName: string, phone: string) => string;
+};
+
+function notifyStrings(locale: NotificationLocale | undefined): NotifyStrings {
+  if (locale === "en") {
+    return {
+      greeting: (firstName) => `Hello ${firstName},`,
+      order: "Order",
+      items: "Items",
+      noItems: "- No items",
+      subtotal: "Subtotal",
+      promotion: "Promotion",
+      discount: "Discount",
+      delivery: "Delivery",
+      homeDelivery: "Home delivery",
+      totalPayable: "Total payable on delivery",
+      receivedSubject: (orderNumber, brand) => `Order ${orderNumber} received — ${brand}`,
+      receivedLead: "We have received your order.",
+      beforeShipment: "We will contact you to confirm before shipping.",
+      receivedTitle: "Thank you for your order!",
+      receivedIntroHtml: "We are preparing your order with care. We will contact you to confirm before shipping.",
+      viewOrder: "View your order",
+      orderSummary: "Order summary",
+      shippingRow: "Shipping",
+      total: "Total",
+      paidToday: "Amount paid today",
+      customerInfo: "Customer information",
+      shippingAddress: "Shipping address",
+      algeria: "Algeria",
+      payment: "Payment",
+      cod: "Cash on delivery",
+      shippingMethod: "Shipping method",
+      questions: "If you have any questions, reply to this email",
+      orContactUs: "or contact us at",
+      statusSubject: (orderNumber) => `Update on your order ${orderNumber}`,
+      statusBody: (orderNumber, status) => `Your order ${orderNumber} is now: ${status}.`,
+      shippedSubject: (orderNumber) => `Your order ${orderNumber} is on its way`,
+      shippedBody: (orderNumber, firstName, phone) =>
+        `Hello ${firstName},\n\nGood news: your order ${orderNumber} has just shipped. You will be contacted by phone at ${phone} before delivery.`,
+    };
+  }
+  return {
+    greeting: (firstName) => `Bonjour ${firstName},`,
+    order: "Commande",
+    items: "Articles",
+    noItems: "- Aucun article",
+    subtotal: "Sous-total",
+    promotion: "Promotion",
+    discount: "Réduction",
+    delivery: "Livraison",
+    homeDelivery: "à domicile",
+    totalPayable: "Total à payer à la livraison",
+    receivedSubject: (orderNumber, brand) => `Commande ${orderNumber} reçue — ${brand}`,
+    receivedLead: "Nous avons bien reçu votre commande.",
+    beforeShipment: "Nous vous contacterons pour confirmer avant l'expédition.",
+    receivedTitle: "Merci pour votre commande !",
+    receivedIntroHtml: "Nous préparons votre commande avec soin. Nous vous contacterons pour confirmer avant l'expédition.",
+    viewOrder: "Afficher votre commande",
+    orderSummary: "Résumé de la commande",
+    shippingRow: "Expédition",
+    total: "Total",
+    paidToday: "Montant payé aujourd'hui",
+    customerInfo: "Informations client",
+    shippingAddress: "Adresse d'expédition",
+    algeria: "Algérie",
+    payment: "Paiement",
+    cod: "Paiement à la livraison",
+    shippingMethod: "Mode d'expédition",
+    questions: "Si vous avez des questions, répondez à cet e-mail",
+    orContactUs: "ou contactez-nous à l'adresse",
+    statusSubject: (orderNumber) => `Mise à jour de votre commande ${orderNumber}`,
+    statusBody: (orderNumber, status) => `Votre commande ${orderNumber} est maintenant : ${status}.`,
+    shippedSubject: (orderNumber) => `Votre commande ${orderNumber} est en route`,
+    shippedBody: (orderNumber, firstName, phone) =>
+      `Bonjour ${firstName},\n\nBonne nouvelle : votre commande ${orderNumber} vient d'être expédiée. Vous serez contacté(e) par téléphone au ${phone} avant la livraison.`,
+  };
+}
+
 function templates(data: OrderEmailData) {
-  const greeting = `Bonjour ${data.firstName},`;
+  const locale: NotificationLocale = data.locale ?? "fr";
+  const L = notifyStrings(locale);
+  const greeting = L.greeting(data.firstName);
   const signature = `\n\n${BRAND_CONFIG.name}\n${BRAND_CONFIG.supportEmail}`;
   const itemLines = (data.items ?? [])
     .map(
@@ -201,20 +318,20 @@ function templates(data: OrderEmailData) {
     )
     .join("\n");
   const orderDetails = [
-    `Commande : ${data.orderNumber}`,
+    `${L.order} : ${data.orderNumber}`,
     "",
-    "Articles :",
-    itemLines || "- Aucun article",
+    `${L.items} :`,
+    itemLines || L.noItems,
     "",
-    `Sous-total : ${formatDA(data.subtotal ?? data.total)}`,
+    `${L.subtotal} : ${formatDA(data.subtotal ?? data.total)}`,
     ...(data.promotionDiscount && data.promotionDiscount > 0
-      ? [`Promotion : −${formatDA(data.promotionDiscount)}`]
+      ? [`${L.promotion} : −${formatDA(data.promotionDiscount)}`]
       : []),
-    ...(data.discount && data.discount > 0 ? [`Réduction : −${formatDA(data.discount)}`] : []),
-    `Livraison (${data.deliveryMethod ?? "à domicile"}) : ${formatDA(data.shipping ?? 0)}`,
-    `Total à payer à la livraison : ${formatDA(data.total)}`,
+    ...(data.discount && data.discount > 0 ? [`${L.discount} : −${formatDA(data.discount)}`] : []),
+    `${L.delivery} (${data.deliveryMethod ?? L.homeDelivery}) : ${formatDA(data.shipping ?? 0)}`,
+    `${L.totalPayable} : ${formatDA(data.total)}`,
     "",
-    "Livraison :",
+    `${L.delivery} :`,
     `${data.firstName} ${data.lastName ?? ""}`.trim(),
     data.phone ? formatPhoneDisplay(data.phone) : "",
     [data.address, data.communeName, data.wilayaName].filter(Boolean).join(", "),
@@ -230,18 +347,16 @@ function templates(data: OrderEmailData) {
       </tr>`,
     )
     .join("");
-  const html = `<!doctype html><html lang="fr"><body style="margin:0;background:#f5f1eb;color:#3e3934;font-family:Arial,Helvetica,sans-serif"><div style="max-width:620px;margin:0 auto;padding:28px 18px"><div style="background:#fff;padding:36px 28px"><div style="border-bottom:1px solid #e8e1d8;padding-bottom:24px"><span style="font-family:Georgia,serif;font-size:27px;letter-spacing:.08em;color:#b08d57">${escapeHtml(BRAND_CONFIG.name)}</span><span style="float:right;color:#81786f;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding-top:8px">Commande #${escapeHtml(data.orderNumber)}</span></div><h1 style="margin:34px 0 10px;font-family:Georgia,serif;font-size:31px;line-height:1.15;font-weight:500;color:#3e3934">Merci pour votre commande !</h1><p style="margin:0;color:#81786f;font-size:16px;line-height:1.65">Bonjour ${escapeHtml(data.firstName)},<br>Nous préparons votre commande avec soin. Nous vous contacterons pour confirmer avant l'expédition.</p>${data.trackingUrl ? `<p style="margin:26px 0 34px"><a href="${escapeHtml(data.trackingUrl)}" style="display:inline-block;background:#b08d57;color:#fff;text-decoration:none;padding:15px 24px;font-size:14px;font-weight:bold">Afficher votre commande</a></p>` : ""}<h2 style="margin:0 0 16px;font-size:18px;color:#3e3934">Résumé de la commande</h2><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tbody>${htmlItems}</tbody></table><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:16px;font-size:14px"><tbody><tr><td style="padding:5px 0;color:#81786f">Sous-total</td><td style="padding:5px 0;text-align:right">${escapeHtml(formatDA(data.subtotal ?? data.total))}</td></tr>${data.promotionDiscount && data.promotionDiscount > 0 ? `<tr><td style="padding:5px 0;color:#81786f">Promotion</td><td style="padding:5px 0;text-align:right">−${escapeHtml(formatDA(data.promotionDiscount))}</td></tr>` : ""}${data.discount && data.discount > 0 ? `<tr><td style="padding:5px 0;color:#81786f">Réduction</td><td style="padding:5px 0;text-align:right">−${escapeHtml(formatDA(data.discount))}</td></tr>` : ""}<tr><td style="padding:5px 0;color:#81786f">Expédition</td><td style="padding:5px 0;text-align:right">${escapeHtml(formatDA(data.shipping ?? 0))}</td></tr><tr><td style="border-top:1px solid #3e3934;padding:18px 0 5px;font-size:17px;font-weight:bold">Total</td><td style="border-top:1px solid #3e3934;padding:18px 0 5px;text-align:right;font-size:19px;font-weight:bold">${escapeHtml(formatDA(data.total))}</td></tr><tr><td style="padding:5px 0;color:#81786f">Montant payé aujourd'hui</td><td style="padding:5px 0;text-align:right;color:#81786f">0 DA</td></tr></tbody></table><h2 style="margin:38px 0 16px;font-size:18px;color:#3e3934">Informations client</h2><div style="color:#81786f;font-size:14px;line-height:1.7"><strong style="color:#3e3934">Adresse d'expédition</strong><br>${escapeHtml(`${data.firstName} ${data.lastName ?? ""}`.trim())}<br>${escapeHtml(data.address ?? "")}<br>${escapeHtml(`${data.communeName ?? ""}, ${data.wilayaName ?? ""}`)}<br>Algérie<p style="margin:22px 0 0"><strong style="color:#3e3934">Paiement</strong><br>Paiement à la livraison</p><p style="margin:22px 0 0"><strong style="color:#3e3934">Mode d'expédition</strong><br>${escapeHtml(data.deliveryMethod ?? "Livraison à domicile")}</p></div><div style="border-top:1px solid #e8e1d8;margin-top:34px;padding-top:22px;color:#81786f;font-size:13px;line-height:1.6">Si vous avez des questions, répondez à cet e-mail${BRAND_CONFIG.supportEmail ? ` ou contactez-nous à l'adresse <a href="mailto:${escapeHtml(BRAND_CONFIG.supportEmail)}" style="color:#b08d57">${escapeHtml(BRAND_CONFIG.supportEmail)}</a>` : ""}.<br><br>${escapeHtml(BRAND_CONFIG.name)}</div></div></div></body></html>`;
+  const html = `<!doctype html><html lang="${locale === "en" ? "en" : "fr"}"><body style="margin:0;background:#f5f1eb;color:#3e3934;font-family:Arial,Helvetica,sans-serif"><div style="max-width:620px;margin:0 auto;padding:28px 18px"><div style="background:#fff;padding:36px 28px"><div style="border-bottom:1px solid #e8e1d8;padding-bottom:24px"><span style="font-family:Georgia,serif;font-size:27px;letter-spacing:.08em;color:#b08d57">${escapeHtml(BRAND_CONFIG.name)}</span><span style="float:right;color:#81786f;font-size:12px;letter-spacing:.12em;text-transform:uppercase;padding-top:8px">${L.order} #${escapeHtml(data.orderNumber)}</span></div><h1 style="margin:34px 0 10px;font-family:Georgia,serif;font-size:31px;line-height:1.15;font-weight:500;color:#3e3934">${L.receivedTitle}</h1><p style="margin:0;color:#81786f;font-size:16px;line-height:1.65">${L.greeting(escapeHtml(data.firstName))}<br>${L.receivedIntroHtml}</p>${data.trackingUrl ? `<p style="margin:26px 0 34px"><a href="${escapeHtml(data.trackingUrl)}" style="display:inline-block;background:#b08d57;color:#fff;text-decoration:none;padding:15px 24px;font-size:14px;font-weight:bold">${L.viewOrder}</a></p>` : ""}<h2 style="margin:0 0 16px;font-size:18px;color:#3e3934">${L.orderSummary}</h2><table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tbody>${htmlItems}</tbody></table><table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-top:16px;font-size:14px"><tbody><tr><td style="padding:5px 0;color:#81786f">${L.subtotal}</td><td style="padding:5px 0;text-align:right">${escapeHtml(formatDA(data.subtotal ?? data.total))}</td></tr>${data.promotionDiscount && data.promotionDiscount > 0 ? `<tr><td style="padding:5px 0;color:#81786f">${L.promotion}</td><td style="padding:5px 0;text-align:right">−${escapeHtml(formatDA(data.promotionDiscount))}</td></tr>` : ""}${data.discount && data.discount > 0 ? `<tr><td style="padding:5px 0;color:#81786f">${L.discount}</td><td style="padding:5px 0;text-align:right">−${escapeHtml(formatDA(data.discount))}</td></tr>` : ""}<tr><td style="padding:5px 0;color:#81786f">${L.shippingRow}</td><td style="padding:5px 0;text-align:right">${escapeHtml(formatDA(data.shipping ?? 0))}</td></tr><tr><td style="border-top:1px solid #3e3934;padding:18px 0 5px;font-size:17px;font-weight:bold">${L.total}</td><td style="border-top:1px solid #3e3934;padding:18px 0 5px;text-align:right;font-size:19px;font-weight:bold">${escapeHtml(formatDA(data.total))}</td></tr><tr><td style="padding:5px 0;color:#81786f">${L.paidToday}</td><td style="padding:5px 0;text-align:right;color:#81786f">0 DA</td></tr></tbody></table><h2 style="margin:38px 0 16px;font-size:18px;color:#3e3934">${L.customerInfo}</h2><div style="color:#81786f;font-size:14px;line-height:1.7"><strong style="color:#3e3934">${L.shippingAddress}</strong><br>${escapeHtml(`${data.firstName} ${data.lastName ?? ""}`.trim())}<br>${escapeHtml(data.address ?? "")}<br>${escapeHtml(`${data.communeName ?? ""}, ${data.wilayaName ?? ""}`)}<br>${L.algeria}<p style="margin:22px 0 0"><strong style="color:#3e3934">${L.payment}</strong><br>${L.cod}</p><p style="margin:22px 0 0"><strong style="color:#3e3934">${L.shippingMethod}</strong><br>${escapeHtml(data.deliveryMethod ?? L.homeDelivery)}</p></div><div style="border-top:1px solid #e8e1d8;margin-top:34px;padding-top:22px;color:#81786f;font-size:13px;line-height:1.6">${L.questions}${BRAND_CONFIG.supportEmail ? ` ${L.orContactUs} <a href="mailto:${escapeHtml(BRAND_CONFIG.supportEmail)}" style="color:#b08d57">${escapeHtml(BRAND_CONFIG.supportEmail)}</a>` : ""}.<br><br>${escapeHtml(BRAND_CONFIG.name)}</div></div></div></body></html>`;
   return {
     received: {
-      subject: `Commande ${data.orderNumber} reçue — ${BRAND_CONFIG.name}`,
-      body: `${greeting}\n\nNous avons bien reçu votre commande.\n\n${orderDetails}\n\nNous vous contacterons pour confirmer avant l'expédition.${signature}`,
+      subject: L.receivedSubject(data.orderNumber, BRAND_CONFIG.name),
+      body: `${greeting}\n\n${L.receivedLead}\n\n${orderDetails}\n\n${L.beforeShipment}${signature}`,
       html,
     },
     status: {
-      subject: `Mise à jour de votre commande ${data.orderNumber}`,
-      body: `${greeting}\n\nVotre commande ${data.orderNumber} est maintenant : ${
-        data.status ?? ""
-      }.${data.trackingNote ? `\n${data.trackingNote}` : ""}${signature}`,
+      subject: L.statusSubject(data.orderNumber),
+      body: `${greeting}\n\n${L.statusBody(data.orderNumber, data.status ?? "")}${data.trackingNote ? `\n${data.trackingNote}` : ""}${signature}`,
     },
   };
 }
@@ -368,6 +483,7 @@ export async function sendOrderReceived(data: {
   total: number;
   items: NonNullable<OrderEmailData["items"]>;
   trackingUrl?: string;
+  locale?: NotificationLocale;
   idempotencyKey?: string;
 }): Promise<NotificationDispatchResult> {
   const tpl = templates(data);
@@ -393,6 +509,7 @@ export async function sendOrderStatusUpdate(data: {
   total: number;
   status: string;
   note?: string;
+  locale?: NotificationLocale;
   idempotencyKey?: string;
 }): Promise<void> {
   const tpl = templates({
@@ -400,6 +517,7 @@ export async function sendOrderStatusUpdate(data: {
     firstName: data.firstName,
     total: data.total,
     status: data.status,
+    locale: data.locale,
   });
   await dispatch({
     orderId: data.orderId,
@@ -420,18 +538,17 @@ export async function sendShippingNotification(data: {
   orderNumber: string;
   firstName: string;
   total: number;
+  locale?: NotificationLocale;
   idempotencyKey?: string;
 }): Promise<void> {
-  const greeting = `Bonjour ${data.firstName},`;
+  const L = notifyStrings(data.locale ?? "fr");
   await dispatch({
     orderId: data.orderId,
     phone: data.phone,
     email: data.email,
     template: "ORDER_SHIPPED",
-    subject: `Votre commande ${data.orderNumber} est en route`,
-    body: `${greeting}\n\nBonne nouvelle : votre commande ${data.orderNumber} vient d'être expédiée. Vous serez contacté(e) par téléphone au ${formatPhoneDisplay(
-      data.phone,
-    )} avant la livraison.`,
+    subject: L.shippedSubject(data.orderNumber),
+    body: L.shippedBody(data.orderNumber, data.firstName, formatPhoneDisplay(data.phone)),
     channels: ["EMAIL", "SMS", "WHATSAPP"],
     idempotencyKey: data.idempotencyKey,
   });

@@ -68,10 +68,15 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
     const result = await importDeliveryCsvAction(csv);
     setPending(false);
     if (!result.ok) {
-      setError("Import failed.");
+      setError(t.adminDelivery.importFailed);
       return;
     }
-    setMessage(`Imported ${result.updated} rates.${result.errors.length > 0 ? ` Issues: ${result.errors.join(" ")}` : ""}`);
+    setMessage(
+      t.adminDelivery.imported.replace("{updated}", String(result.updated)) +
+        (result.errors.length > 0
+          ? t.adminDelivery.importIssues.replace("{issues}", result.errors.join(" "))
+          : ""),
+    );
     router.refresh();
   }
 
@@ -201,7 +206,7 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
           className="field mt-3 font-mono text-xs"
         />
         <Button type="button" disabled={pending || !csv.trim()} size="sm" className="mt-3" onClick={() => void importCsv()}>
-          {pending ? "Importing…" : "Import CSV"}
+          {pending ? t.adminDelivery.importing : t.adminDelivery.importCsv}
         </Button>
       </details>
     </div>

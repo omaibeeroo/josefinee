@@ -25,7 +25,7 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     background_color: "#fbfcfd",
     theme_color: "#f1f3f5",
     lang: locale === "ar" ? "ar" : locale === "en" ? "en" : "fr-DZ",
-    dir: "ltr",
+    dir: locale === "ar" ? "rtl" : "ltr",
     icons: [
       {
         src: "/icon.png",

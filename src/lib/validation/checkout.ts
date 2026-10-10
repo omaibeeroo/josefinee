@@ -1,15 +1,6 @@
 import { z } from "zod";
-import { zEmail, zHoneypot, zId, zOptionalString, zPhone } from "./common";
-
-/**
- * Strict boolean: accepts real booleans (JSON actions) and "true"/"false"
- * strings (FormData). Unlike z.coerce.boolean(), the string "false" maps to
- * false instead of true.
- */
-export const zStrictBoolean = z.union([
-  z.boolean(),
-  z.enum(["true", "false"]).transform((value) => value === "true"),
-]);
+import { zEmail, zHoneypot, zId, zOptionalString, zPhone, zStrictBoolean } from "./common";
+import { passwordIssues } from "@/lib/auth/password";
 
 export const checkoutSchema = z.object({
   firstName: z.string().trim().min(2, "Please enter your first name.").max(60),
@@ -30,7 +21,14 @@ export const checkoutSchema = z.object({
   allowDuplicate: zStrictBoolean.optional().default(false),
   idempotencyKey: z.string().trim().min(8).max(100),
   website: zHoneypot,
-});
+}).refine(
+  (value) => {
+    if (!value.createAccount) return true;
+    if (!value.email || !value.password) return false;
+    return passwordIssues(value.password).length === 0;
+  },
+  { message: "Use upper and lower case letters and at least one number.", path: ["password"] },
+);
 
 export type CheckoutInput = z.infer<typeof checkoutSchema>;
 

@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { enforceRateLimit, LIMITS, clientIp } from "@/lib/rate-limit";
 import { purgeExpiredData } from "@/server/retention";
 
 export const runtime = "nodejs";
@@ -17,6 +18,11 @@ function isAuthorized(request: NextRequest): boolean {
 export async function POST(request: NextRequest) {
   if (!isAuthorized(request)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401, headers: { "Cache-Control": "no-store" } });
+  }
+  try {
+    await enforceRateLimit({ ...LIMITS.api, key: `internal:retention:${await clientIp()}` });
+  } catch {
+    return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { "Cache-Control": "no-store" } });
   }
   try {
     const result = await purgeExpiredData();

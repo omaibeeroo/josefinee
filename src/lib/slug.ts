@@ -1,3 +1,5 @@
+import { randomInt } from "node:crypto";
+
 export function slugify(input: string): string {
   return input
     .normalize("NFD")
@@ -12,7 +14,7 @@ export function randomSuffix(length = 4): string {
   const chars = "abcdefghijklmnopqrstuvwxyz0123456789";
   let result = "";
   for (let i = 0; i < length; i += 1) {
-    result += chars[Math.floor(Math.random() * chars.length)];
+    result += chars[randomInt(chars.length)];
   }
   return result;
 }

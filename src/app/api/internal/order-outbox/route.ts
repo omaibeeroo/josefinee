@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { enforceRateLimit, LIMITS, clientIp } from "@/lib/rate-limit";
 import { processPendingOrderOutbox } from "@/server/order-outbox";
 
 export const runtime = "nodejs";
@@ -19,6 +20,15 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(
       { error: "Unauthorized" },
       { status: 401, headers: { "Cache-Control": "no-store" } },
+    );
+  }
+
+  try {
+    await enforceRateLimit({ ...LIMITS.api, key: `internal:outbox:${await clientIp()}` });
+  } catch {
+    return NextResponse.json(
+      { error: "Too many requests." },
+      { status: 429, headers: { "Cache-Control": "no-store" } },
     );
   }
 

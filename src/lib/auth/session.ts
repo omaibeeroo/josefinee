@@ -65,8 +65,6 @@ export const getAdminSession = cache(async () => {
             email: true,
             status: true,
             mustChangePassword: true,
-            passwordHash: true,
-            twoFactorSecret: true,
             twoFactorEnabled: true,
             role: {
               select: {
@@ -155,7 +153,6 @@ export const getCustomerSession = cache(async () => {
             email: true,
             phone: true,
             status: true,
-            passwordHash: true,
           },
         },
       },

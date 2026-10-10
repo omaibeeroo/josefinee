@@ -17,6 +17,7 @@ export async function purgeExpiredData(): Promise<{
   adminSessions: number;
   customerSessions: number;
   carts: number;
+  abandonedCartItems: number;
   idempotencyKeys: number;
   rateLimitBuckets: number;
   analyticsEvents: number;
@@ -84,18 +85,36 @@ export async function purgeExpiredData(): Promise<{
   const outboxEvents = await deleteIdsInBatches(
     () =>
       prisma.orderOutboxEvent.findMany({
-        where: { status: "COMPLETED", completedAt: { lt: outboxCutoff } },
+        where: {
+          OR: [
+            { status: "COMPLETED", completedAt: { lt: outboxCutoff } },
+            { status: "FAILED", createdAt: { lt: outboxCutoff } },
+          ],
+        },
         select: { id: true },
         orderBy: { id: "asc" },
         take: BATCH_SIZE,
       }),
     (ids) => prisma.orderOutboxEvent.deleteMany({ where: { id: { in: ids } } }),
   );
+  // Abandoned carts keep their items for a grace window (recovery/linking),
+  // then the lines are purged so CartItem rows cannot accumulate forever.
+  const abandonedItems = await deleteIdsInBatches(
+    () =>
+      prisma.cartItem.findMany({
+        where: { cart: { status: "ABANDONED", updatedAt: { lt: outboxCutoff } } },
+        select: { id: true },
+        orderBy: { id: "asc" },
+        take: BATCH_SIZE,
+      }),
+    (ids) => prisma.cartItem.deleteMany({ where: { id: { in: ids } } }),
+  );
 
   return {
     adminSessions: adminSessions.count,
     customerSessions: customerSessions.count,
     carts: carts.count,
+    abandonedCartItems: abandonedItems,
     idempotencyKeys: idempotencyKeys.count,
     rateLimitBuckets: rateLimitBuckets.count,
     analyticsEvents,

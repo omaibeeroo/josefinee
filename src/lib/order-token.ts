@@ -6,7 +6,7 @@ const DEFAULT_TTL_MS = 30 * 24 * 60 * 60_000;
 
 function secret(): string {
   const value = process.env.AUTH_SECRET;
-  if (!value) throw new AppError("CONFIG", "Server misconfiguration.", 500);
+  if (!value || value.length < 32) throw new AppError("CONFIG", "Server misconfiguration.", 500);
   return value;
 }
 
