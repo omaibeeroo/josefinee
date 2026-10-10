@@ -1,5 +1,6 @@
 import { timingSafeEqual } from "node:crypto";
 import { NextResponse, type NextRequest } from "next/server";
+import { isAppError } from "@/lib/errors";
 import { enforceRateLimit, LIMITS, clientIp } from "@/lib/rate-limit";
 import { purgeExpiredData } from "@/server/retention";
 
@@ -21,8 +22,15 @@ export async function POST(request: NextRequest) {
   }
   try {
     await enforceRateLimit({ ...LIMITS.api, key: `internal:retention:${await clientIp()}` });
-  } catch {
-    return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { "Cache-Control": "no-store" } });
+  } catch (error) {
+    if (isAppError(error) && error.code === "RATE_LIMITED") {
+      return NextResponse.json({ error: "Too many requests." }, { status: 429, headers: { "Cache-Control": "no-store" } });
+    }
+    console.error("[retention] rate limit unavailable", error instanceof Error ? error.name : "unknown");
+    return NextResponse.json(
+      { error: "Security checks are temporarily unavailable." },
+      { status: 503, headers: { "Cache-Control": "no-store", "Retry-After": "60" } },
+    );
   }
   try {
     const result = await purgeExpiredData();
