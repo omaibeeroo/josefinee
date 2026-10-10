@@ -533,7 +533,7 @@ const fr = {
     addFailed: "Impossible d’ajouter cet article. Réessayez.",
   },
   reviews: {
-    toggle: "Donnez votre avis",
+    toggle: "Avis",
   },
   errors: {
     title: "Un problème est survenu",

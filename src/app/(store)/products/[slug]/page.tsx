@@ -322,30 +322,30 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         className="mx-auto mt-8 max-w-2xl text-center md:mt-10"
         aria-label={t.product.reviews}
       >
-        {reviews.length > 0 && (
-          <>
-            <p className="eyebrow mb-2">{t.product.speakers}</p>
-            <h2 className="font-display text-3xl font-medium md:text-4xl">
-              {t.product.reviews} · {reviews.length}
-            </h2>
-            <ul className="mt-8 space-y-0">
-              {reviews.map((review) => (
-                <li key={review.id} className="border-t hairline py-6 text-start last:border-b">
-                  <Stars value={review.rating} />
-                  {review.title && <p className="mt-2 font-display text-lg">{review.title}</p>}
-                  <p className="mt-1 text-[0.9375rem] leading-relaxed text-ink-soft">
-                    {review.body}
-                  </p>
-                  <p className="mt-2 text-xs uppercase tracking-[0.12em] text-ink-muted">
-                    {review.authorName}
-                    {review.isVerifiedPurchase ? ` · ${t.product.verified}` : ""}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
         <ReviewToggle>
+          {reviews.length > 0 && (
+            <div className="review-list">
+              <p className="eyebrow mb-2">{t.product.speakers}</p>
+              <h2 className="font-display text-3xl font-medium md:text-4xl">
+                {t.product.reviews} · {reviews.length}
+              </h2>
+              <ul className="mt-8 space-y-0">
+                {reviews.map((review) => (
+                  <li key={review.id} className="border-t hairline py-6 text-start last:border-b">
+                    <Stars value={review.rating} />
+                    {review.title && <p className="mt-2 font-display text-lg">{review.title}</p>}
+                    <p className="mt-1 text-[0.9375rem] leading-relaxed text-ink-soft">
+                      {review.body}
+                    </p>
+                    <p className="mt-2 text-xs uppercase tracking-[0.12em] text-ink-muted">
+                      {review.authorName}
+                      {review.isVerifiedPurchase ? ` · ${t.product.verified}` : ""}
+                    </p>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
           <ReviewForm productId={product.id} />
         </ReviewToggle>
       </section>

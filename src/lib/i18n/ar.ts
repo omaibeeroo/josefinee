@@ -535,7 +535,7 @@ const ar: FrDictionary = {
     addFailed: "تعذر إضافة هذا المنتج. حاولي مرة أخرى.",
   },
   reviews: {
-    toggle: "قيّمي المنتج",
+    toggle: "مراجعة",
   },
   errors: {
     title: "حدثت مشكلة",

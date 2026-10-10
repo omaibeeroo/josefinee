@@ -587,7 +587,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
   return (
     <div className="mt-6">
       <VariantPicker product={product} selectedVariantId={variantId} onChange={setVariantId} />
-      <div className="product-purchase-price mt-4 text-center md:text-start">
+      <div className="product-purchase-price mt-4 text-center">
         <Price
           price={selected?.price ?? product.price}
           compareAt={selected?.compareAtPrice ?? product.compareAtPrice}
@@ -601,7 +601,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
             .replace("{s}", selected.available > 1 ? "s" : "")}
         </p>
       )}
-      <div className="product-purchase-actions mt-4 flex gap-3 md:mt-5">
+      <div className="product-purchase-actions mt-4 grid gap-3 md:mt-5">
         <QuantitySelector value={quantity} onChange={setQuantity} max={Math.max(1, maxQuantity)} />
         <Button
           onClick={() => void submit(false)}
@@ -613,15 +613,15 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
         <span className="product-wishlist hidden md:flex">
           <WishlistButton productId={product.id} bordered />
         </span>
+        <Button
+          variant="gold"
+          onClick={() => void submit(true)}
+          disabled={pending || maxQuantity <= 0}
+          className="product-buy-now w-full"
+        >
+          {t.product.buyNowCod}
+        </Button>
       </div>
-      <Button
-        variant="gold"
-        onClick={() => void submit(true)}
-        disabled={pending || maxQuantity <= 0}
-        className="product-buy-now mt-3 w-full"
-      >
-        {t.product.buyNowCod}
-      </Button>
       {error && (
         <p className="mt-3 text-sm text-[#9e342e]" role="alert">
           {error}

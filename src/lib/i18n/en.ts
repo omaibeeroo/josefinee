@@ -535,7 +535,7 @@ const en: FrDictionary = {
     addFailed: "We could not add this item. Please retry.",
   },
   reviews: {
-    toggle: "Write a review",
+    toggle: "Review",
   },
   errors: {
     title: "Something went wrong",
