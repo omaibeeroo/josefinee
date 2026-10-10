@@ -37,7 +37,7 @@ export function clearGuestWishlist(): void {
   writeGuestWishlist([]);
 }
 
-import { discountPercent, formatPrice } from "@/lib/money";
+import { discountPercent } from "@/lib/money";
 import { pixelEvent } from "@/components/pixels";
 import {
   isOptionValueAvailableForSelection,
@@ -183,7 +183,9 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
               ))}
             </div>
             <span aria-live="polite" className="sr-only">
-              {t.product.imageCounter.replace("{current}", String(current + 1)).replace("{total}", String(count))}
+              {t.product.imageCounter
+                .replace("{current}", String(current + 1))
+                .replace("{total}", String(count))}
             </span>
           </>
         )}
@@ -194,7 +196,9 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
             <>
               {percent && <Badge tone="sale">-{percent}%</Badge>}
               {product.isNew && <Badge tone="gold">{t.product.badgeNew}</Badge>}
-              {product.isBestseller && !product.isNew && <Badge tone="ink">{t.product.badgeBestSeller}</Badge>}
+              {product.isBestseller && !product.isNew && (
+                <Badge tone="ink">{t.product.badgeBestSeller}</Badge>
+              )}
             </>
           )}
         </div>
@@ -378,7 +382,7 @@ export function ProductGallery({
         </span>
       </button>
       {images.length > 1 && (
-        <div className="mt-3 flex gap-3 overflow-x-auto pb-1">
+        <div className="product-gallery-thumbs mt-2 flex gap-2 overflow-x-auto pb-1 md:mt-3 md:gap-3">
           {images.map((image, index) => (
             <button
               key={image.url}
@@ -387,8 +391,8 @@ export function ProductGallery({
               aria-label={t.product.viewImage.replace("{n}", String(index + 1))}
               aria-current={index === active}
               className={cn(
-                "product-gallery-thumb relative h-20 w-16 shrink-0 overflow-hidden bg-cream",
-                index === active && "product-gallery-thumb-active ring-2 ring-gold ring-offset-2",
+                "product-gallery-thumb relative h-16 w-14 shrink-0 overflow-hidden bg-cream md:h-20 md:w-16",
+                index === active && "product-gallery-thumb-active",
               )}
             >
               <ProductImage url={image.url} alt={image.alt || name} sizes="64px" />
@@ -538,7 +542,7 @@ function VariantPicker({
 /* ------------------------------------------------------ Add to bag panel */
 
 export function AddToBagPanel({ product }: { product: StoreProduct }) {
-  const { locale, t } = useLocale();
+  const { t } = useLocale();
   const { add } = useCart();
   const [variantId, setVariantId] = useState(
     product.defaultVariantId ?? product.variants[0]?.id ?? "",
@@ -583,7 +587,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
   return (
     <div className="mt-6">
       <VariantPicker product={product} selectedVariantId={variantId} onChange={setVariantId} />
-      <div className="mt-4">
+      <div className="product-purchase-price mt-4 text-center md:text-start">
         <Price
           price={selected?.price ?? product.price}
           compareAt={selected?.compareAtPrice ?? product.compareAtPrice}
@@ -592,25 +596,29 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
       </div>
       {selected?.available !== undefined && selected.available <= 3 && selected.available > 0 && (
         <p className="mt-3 text-sm font-medium text-sale" role="status">
-          {t.product.onlyLeft.replace("{count}", String(selected.available)).replace("{s}", selected.available > 1 ? "s" : "")}
+          {t.product.onlyLeft
+            .replace("{count}", String(selected.available))
+            .replace("{s}", selected.available > 1 ? "s" : "")}
         </p>
       )}
-      <div className="mt-5 flex gap-3">
+      <div className="product-purchase-actions mt-4 flex gap-3 md:mt-5">
         <QuantitySelector value={quantity} onChange={setQuantity} max={Math.max(1, maxQuantity)} />
         <Button
           onClick={() => void submit(false)}
           disabled={pending || maxQuantity <= 0}
-          className="flex-1"
+          className="product-add-to-bag hidden flex-1 md:flex"
         >
           {pending ? t.product.adding : t.product.addToBag}
         </Button>
-        <WishlistButton productId={product.id} bordered />
+        <span className="product-wishlist hidden md:flex">
+          <WishlistButton productId={product.id} bordered />
+        </span>
       </div>
       <Button
         variant="gold"
         onClick={() => void submit(true)}
         disabled={pending || maxQuantity <= 0}
-        className="mt-3 w-full"
+        className="product-buy-now mt-3 w-full"
       >
         {t.product.buyNowCod}
       </Button>
@@ -619,32 +627,6 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
           {error}
         </p>
       )}
-
-      {/* Sticky one-thumb buy bar — mobile only, the premium COD shortcut. */}
-      <div className="h-[4.5rem] md:hidden" aria-hidden="true" />
-      <div className="fixed inset-x-0 bottom-0 z-40 border-t hairline bg-ivory pb-[env(safe-area-inset-bottom)] shadow-[0_-16px_35px_-24px_rgb(29_35_43/0.45)] md:hidden">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium">{product.name}</p>
-            <p className="text-sm text-ink-soft">
-              {selected
-                ? formatPrice(selected.price, { locale })
-                : formatPrice(product.price, { locale })}
-              {selected?.optionLabel && (
-                <span className="text-ink-muted"> · {selected.optionLabel}</span>
-              )}
-            </p>
-          </div>
-          <Button
-            onClick={() => void submit(false)}
-            disabled={pending || maxQuantity <= 0}
-            size="sm"
-            className="shrink-0 px-6"
-          >
-            {pending ? t.product.adding : maxQuantity <= 0 ? t.product.soldOut : t.product.add}
-          </Button>
-        </div>
-      </div>
     </div>
   );
 }

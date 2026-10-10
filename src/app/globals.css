@@ -208,8 +208,12 @@
   /* Premium silver chrome for the sticky header + footer (translucent). */
   --color-chrome: rgb(233 236 239 / 0.88);
 
-  --font-display: var(--font-display), "Cormorant Garamond", Georgia, "Segoe UI", "Amiri", "Noto Naskh Arabic", serif;
-  --font-sans: var(--font-sans), Inter, system-ui, -apple-system, "Segoe UI", Tahoma, "Noto Sans Arabic", sans-serif;
+  --font-display:
+    var(--font-display), "Cormorant Garamond", Georgia, "Segoe UI", "Amiri", "Noto Naskh Arabic",
+    serif;
+  --font-sans:
+    var(--font-sans), Inter, system-ui, -apple-system, "Segoe UI", Tahoma, "Noto Sans Arabic",
+    sans-serif;
 
   --tracking-luxe: 0.24em;
   --tracking-wide-sm: 0.12em;
@@ -1292,24 +1296,26 @@ html.theme-switching *::after {
   }
 
   .product-gallery-thumb {
-    border: 1px solid #dce1e6;
+    border: 0;
     border-radius: 0.75rem;
+    opacity: 0.68;
     transition:
-      transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-      border-color 0.25s ease,
-      box-shadow 0.25s ease;
+      transform 0.38s cubic-bezier(0.22, 1, 0.36, 1),
+      opacity 0.3s ease,
+      box-shadow 0.3s ease;
   }
 
   .product-gallery-thumb:hover,
   .product-gallery-thumb:focus-visible {
-    border-color: #c6a7b8;
+    opacity: 0.92;
     box-shadow: 0 10px 20px -18px rgb(29 35 43 / 0.9);
-    transform: translateY(-4px);
+    transform: translateY(-2px);
   }
 
   .product-gallery-thumb-active {
-    border-color: #8794a3;
-    box-shadow: 0 0 0 3px rgb(198 167 184 / 0.16);
+    opacity: 1;
+    box-shadow: 0 8px 18px -16px rgb(29 35 43 / 0.9);
+    transform: scale(1.04);
   }
 
   .product-detail-title {
@@ -1400,6 +1406,90 @@ html.theme-switching *::after {
 }
 
 @media (max-width: 767px) {
+  .product-detail-page {
+    padding-top: 0.75rem;
+    padding-bottom: 1.5rem;
+  }
+
+  .product-detail-layout {
+    gap: 1rem;
+  }
+
+  .product-detail-gallery {
+    margin-inline: -1rem;
+  }
+
+  .product-detail-page .product-gallery-hero {
+    aspect-ratio: 4 / 5;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  .product-gallery-thumbs {
+    padding-inline: 1rem;
+    scroll-snap-type: x proximity;
+  }
+
+  .product-gallery-thumb {
+    scroll-snap-align: start;
+    border-radius: 0.5rem;
+  }
+
+  .product-detail-info {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+  }
+
+  .product-detail-heading {
+    align-items: center;
+  }
+
+  .product-detail-status {
+    max-width: 45%;
+    white-space: nowrap;
+    text-align: end;
+  }
+
+  .product-detail-status span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .product-detail-page .product-purchase-panel {
+    margin-top: 0.75rem;
+    padding-block: 0.75rem;
+  }
+
+  .product-purchase-price {
+    margin-top: 0.75rem;
+  }
+
+  .product-purchase-actions {
+    margin-top: 0.75rem;
+  }
+
+  .product-buy-now {
+    margin-top: 0.65rem;
+  }
+
+  .product-fulfillment {
+    margin-top: 1rem;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+  }
+
+  .product-fulfillment > div {
+    min-width: 0;
+    gap: 0.5rem;
+  }
+
+  .product-fulfillment dd {
+    font-size: 0.78rem;
+    line-height: 1.35;
+  }
+
   .product-gallery-hero:hover .product-zoom-image,
   .product-gallery-hero:focus-visible .product-zoom-image {
     transform: none;
@@ -1838,13 +1928,23 @@ html.theme-switching *::after {
   }
 
   @keyframes mobile-menu-backdrop-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes mobile-menu-panel-in {
-    from { opacity: 0.96; transform: translate3d(-102%, 0, 0); }
-    to { opacity: 1; transform: translate3d(0, 0, 0); }
+    from {
+      opacity: 0.96;
+      transform: translate3d(-102%, 0, 0);
+    }
+    to {
+      opacity: 1;
+      transform: translate3d(0, 0, 0);
+    }
   }
 
   @media (min-width: 768px) {

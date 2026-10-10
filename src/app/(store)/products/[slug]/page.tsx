@@ -19,6 +19,7 @@ import { serializeForInlineJsonScript } from "@/lib/script-data";
 import { cleanRichText } from "@/lib/sanitize";
 import { formatDA } from "@/lib/money";
 import { appUrl } from "@/config/brand";
+import { cn } from "@/lib/utils";
 
 const getCachedProductBySlug = cache((slug: string) => getProductBySlug(slug));
 
@@ -139,7 +140,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   ];
 
   return (
-    <div className="product-detail-page container-luxe py-8 md:py-12">
+    <div className="product-detail-page container-luxe py-5 md:py-12">
       <PixelEvent
         name="ViewContent"
         params={{
@@ -157,7 +158,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
       <nav
         aria-label={t.product.breadcrumb}
-        className="mb-6 text-xs uppercase tracking-[0.14em] text-ink-muted"
+        className="mb-4 text-xs uppercase tracking-[0.14em] text-ink-muted md:mb-6"
       >
         <Link href="/" className="hover:text-ink">
           {t.product.home}
@@ -176,34 +177,35 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
         </span>
       </nav>
 
-      <div className="product-detail-layout grid gap-10 lg:grid-cols-[minmax(0,1.08fr)_minmax(24rem,0.92fr)] lg:gap-16">
+      <div className="product-detail-layout grid gap-5 lg:grid-cols-[minmax(0,1.08fr)_minmax(24rem,0.92fr)] lg:gap-16">
         <div className="product-detail-gallery lg:sticky lg:top-24 lg:self-start">
           <ProductGallery images={product.images} name={product.name} />
         </div>
 
         <div className="product-detail-info">
-          {product.category && <p className="eyebrow mb-3">{product.category.name}</p>}
-          <h1 className="product-detail-title font-display text-4xl font-medium leading-[1.05] tracking-tight md:text-6xl">
-            {product.name}
-          </h1>
+          {product.category && <p className="eyebrow mb-2 md:mb-3">{product.category.name}</p>}
+          <div className="product-detail-heading flex items-start justify-between gap-3">
+            <h1 className="product-detail-title min-w-0 font-display text-3xl font-medium leading-[1.05] tracking-tight md:text-6xl">
+              {product.name}
+            </h1>
+            <p
+              className="product-detail-status mt-1 flex shrink-0 items-center gap-1.5 text-xs font-medium md:mt-2 md:text-sm"
+              role="status"
+            >
+              <span
+                className={cn("h-2 w-2 rounded-full", product.inStock ? "bg-success" : "bg-sale")}
+                aria-hidden="true"
+              />
+              <span className={cn(!product.inStock && "text-sale")}>
+                {product.inStock ? t.product.inStockReady : t.product.soldOutSoon}
+              </span>
+            </p>
+          </div>
           {product.ratingCount > 0 && (
-            <div className="mt-3">
+            <div className="mt-2 md:mt-3">
               <Stars value={product.ratingAvg} count={product.ratingCount} />
             </div>
           )}
-          <p className="mt-2 flex items-center gap-2 text-sm" role="status">
-            {product.inStock ? (
-              <>
-                <span className="h-2 w-2 rounded-full bg-success" aria-hidden="true" />
-                <span className="font-medium">{t.product.inStockReady}</span>
-              </>
-            ) : (
-              <>
-                <span className="h-2 w-2 rounded-full bg-sale" aria-hidden="true" />
-                <span className="font-medium text-sale">{t.product.soldOutSoon}</span>
-              </>
-            )}
-          </p>
           {promotion && (
             <p
               className="mt-2 inline-block bg-gold/15 px-3 py-1.5 text-sm font-medium text-gold-dark"
@@ -215,15 +217,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               {t.product.promoWith.replace("{name}", promotion.name)}
             </p>
           )}
-          {product.shortDescription && (
-            <p className="mt-4 leading-relaxed text-ink-soft">{product.shortDescription}</p>
-          )}
-
           <div className="product-purchase-panel">
             <AddToBagPanel product={product} />
           </div>
 
-          <dl className="mt-7 grid grid-cols-1 gap-3 border-t hairline pt-6 text-sm sm:grid-cols-2">
+          <dl className="product-fulfillment mt-5 grid grid-cols-2 gap-3 border-t hairline pt-4 text-sm md:mt-7 md:pt-6">
             <div className="flex items-start gap-3">
               <Banknote
                 size={18}
