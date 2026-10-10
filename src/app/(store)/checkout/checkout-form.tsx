@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { z } from "zod";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import {
@@ -16,15 +15,8 @@ import { bidiIsolate, formatDA } from "@/lib/money";
 import { pixelEvent } from "@/components/pixels";
 import type { CartLine } from "@/server/cart";
 import type { CommuneOption, DeliveryOption, WilayaOption } from "@/server/delivery";
-const CHECKOUT_DRAFT_KEY = "hanadi.checkout.draft.v1";
 
 const CHECKOUT_IDEMPOTENCY_KEY = "hanadi.checkout.idempotency.v1";
-const checkoutDraftSchema = z.object({
-  wilayaId: z.string().max(64),
-  communeId: z.string().max(64),
-  deliveryMethod: z.enum(["HOME", "STOPDESK", "EXPRESS", "STANDARD"]),
-  couponInput: z.string().max(40),
-});
 
 function newCheckoutKey(): string {
   if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
@@ -65,8 +57,6 @@ export function CheckoutForm({
   const [coupon, setCoupon] = useState<{ code: string; discount: number } | null>(null);
   const [couponMessage, setCouponMessage] = useState<string | null>(null);
   const [couponPending, setCouponPending] = useState(false);
-  const [draftLoaded, setDraftLoaded] = useState(false);
-  const [draftRestored, setDraftRestored] = useState(false);
 
   const [website, setWebsite] = useState("");
   const [fields, setFields] = useState<Record<string, string>>({});
@@ -78,24 +68,9 @@ export function CheckoutForm({
   const [regionRetryToken, setRegionRetryToken] = useState(0);
 
   useEffect(() => {
+    // Idempotency key only: a refresh/back-navigation must replay the same
+    // order instead of creating a duplicate. No form draft is persisted.
     try {
-      const rawDraft = window.sessionStorage.getItem(CHECKOUT_DRAFT_KEY);
-      if (rawDraft) {
-        const parsedDraft = checkoutDraftSchema.safeParse(JSON.parse(rawDraft));
-        if (parsedDraft.success) {
-          const draft = parsedDraft.data;
-          setWilayaId(draft.wilayaId);
-          setCommuneId(draft.communeId);
-          setDeliveryMethod(draft.deliveryMethod);
-          setCouponInput(draft.couponInput);
-          setCouponMessage(
-            draft.couponInput ? t.checkout.couponRemembered : null,
-          );
-          setDraftRestored(true);
-        } else {
-          window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
-        }
-      }
       const savedKey = window.sessionStorage.getItem(CHECKOUT_IDEMPOTENCY_KEY);
       const key = savedKey && /^[A-Za-z0-9-]{8,100}$/.test(savedKey) ? savedKey : newCheckoutKey();
       idempotencyKey.current = key;
@@ -103,27 +78,7 @@ export function CheckoutForm({
     } catch {
       idempotencyKey.current = newCheckoutKey();
     }
-    setDraftLoaded(true);
-  }, [t.checkout.couponRemembered]);
-
-  useEffect(() => {
-    if (!draftLoaded) return;
-    const draft = {
-      wilayaId,
-      communeId,
-      deliveryMethod,
-      couponInput,
-    };
-    try {
-      if (Object.values(draft).some((value) => value.trim().length > 0)) {
-        window.sessionStorage.setItem(CHECKOUT_DRAFT_KEY, JSON.stringify(draft));
-      } else {
-        window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
-      }
-    } catch {
-      // Storage may be disabled; checkout remains functional without draft recovery.
-    }
-  }, [draftLoaded, wilayaId, communeId, deliveryMethod, couponInput]);
+  }, []);
 
   useEffect(() => {
     if (!wilayaId) {
@@ -176,28 +131,6 @@ export function CheckoutForm({
     () => (freeDeliveryThreshold > 0 ? Math.max(0, freeDeliveryThreshold - postPromoSubtotal) : 0),
     [freeDeliveryThreshold, postPromoSubtotal],
   );
-
-  function clearSavedDraft() {
-    setFirstName("");
-    setLastName("");
-    setPhone("");
-    setEmail("");
-    setWilayaId("");
-    setCommuneId("");
-    setAddress("");
-    setDeliveryMethod(defaultDeliveryMethod);
-    setCouponInput("");
-    setCoupon(null);
-    setCouponMessage(null);
-    setAllowDuplicate(false);
-    setWebsite("");
-    setDraftRestored(false);
-    try {
-      window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
-    } catch {
-      // Storage may be disabled; clearing the in-memory form still works.
-    }
-  }
 
   async function applyCoupon() {
     setCouponMessage(null);
@@ -262,7 +195,6 @@ export function CheckoutForm({
 
     if (result.ok) {
       try {
-        window.sessionStorage.removeItem(CHECKOUT_DRAFT_KEY);
         window.sessionStorage.removeItem(CHECKOUT_IDEMPOTENCY_KEY);
       } catch {
         // Successful order navigation must not depend on browser storage access.
@@ -297,19 +229,6 @@ export function CheckoutForm({
         className="checkout-form relative space-y-8"
       >
         <Honeypot value={website} onChange={setWebsite} />
-        {draftRestored && (
-          <div
-            className="flex flex-wrap items-center justify-between gap-3 border hairline bg-white px-4 py-3 text-sm"
-            role="status"
-          >
-            <span dir="auto">
-              {t.checkout.draftRestored}
-            </span>
-            <Button type="button" variant="outline" size="sm" onClick={clearSavedDraft}>
-              {t.checkout.clearDraft}
-            </Button>
-          </div>
-        )}
         {formError && (
           <p
             dir="auto"
