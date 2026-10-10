@@ -115,7 +115,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
   return (
     <article className="product-card group flex flex-col">
       <div
-        className="product-card-media relative overflow-hidden bg-cream transition-shadow duration-500 hover:shadow-[0_28px_55px_-28px_rgb(29_35_43/0.4)]"
+        className="product-card-media relative overflow-hidden bg-cream transition-transform duration-500"
         role={count > 1 ? "group" : undefined}
         aria-roledescription={count > 1 ? "carousel" : undefined}
         aria-label={count > 1 ? product.name : undefined}
