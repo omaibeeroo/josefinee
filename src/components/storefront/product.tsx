@@ -157,7 +157,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
               type="button"
               aria-label={t.product.prevImage}
               onClick={() => go(-1)}
-              className="absolute start-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-card transition-opacity duration-200 hover:bg-white focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+              className="absolute start-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-[#fff]/10 text-[#fff] opacity-90 backdrop-blur-[2px] drop-shadow-md transition-all duration-200 hover:bg-[#fff]/30 hover:opacity-100 focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
             >
               <ChevronLeft size={17} className="rtl-flip" />
             </button>
@@ -165,7 +165,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
               type="button"
               aria-label={t.product.nextImage}
               onClick={() => go(1)}
-              className="absolute end-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-ink shadow-card transition-opacity duration-200 hover:bg-white focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+              className="absolute end-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-[#fff]/10 text-[#fff] opacity-90 backdrop-blur-[2px] drop-shadow-md transition-all duration-200 hover:bg-[#fff]/30 hover:opacity-100 focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
             >
               <ChevronRight size={17} className="rtl-flip" />
             </button>
@@ -206,7 +206,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
             type="button"
             disabled={pending}
             onClick={() => (product.hasVariants ? setQuickOpen(true) : void quickAdd())}
-            className="absolute inset-x-0 bottom-0 hidden translate-y-2 bg-ink/90 py-3 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-ivory opacity-0 transition-all duration-200 hover:bg-ink group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 md:block"
+            className="absolute inset-x-0 bottom-0 hidden bg-gradient-to-t from-ink/60 via-ink/20 to-transparent pb-3 pt-10 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-ivory opacity-0 transition-all duration-200 group-hover:opacity-100 group-focus-within:opacity-100 md:block"
           >
             {pending ? t.product.adding : product.hasVariants ? t.product.chooseOptionsBtn : t.product.addToBag}
           </button>
@@ -221,7 +221,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
               : `${t.product.addFor} ${product.name} ${t.product.toBag}`
             }
             onClick={() => (product.hasVariants ? setQuickOpen(true) : void quickAdd())}
-            className="absolute bottom-2 end-2 flex h-10 w-10 items-center justify-center rounded-full bg-ivory shadow-card md:hidden"
+            className="absolute bottom-2 end-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#fff]/15 text-[#fff] opacity-90 backdrop-blur-[2px] drop-shadow-md transition-all duration-200 hover:bg-[#fff]/30 hover:opacity-100 md:hidden"
           >
             <Plus size={18} />
           </button>
@@ -917,12 +917,24 @@ function WishlistButton({
       aria-label={saved ? t.product.removeWishlist : t.product.addWishlist}
       aria-pressed={saved ?? false}
       className={cn(
-        "flex h-9 w-9 items-center justify-center bg-ivory shadow-card transition-colors hover:bg-white disabled:opacity-50",
-        bordered && "h-[2.875rem] w-[2.875rem] border hairline bg-white shadow-none",
+        "flex h-9 w-9 items-center justify-center transition-all duration-200 disabled:opacity-50",
+        bordered
+          ? "h-[2.875rem] w-[2.875rem] border hairline bg-white shadow-none"
+          : "bg-transparent opacity-90 hover:bg-[#fff]/20 hover:opacity-100 focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
+        saved && !bordered && "md:opacity-100",
         className,
       )}
     >
-      <Heart size={17} className={saved ? "fill-sale text-sale" : "text-ink"} />
+      <Heart
+        size={17}
+        className={
+          saved
+            ? "fill-sale text-sale drop-shadow-md"
+            : bordered
+              ? "text-ink"
+              : "text-[#fff] drop-shadow-md"
+        }
+      />
     </button>
   );
 }
