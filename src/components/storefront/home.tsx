@@ -16,7 +16,7 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
   const { t } = useLocale();
   const hasImage = Boolean(hero.imageDesktop);
   return (
-    <section className="relative overflow-hidden bg-cream" aria-label={t.home.heroFeatured}>
+    <section className="relative overflow-hidden bg-cream md:mt-12" aria-label={t.home.heroFeatured}>
       {hasImage ? (
         <>
           <div className="relative aspect-[4/5] w-full sm:aspect-[16/10] md:aspect-[21/9]">

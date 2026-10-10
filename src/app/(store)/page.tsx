@@ -175,7 +175,7 @@ export default async function HomePage() {
 
   const blocks: Record<string, React.ReactNode> = {
     featured: hasCatalog ? (
-      <div className="section-space pt-4 md:pt-0">
+      <div className="section-space pt-4 md:pt-12">
         <ProductCarousel
           title={t.home.featuredTitle}
           products={featured}
