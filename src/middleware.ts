@@ -1,5 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { LOCALE_COOKIE } from "@/lib/i18n/locales";
+import { BRAND_CONFIG } from "@/config/brand";
+import dictionaries from "@/lib/i18n";
+import { LOCALE_COOKIE, parseLocale } from "@/lib/i18n/locales";
 
 export async function middleware(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
@@ -118,33 +120,63 @@ async function hasActiveAdminSession(request: NextRequest): Promise<boolean> {
 }
 
 function maintenanceResponse(csp: string, localeCookie?: string): NextResponse {
-  const lang = localeCookie === "ar" ? "ar" : localeCookie === "en" ? "en" : "fr";
-  const heading = "COMING SOON";
-  const title =
-    lang === "ar"
-      ? "المتجر مغلق مؤقتًا | Hanadi Store"
-      : lang === "en"
-        ? "Shop temporarily closed | Hanadi Store"
-        : "Boutique temporairement fermée | Hanadi Store";
-  const body =
-    lang === "ar"
-      ? "متجرنا غير متاح مؤقتًا بسبب تحديث. يرجى العودة بعد قليل."
-      : lang === "en"
-        ? "Our boutique is temporarily unavailable during an update. Please come back in a few moments."
-        : "Notre boutique est temporairement indisponible pendant une mise à jour. Merci de revenir dans quelques instants.";
-  return new NextResponse(
-    `<!doctype html><html lang="${lang}" dir="${lang === "ar" ? "rtl" : "ltr"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#faf8f4"><title>${title}</title><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;min-height:100svh;display:grid;place-items:center;padding:1.5rem;background:#faf8f4;color:#1c1a17;font-family:Georgia,"Times New Roman",serif;text-align:center}main{width:min(100%,42rem);padding:clamp(2rem,8vw,5rem) 1.5rem}strong{display:block;margin-bottom:clamp(2.5rem,8vw,4rem);color:#b08d57;font-size:clamp(1.25rem,4vw,1.8rem);font-weight:400;letter-spacing:.32em;text-transform:uppercase}.ornament{width:3rem;height:1px;margin:0 auto 2rem;background:#b08d57}h1{margin:0;font-size:clamp(2.4rem,9vw,4.75rem);font-weight:400;letter-spacing:.12em;line-height:1.05}p{max-width:29rem;margin:1.5rem auto 0;color:#665f56;font-family:Arial,sans-serif;font-size:.95rem;line-height:1.8}@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}</style></head><body><main><strong>Hanadi Store</strong><div class="ornament" aria-hidden="true"></div><h1>${heading}</h1><p>${body}</p></main></body></html>`,
-    {
-      status: 503,
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Cache-Control": "no-store, max-age=0",
-        "Retry-After": "300",
-        "Content-Security-Policy": csp,
-        "X-Content-Type-Options": "nosniff",
-      },
+  const lang = parseLocale(localeCookie);
+  const copy = dictionaries[lang].maintenance;
+  const brandName = escapeHtml(BRAND_CONFIG.name);
+  const title = copy.title.replace("{name}", brandName);
+  const html = `<!doctype html>
+<html lang="${lang}" dir="${lang === "ar" ? "rtl" : "ltr"}">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+    <meta name="robots" content="noindex,nofollow">
+    <meta name="theme-color" content="#faf8f4">
+    <title>${title}</title>
+    <style>
+      *{box-sizing:border-box}
+      body{margin:0;min-height:100vh;min-height:100svh;display:grid;place-items:center;padding:1.5rem;background:#faf8f4;color:#1c1a17;font-family:Georgia,"Times New Roman",serif;text-align:center}
+      main{width:min(100%,42rem);padding:clamp(2rem,8vw,5rem) 1.5rem}
+      strong{display:block;margin-bottom:clamp(2.5rem,8vw,4rem);color:#b08d57;font-size:clamp(1.25rem,4vw,1.8rem);font-weight:400;letter-spacing:.32em;text-transform:uppercase}
+      .ornament{width:3rem;height:1px;margin:0 auto 2rem;background:#b08d57}
+      h1{margin:0;font-size:clamp(2.4rem,9vw,4.75rem);font-weight:400;letter-spacing:.12em;line-height:1.05}
+      p{max-width:29rem;margin:1.5rem auto 0;color:#665f56;font-family:Arial,sans-serif;font-size:.95rem;line-height:1.8}
+      html[dir="rtl"] body,html[dir="rtl"] h1,html[dir="rtl"] p{font-family:Tahoma,"Segoe UI","Noto Naskh Arabic",Arial,sans-serif}
+      html[dir="rtl"] h1{letter-spacing:0;line-height:1.35}
+      @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}
+    </style>
+  </head>
+  <body>
+    <main>
+      <strong dir="ltr">${brandName}</strong>
+      <div class="ornament" aria-hidden="true"></div>
+      <h1>${copy.heading}</h1>
+      <p>${copy.body}</p>
+    </main>
+  </body>
+</html>`;
+  return new NextResponse(html, {
+    status: 503,
+    headers: {
+      "Content-Type": "text/html; charset=utf-8",
+      "Cache-Control": "no-store, max-age=0",
+      "Retry-After": "300",
+      "Content-Security-Policy": csp,
+      "X-Content-Type-Options": "nosniff",
     },
-  );
+  });
+}
+
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (character) => {
+    const entities: Record<string, string> = {
+      "&": "&amp;",
+      "<": "&lt;",
+      ">": "&gt;",
+      '"': "&quot;",
+      "'": "&#39;",
+    };
+    return entities[character] ?? character;
+  });
 }
 
 type SlugKind = "products" | "collections" | "categories" | "pages";
@@ -172,16 +204,56 @@ function slugNotFound(csp: string, localeCookie: string | undefined, kind: SlugK
   const copy =
     kind === "products"
       ? {
-          title: lang === "ar" ? "المنتج غير موجود | Hanadi Store" : lang === "en" ? "Product not found | Hanadi Store" : "Produit introuvable | Hanadi Store",
-          heading: lang === "ar" ? "المنتج غير موجود" : lang === "en" ? "Product not found" : "Produit introuvable",
-          body: lang === "ar" ? "هذا المنتج لم يعد موجودًا أو غير متاح." : lang === "en" ? "This product no longer exists or is unavailable." : "Ce produit n’existe plus ou n’est pas disponible.",
-          back: lang === "ar" ? "العودة إلى المتجر" : lang === "en" ? "Back to the shop" : "Retour à la boutique",
+          title:
+            lang === "ar"
+              ? "المنتج غير موجود | Hanadi Store"
+              : lang === "en"
+                ? "Product not found | Hanadi Store"
+                : "Produit introuvable | Hanadi Store",
+          heading:
+            lang === "ar"
+              ? "المنتج غير موجود"
+              : lang === "en"
+                ? "Product not found"
+                : "Produit introuvable",
+          body:
+            lang === "ar"
+              ? "هذا المنتج لم يعد موجودًا أو غير متاح."
+              : lang === "en"
+                ? "This product no longer exists or is unavailable."
+                : "Ce produit n’existe plus ou n’est pas disponible.",
+          back:
+            lang === "ar"
+              ? "العودة إلى المتجر"
+              : lang === "en"
+                ? "Back to the shop"
+                : "Retour à la boutique",
         }
       : {
-          title: lang === "ar" ? "الصفحة غير موجودة | Hanadi Store" : lang === "en" ? "Page not found | Hanadi Store" : "Page introuvable | Hanadi Store",
-          heading: lang === "ar" ? "الصفحة غير موجودة" : lang === "en" ? "Page not found" : "Page introuvable",
-          body: lang === "ar" ? "الصفحة المطلوبة غير موجودة." : lang === "en" ? "The requested page does not exist." : "La page demandée n’existe pas.",
-          back: lang === "ar" ? "العودة إلى المتجر" : lang === "en" ? "Back to the shop" : "Retour à la boutique",
+          title:
+            lang === "ar"
+              ? "الصفحة غير موجودة | Hanadi Store"
+              : lang === "en"
+                ? "Page not found | Hanadi Store"
+                : "Page introuvable | Hanadi Store",
+          heading:
+            lang === "ar"
+              ? "الصفحة غير موجودة"
+              : lang === "en"
+                ? "Page not found"
+                : "Page introuvable",
+          body:
+            lang === "ar"
+              ? "الصفحة المطلوبة غير موجودة."
+              : lang === "en"
+                ? "The requested page does not exist."
+                : "La page demandée n’existe pas.",
+          back:
+            lang === "ar"
+              ? "العودة إلى المتجر"
+              : lang === "en"
+                ? "Back to the shop"
+                : "Retour à la boutique",
         };
   return new NextResponse(
     `<!doctype html><html lang="${lang}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex"><title>${copy.title}</title></head><body><main><h1>${copy.heading}</h1><p>${copy.body}</p><a href="/shop">${copy.back}</a></main></body></html>`,

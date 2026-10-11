@@ -2,6 +2,15 @@ import type { FrDictionary } from "./fr";
 
 const ar: FrDictionary = {
   locale: "ar",
+  siteMetadata: {
+    titleSuffix: "مجوهرات وحقائب وإكسسوارات عصرية | الدفع عند الاستلام",
+    description: "مجوهرات وحقائب وإكسسوارات عصرية مع خدمة التوصيل إلى جميع أنحاء الجزائر والدفع عند الاستلام.",
+  },
+  maintenance: {
+    heading: "قريبًا",
+    title: "{name} — قريبًا",
+    body: "نعمل على إدخال بعض التحديثات، ونعود إليك قريبًا.",
+  },
   orderErrors: {
     validationReview: "يرجى مراجعة الحقول المحددة والمحاولة مرة أخرى.",
     codDisabled: "الدفع عند الاستلام غير متاح مؤقتًا.",
@@ -119,7 +128,7 @@ const ar: FrDictionary = {
     searchLabel: "البحث في المتجر",
     searchPlaceholder: "قلادة، حقيبة، أقراط…",
     searchProducts: "البحث عن المنتجات",
-    ok: "OK",
+    ok: "حسنًا",
     popular: "شائع:",
     brandHome: "{name} الرئيسية",
     mainNav: "التنقل الرئيسي",

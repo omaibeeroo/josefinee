@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { Fragment } from "react";
 import { getSettings } from "@/lib/settings";
+import { resolveSiteMetadata } from "@/lib/i18n/metadata";
 import {
   getBestSellers,
   getFeaturedProducts,
@@ -25,9 +26,10 @@ import { ProductCarousel } from "@/components/storefront/product";
 // Display data underneath still uses short-lived unstable_cache entries.
 
 export async function generateMetadata(): Promise<Metadata> {
-  const settings = await getSettings();
+  const [settings, dictionary] = await Promise.all([getSettings(), getDictionary()]);
+  const siteMetadata = resolveSiteMetadata(settings.seo, dictionary.siteMetadata);
   return {
-    description: settings.seo.defaultDescription,
+    description: siteMetadata.description,
   };
 }
 
