@@ -2629,3 +2629,12 @@ html[data-theme="light"] {
     animation: none !important;
   }
 }
+
+/* Arabic interface text must keep its natural joining. The editorial tracking
+   used for Latin navigation and pill buttons visually splits Arabic words. */
+html[lang="ar"] :is(a, button, [role="button"]),
+html[lang="ar"] :is(a, button, [role="button"]) :not(.font-display) {
+  font-family: var(--font-sans-ar), sans-serif;
+  font-kerning: normal;
+  letter-spacing: normal;
+}
