@@ -2638,3 +2638,10 @@ html[lang="ar"] :is(a, button, [role="button"]) :not(.font-display) {
   font-kerning: normal;
   letter-spacing: normal;
 }
+
+/* Keep Arabic glyphs joined across the whole reading flow. Latin editorial
+   tracking utilities can leak onto badges, eyebrows, benefit labels, and footer headings. */
+html[lang="ar"] body,
+html[lang="ar"] body * {
+  letter-spacing: normal;
+}
