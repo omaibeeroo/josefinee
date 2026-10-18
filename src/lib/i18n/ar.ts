@@ -252,7 +252,6 @@ const ar: FrDictionary = {
     noReviews: "لا توجد تقييمات بعد — شاركي تجربتك الأولى.",
     verified: "عملية شراء موثقة",
     alsoLike: "قد يعجبك أيضًا",
-    speakers: "يتحدثون عنه",
     giveReview: "قيّمي المنتج",
     yourRating: "تقييمك *",
     rating: "التقييم",

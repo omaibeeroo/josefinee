@@ -250,7 +250,6 @@ const fr = {
     noReviews: "Aucun avis pour le moment — partagez la première votre expérience.",
     verified: "Achat vérifié",
     alsoLike: "Vous aimerez aussi",
-    speakers: "Ils en parlent",
     giveReview: "Donnez votre avis",
     yourRating: "Votre note *",
     rating: "Note",

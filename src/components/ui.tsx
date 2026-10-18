@@ -536,6 +536,27 @@ export function Stars({ value, count }: { value: number; count?: number }) {
   );
 }
 
+/* ------------------------------------------------------------ SingleStar */
+
+/**
+ * Compact rating readout: one filled star + the numeric value (e.g. ★ 4.8).
+ * Rounds to one decimal with plain arithmetic (no Intl) so server and client
+ * render byte-identical output.
+ */
+export function SingleStar({ value }: { value: number }) {
+  const { t } = useLocale();
+  const rounded = Math.round(value * 10) / 10;
+  return (
+    <span
+      className="inline-flex items-center gap-1"
+      aria-label={t.common.ratedOutOf5.replace("{value}", String(rounded))}
+    >
+      <Star size={13} className="fill-gold text-gold" aria-hidden="true" />
+      <span className="text-sm font-medium tabular-nums">{String(rounded)}</span>
+    </span>
+  );
+}
+
 /* -------------------------------------------------------------------- Price */
 
 export function Price({

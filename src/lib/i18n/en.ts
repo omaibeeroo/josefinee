@@ -252,7 +252,6 @@ const en: FrDictionary = {
     noReviews: "No reviews yet — be the first to share your thoughts.",
     verified: "Verified purchase",
     alsoLike: "You may also like",
-    speakers: "What they say",
     giveReview: "Write a review",
     yourRating: "Your rating *",
     rating: "Rating",
