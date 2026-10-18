@@ -468,9 +468,7 @@ export function Accordion({
   return (
     <div
       data-tone={light ? "light" : undefined}
-      className={cn(
-        light ? "overlay-text" : "divide-y border-y divide-line hairline",
-      )}
+      className={cn(light ? "overlay-text" : "divide-y border-y divide-line hairline")}
     >
       {items.map((item, index) => {
         const isOpen = open === index;
@@ -570,7 +568,12 @@ export function Price({
 }) {
   const { locale } = useLocale();
   return (
-    <p className={cn("flex items-baseline gap-2 tabular-nums", large ? "text-2xl" : "text-[0.9375rem]")}>
+    <p
+      className={cn(
+        "flex items-baseline gap-2 tabular-nums",
+        large ? "text-2xl" : "text-[0.9375rem]",
+      )}
+    >
       <span className={cn("font-medium", compareAt && compareAt > price && "text-sale")}>
         {formatDA(price, locale)}
       </span>

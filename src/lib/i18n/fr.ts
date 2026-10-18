@@ -2,7 +2,8 @@ const fr = {
   locale: "fr",
   siteMetadata: {
     titleSuffix: "Bijoux et accessoires modernes | Paiement à la livraison",
-    description: "Bijoux, sacs et accessoires modernes livrés partout en Algérie. Paiement à la livraison.",
+    description:
+      "Bijoux, sacs et accessoires modernes livrés partout en Algérie. Paiement à la livraison.",
   },
   maintenance: {
     heading: "De retour bientôt",
@@ -19,8 +20,10 @@ const fr = {
     invalidCommune: "Veuillez choisir une commune valide pour cette wilaya.",
     emailRequired: "Une adresse e-mail est requise pour créer un compte.",
     weakPasswordSignup: "Choisissez un mot de passe plus fort (10+ caractères, mixte, chiffre).",
-    duplicateOrder: "Nous avons déjà reçu une commande similaire de ce numéro il y a un instant. Cochez « commander quand même » pour la repasser.",
-    checkoutInProgress: "Votre commande est en cours de traitement. Veuillez patienter un instant et réessayer.",
+    duplicateOrder:
+      "Nous avons déjà reçu une commande similaire de ce numéro il y a un instant. Cochez « commander quand même » pour la repasser.",
+    checkoutInProgress:
+      "Votre commande est en cours de traitement. Veuillez patienter un instant et réessayer.",
   },
   actionErrors: {
     reviewFields: "Veuillez vérifier les champs surlignés.",
@@ -46,7 +49,8 @@ const fr = {
     couponLimit: "Vous avez déjà utilisé ce code promo.",
     couponRegion: "Ce code promo n’est pas disponible dans votre région.",
     couponNoApply: "Ce code promo ne s’applique pas à votre panier.",
-    deliveryGone: "Ce mode de livraison n’est plus disponible pour votre région. Choisissez-en un autre.",
+    deliveryGone:
+      "Ce mode de livraison n’est plus disponible pour votre région. Choisissez-en un autre.",
   },
   actions: {
     invalidEmail: "Veuillez saisir une adresse e-mail valide.",
@@ -154,7 +158,8 @@ const fr = {
   home: {
     featuredTitle: "La sélection Hanadi Store",
     signatureEyebrow: "La pièce signature",
-    spotlightText: "Une pièce choisie pour accompagner les moments qui comptent, avec la douceur et la présence propres à Hanadi Store.",
+    spotlightText:
+      "Une pièce choisie pour accompagner les moments qui comptent, avec la douceur et la présence propres à Hanadi Store.",
     selectionLabel: "sélection",
     wardobeNote: "La garde-robe Hanadi Store",
     shopByCategory: "Acheter par catégorie",
@@ -191,8 +196,10 @@ const fr = {
     emptyErrorEyebrow: "Service momentanément indisponible",
     emptyTitle: "Nos nouveautés arrivent bientôt",
     emptyErrorTitle: "Impossible de charger la sélection",
-    emptyHint: "La boutique prépare actuellement sa première sélection. Inscrivez-vous pour être informée des nouveautés.",
-    emptyErrorHint: "Un problème temporaire empêche l’affichage des produits. Veuillez réessayer dans quelques instants.",
+    emptyHint:
+      "La boutique prépare actuellement sa première sélection. Inscrivez-vous pour être informée des nouveautés.",
+    emptyErrorHint:
+      "Un problème temporaire empêche l’affichage des produits. Veuillez réessayer dans quelques instants.",
     heroFeatured: "En vedette",
   },
   catalog: {
@@ -227,9 +234,9 @@ const fr = {
     fullDetails: "Détails complets",
     openGallery: "Ouvrir la galerie en plein écran",
     viewImage: "Voir l’image {n}",
-      prevImage: "Image précédente",
-      nextImage: "Image suivante",
-      imageCounter: "Image {current} sur {total}",
+    prevImage: "Image précédente",
+    nextImage: "Image suivante",
+    imageCounter: "Image {current} sur {total}",
     optionOutOfStock: "Cette option est en rupture de stock.",
     add: "Ajouter",
     soldOut: "Épuisé",
@@ -308,10 +315,12 @@ const fr = {
     subtitle: "Réglez en espèces à la réception de votre commande. Aucune carte nécessaire.",
     emptyTitle: "Votre panier est vide",
     emptyHint: "Ajoutez des articles avant de finaliser votre commande.",
-    draftRestored: "Vos choix de livraison et votre code promo ont été restaurés dans cet onglet. Vos coordonnées et votre adresse ne sont jamais enregistrées.",
+    draftRestored:
+      "Vos choix de livraison et votre code promo ont été restaurés dans cet onglet. Vos coordonnées et votre adresse ne sont jamais enregistrées.",
     clearDraft: "Effacer les choix enregistrés",
     dupTitle: "Nous avons déjà reçu une commande similaire avec ce numéro.",
-    dupBody: "La commande {order} vient d’être passée. Continuez uniquement si vous souhaitez vraiment commander deux fois.",
+    dupBody:
+      "La commande {order} vient d’être passée. Continuez uniquement si vous souhaitez vraiment commander deux fois.",
     dupConfirm: "Oui, passer une nouvelle commande",
     stepContact: "1 · Vos coordonnées",
     phoneHint: "0550 12 34 56 — nous vous appellerons pour confirmer",
@@ -347,9 +356,12 @@ const fr = {
     totalToPay: "Total à payer",
     freeShipHint: "à votre panier pour bénéficier de la livraison offerte.",
     freeShipPrefix: "Ajoutez",
-    noRates: "Les options de livraison ne sont pas disponibles dans cette wilaya. Choisissez-en une autre ou contactez-nous.",
-    ratesFailed: "Impossible de charger les options de livraison. Réessayez ou choisissez une autre wilaya.",
-    couponRemembered: "Code promo enregistré — appliquez-le à nouveau pour vérifier sa disponibilité.",
+    noRates:
+      "Les options de livraison ne sont pas disponibles dans cette wilaya. Choisissez-en une autre ou contactez-nous.",
+    ratesFailed:
+      "Impossible de charger les options de livraison. Réessayez ou choisissez une autre wilaya.",
+    couponRemembered:
+      "Code promo enregistré — appliquez-le à nouveau pour vérifier sa disponibilité.",
     couponApplied: "Code {code} appliqué — vous économisez {discount}.",
     couponCheckFailed: "Impossible de vérifier ce code. Réessayez.",
     submitConfirmFailed: "La réponse n’a pas pu être confirmée. Veuillez réessayer.",
@@ -366,7 +378,8 @@ const fr = {
   },
   shop: {
     title: "Toute la boutique",
-    description: "Parcourez toute la collection — bijoux, sacs et accessoires livrés partout en Algérie.",
+    description:
+      "Parcourez toute la collection — bijoux, sacs et accessoires livrés partout en Algérie.",
     eyebrow: "La sélection",
     emptyTitle: "Aucun article trouvé",
     emptyHint: "Essayez de retirer certains filtres pour voir plus de pièces.",
@@ -419,7 +432,8 @@ const fr = {
     viewSaved: "Voir mes favoris",
     savedEmpty: "Rien de sauvegardé pour l’instant",
     savedHint: "Touchez le cœur sur un article pour le garder ici.",
-    savedHintSync: "Touchez le cœur sur un article pour le garder ici — connectez-vous pour le synchroniser.",
+    savedHintSync:
+      "Touchez le cœur sur un article pour le garder ici — connectez-vous pour le synchroniser.",
     addAddress: "Ajouter une adresse",
     noAddress: "Aucune adresse enregistrée. Ajoutez-en une pour commander plus vite.",
     editAddress: "Modifier l’adresse",
@@ -458,7 +472,8 @@ const fr = {
     whatsappMsg: "Bonjour, j’ai une question au sujet de ma commande {order}.",
     confirmed: "Commande confirmée ♡",
     thanks: "Merci, {name}.",
-    prepareNote: "Nous préparerons votre commande avec soin et appellerons le {phone} avant la livraison.",
+    prepareNote:
+      "Nous préparerons votre commande avec soin et appellerons le {phone} avant la livraison.",
     order: "Commande",
     progress: "Suivi de commande",
     current: "en cours",
@@ -475,10 +490,12 @@ const fr = {
   },
   contact: {
     title: "Nous contacter",
-    description: "Contactez notre service client pour toute question sur une commande ou une livraison.",
+    description:
+      "Contactez notre service client pour toute question sur une commande ou une livraison.",
     eyebrow: "Service client",
     heading: "Contactez-nous",
-    intro: "Une question sur une commande, une pièce ou une livraison ? Écrivez-nous, nous vous répondons sous un jour ouvré.",
+    intro:
+      "Une question sur une commande, une pièce ou une livraison ? Écrivez-nous, nous vous répondons sous un jour ouvré.",
     talk: "Parlons-nous",
     talkHint: "Commande, produit ou livraison : dites-nous tout, nous nous occupons du reste.",
     email: "E-mail",
@@ -493,7 +510,8 @@ const fr = {
   },
   faq: {
     title: "Questions fréquentes",
-    description: "Commande, livraison, paiement à la livraison et retours — réponses aux questions fréquentes.",
+    description:
+      "Commande, livraison, paiement à la livraison et retours — réponses aux questions fréquentes.",
     eyebrow: "Aide",
     empty: "Aucune question pour l’instant — contactez-nous directement.",
   },
@@ -546,7 +564,8 @@ const fr = {
   errors: {
     title: "Un problème est survenu",
     heading: "Veuillez réessayer",
-    message: "Une erreur inattendue s’est produite. Votre panier est en sécurité — rechargez cette page.",
+    message:
+      "Une erreur inattendue s’est produite. Votre panier est en sécurité — rechargez cette page.",
     tryAgain: "Réessayer",
     notFoundTitle: "Cette page n’existe pas",
     notFoundHint: "La page que vous cherchez a peut-être été déplacée ou n’existe plus.",
@@ -741,7 +760,8 @@ const fr = {
     defaultImage: "Image sociale par défaut",
     whatsapp: "Numéro WhatsApp",
     gaHint: "Les pixels ne chargent qu’après consentement cookies",
-    notifHint: "Les fournisseurs se configurent via les variables d’environnement. Ces interrupteurs contrôlent l’usage de chaque canal.",
+    notifHint:
+      "Les fournisseurs se configurent via les variables d’environnement. Ces interrupteurs contrôlent l’usage de chaque canal.",
     orderEmails: "E-mails de commande",
     orderSms: "SMS de commande",
     orderWhatsapp: "Messages WhatsApp de commande",
@@ -852,7 +872,8 @@ const fr = {
     productsCol: "Produits",
     activeVisible: "Actif (visible dans la navigation)",
     saveCategory: "Enregistrer la catégorie",
-    deleteCategoryConfirm: "Supprimer cette catégorie ? Seules les catégories vides peuvent être supprimées.",
+    deleteCategoryConfirm:
+      "Supprimer cette catégorie ? Seules les catégories vides peuvent être supprimées.",
     newCollection: "Nouvelle collection",
     editCollection: "Modifier la collection",
     saveCollection: "Enregistrer la collection",
@@ -956,11 +977,13 @@ const fr = {
     setup2fa: "Configurer la 2FA",
     verifying: "Vérification…",
     verifyEnable: "Vérifier et activer",
-    scanHow: "Scannez ce code avec votre application d’authentification (Google Authenticator, 1Password, …), puis saisissez le code à 6 chiffres.",
+    scanHow:
+      "Scannez ce code avec votre application d’authentification (Google Authenticator, 1Password, …), puis saisissez le code à 6 chiffres.",
     qrAlt: "QR code d’authentification",
     manualKey: "Clé manuelle :",
     code6: "Code à 6 chiffres",
-    disableConfirm: "Désactiver l’authentification à deux facteurs ? Cela affaiblit la sécurité de votre compte.",
+    disableConfirm:
+      "Désactiver l’authentification à deux facteurs ? Cela affaiblit la sécurité de votre compte.",
     enabledNow: "L’authentification à deux facteurs est activée.",
   },
   adminRow: {
@@ -974,7 +997,8 @@ const fr = {
     edit: "Modifier",
     unpublish: "Dépublier",
     publish: "Publier",
-    archiveConfirm: "Archiver ou supprimer ce produit ? Les produits avec commandes sont archivés, jamais supprimés.",
+    archiveConfirm:
+      "Archiver ou supprimer ce produit ? Les produits avec commandes sont archivés, jamais supprimés.",
   },
   adminMisc: {
     nothingHere: "Rien ici.",
@@ -1130,7 +1154,8 @@ const fr = {
     noPromos: "Aucune promotion pour l’instant.",
     editPromo: "Modifier",
     savePromo: "Enregistrer la promotion",
-    autoHint: "Les remises automatiques n’ont pas besoin de code — la meilleure promotion applicable s’applique à la commande et ne se cumule jamais.",
+    autoHint:
+      "Les remises automatiques n’ont pas besoin de code — la meilleure promotion applicable s’applique à la commande et ne se cumule jamais.",
     nameHint: "Affiché aux clientes à la commande, ex. « Soldes Aïd »",
     percentRange90: "Pourcent (1–90)",
     allCollections: "Toutes les collections",
@@ -1240,21 +1265,27 @@ const fr = {
   adminPages: {
     dashboardDesc: "Seules les commandes livrées comptent dans le chiffre d’affaires.",
     auditTitle: "Journal d’audit",
-    auditDesc: "Registre immuable des actions admin importantes. Les entrées ne sont ni modifiées ni supprimées.",
+    auditDesc:
+      "Registre immuable des actions admin importantes. Les entrées ne sont ni modifiées ni supprimées.",
     categoriesTitle: "Catégories",
-    categoriesDesc: "Navigation et regroupement des produits. Suppression possible uniquement si vide.",
+    categoriesDesc:
+      "Navigation et regroupement des produits. Suppression possible uniquement si vide.",
     collectionsTitle: "Collections",
-    collectionsDesc: "Sélections manuelles et automatiques (Nouveautés, Meilleures ventes, Promotions).",
+    collectionsDesc:
+      "Sélections manuelles et automatiques (Nouveautés, Meilleures ventes, Promotions).",
     contentTitle: "Contenu",
     contentDesc: "Pages légales, FAQ et bandeau d’annonce.",
     couponsTitle: "Coupons",
     couponsDesc: "Les codes sont validés côté serveur — le client ne décide jamais d’une remise.",
     customersTitle: "Clientes",
-    customersDesc: "{total} clientes. Les données personnelles ne sont visibles que par le personnel autorisé.",
-    deliveryDesc: "Les tarifs par wilaya alimentent la commande. Cliquez un prix pour le modifier. Import/export CSV pris en charge.",
+    customersDesc:
+      "{total} clientes. Les données personnelles ne sont visibles que par le personnel autorisé.",
+    deliveryDesc:
+      "Les tarifs par wilaya alimentent la commande. Cliquez un prix pour le modifier. Import/export CSV pris en charge.",
     deliveryTitle: "Livraison",
     inventoryTitle: "Stock",
-    inventoryDesc: "{total} variantes suivies. Chaque mouvement de stock est journalisé avec un motif.",
+    inventoryDesc:
+      "{total} variantes suivies. Chaque mouvement de stock est journalisé avec un motif.",
     messagesDesc: "Messages du formulaire de contact, avec protection antispam.",
     newsletterDesc: "{total} abonnées actives. Les consentements sont horodatés.",
     ordersDesc: "{total} commandes correspondent à ces filtres.",
@@ -1262,14 +1293,17 @@ const fr = {
     productsNewTitle: "Nouveau produit",
     productsNewDesc: "Créez un produit. Il reste en brouillon jusqu’à publication.",
     productEdit: "Modifier —",
-    promotionsDesc: "Promotions automatiques limitées dans le temps. Le serveur décide ce qui est en ligne.",
+    promotionsDesc:
+      "Promotions automatiques limitées dans le temps. Le serveur décide ce qui est en ligne.",
     reviewsDesc: "Tous les avis exigent une modération avant parution sur la boutique.",
     securityTitle: "Ma sécurité",
     securityDesc: "Protégez votre compte admin avec un mot de passe fort et la 2FA.",
     settingsTitle: "Réglages",
-    settingsDesc: "Marque, boutique, commerce et intégrations. Les changements s’appliquent aussitôt.",
+    settingsDesc:
+      "Marque, boutique, commerce et intégrations. Les changements s’appliquent aussitôt.",
     staffTitle: "Équipe",
-    staffDesc: "Accès par rôles. Les nouveaux comptes doivent changer leur mot de passe à la première connexion.",
+    staffDesc:
+      "Accès par rôles. Les nouveaux comptes doivent changer leur mot de passe à la première connexion.",
     messagesTitle: "Messages",
     newsletterTitle: "Newsletter",
     promotionsTitle: "Promotions",

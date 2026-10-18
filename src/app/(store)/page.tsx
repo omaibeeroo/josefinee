@@ -39,60 +39,55 @@ async function getHomeData() {
   // featured-collection lookup waits on settings below.
   const settings = await getSettings();
   const display = settings.homepage.display;
-  const [
-    featuredResult,
-    newInResult,
-    bestSellersResult,
-    categoriesResult,
-    deliveredResult,
-  ] = await Promise.all([
-    getFeaturedProducts(display.featuredCount).then(
-      (value) => ({ status: "fulfilled" as const, value }),
-      () => ({ status: "rejected" as const, value: [] }),
-    ),
-    getNewInProducts(display.newInCount).then(
-      (value) => ({ status: "fulfilled" as const, value }),
-      () => ({ status: "rejected" as const, value: [] }),
-    ),
-    getBestSellers(display.bestSellersCount).then(
-      (value) => ({ status: "fulfilled" as const, value }),
-      () => ({ status: "rejected" as const, value: [] }),
-    ),
-    prisma.category
-      .findMany({
-        where: { isActive: true, parentId: null },
-        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-        select: {
-          name: true,
-          slug: true,
-          image: true,
-          _count: { select: { products: { where: { status: "ACTIVE" } } } },
-        },
-        take: display.categoryCount,
-      })
-      .then(
+  const [featuredResult, newInResult, bestSellersResult, categoriesResult, deliveredResult] =
+    await Promise.all([
+      getFeaturedProducts(display.featuredCount).then(
+        (value) => ({ status: "fulfilled" as const, value }),
+        () => ({ status: "rejected" as const, value: [] }),
+      ),
+      getNewInProducts(display.newInCount).then(
+        (value) => ({ status: "fulfilled" as const, value }),
+        () => ({ status: "rejected" as const, value: [] }),
+      ),
+      getBestSellers(display.bestSellersCount).then(
+        (value) => ({ status: "fulfilled" as const, value }),
+        () => ({ status: "rejected" as const, value: [] }),
+      ),
+      prisma.category
+        .findMany({
+          where: { isActive: true, parentId: null },
+          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+          select: {
+            name: true,
+            slug: true,
+            image: true,
+            _count: { select: { products: { where: { status: "ACTIVE" } } } },
+          },
+          take: display.categoryCount,
+        })
+        .then(
+          (value) => ({ status: "fulfilled" as const, value }),
+          (error: unknown) => {
+            console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
+            return {
+              status: "rejected" as const,
+              value: [] as Array<{
+                name: string;
+                slug: string;
+                image: string | null;
+                _count: { products: number };
+              }>,
+            };
+          },
+        ),
+      prisma.order.count({ where: { status: "DELIVERED" } }).then(
         (value) => ({ status: "fulfilled" as const, value }),
         (error: unknown) => {
           console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
-          return {
-            status: "rejected" as const,
-            value: [] as Array<{
-              name: string;
-              slug: string;
-              image: string | null;
-              _count: { products: number };
-            }>,
-          };
+          return { status: "rejected" as const, value: 0 };
         },
       ),
-    prisma.order.count({ where: { status: "DELIVERED" } }).then(
-      (value) => ({ status: "fulfilled" as const, value }),
-      (error: unknown) => {
-        console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
-        return { status: "rejected" as const, value: 0 };
-      },
-    ),
-  ]);
+    ]);
   const featured = featuredResult.value;
   const newIn = newInResult.value;
   const bestSellers = bestSellersResult.value;

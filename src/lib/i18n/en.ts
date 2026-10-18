@@ -4,7 +4,8 @@ const en: FrDictionary = {
   locale: "en",
   siteMetadata: {
     titleSuffix: "Modern jewellery, bags & accessories | Cash on delivery",
-    description: "Modern jewellery, bags and accessories delivered across Algeria. Pay on delivery.",
+    description:
+      "Modern jewellery, bags and accessories delivered across Algeria. Pay on delivery.",
   },
   maintenance: {
     heading: "Coming soon",
@@ -21,7 +22,8 @@ const en: FrDictionary = {
     invalidCommune: "Please select a valid commune for this wilaya.",
     emailRequired: "An email address is required to create an account.",
     weakPasswordSignup: "Choose a stronger password (10+ chars, mixed case, number).",
-    duplicateOrder: "We already received a similar order from this number a moment ago. Tick “order anyway” to place it again.",
+    duplicateOrder:
+      "We already received a similar order from this number a moment ago. Tick “order anyway” to place it again.",
     checkoutInProgress: "Your order is still being processed. Please wait a moment and try again.",
   },
   actionErrors: {
@@ -48,7 +50,8 @@ const en: FrDictionary = {
     couponLimit: "You have already used this promo code.",
     couponRegion: "This promo code is not available in your region.",
     couponNoApply: "This promo code does not apply to your bag.",
-    deliveryGone: "This delivery method is no longer available for your region. Please choose another.",
+    deliveryGone:
+      "This delivery method is no longer available for your region. Please choose another.",
   },
   actions: {
     invalidEmail: "Please enter a valid email address.",
@@ -156,7 +159,8 @@ const en: FrDictionary = {
   home: {
     featuredTitle: "The Hanadi Store selection",
     signatureEyebrow: "The signature piece",
-    spotlightText: "A piece chosen to accompany the moments that matter, with the softness and presence of Hanadi Store.",
+    spotlightText:
+      "A piece chosen to accompany the moments that matter, with the softness and presence of Hanadi Store.",
     selectionLabel: "selection",
     wardobeNote: "The Hanadi Store wardrobe",
     shopByCategory: "Shop by category",
@@ -194,7 +198,8 @@ const en: FrDictionary = {
     emptyTitle: "Our new arrivals are coming soon",
     emptyErrorTitle: "Could not load the selection",
     emptyHint: "The boutique is preparing its first selection. Sign up to hear about new arrivals.",
-    emptyErrorHint: "A temporary issue is preventing products from showing. Please try again in a moment.",
+    emptyErrorHint:
+      "A temporary issue is preventing products from showing. Please try again in a moment.",
     heroFeatured: "Featured",
   },
   catalog: {
@@ -310,7 +315,8 @@ const en: FrDictionary = {
     subtitle: "Pay in cash when your order arrives. No card needed.",
     emptyTitle: "Your bag is empty",
     emptyHint: "Add items before checking out.",
-    draftRestored: "Your delivery choices and promo code were restored in this tab. Your contact details and address are never stored.",
+    draftRestored:
+      "Your delivery choices and promo code were restored in this tab. Your contact details and address are never stored.",
     clearDraft: "Clear saved choices",
     dupTitle: "We already received a similar order with this number.",
     dupBody: "Order {order} was just placed. Continue only if you really want to order twice.",
@@ -368,7 +374,8 @@ const en: FrDictionary = {
   },
   shop: {
     title: "Shop all",
-    description: "Browse the full collection — jewelry, bags and accessories delivered across Algeria.",
+    description:
+      "Browse the full collection — jewelry, bags and accessories delivered across Algeria.",
     eyebrow: "The edit",
     emptyTitle: "No products found",
     emptyHint: "Try removing some filters to see more pieces.",
@@ -421,7 +428,8 @@ const en: FrDictionary = {
     viewSaved: "View saved",
     savedEmpty: "Nothing saved yet",
     savedHint: "Tap the heart on any product to keep it here.",
-    savedHintSync: "Tap the heart on any product to keep it here — sign in to sync it across devices.",
+    savedHintSync:
+      "Tap the heart on any product to keep it here — sign in to sync it across devices.",
     addAddress: "Add address",
     noAddress: "No saved addresses yet. Add one to check out faster.",
     editAddress: "Edit address",
@@ -480,7 +488,8 @@ const en: FrDictionary = {
     description: "Contact our customer support team.",
     eyebrow: "Support",
     heading: "Contact us",
-    intro: "A question about an order, a piece or delivery? Write to us — we reply within one business day.",
+    intro:
+      "A question about an order, a piece or delivery? Write to us — we reply within one business day.",
     talk: "Talk to us",
     talkHint: "Order, product or delivery: tell us everything, we handle the rest.",
     email: "Email",
@@ -743,7 +752,8 @@ const en: FrDictionary = {
     defaultImage: "Default social image",
     whatsapp: "WhatsApp number",
     gaHint: "Pixels load only after cookie consent",
-    notifHint: "Providers are configured through environment variables. These toggles control whether each channel is used.",
+    notifHint:
+      "Providers are configured through environment variables. These toggles control whether each channel is used.",
     orderEmails: "Order emails",
     orderSms: "Order SMS",
     orderWhatsapp: "Order WhatsApp messages",
@@ -958,7 +968,8 @@ const en: FrDictionary = {
     setup2fa: "Set up 2FA",
     verifying: "Verifying…",
     verifyEnable: "Verify & enable",
-    scanHow: "Scan this code with your authenticator app (Google Authenticator, 1Password, …), then enter the 6-digit code.",
+    scanHow:
+      "Scan this code with your authenticator app (Google Authenticator, 1Password, …), then enter the 6-digit code.",
     qrAlt: "Authenticator QR code",
     manualKey: "Manual key:",
     code6: "6-digit code",
@@ -976,7 +987,8 @@ const en: FrDictionary = {
     edit: "Edit",
     unpublish: "Unpublish",
     publish: "Publish",
-    archiveConfirm: "Archive or delete this product? Products with orders are archived, never hard-deleted.",
+    archiveConfirm:
+      "Archive or delete this product? Products with orders are archived, never hard-deleted.",
   },
   adminMisc: {
     nothingHere: "Nothing here.",
@@ -1132,7 +1144,8 @@ const en: FrDictionary = {
     noPromos: "No promotions yet.",
     editPromo: "Edit",
     savePromo: "Save promotion",
-    autoHint: "Automatic discounts need no code — the best applicable promotion is applied at checkout and never stacks.",
+    autoHint:
+      "Automatic discounts need no code — the best applicable promotion is applied at checkout and never stacks.",
     nameHint: "Shown to customers at checkout, e.g. “Eid Sale”",
     percentRange90: "Percent (1–90)",
     allCollections: "All collections",
@@ -1250,10 +1263,12 @@ const en: FrDictionary = {
     contentTitle: "Content",
     contentDesc: "Legal pages, FAQ and the announcement bar.",
     couponsTitle: "Coupons",
-    couponsDesc: "Discount codes are validated server-side — the client can never dictate a discount.",
+    couponsDesc:
+      "Discount codes are validated server-side — the client can never dictate a discount.",
     customersTitle: "Customers",
     customersDesc: "{total} customers. Personal data is only visible to authorized staff.",
-    deliveryDesc: "Per-wilaya rates power the checkout. Click any price to edit it. CSV import/export supported.",
+    deliveryDesc:
+      "Per-wilaya rates power the checkout. Click any price to edit it. CSV import/export supported.",
     deliveryTitle: "Delivery",
     inventoryTitle: "Inventory",
     inventoryDesc: "{total} variants tracked. Stock changes are logged with a reason.",
