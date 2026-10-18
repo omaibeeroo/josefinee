@@ -48,6 +48,7 @@ const en: FrDictionary = {
     couponUsedUp: "This promo code has reached its limit.",
     couponFirstOrder: "This promo code is for first orders only.",
     couponLimit: "You have already used this promo code.",
+    couponMinOrder: "This promo code requires a minimum order.",
     couponRegion: "This promo code is not available in your region.",
     couponNoApply: "This promo code does not apply to your bag.",
     deliveryGone:

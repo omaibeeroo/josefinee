@@ -41,7 +41,8 @@ export async function getDeliveryFloorAction() {
 
 export async function addToCartAction(variantId: string, quantity = 1) {
   const tErr = await getActionT();
-  const parsed = z.object({ variantId: zId, quantity: z.number().int().min(1).max(20) })
+  const parsed = z
+    .object({ variantId: zId, quantity: z.number().int().min(1).max(20) })
     .safeParse({ variantId, quantity });
   if (!parsed.success) return { ok: false as const, error: tErr.validItem };
   try {
@@ -64,7 +65,8 @@ export async function addToCartAction(variantId: string, quantity = 1) {
 
 export async function updateCartItemAction(itemId: string, quantity: number) {
   const tErr = await getActionT();
-  const parsed = z.object({ itemId: zId, quantity: z.number().int().min(0).max(20) })
+  const parsed = z
+    .object({ itemId: zId, quantity: z.number().int().min(0).max(20) })
     .safeParse({ itemId, quantity });
   if (!parsed.success) return { ok: false as const, error: tErr.validQuantity };
   try {
@@ -139,12 +141,20 @@ export async function previewCouponAction(code: string) {
     // Mirror checkout precedence: automatic promotion first, coupon on the remainder.
     const promotion = await resolveBestPromotion(lines);
     const effectiveSubtotal = Math.max(0, cart.subtotal - (promotion?.discount ?? 0));
+    // Coupon eligibility must see the same post-promotion line totals as
+    // checkout, or the preview overstates the discount.
+    const effectiveLines = promotion
+      ? lines.map((line, index) => ({
+          ...line,
+          lineTotal: promotion.lineTotalsAfterPromotion[index] ?? line.unitPrice * line.quantity,
+        }))
+      : lines;
 
     const customer = await getCustomerSession().catch(() => null);
     const first = await isFirstOrder({ phone: "", customerId: customer?.customer.id ?? null });
     const result = await validateCoupon({
       code: normalized,
-      lines,
+      lines: effectiveLines,
       subtotal: effectiveSubtotal,
       wilayaId: "",
       phone: "",
@@ -157,4 +167,3 @@ export async function previewCouponAction(code: string) {
     return { ok: false as const, error: localizeAppError(error, tErr) };
   }
 }
-

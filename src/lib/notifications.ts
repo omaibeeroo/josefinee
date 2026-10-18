@@ -154,37 +154,34 @@ const whatsappProvider: NotificationProvider = {
     const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
     const token = process.env.WHATSAPP_API_KEY;
     if (provider === "meta" && phoneNumberId && token) {
-      const response = await fetch(
-        `https://graph.facebook.com/v20.0/${phoneNumberId}/messages`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-            ...(message.idempotencyKey ? { "X-Idempotency-Key": message.idempotencyKey } : {}),
-          },
-          body: JSON.stringify({
-            messaging_product: "whatsapp",
-            to: toInternationalPhone(message.to, false),
-            ...(process.env.WHATSAPP_TEMPLATE_NAME
-              ? {
-                  type: "template",
-                  template: {
-                    name: process.env.WHATSAPP_TEMPLATE_NAME,
-                    language: { code: process.env.WHATSAPP_TEMPLATE_LANGUAGE ?? "fr" },
-                    components: [
-                      {
-                        type: "body",
-                        parameters: [{ type: "text", text: message.body }],
-                      },
-                    ],
-                  },
-                }
-              : { type: "text", text: { body: message.body } }),
-          }),
-          signal: providerSignal(),
+      const response = await fetch(`https://graph.facebook.com/v20.0/${phoneNumberId}/messages`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+          ...(message.idempotencyKey ? { "X-Idempotency-Key": message.idempotencyKey } : {}),
         },
-      );
+        body: JSON.stringify({
+          messaging_product: "whatsapp",
+          to: toInternationalPhone(message.to, false),
+          ...(process.env.WHATSAPP_TEMPLATE_NAME
+            ? {
+                type: "template",
+                template: {
+                  name: process.env.WHATSAPP_TEMPLATE_NAME,
+                  language: { code: process.env.WHATSAPP_TEMPLATE_LANGUAGE ?? "fr" },
+                  components: [
+                    {
+                      type: "body",
+                      parameters: [{ type: "text", text: message.body }],
+                    },
+                  ],
+                },
+              }
+            : { type: "text", text: { body: message.body } }),
+        }),
+        signal: providerSignal(),
+      });
       if (!response.ok) throw new Error(`WhatsApp provider failed with ${response.status}`);
       return;
     }
@@ -248,7 +245,8 @@ function notifyStrings(locale: NotificationLocale | undefined): NotifyStrings {
       receivedLead: "We have received your order.",
       beforeShipment: "We will contact you to confirm before shipping.",
       receivedTitle: "Thank you for your order!",
-      receivedIntroHtml: "We are preparing your order with care. We will contact you to confirm before shipping.",
+      receivedIntroHtml:
+        "We are preparing your order with care. We will contact you to confirm before shipping.",
       viewOrder: "View your order",
       orderSummary: "Order summary",
       shippingRow: "Shipping",
@@ -284,7 +282,8 @@ function notifyStrings(locale: NotificationLocale | undefined): NotifyStrings {
     receivedLead: "Nous avons bien reçu votre commande.",
     beforeShipment: "Nous vous contacterons pour confirmer avant l'expédition.",
     receivedTitle: "Merci pour votre commande !",
-    receivedIntroHtml: "Nous préparons votre commande avec soin. Nous vous contacterons pour confirmer avant l'expédition.",
+    receivedIntroHtml:
+      "Nous préparons votre commande avec soin. Nous vous contacterons pour confirmer avant l'expédition.",
     viewOrder: "Afficher votre commande",
     orderSummary: "Résumé de la commande",
     shippingRow: "Expédition",
@@ -299,7 +298,8 @@ function notifyStrings(locale: NotificationLocale | undefined): NotifyStrings {
     questions: "Si vous avez des questions, répondez à cet e-mail",
     orContactUs: "ou contactez-nous à l'adresse",
     statusSubject: (orderNumber) => `Mise à jour de votre commande ${orderNumber}`,
-    statusBody: (orderNumber, status) => `Votre commande ${orderNumber} est maintenant : ${status}.`,
+    statusBody: (orderNumber, status) =>
+      `Votre commande ${orderNumber} est maintenant : ${status}.`,
     shippedSubject: (orderNumber) => `Votre commande ${orderNumber} est en route`,
     shippedBody: (orderNumber, firstName, phone) =>
       `Bonjour ${firstName},\n\nBonne nouvelle : votre commande ${orderNumber} vient d'être expédiée. Vous serez contacté(e) par téléphone au ${phone} avant la livraison.`,
@@ -337,7 +337,11 @@ function templates(data: OrderEmailData) {
     [data.address, data.communeName, data.wilayaName].filter(Boolean).join(", "),
   ].join("\n");
   const escapeHtml = (value: string): string =>
-    value.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    value
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
   const htmlItems = (data.items ?? [])
     .map(
       (item) => `<tr>
@@ -431,9 +435,7 @@ async function dispatch(options: DispatchOptions): Promise<NotificationDispatchR
         });
       } catch (error) {
         // Lost the race: the other worker already recorded this send.
-        if (
-          !(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
-        ) {
+        if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) {
           throw error;
         }
       }
@@ -508,10 +510,12 @@ export async function sendOrderStatusUpdate(data: {
   firstName: string;
   total: number;
   status: string;
+  /** Stable order-status code (e.g. CONFIRMED) — dedupes per status, not per label. */
+  statusKey: string;
   note?: string;
   locale?: NotificationLocale;
   idempotencyKey?: string;
-}): Promise<void> {
+}): Promise<NotificationDispatchResult> {
   const tpl = templates({
     orderNumber: data.orderNumber,
     firstName: data.firstName,
@@ -519,11 +523,11 @@ export async function sendOrderStatusUpdate(data: {
     status: data.status,
     locale: data.locale,
   });
-  await dispatch({
+  return dispatch({
     orderId: data.orderId,
     phone: data.phone,
     email: data.email,
-    template: "ORDER_STATUS_UPDATE",
+    template: `ORDER_STATUS_UPDATE_${data.statusKey}`,
     subject: tpl.status.subject,
     body: tpl.status.body,
     channels: ["EMAIL", "SMS", "WHATSAPP"],
@@ -540,9 +544,9 @@ export async function sendShippingNotification(data: {
   total: number;
   locale?: NotificationLocale;
   idempotencyKey?: string;
-}): Promise<void> {
+}): Promise<NotificationDispatchResult> {
   const L = notifyStrings(data.locale ?? "fr");
-  await dispatch({
+  return dispatch({
     orderId: data.orderId,
     phone: data.phone,
     email: data.email,

@@ -4,12 +4,7 @@ export class AppError extends Error {
   readonly status: number;
   readonly meta?: Record<string, unknown>;
 
-  constructor(
-    code: string,
-    userMessage: string,
-    status = 400,
-    meta?: Record<string, unknown>,
-  ) {
+  constructor(code: string, userMessage: string, status = 400, meta?: Record<string, unknown>) {
     super(userMessage);
     this.name = "AppError";
     this.code = code;
@@ -49,11 +44,13 @@ const ERROR_MESSAGE_KEYS: Record<string, string> = {
   COUPON_USED_UP: "couponUsedUp",
   COUPON_FIRST_ORDER: "couponFirstOrder",
   COUPON_LIMIT_REACHED: "couponLimit",
+  COUPON_MIN_ORDER: "couponMinOrder",
   COUPON_WILAYA: "couponRegion",
   COUPON_NOT_APPLICABLE: "couponNoApply",
   DELIVERY_UNAVAILABLE: "deliveryGone",
   DUPLICATE_ORDER: "duplicateOrder",
   ACCOUNT_EXISTS: "accountExists",
+  RATE_LIMITED: "rateLimited",
 };
 
 export function localizeAppError(error: unknown, t: Record<string, string | undefined>): string {

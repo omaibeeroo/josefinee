@@ -47,6 +47,7 @@ const fr = {
     couponUsedUp: "Ce code promo a atteint sa limite.",
     couponFirstOrder: "Ce code promo est réservé aux premières commandes.",
     couponLimit: "Vous avez déjà utilisé ce code promo.",
+    couponMinOrder: "Ce code promo nécessite un minimum de commande.",
     couponRegion: "Ce code promo n’est pas disponible dans votre région.",
     couponNoApply: "Ce code promo ne s’applique pas à votre panier.",
     deliveryGone:

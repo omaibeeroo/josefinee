@@ -17,7 +17,10 @@ const NO_STORE = { "Cache-Control": "no-store" };
 export async function POST(request: Request) {
   const session = await getAdminSession();
   if (!session) {
-    return Response.json({ ok: false, error: "Please sign in." }, { status: 401, headers: NO_STORE });
+    return Response.json(
+      { ok: false, error: "Please sign in." },
+      { status: 401, headers: NO_STORE },
+    );
   }
   if (!can(session.user, "products:write")) {
     return Response.json({ ok: false, error: "Forbidden." }, { status: 403, headers: NO_STORE });
@@ -27,13 +30,29 @@ export async function POST(request: Request) {
     await assertSameOrigin();
     await enforceRateLimit({ ...LIMITS.upload, key: `upload:${session.user.id}` });
 
+    // Reject oversized bodies before buffering them into memory; the parse
+    // below is the authoritative check for chunked requests without a length.
+    const declaredLength = Number(request.headers.get("content-length") ?? "");
+    if (Number.isFinite(declaredLength) && declaredLength > 8 * 1024 * 1024 + 64 * 1024) {
+      return Response.json(
+        { ok: false, error: "Image is too large." },
+        { status: 413, headers: NO_STORE },
+      );
+    }
+
     const form = await request.formData();
     const file = form.get("file");
     if (!(file instanceof File)) {
-      return Response.json({ ok: false, error: "No file provided." }, { status: 400, headers: NO_STORE });
+      return Response.json(
+        { ok: false, error: "No file provided." },
+        { status: 400, headers: NO_STORE },
+      );
     }
     if (file.size > 8 * 1024 * 1024) {
-      return Response.json({ ok: false, error: "Image is too large." }, { status: 413, headers: NO_STORE });
+      return Response.json(
+        { ok: false, error: "Image is too large." },
+        { status: 413, headers: NO_STORE },
+      );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());

@@ -66,7 +66,12 @@ export async function subscribeNewsletterAction(email: string, source?: string, 
 
 export async function unsubscribeAction(token: string) {
   const t = await getActionT();
-  const parsedToken = z.string().min(16).max(128).regex(/^[A-Za-z0-9_-]+$/).safeParse(token);
+  const parsedToken = z
+    .string()
+    .min(16)
+    .max(128)
+    .regex(/^[A-Za-z0-9_-]+$/)
+    .safeParse(token);
   if (!parsedToken.success) return { ok: false as const, error: t.linkInvalid };
   const ip = await clientIp();
   try {
@@ -148,15 +153,33 @@ export async function submitReviewAction(input: {
 
   try {
     await enforceRateLimit({ ...LIMITS.review, key: `review-ip:${ip}` });
-    await enforceRateLimit({ ...LIMITS.review, key: `review-ip-product:${ip}:${parsed.data.productId}` });
+    await enforceRateLimit({
+      ...LIMITS.review,
+      key: `review-ip-product:${ip}:${parsed.data.productId}`,
+    });
   } catch {
     return { ok: false as const, error: t.rateLimited };
+  }
+
+  // Reviews only land on storefront-visible products; hidden/draft products
+  // must not collect public reviews.
+  const visibleProduct = await prisma.product.findFirst({
+    where: { AND: [storefrontProductWhere(), { id: parsed.data.productId }] },
+    select: { id: true },
+  });
+  if (!visibleProduct) {
+    return { ok: false as const, error: t.productUnavailable };
   }
 
   // One review per customer per product; guests are limited to one per hashed IP.
   const existing = session?.customer
     ? await prisma.review.findUnique({
-        where: { productId_customerId: { productId: parsed.data.productId, customerId: session.customer.id } },
+        where: {
+          productId_customerId: {
+            productId: parsed.data.productId,
+            customerId: session.customer.id,
+          },
+        },
       })
     : await prisma.review.findFirst({
         where: { productId: parsed.data.productId, guestIdentityHash },
@@ -181,7 +204,11 @@ export async function submitReviewAction(input: {
     });
     return { ok: true as const, message: t.reviewThanks };
   } catch (error) {
-    if (error instanceof Error && "code" in error && (error as { code?: string }).code === "P2002") {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      (error as { code?: string }).code === "P2002"
+    ) {
       return { ok: false as const, error: t.alreadyReviewed };
     }
     console.error("[review] submission failed", error instanceof Error ? error.name : "unknown");
@@ -356,7 +383,9 @@ export async function getWishlistProductsAction(productIds: string[]) {
     compareAtPrice: product.compareAtPrice,
     image: product.images[0]?.url ?? null,
     inStock:
-      (product.variants[0]?.inventory?.stock ?? 0) - (product.variants[0]?.inventory?.reserved ?? 0) > 0,
+      (product.variants[0]?.inventory?.stock ?? 0) -
+        (product.variants[0]?.inventory?.reserved ?? 0) >
+      0,
     defaultVariantId: product.variants[0]?.id ?? null,
   }));
 }
@@ -457,7 +486,10 @@ export async function changePasswordAction(input: { current: string; next: strin
   const session = await getCustomerSession();
   if (!session) return { ok: false as const, error: t.signIn };
   try {
-    await enforceRateLimit({ ...LIMITS.passwordReset, key: `password-change:${session.customer.id}` });
+    await enforceRateLimit({
+      ...LIMITS.passwordReset,
+      key: `password-change:${session.customer.id}`,
+    });
   } catch {
     return { ok: false as const, error: t.rateLimited };
   }

@@ -26,12 +26,21 @@ describe("localizeAppError", () => {
   });
 
   it("falls back to the embedded message for unmapped codes", () => {
-    expect(localizeAppError(new AppError("RATE_LIMITED", "Slow down.", 429), t)).toBe(
-      "Slow down.",
+    expect(localizeAppError(new AppError("NOT_MAPPED", "Slow down.", 429), t)).toBe("Slow down.");
+    expect(localizeAppError(new Error("boom"), t)).toBe("Something went wrong. Please try again.");
+  });
+
+  it("maps rate-limit and coupon-minimum codes when the dictionary has them", () => {
+    const dictionary = { ...t, rateLimited: "RATE_LIMITED_T", couponMinOrder: "MIN_ORDER_T" };
+    expect(localizeAppError(new AppError("RATE_LIMITED", "Slow down.", 429), dictionary)).toBe(
+      "RATE_LIMITED_T",
     );
-    expect(localizeAppError(new Error("boom"), t)).toBe(
-      "Something went wrong. Please try again.",
+    expect(localizeAppError(new AppError("COUPON_MIN_ORDER", "min order"), dictionary)).toBe(
+      "MIN_ORDER_T",
     );
+    // Mapped code, dictionary without the key — embedded message still wins
+    // over a blank toast.
+    expect(localizeAppError(new AppError("RATE_LIMITED", "Slow down.", 429), t)).toBe("Slow down.");
   });
 
   it("falls back when the dictionary lacks the key", () => {

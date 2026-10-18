@@ -29,6 +29,37 @@ import { adminId, userStatus } from "@/lib/validation/admin";
 const ADMIN_LOGIN_FAILURE_LIMIT = 5;
 const ADMIN_LOCKOUT_MS = 15 * 60_000;
 
+let placeholderHash: Promise<string> | null = null;
+/**
+ * Password verification always runs — even for unknown or passwordless
+ * accounts — so response timing cannot be used to enumerate admin emails.
+ */
+function placeholderPasswordHash(): Promise<string> {
+  placeholderHash ??= hashPassword("timing-equalization-placeholder");
+  return placeholderHash;
+}
+
+/** Count a failed credential step (password or TOTP) toward the lockout. */
+async function registerFailedAdminLogin(userId: string): Promise<void> {
+  const lockedUntil = new Date(Date.now() + ADMIN_LOCKOUT_MS);
+  await prisma.$executeRaw`
+    UPDATE "User"
+    SET
+      "failedLoginCount" = "failedLoginCount" + 1,
+      "status" = CASE
+        WHEN "failedLoginCount" + 1 >= ${ADMIN_LOGIN_FAILURE_LIMIT}
+          THEN 'LOCKED'::"UserStatus"
+        ELSE "status"
+      END,
+      "lockedUntil" = CASE
+        WHEN "failedLoginCount" + 1 >= ${ADMIN_LOGIN_FAILURE_LIMIT}
+          THEN ${lockedUntil}
+        ELSE "lockedUntil"
+      END
+    WHERE "id" = ${userId} AND "status" = 'ACTIVE'::"UserStatus"
+  `;
+}
+
 function redirectIfPasswordChangeRequired(mustChangePassword: boolean): void {
   if (mustChangePassword) redirect("/admin/first-login");
 }
@@ -54,7 +85,10 @@ export async function adminLoginAction(input: { email: string; password: string;
   const ip = await clientIp();
   try {
     await enforceRateLimit({ ...LIMITS.adminLogin, key: `admin-login:${ip}` });
-    await enforceRateLimit({ ...LIMITS.adminLogin, key: `admin-login-account:${parsed.data.email}` });
+    await enforceRateLimit({
+      ...LIMITS.adminLogin,
+      key: `admin-login-account:${parsed.data.email}`,
+    });
   } catch {
     return { ok: false as const, error: t.rateLimited };
   }
@@ -65,10 +99,12 @@ export async function adminLoginAction(input: { email: string; password: string;
   });
 
   if (!user) {
+    await verifyPassword(await placeholderPasswordHash(), parsed.data.password);
     return { ok: false as const, error: t.badCredentials };
   }
 
   if (user.status === "DISABLED") {
+    await verifyPassword(await placeholderPasswordHash(), parsed.data.password);
     return { ok: false as const, error: t.badCredentials };
   }
   if (user.status === "LOCKED" && user.lockedUntil && user.lockedUntil <= new Date()) {
@@ -80,28 +116,13 @@ export async function adminLoginAction(input: { email: string; password: string;
     return { ok: false as const, error: t.lockedOut };
   }
 
-  const valid = user.passwordHash
-    ? await verifyPassword(user.passwordHash, parsed.data.password)
-    : false;
+  const valid = await verifyPassword(
+    user.passwordHash ?? (await placeholderPasswordHash()),
+    parsed.data.password,
+  );
 
   if (!valid) {
-    const lockedUntil = new Date(Date.now() + ADMIN_LOCKOUT_MS);
-    await prisma.$executeRaw`
-      UPDATE "User"
-      SET
-        "failedLoginCount" = "failedLoginCount" + 1,
-        "status" = CASE
-          WHEN "failedLoginCount" + 1 >= ${ADMIN_LOGIN_FAILURE_LIMIT}
-            THEN 'LOCKED'::"UserStatus"
-          ELSE "status"
-        END,
-        "lockedUntil" = CASE
-          WHEN "failedLoginCount" + 1 >= ${ADMIN_LOGIN_FAILURE_LIMIT}
-            THEN ${lockedUntil}
-          ELSE "lockedUntil"
-        END
-      WHERE "id" = ${user.id} AND "status" = 'ACTIVE'::"UserStatus"
-    `;
+    await registerFailedAdminLogin(user.id);
     await recordAudit({
       actorType: "SYSTEM",
       actorUserId: null,
@@ -131,6 +152,8 @@ export async function adminLoginAction(input: { email: string; password: string;
       };
     }
     if (!verifyTotp(secret, parsed.data.totp)) {
+      // TOTP guessing counts toward the same lockout as password guessing.
+      await registerFailedAdminLogin(user.id);
       await recordAudit({
         actorType: "SYSTEM",
         actorUserId: null,
@@ -292,7 +315,10 @@ export async function confirm2faSetupAction(token: string) {
   if (!session) redirect("/admin/login");
   redirectIfPasswordChangeRequired(session.user.mustChangePassword);
   const t = await getActionT();
-  const parsedToken = z.string().regex(/^\d{6}$/).safeParse(token);
+  const parsedToken = z
+    .string()
+    .regex(/^\d{6}$/)
+    .safeParse(token);
   if (!parsedToken.success) {
     return { ok: false as const, error: t.invalidCode };
   }
@@ -349,8 +375,7 @@ export async function disable2faAction(input: { currentPassword: string; token: 
   ) {
     return { ok: false as const, error: t.wrongCurrent };
   }
-  if (!disableCredentials.twoFactorSecret)
-    return { ok: false as const, error: t.totpNotEnabled };
+  if (!disableCredentials.twoFactorSecret) return { ok: false as const, error: t.totpNotEnabled };
   try {
     if (!verifyTotp(decryptSecret(disableCredentials.twoFactorSecret), parsed.data.token))
       return { ok: false as const, error: t.totpInvalid };
@@ -467,7 +492,9 @@ export async function setUserStatusAction(userId: string, status: "ACTIVE" | "DI
 
 export async function resetUserPasswordAction(userId: string, password: string) {
   const actor = await requirePermission("users:manage");
-  const parsed = z.object({ userId: adminId, password: z.string().max(200) }).safeParse({ userId, password });
+  const parsed = z
+    .object({ userId: adminId, password: z.string().max(200) })
+    .safeParse({ userId, password });
   if (!parsed.success || !isStrongPassword(parsed.data.password)) {
     return {
       ok: false as const,

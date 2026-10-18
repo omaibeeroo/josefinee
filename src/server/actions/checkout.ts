@@ -31,7 +31,7 @@ export async function submitOrderAction(input: CheckoutInput): Promise<SubmitOrd
   try {
     await enforceRateLimit({ ...LIMITS.checkout, key: `checkout:${ip}` });
   } catch (error) {
-    return { ok: false, error: toUserMessage(error), code: "RATE_LIMITED" };
+    return { ok: false, error: localizeAppError(error, tErr), code: "RATE_LIMITED" };
   }
 
   const parsed = checkoutSchema.safeParse(input);
@@ -74,7 +74,10 @@ export async function submitOrderAction(input: CheckoutInput): Promise<SubmitOrd
 }
 
 export async function getCheckoutData() {
-  const [cart, wilayas] = await Promise.all([getCartForCheckout().catch(() => null), getActiveWilayas()]);
+  const [cart, wilayas] = await Promise.all([
+    getCartForCheckout().catch(() => null),
+    getActiveWilayas(),
+  ]);
 
   let promotion: { name: string; discount: number } | null = null;
   if (cart && cart.lines.length > 0) {
@@ -138,7 +141,10 @@ export async function lookupOrderAction(orderNumber: string, phoneRaw: string) {
   }
   try {
     const order = await prisma.order.findFirst({
-      where: { orderNumber: parsed.data.orderNumber.trim().toUpperCase(), phone: parsed.data.phone },
+      where: {
+        orderNumber: parsed.data.orderNumber.trim().toUpperCase(),
+        phone: parsed.data.phone,
+      },
       select: { orderNumber: true },
     });
     if (!order) {

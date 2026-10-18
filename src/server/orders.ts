@@ -47,10 +47,24 @@ type CreateOrderContext = {
 
 type TxClient = Parameters<Parameters<typeof prisma.$transaction>[0]>[0];
 
+/**
+ * Sentinel thrown inside the checkout transaction when a racing double-submit
+ * claims the idempotency key first. The transaction is already aborted at that
+ * point (25P02), so recovery must run outside — see `recoverSettledCheckout`.
+ */
+class IdempotencyLostError extends Error {
+  constructor() {
+    super("concurrent checkout claimed the idempotency key");
+    this.name = "IdempotencyLostError";
+  }
+}
+
 /** Short pause between idempotency-settlement polls (kept inside the tx budget). */
 function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+type CheckoutStore = Pick<TxClient, "idempotencyKey" | "order">;
 
 /**
  * Reads a settled idempotent result: either a stored response from a
@@ -58,7 +72,7 @@ function sleep(ms: number): Promise<void> {
  * sibling attempt is still in flight.
  */
 async function readSettledCheckout(
-  tx: TxClient,
+  tx: CheckoutStore,
   idempotencyKey: string,
 ): Promise<CreateOrderResult | null> {
   const settled = await tx.idempotencyKey.findUnique({ where: { key: idempotencyKey } });
@@ -93,6 +107,33 @@ async function readSettledCheckout(
     trackingToken: signOrderToken(existing.orderNumber),
     isDuplicate: true,
   };
+}
+
+/** Checkout transaction outcome: a fresh placement or a replayed duplicate. */
+type PlacedCheckout =
+  | { replay: false; result: CreateOrderResult; customerId: string | null }
+  | { replay: true; result: CreateOrderResult };
+
+/**
+ * Post-race recovery for an idempotency-loser: polls on a fresh connection
+ * (the loser's transaction was aborted when the unique insert failed) until
+ * the winner settles, then replays its result. Returns null when the winner
+ * is still committing after the poll budget. Exported for regression tests.
+ */
+export async function recoverSettledCheckout(
+  idempotencyKey: string,
+  store: CheckoutStore = prisma,
+): Promise<CreateOrderResult | null> {
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    await sleep(400);
+    try {
+      const replayed = await readSettledCheckout(store, idempotencyKey);
+      if (replayed) return replayed;
+    } catch {
+      // Transient read error while the winner commits — retry within budget.
+    }
+  }
+  return null;
 }
 
 /**
@@ -169,461 +210,488 @@ export async function createOrder(
   if (!secret || secret.length < 32) {
     throw new AppError("CONFIG", tErr.configDown, 503);
   }
-  const placed = await prisma.$transaction(async (tx) => {
-    // Read the cart even if it is already converted so a lost response can be recovered.
-    const { cartId, customerId: cartCustomerId, status: cartStatus, lines } = await getCartForCheckout(tx, {
-      includeInactive: true,
-    });
-    if (cartCustomerId && session && cartCustomerId !== session.customer.id) {
-      throw new AppError("CART_NOT_OWNED", tErr.cartNotOwned, 403);
-    }
-    const idempotencyKey = `checkout:${createHmac("sha256", secret)
-      .update(`${cartId}:${data.idempotencyKey}`)
-      .digest("hex")}`;
+  // Set inside the transaction when a racing double-submit wins the
+  // idempotency key; recovery polls on a fresh connection after rollback.
+  let lostIdempotencyKey: string | null = null;
+  const checkoutTx = prisma.$transaction(
+    async (tx) => {
+      // Read the cart even if it is already converted so a lost response can be recovered.
+      const {
+        cartId,
+        customerId: cartCustomerId,
+        status: cartStatus,
+        lines,
+      } = await getCartForCheckout(tx, {
+        includeInactive: true,
+      });
+      if (cartCustomerId && session && cartCustomerId !== session.customer.id) {
+        throw new AppError("CART_NOT_OWNED", tErr.cartNotOwned, 403);
+      }
+      const idempotencyKey = `checkout:${createHmac("sha256", secret)
+        .update(`${cartId}:${data.idempotencyKey}`)
+        .digest("hex")}`;
 
-    const prior = await tx.idempotencyKey.findUnique({ where: { key: idempotencyKey } });
-    const savedResponse = prior?.response as unknown as Partial<CreateOrderResult> | null;
-    if (savedResponse && typeof savedResponse.orderNumber === "string") {
-      const replay: CreateOrderResult = {
-        ...(savedResponse as CreateOrderResult),
-        trackingToken: signOrderToken(savedResponse.orderNumber),
-        isDuplicate: true,
-      };
-      await tx.idempotencyKey.update({ where: { key: idempotencyKey }, data: { response: replay as never } });
-      return { replay: true as const, result: replay };
-    }
+      const prior = await tx.idempotencyKey.findUnique({ where: { key: idempotencyKey } });
+      const savedResponse = prior?.response as unknown as Partial<CreateOrderResult> | null;
+      if (savedResponse && typeof savedResponse.orderNumber === "string") {
+        const replay: CreateOrderResult = {
+          ...(savedResponse as CreateOrderResult),
+          trackingToken: signOrderToken(savedResponse.orderNumber),
+          isDuplicate: true,
+        };
+        await tx.idempotencyKey.update({
+          where: { key: idempotencyKey },
+          data: { response: replay as never },
+        });
+        return { replay: true as const, result: replay };
+      }
 
-    const existingOrder = await tx.order.findUnique({
-      where: { idempotencyKey },
-      include: { promotion: { select: { name: true } } },
-    });
-    if (existingOrder) {
-      const recovered: CreateOrderResult = {
-        orderId: existingOrder.id,
-        orderNumber: existingOrder.orderNumber,
-        total: existingOrder.total,
-        subtotal: existingOrder.subtotal,
-        discount: existingOrder.discount,
-        promotionDiscount: existingOrder.promotionDiscount,
-        promotionName: existingOrder.promotion?.name ?? null,
-        shipping: existingOrder.shipping,
-        firstName: existingOrder.firstName,
-        phone: existingOrder.phone,
-        wilayaName: existingOrder.wilayaName,
-        communeName: existingOrder.communeName,
-        address: existingOrder.address,
-        deliveryMethod: existingOrder.deliveryMethod,
-        trackingToken: signOrderToken(existingOrder.orderNumber),
-        isDuplicate: true,
-      };
-      if (prior) {
-        await tx.idempotencyKey.update({ where: { key: idempotencyKey }, data: { response: recovered as never } });
-      } else {
+      const existingOrder = await tx.order.findUnique({
+        where: { idempotencyKey },
+        include: { promotion: { select: { name: true } } },
+      });
+      if (existingOrder) {
+        const recovered: CreateOrderResult = {
+          orderId: existingOrder.id,
+          orderNumber: existingOrder.orderNumber,
+          total: existingOrder.total,
+          subtotal: existingOrder.subtotal,
+          discount: existingOrder.discount,
+          promotionDiscount: existingOrder.promotionDiscount,
+          promotionName: existingOrder.promotion?.name ?? null,
+          shipping: existingOrder.shipping,
+          firstName: existingOrder.firstName,
+          phone: existingOrder.phone,
+          wilayaName: existingOrder.wilayaName,
+          communeName: existingOrder.communeName,
+          address: existingOrder.address,
+          deliveryMethod: existingOrder.deliveryMethod,
+          trackingToken: signOrderToken(existingOrder.orderNumber),
+          isDuplicate: true,
+        };
+        if (prior) {
+          await tx.idempotencyKey.update({
+            where: { key: idempotencyKey },
+            data: { response: recovered as never },
+          });
+        } else {
+          await tx.idempotencyKey.create({
+            data: {
+              key: idempotencyKey,
+              scope: "checkout",
+              expiresAt: new Date(Date.now() + 24 * 60 * 60_000),
+              response: recovered as never,
+            },
+          });
+        }
+        return { replay: true as const, result: recovered };
+      }
+
+      if (prior) await tx.idempotencyKey.deleteMany({ where: { key: idempotencyKey } });
+      if (cartStatus !== "ACTIVE") {
+        throw new AppError("CART_ALREADY_CHECKED_OUT", tErr.alreadyCheckedOut, 409);
+      }
+      try {
         await tx.idempotencyKey.create({
           data: {
             key: idempotencyKey,
             scope: "checkout",
             expiresAt: new Date(Date.now() + 24 * 60 * 60_000),
-            response: recovered as never,
           },
         });
+      } catch (error) {
+        // A racing double-submit passed the null check above and lost the
+        // unique-key insert. This transaction is now aborted; signal the outer
+        // caller so recovery can poll on a fresh connection and replay the
+        // winner (never a 25P02 crash, never a 500).
+        if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) {
+          throw error;
+        }
+        lostIdempotencyKey = idempotencyKey;
+        throw new IdempotencyLostError();
       }
-      return { replay: true as const, result: recovered };
-    }
 
-    if (prior) await tx.idempotencyKey.delete({ where: { key: idempotencyKey } });
-    if (cartStatus !== "ACTIVE") {
-      throw new AppError("CART_ALREADY_CHECKED_OUT", tErr.alreadyCheckedOut, 409);
-    }
-    try {
-      await tx.idempotencyKey.create({
-        data: {
-          key: idempotencyKey,
-          scope: "checkout",
-          expiresAt: new Date(Date.now() + 24 * 60 * 60_000),
-        },
+      // All authoritative cart, catalog, delivery, promotion and coupon reads use tx.
+
+      const wilaya = await tx.wilaya.findUnique({ where: { id: data.wilayaId } });
+      if (!wilaya || !wilaya.isActive) {
+        throw new AppError("INVALID_WILAYA", tErr.invalidWilaya, 400);
+      }
+      const commune = await tx.commune.findFirst({
+        where: { id: data.communeId, wilayaId: wilaya.id, isActive: true },
       });
-    } catch (error) {
-      // A racing double-submit passed the null check above and lost the
-      // unique-key insert. Never 500: wait briefly for the winner to settle
-      // and replay it, otherwise ask the client to retry into the replay.
-      if (
-        !(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")
-      ) {
-        throw error;
+      if (!commune) {
+        throw new AppError("INVALID_COMMUNE", tErr.invalidCommune, 400);
       }
-      for (let attempt = 0; attempt < 5; attempt += 1) {
-        await sleep(400);
-        const replayed = await readSettledCheckout(tx, idempotencyKey);
-        if (replayed) return { replay: true as const, result: replayed };
-      }
-      throw new AppError("CHECKOUT_IN_PROGRESS", tErr.checkoutInProgress, 409);
-    }
 
-    // All authoritative cart, catalog, delivery, promotion and coupon reads use tx.
-
-    const wilaya = await tx.wilaya.findUnique({ where: { id: data.wilayaId } });
-    if (!wilaya || !wilaya.isActive) {
-      throw new AppError("INVALID_WILAYA", tErr.invalidWilaya, 400);
-    }
-    const commune = await tx.commune.findFirst({
-      where: { id: data.communeId, wilayaId: wilaya.id, isActive: true },
-    });
-    if (!commune) {
-      throw new AppError("INVALID_COMMUNE", tErr.invalidCommune, 400);
-    }
-
-    const variants = await tx.productVariant.findMany({
-      where: { id: { in: lines.map((line) => line.variantId) }, isActive: true },
-      include: {
-        product: {
-          select: {
-            id: true,
-            name: true,
-            sku: true,
-            status: true,
-            publishedAt: true,
-            price: true,
-            collectionLinks: { select: { collectionId: true } },
+      const variants = await tx.productVariant.findMany({
+        where: { id: { in: lines.map((line) => line.variantId) }, isActive: true },
+        include: {
+          product: {
+            select: {
+              id: true,
+              name: true,
+              sku: true,
+              status: true,
+              publishedAt: true,
+              price: true,
+              collectionLinks: { select: { collectionId: true } },
+            },
           },
+          inventory: true,
         },
-        inventory: true,
-      },
-    });
-    const variantById = new Map(variants.map((variant) => [variant.id, variant]));
-    const freshLines = lines.map((line) => {
-      const variant = variantById.get(line.variantId);
-      if (
-        !variant ||
-        variant.product.status !== "ACTIVE" ||
-        (variant.product.publishedAt !== null && variant.product.publishedAt > new Date())
-      ) {
-        throw new AppError(
-          "PRODUCT_UNAVAILABLE",
-          tErr.productGone.replace("{name}", line.productName),
-          409,
-        );
-      }
-      const available = (variant.inventory?.stock ?? 0) - (variant.inventory?.reserved ?? 0);
-      if (available < line.quantity) {
-        throw new AppError(
-          "OUT_OF_STOCK",
-          tErr.outOfStock
-            .replace("{name}", line.productName)
-            .replace("{count}", String(Math.max(0, available))),
-          409,
-        );
-      }
-      const unitPrice = variant.price ?? variant.product.price;
-      return {
-        variantId: variant.id,
-        productId: variant.product.id,
-        productName: variant.product.name,
-        variantLabel: variant.optionLabel,
-        sku: variant.sku,
-        imageUrl: variant.imageUrl,
-        unitPrice,
-        quantity: line.quantity,
-        lineTotal: unitPrice * line.quantity,
-        collectionIds: variant.product.collectionLinks.map((entry) => entry.collectionId),
-      };
-    });
-    const subtotal = freshLines.reduce((sum, line) => sum + line.lineTotal, 0);
-
-    // Independent reads: promotion and delivery rate resolve concurrently.
-    const [promotion, rate] = await Promise.all([
-      resolveBestPromotion(
-        freshLines.map((line) => ({
-          productId: line.productId,
-          collectionIds: line.collectionIds,
-          unitPrice: line.unitPrice,
+      });
+      const variantById = new Map(variants.map((variant) => [variant.id, variant]));
+      const freshLines = lines.map((line) => {
+        const variant = variantById.get(line.variantId);
+        if (
+          !variant ||
+          variant.product.status !== "ACTIVE" ||
+          (variant.product.publishedAt !== null && variant.product.publishedAt > new Date())
+        ) {
+          throw new AppError(
+            "PRODUCT_UNAVAILABLE",
+            tErr.productGone.replace("{name}", line.productName),
+            409,
+          );
+        }
+        const available = (variant.inventory?.stock ?? 0) - (variant.inventory?.reserved ?? 0);
+        if (available < line.quantity) {
+          throw new AppError(
+            "OUT_OF_STOCK",
+            tErr.outOfStock
+              .replace("{name}", line.productName)
+              .replace("{count}", String(Math.max(0, available))),
+            409,
+          );
+        }
+        const unitPrice = variant.price ?? variant.product.price;
+        return {
+          variantId: variant.id,
+          productId: variant.product.id,
+          productName: variant.product.name,
+          variantLabel: variant.optionLabel,
+          sku: variant.sku,
+          imageUrl: variant.imageUrl,
+          unitPrice,
           quantity: line.quantity,
-        })),
-        new Date(),
-        tx,
-      ),
-      resolveDeliveryRate(wilaya.id, data.deliveryMethod, tx),
-    ]);
-    const promotionDiscount = promotion?.discount ?? 0;
-    const promotionId = promotion?.promotionId ?? null;
-    const postPromoSubtotal = Math.max(0, subtotal - promotionDiscount);
-    const shipping =
-      settings.commerce.freeDeliveryThreshold > 0 &&
-      postPromoSubtotal >= settings.commerce.freeDeliveryThreshold
-        ? 0
-        : rate.price;
-
-    // Coupon first-order eligibility and customer creation must observe a
-    // committed order for this phone. PostgreSQL transaction-scoped advisory
-    // locks serialize only competing checkouts for the same normalized phone.
-    await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${data.phone}, 0))`;
-
-    // Only an authenticated session proves account ownership. A cart linked to
-    // a customer without a session must NOT confer update rights — guests
-    // resolve purely by phone and may never overwrite stored PII.
-    const authenticatedCustomerId = session?.customer.id ?? null;
-    const customer = authenticatedCustomerId
-      ? await tx.customer.findUnique({ where: { id: authenticatedCustomerId } })
-      : await tx.customer.findUnique({ where: { phone: data.phone } });
-
-    let discount = 0;
-    let couponId: string | null = null;
-    if (data.couponCode) {
-      const first = await isFirstOrder({
-        phone: data.phone,
-        customerId: customer?.id ?? null,
-        db: tx,
+          lineTotal: unitPrice * line.quantity,
+          collectionIds: variant.product.collectionLinks.map((entry) => entry.collectionId),
+        };
       });
-      const validation = await validateCoupon({
-        code: data.couponCode,
-        lines: freshLines.map((line, index) => ({
-          productId: line.productId,
-          unitPrice: line.unitPrice,
-          quantity: line.quantity,
-          lineTotal: promotion?.lineTotalsAfterPromotion[index],
-          collectionIds: line.collectionIds,
-        })),
-        subtotal: postPromoSubtotal,
-        wilayaId: wilaya.id,
-        phone: data.phone,
-        customerId: customer?.id ?? null,
-        isFirstOrder: first,
-        db: tx,
-      });
-      discount = validation.discount;
-      couponId = validation.couponId;
-      await consumeCoupon(tx, {
-        couponId,
-        phone: data.phone,
-        customerId: customer?.id ?? null,
-      });
-    }
+      const subtotal = freshLines.reduce((sum, line) => sum + line.lineTotal, 0);
 
-    const total = Math.max(0, postPromoSubtotal - discount + shipping);
-    if (!data.allowDuplicate) {
-      const recent = await tx.order.findMany({
-        where: {
+      // Independent reads: promotion and delivery rate resolve concurrently.
+      const [promotion, rate] = await Promise.all([
+        resolveBestPromotion(
+          freshLines.map((line) => ({
+            productId: line.productId,
+            collectionIds: line.collectionIds,
+            unitPrice: line.unitPrice,
+            quantity: line.quantity,
+          })),
+          new Date(),
+          tx,
+        ),
+        resolveDeliveryRate(wilaya.id, data.deliveryMethod, tx),
+      ]);
+      const promotionDiscount = promotion?.discount ?? 0;
+      const promotionId = promotion?.promotionId ?? null;
+      const postPromoSubtotal = Math.max(0, subtotal - promotionDiscount);
+      const shipping =
+        settings.commerce.freeDeliveryThreshold > 0 &&
+        postPromoSubtotal >= settings.commerce.freeDeliveryThreshold
+          ? 0
+          : rate.price;
+
+      // Coupon first-order eligibility and customer creation must observe a
+      // committed order for this phone. PostgreSQL transaction-scoped advisory
+      // locks serialize only competing checkouts for the same normalized phone.
+      await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${data.phone}, 0))`;
+
+      // Only an authenticated session proves account ownership. A cart linked to
+      // a customer without a session must NOT confer update rights — guests
+      // resolve purely by phone and may never overwrite stored PII.
+      const authenticatedCustomerId = session?.customer.id ?? null;
+      const customer = authenticatedCustomerId
+        ? await tx.customer.findUnique({ where: { id: authenticatedCustomerId } })
+        : await tx.customer.findUnique({ where: { phone: data.phone } });
+
+      let discount = 0;
+      let couponId: string | null = null;
+      if (data.couponCode) {
+        const first = await isFirstOrder({
           phone: data.phone,
-          createdAt: { gte: new Date(Date.now() - DUPLICATE_WINDOW_MS) },
-          status: { in: [...OPEN_FOR_DUPLICATE] },
-        },
-        orderBy: { createdAt: "desc" },
-        take: 50,
-        select: { orderNumber: true, total: true, _count: { select: { items: true } } },
-      });
-      const itemCount = freshLines.length;
-      const match = recent.find(
-        (order) => order.total === total && order._count.items === itemCount,
-      );
-      if (match) {
-        throw new AppError("DUPLICATE_ORDER", tErr.duplicateOrder, 409, {
-          orderNumber: match.orderNumber,
+          customerId: customer?.id ?? null,
+          db: tx,
+        });
+        const validation = await validateCoupon({
+          code: data.couponCode,
+          lines: freshLines.map((line, index) => ({
+            productId: line.productId,
+            unitPrice: line.unitPrice,
+            quantity: line.quantity,
+            lineTotal: promotion?.lineTotalsAfterPromotion[index],
+            collectionIds: line.collectionIds,
+          })),
+          subtotal: postPromoSubtotal,
+          wilayaId: wilaya.id,
+          phone: data.phone,
+          customerId: customer?.id ?? null,
+          isFirstOrder: first,
+          db: tx,
+        });
+        discount = validation.discount;
+        couponId = validation.couponId;
+        await consumeCoupon(tx, {
+          couponId,
+          phone: data.phone,
+          customerId: customer?.id ?? null,
         });
       }
-    }
 
-    const risk = await assessOrderRisk({
-      phone: data.phone,
-      customerId: customer?.id ?? null,
-      total,
-      itemCount: freshLines.length,
-      db: tx,
-    });
+      const total = Math.max(0, postPromoSubtotal - discount + shipping);
+      if (!data.allowDuplicate) {
+        const recent = await tx.order.findMany({
+          where: {
+            phone: data.phone,
+            createdAt: { gte: new Date(Date.now() - DUPLICATE_WINDOW_MS) },
+            status: { in: [...OPEN_FOR_DUPLICATE] },
+          },
+          orderBy: { createdAt: "desc" },
+          take: 50,
+          select: { orderNumber: true, total: true, _count: { select: { items: true } } },
+        });
+        const itemCount = freshLines.length;
+        const match = recent.find(
+          (order) => order.total === total && order._count.items === itemCount,
+        );
+        if (match) {
+          throw new AppError("DUPLICATE_ORDER", tErr.duplicateOrder, 409, {
+            orderNumber: match.orderNumber,
+          });
+        }
+      }
 
-    const customerDecision = decideCustomerWrite({
-      authenticatedCustomerId,
-      customer: customer ? { id: customer.id, passwordHash: customer.passwordHash } : null,
-      createAccount: data.createAccount,
-    });
-    if (customerDecision === "reject-exists") {
-      throw new AppError("ACCOUNT_EXISTS", tErr.accountExists, 409);
-    }
+      const risk = await assessOrderRisk({
+        phone: data.phone,
+        customerId: customer?.id ?? null,
+        total,
+        itemCount: freshLines.length,
+        db: tx,
+      });
 
-    let customerId: string | null = customer?.id ?? null;
-    if (customerId && customerDecision === "update-owned") {
-      try {
+      const customerDecision = decideCustomerWrite({
+        authenticatedCustomerId,
+        customer: customer ? { id: customer.id, passwordHash: customer.passwordHash } : null,
+        createAccount: data.createAccount,
+      });
+      if (customerDecision === "reject-exists") {
+        throw new AppError("ACCOUNT_EXISTS", tErr.accountExists, 409);
+      }
+
+      let customerId: string | null = customer?.id ?? null;
+      if (customerId && customerDecision === "update-owned") {
+        try {
+          await tx.customer.update({
+            where: { id: customerId },
+            data: {
+              firstName: data.firstName,
+              lastName: data.lastName,
+              email: data.email ?? undefined,
+              lastOrderAt: new Date(),
+              ...(passwordHash ? { passwordHash } : {}),
+            },
+          });
+        } catch (error) {
+          if (isUniqueViolation(error)) {
+            throw new AppError("ACCOUNT_EXISTS", tErr.accountExists, 409);
+          }
+          throw error;
+        }
+      } else if (customerId) {
+        // Repeat guest order for an existing phone: link the order but leave
+        // stored names, email and credentials untouched.
         await tx.customer.update({
           where: { id: customerId },
-          data: {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            email: data.email ?? undefined,
-            lastOrderAt: new Date(),
-            ...(passwordHash ? { passwordHash } : {}),
-          },
+          data: { lastOrderAt: new Date() },
         });
-      } catch (error) {
-        if (isUniqueViolation(error)) {
-          throw new AppError("ACCOUNT_EXISTS", tErr.accountExists, 409);
+      } else {
+        try {
+          const created = await tx.customer.create({
+            data: {
+              firstName: data.firstName,
+              lastName: data.lastName,
+              phone: data.phone,
+              email: data.email ?? null,
+              passwordHash,
+              riskLevel: risk.level,
+            },
+          });
+          customerId = created.id;
+        } catch (error) {
+          if (isUniqueViolation(error)) {
+            throw new AppError("ACCOUNT_EXISTS", tErr.accountExists, 409);
+          }
+          throw error;
         }
-        throw error;
       }
-    } else if (customerId) {
-      // Repeat guest order for an existing phone: link the order but leave
-      // stored names, email and credentials untouched.
-      await tx.customer.update({
-        where: { id: customerId },
-        data: { lastOrderAt: new Date() },
-      });
-    } else {
-      try {
-        const created = await tx.customer.create({
-          data: {
-            firstName: data.firstName,
-            lastName: data.lastName,
-            phone: data.phone,
-            email: data.email ?? null,
-            passwordHash,
-            riskLevel: risk.level,
-          },
-        });
-        customerId = created.id;
-      } catch (error) {
-        if (isUniqueViolation(error)) {
-          throw new AppError("ACCOUNT_EXISTS", tErr.accountExists, 409);
-        }
-        throw error;
-      }
-    }
 
-    const year = new Date().getFullYear();
-    const counterRows = await tx.$queryRaw<Array<{ value: number }>>`
+      const year = new Date().getFullYear();
+      const counterRows = await tx.$queryRaw<Array<{ value: number }>>`
       INSERT INTO "Counter" ("key", "value") VALUES (${`order:${year}`}, 1)
       ON CONFLICT ("key") DO UPDATE SET "value" = "Counter"."value" + 1
       RETURNING "value"
     `;
-    const sequence = counterRows[0]?.value ?? Math.floor(Date.now() / 1000);
-    const orderNumber = `${settings.commerce.orderPrefix}-${year}-${String(sequence).padStart(6, "0")}`;
+      const sequence = counterRows[0]?.value ?? Math.floor(Date.now() / 1000);
+      const orderNumber = `${settings.commerce.orderPrefix}-${year}-${String(sequence).padStart(6, "0")}`;
 
-    const order = await tx.order.create({
-      data: {
-        orderNumber,
-        status: "PENDING",
-        customerId,
+      const order = await tx.order.create({
+        data: {
+          orderNumber,
+          status: "PENDING",
+          customerId,
+          firstName: data.firstName,
+          lastName: data.lastName,
+          phone: data.phone,
+          email: data.email ?? null,
+          wilayaId: wilaya.id,
+          communeId: commune.id,
+          wilayaName: wilaya.name,
+          communeName: commune.name,
+          address: data.address,
+          notes: data.notes ?? null,
+          deliveryMethod: data.deliveryMethod,
+          subtotal,
+          discount,
+          shipping,
+          total,
+          couponId,
+          promotionId,
+          promotionDiscount,
+          riskLevel: risk.level,
+          riskScore: risk.score,
+          riskFlags: risk.flags,
+          ip: context.ip,
+          userAgent: context.userAgent,
+          idempotencyKey,
+          items: {
+            create: freshLines.map((line) => ({
+              productId: line.productId,
+              variantId: line.variantId,
+              productName: line.productName,
+              variantLabel: line.variantLabel,
+              sku: line.sku,
+              imageUrl: line.imageUrl,
+              unitPrice: line.unitPrice,
+              quantity: line.quantity,
+              lineTotal: line.lineTotal,
+            })),
+          },
+          statusHistory: {
+            create: {
+              status: "PENDING",
+              note: "Order placed (cash on delivery).",
+              isCustomerVisible: true,
+            },
+          },
+        },
+        include: { items: true },
+      });
+
+      for (const line of freshLines) {
+        await decrementStock(tx, {
+          variantId: line.variantId,
+          quantity: line.quantity,
+          orderId: order.id,
+          reason: `Order ${orderNumber}`,
+        });
+        await tx.product.update({
+          where: { id: line.productId },
+          data: { soldCount: { increment: line.quantity } },
+        });
+      }
+
+      if (couponId) {
+        await tx.couponRedemption.create({
+          data: {
+            couponId,
+            orderId: order.id,
+            customerId,
+            phone: data.phone,
+            amount: discount,
+          },
+        });
+      }
+
+      const converted = await tx.cart.updateMany({
+        where: { id: cartId, status: "ACTIVE" },
+        data: { status: "CONVERTED", customerId },
+      });
+      if (converted.count !== 1) {
+        throw new AppError("CART_ALREADY_CHECKED_OUT", tErr.alreadyCheckedOut, 409);
+      }
+      await tx.orderOutboxEvent.createMany({
+        data: ORDER_OUTBOX_KINDS.map((kind) => ({ orderId: order.id, kind })),
+      });
+      await tx.auditLog.create({
+        data: {
+          actorType: "SYSTEM",
+          action: "ORDER_CREATED",
+          resource: "Order",
+          resourceId: order.id,
+          ip: context.ip,
+          userAgent: context.userAgent,
+          metadata: { orderNumber, total, itemCount: freshLines.length },
+        },
+      });
+
+      const result: CreateOrderResult = {
+        orderId: order.id,
+        orderNumber: order.orderNumber,
+        total,
+        subtotal,
+        discount,
+        promotionDiscount,
+        promotionName: promotion?.name ?? null,
+        shipping,
         firstName: data.firstName,
-        lastName: data.lastName,
         phone: data.phone,
-        email: data.email ?? null,
-        wilayaId: wilaya.id,
-        communeId: commune.id,
         wilayaName: wilaya.name,
         communeName: commune.name,
         address: data.address,
-        notes: data.notes ?? null,
         deliveryMethod: data.deliveryMethod,
-        subtotal,
-        discount,
-        shipping,
-        total,
-        couponId,
-        promotionId,
-        promotionDiscount,
-        riskLevel: risk.level,
-        riskScore: risk.score,
-        riskFlags: risk.flags,
-        ip: context.ip,
-        userAgent: context.userAgent,
-        idempotencyKey,
-        items: {
-          create: freshLines.map((line) => ({
-            productId: line.productId,
-            variantId: line.variantId,
-            productName: line.productName,
-            variantLabel: line.variantLabel,
-            sku: line.sku,
-            imageUrl: line.imageUrl,
-            unitPrice: line.unitPrice,
-            quantity: line.quantity,
-            lineTotal: line.lineTotal,
-          })),
-        },
-        statusHistory: {
-          create: {
-            status: "PENDING",
-            note: "Order placed (cash on delivery).",
-            isCustomerVisible: true,
-          },
-        },
-      },
-      include: { items: true },
-    });
-
-    for (const line of freshLines) {
-      await decrementStock(tx, {
-        variantId: line.variantId,
-        quantity: line.quantity,
-        orderId: order.id,
-        reason: `Order ${orderNumber}`,
+        trackingToken: signOrderToken(order.orderNumber),
+        isDuplicate: false,
+      };
+      await tx.idempotencyKey.update({
+        where: { key: idempotencyKey },
+        data: { response: result as never },
       });
-      await tx.product.update({
-        where: { id: line.productId },
-        data: { soldCount: { increment: line.quantity } },
-      });
+
+      return {
+        replay: false as const,
+        result,
+        customerId,
+      };
+    },
+    { timeout: txTimeoutMs },
+  );
+  let placed: PlacedCheckout;
+  try {
+    placed = await checkoutTx;
+  } catch (error) {
+    // The loser's transaction is aborted; recover on a fresh connection.
+    if (error instanceof IdempotencyLostError && lostIdempotencyKey) {
+      const replayed = await recoverSettledCheckout(lostIdempotencyKey);
+      if (!replayed) {
+        throw new AppError("CHECKOUT_IN_PROGRESS", tErr.checkoutInProgress, 409);
+      }
+      placed = { replay: true as const, result: replayed };
+    } else {
+      throw error;
     }
-
-    if (couponId) {
-      await tx.couponRedemption.create({
-        data: {
-          couponId,
-          orderId: order.id,
-          customerId,
-          phone: data.phone,
-          amount: discount,
-        },
-      });
-    }
-
-    const converted = await tx.cart.updateMany({
-      where: { id: cartId, status: "ACTIVE" },
-      data: { status: "CONVERTED", customerId },
-    });
-    if (converted.count !== 1) {
-      throw new AppError("CART_ALREADY_CHECKED_OUT", tErr.alreadyCheckedOut, 409);
-    }
-    await tx.orderOutboxEvent.createMany({
-      data: ORDER_OUTBOX_KINDS.map((kind) => ({ orderId: order.id, kind })),
-    });
-    await tx.auditLog.create({
-      data: {
-        actorType: "SYSTEM",
-        action: "ORDER_CREATED",
-        resource: "Order",
-        resourceId: order.id,
-        ip: context.ip,
-        userAgent: context.userAgent,
-        metadata: { orderNumber, total, itemCount: freshLines.length },
-      },
-    });
-
-    const result: CreateOrderResult = {
-      orderId: order.id,
-      orderNumber: order.orderNumber,
-      total,
-      subtotal,
-      discount,
-      promotionDiscount,
-      promotionName: promotion?.name ?? null,
-      shipping,
-      firstName: data.firstName,
-      phone: data.phone,
-      wilayaName: wilaya.name,
-      communeName: commune.name,
-      address: data.address,
-      deliveryMethod: data.deliveryMethod,
-      trackingToken: signOrderToken(order.orderNumber),
-      isDuplicate: false,
-    };
-    await tx.idempotencyKey.update({
-      where: { key: idempotencyKey },
-      data: { response: result as never },
-    });
-
-    return {
-      replay: false as const,
-      result,
-      customerId,
-    };
-  }, { timeout: txTimeoutMs });
+  }
 
   if (placed.replay) {
     after(async () => {
@@ -758,7 +826,10 @@ export async function getOrderConfirmation(orderNumber: string): Promise<OrderCo
       })),
     };
   } catch (error) {
-    console.error("[orders] confirmation lookup failed", error instanceof Error ? error.name : "unknown");
+    console.error(
+      "[orders] confirmation lookup failed",
+      error instanceof Error ? error.name : "unknown",
+    );
     return null;
   }
 }

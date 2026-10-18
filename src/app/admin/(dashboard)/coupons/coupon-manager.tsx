@@ -29,7 +29,11 @@ export type CouponRow = {
 
 function toDateInput(value: Date | null): string {
   if (!value) return "";
-  return new Date(value).toISOString().slice(0, 16);
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  // datetime-local is local wall time — formatting via UTC would shift it.
+  const pad = (part: number) => String(part).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
 export function CouponManager({
@@ -43,7 +47,9 @@ export function CouponManager({
 }) {
   const router = useRouter();
   const { t } = useLocale();
-  const [editing, setEditing] = useState<Partial<CouponRow & { productSkus: string }> & { id?: string } | null>(null);
+  const [editing, setEditing] = useState<
+    (Partial<CouponRow & { productSkus: string }> & { id?: string }) | null
+  >(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
@@ -87,7 +93,9 @@ export function CouponManager({
 
   function toggleList<T>(list: T[] | undefined, value: T): T[] {
     const current = list ?? [];
-    return current.includes(value) ? current.filter((entry) => entry !== value) : [...current, value];
+    return current.includes(value)
+      ? current.filter((entry) => entry !== value)
+      : [...current, value];
   }
 
   return (
@@ -113,7 +121,10 @@ export function CouponManager({
         </Button>
       </div>
       {error && (
-        <p className="mb-3 border border-[#9e342e]/30 bg-red-50 px-4 py-2 text-sm text-[#9e342e]" role="alert">
+        <p
+          className="mb-3 border border-[#9e342e]/30 bg-red-50 px-4 py-2 text-sm text-[#9e342e]"
+          role="alert"
+        >
           {error}
         </p>
       )}
@@ -135,13 +146,17 @@ export function CouponManager({
                 <td className="px-4 py-3 font-mono font-medium">{coupon.code}</td>
                 <td className="px-4 py-3">
                   {coupon.type === "PERCENTAGE" ? `${coupon.value}%` : `${coupon.value} DA`}
-                  {coupon.minOrder ? <span className="block text-xs text-ink-muted">min {coupon.minOrder} DA</span> : null}
+                  {coupon.minOrder ? (
+                    <span className="block text-xs text-ink-muted">min {coupon.minOrder} DA</span>
+                  ) : null}
                 </td>
                 <td className="px-4 py-3 tabular-nums">
                   {coupon._count.redemptions}
                   {coupon.usageLimit ? ` / ${coupon.usageLimit}` : ""}
                 </td>
-                <td className="px-4 py-3">{coupon.isActive ? t.adminCoupon.yes : t.adminCoupon.no}</td>
+                <td className="px-4 py-3">
+                  {coupon.isActive ? t.adminCoupon.yes : t.adminCoupon.no}
+                </td>
                 <td className="px-4 py-3 text-end text-xs">
                   <button
                     type="button"
@@ -159,7 +174,11 @@ export function CouponManager({
                   >
                     {t.adminCoupon.editCoupon}
                   </button>
-                  <button type="button" onClick={() => void remove(coupon.id)} className="ms-3 text-[#9e342e] underline underline-offset-2">
+                  <button
+                    type="button"
+                    onClick={() => void remove(coupon.id)}
+                    className="ms-3 text-[#9e342e] underline underline-offset-2"
+                  >
                     {t.adminForm.delete}
                   </button>
                 </td>
@@ -167,66 +186,174 @@ export function CouponManager({
             ))}
           </tbody>
         </table>
-          {coupons.length === 0 && <p className="p-8 text-center text-sm text-ink-muted">{t.adminCoupon.noCoupons}</p>}
+        {coupons.length === 0 && (
+          <p className="p-8 text-center text-sm text-ink-muted">{t.adminCoupon.noCoupons}</p>
+        )}
       </div>
 
       {editing && (
         <form onSubmit={submit} className="mt-6 space-y-4 border hairline bg-white p-5">
-          <h2 className="font-display text-2xl">{editing.id ? `${t.adminCoupon.editCoupon} ${editing.code}` : t.adminCoupon.newCoupon}</h2>
+          <h2 className="font-display text-2xl">
+            {editing.id ? `${t.adminCoupon.editCoupon} ${editing.code}` : t.adminCoupon.newCoupon}
+          </h2>
           <div className="grid gap-4 sm:grid-cols-3">
             <Field label={t.adminForm.code} required>
-              <Input value={editing.code ?? ""} onChange={(event) => setEditing({ ...editing, code: event.target.value.toUpperCase() })} required className="font-mono uppercase" />
+              <Input
+                value={editing.code ?? ""}
+                onChange={(event) =>
+                  setEditing({ ...editing, code: event.target.value.toUpperCase() })
+                }
+                required
+                className="font-mono uppercase"
+              />
             </Field>
             <Field label={t.adminForm.type}>
-              <Select value={editing.type ?? "PERCENTAGE"} onChange={(event) => setEditing({ ...editing, type: event.target.value as "PERCENTAGE" | "FIXED" })}>
+              <Select
+                value={editing.type ?? "PERCENTAGE"}
+                onChange={(event) =>
+                  setEditing({ ...editing, type: event.target.value as "PERCENTAGE" | "FIXED" })
+                }
+              >
                 <option value="PERCENTAGE">{t.adminCoupon.percentage}</option>
                 <option value="FIXED">{t.adminCoupon.fixedAmount}</option>
               </Select>
             </Field>
-            <Field label={editing.type === "FIXED" ? t.adminCoupon.amountDa : t.adminCoupon.percentRange} required>
-              <Input type="number" min={1} value={editing.value ?? 10} onChange={(event) => setEditing({ ...editing, value: Number(event.target.value) })} required />
+            <Field
+              label={editing.type === "FIXED" ? t.adminCoupon.amountDa : t.adminCoupon.percentRange}
+              required
+            >
+              <Input
+                type="number"
+                min={1}
+                value={editing.value ?? 10}
+                onChange={(event) => setEditing({ ...editing, value: Number(event.target.value) })}
+                required
+              />
             </Field>
           </div>
           <div className="grid gap-4 sm:grid-cols-4">
             <Field label={t.adminCoupon.minOrder}>
-              <Input type="number" min={0} value={editing.minOrder ?? ""} onChange={(event) => setEditing({ ...editing, minOrder: event.target.value === "" ? null : Number(event.target.value) })} />
+              <Input
+                type="number"
+                min={0}
+                value={editing.minOrder ?? ""}
+                onChange={(event) =>
+                  setEditing({
+                    ...editing,
+                    minOrder: event.target.value === "" ? null : Number(event.target.value),
+                  })
+                }
+              />
             </Field>
             <Field label={t.adminCoupon.maxDiscount}>
-              <Input type="number" min={0} value={editing.maxDiscount ?? ""} onChange={(event) => setEditing({ ...editing, maxDiscount: event.target.value === "" ? null : Number(event.target.value) })} />
+              <Input
+                type="number"
+                min={0}
+                value={editing.maxDiscount ?? ""}
+                onChange={(event) =>
+                  setEditing({
+                    ...editing,
+                    maxDiscount: event.target.value === "" ? null : Number(event.target.value),
+                  })
+                }
+              />
             </Field>
             <Field label={t.adminCoupon.totalLimit}>
-              <Input type="number" min={0} value={editing.usageLimit ?? ""} onChange={(event) => setEditing({ ...editing, usageLimit: event.target.value === "" ? null : Number(event.target.value) })} />
+              <Input
+                type="number"
+                min={0}
+                value={editing.usageLimit ?? ""}
+                onChange={(event) =>
+                  setEditing({
+                    ...editing,
+                    usageLimit: event.target.value === "" ? null : Number(event.target.value),
+                  })
+                }
+              />
             </Field>
             <Field label={t.adminCoupon.perCustomer}>
-              <Input type="number" min={0} value={editing.perCustomerLimit ?? ""} onChange={(event) => setEditing({ ...editing, perCustomerLimit: event.target.value === "" ? null : Number(event.target.value) })} />
+              <Input
+                type="number"
+                min={0}
+                value={editing.perCustomerLimit ?? ""}
+                onChange={(event) =>
+                  setEditing({
+                    ...editing,
+                    perCustomerLimit: event.target.value === "" ? null : Number(event.target.value),
+                  })
+                }
+              />
             </Field>
           </div>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t.adminCoupon.startsAt}>
-              <Input type="datetime-local" value={editing.startsAt ? toDateInput(editing.startsAt as Date) : ""} onChange={(event) => setEditing({ ...editing, startsAt: event.target.value ? (new Date(event.target.value) as unknown as Date) : null })} />
+              <Input
+                type="datetime-local"
+                value={editing.startsAt ? toDateInput(editing.startsAt as Date) : ""}
+                onChange={(event) =>
+                  setEditing({
+                    ...editing,
+                    startsAt: event.target.value
+                      ? (new Date(event.target.value) as unknown as Date)
+                      : null,
+                  })
+                }
+              />
             </Field>
             <Field label={t.adminCoupon.endsAt}>
-              <Input type="datetime-local" value={editing.endsAt ? toDateInput(editing.endsAt as Date) : ""} onChange={(event) => setEditing({ ...editing, endsAt: event.target.value ? (new Date(event.target.value) as unknown as Date) : null })} />
+              <Input
+                type="datetime-local"
+                value={editing.endsAt ? toDateInput(editing.endsAt as Date) : ""}
+                onChange={(event) =>
+                  setEditing({
+                    ...editing,
+                    endsAt: event.target.value
+                      ? (new Date(event.target.value) as unknown as Date)
+                      : null,
+                  })
+                }
+              />
             </Field>
           </div>
           <div className="flex flex-wrap gap-4 text-sm">
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={editing.isActive ?? true} onChange={(event) => setEditing({ ...editing, isActive: event.target.checked })} className="h-4 w-4 accent-[#1c1a17]" />
+              <input
+                type="checkbox"
+                checked={editing.isActive ?? true}
+                onChange={(event) => setEditing({ ...editing, isActive: event.target.checked })}
+                className="h-4 w-4 accent-[#1c1a17]"
+              />
               {t.adminForm.active}
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={editing.firstOrderOnly ?? false} onChange={(event) => setEditing({ ...editing, firstOrderOnly: event.target.checked })} className="h-4 w-4 accent-[#1c1a17]" />
+              <input
+                type="checkbox"
+                checked={editing.firstOrderOnly ?? false}
+                onChange={(event) =>
+                  setEditing({ ...editing, firstOrderOnly: event.target.checked })
+                }
+                className="h-4 w-4 accent-[#1c1a17]"
+              />
               {t.adminCoupon.firstOrders}
             </label>
             <label className="flex items-center gap-2">
-              <input type="checkbox" checked={editing.appliesToAll ?? true} onChange={(event) => setEditing({ ...editing, appliesToAll: event.target.checked })} className="h-4 w-4 accent-[#1c1a17]" />
+              <input
+                type="checkbox"
+                checked={editing.appliesToAll ?? true}
+                onChange={(event) => setEditing({ ...editing, appliesToAll: event.target.checked })}
+                className="h-4 w-4 accent-[#1c1a17]"
+              />
               {t.adminCoupon.wholeBag}
             </label>
           </div>
           {!(editing.appliesToAll ?? true) && (
             <>
               <Field label={t.adminCoupon.productSkus}>
-                <Textarea value={editing.productSkus ?? ""} onChange={(event) => setEditing({ ...editing, productSkus: event.target.value })} rows={2} />
+                <Textarea
+                  value={editing.productSkus ?? ""}
+                  onChange={(event) => setEditing({ ...editing, productSkus: event.target.value })}
+                  rows={2}
+                />
               </Field>
               <div>
                 <p className="field-label">Collections</p>
@@ -236,7 +363,12 @@ export function CouponManager({
                       <input
                         type="checkbox"
                         checked={(editing.collectionSlugs ?? []).includes(collection.slug)}
-                        onChange={() => setEditing({ ...editing, collectionSlugs: toggleList(editing.collectionSlugs, collection.slug) })}
+                        onChange={() =>
+                          setEditing({
+                            ...editing,
+                            collectionSlugs: toggleList(editing.collectionSlugs, collection.slug),
+                          })
+                        }
                         className="h-4 w-4 accent-[#1c1a17]"
                       />
                       {collection.name}
@@ -254,7 +386,12 @@ export function CouponManager({
                   <input
                     type="checkbox"
                     checked={(editing.wilayaCodes ?? []).includes(wilaya.code)}
-                    onChange={() => setEditing({ ...editing, wilayaCodes: toggleList(editing.wilayaCodes, wilaya.code) })}
+                    onChange={() =>
+                      setEditing({
+                        ...editing,
+                        wilayaCodes: toggleList(editing.wilayaCodes, wilaya.code),
+                      })
+                    }
                     className="h-4 w-4 accent-[#1c1a17]"
                   />
                   {String(wilaya.code).padStart(2, "0")} {wilaya.name}

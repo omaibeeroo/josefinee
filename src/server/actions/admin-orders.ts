@@ -191,6 +191,21 @@ export async function changeOrderStatusAction(
       });
 
       if (status === "CANCELLED" || status === "RETURNED") {
+        if (status === "CANCELLED") {
+          // A cancelled order never consumed its coupon: release the
+          // redemption and the usage slot so the customer can use it again.
+          const redemption = await tx.couponRedemption.findUnique({
+            where: { orderId },
+            select: { couponId: true },
+          });
+          if (redemption) {
+            await tx.couponRedemption.delete({ where: { orderId } });
+            await tx.coupon.updateMany({
+              where: { id: redemption.couponId, usageCount: { gt: 0 } },
+              data: { usageCount: { decrement: 1 } },
+            });
+          }
+        }
         for (const item of order.items) {
           if (item.variantId) {
             await incrementStock(tx, {
@@ -233,29 +248,41 @@ export async function changeOrderStatusAction(
     if (notify) {
       const label = t.customerStatus[status];
       try {
-        if (status === "SHIPPED") {
-          await sendShippingNotification({
-            orderId,
-            phone: order.phone,
-            email: order.email,
-            orderNumber: order.orderNumber,
-            firstName: order.firstName,
-            total: order.total,
-            locale: locale === "en" ? "en" : "fr",
-            idempotencyKey: `order-status:${orderId}:${status}`,
-          });
-        } else {
-          await sendOrderStatusUpdate({
-            orderId,
-            phone: order.phone,
-            email: order.email,
-            orderNumber: order.orderNumber,
-            firstName: order.firstName,
-            total: order.total,
-            status: label,
-            note,
-            locale: locale === "en" ? "en" : "fr",
-            idempotencyKey: `order-status:${orderId}:${status}`,
+        const dispatchResult =
+          status === "SHIPPED"
+            ? await sendShippingNotification({
+                orderId,
+                phone: order.phone,
+                email: order.email,
+                orderNumber: order.orderNumber,
+                firstName: order.firstName,
+                total: order.total,
+                locale: locale === "en" ? "en" : "fr",
+                idempotencyKey: `order-status:${orderId}:${status}`,
+              })
+            : await sendOrderStatusUpdate({
+                orderId,
+                phone: order.phone,
+                email: order.email,
+                orderNumber: order.orderNumber,
+                firstName: order.firstName,
+                total: order.total,
+                status: label,
+                statusKey: status,
+                note,
+                locale: locale === "en" ? "en" : "fr",
+                idempotencyKey: `order-status:${orderId}:${status}`,
+              });
+        // The customer counts as notified when at least one channel actually
+        // delivered; partial channel failures are audited instead of ignored.
+        notified = dispatchResult.sent.length > 0;
+        if (dispatchResult.failed.length > 0) {
+          await recordAudit({
+            actorUserId: actor.id,
+            action: "ORDER_NOTIFICATION_FAILED",
+            resource: "Order",
+            resourceId: orderId,
+            metadata: { to: status, channels: dispatchResult.failed },
           });
         }
       } catch {
@@ -291,7 +318,9 @@ export async function changeOrderStatusAction(
 
 export async function updateAdminNotesAction(orderId: string, notes: string) {
   const actor = await requirePermission("orders:write");
-  const parsed = z.object({ orderId: adminId, notes: z.string().max(4000) }).safeParse({ orderId, notes });
+  const parsed = z
+    .object({ orderId: adminId, notes: z.string().max(4000) })
+    .safeParse({ orderId, notes });
   if (!parsed.success) return { ok: false as const, error: "Invalid order note." };
   try {
     await prisma.order.update({

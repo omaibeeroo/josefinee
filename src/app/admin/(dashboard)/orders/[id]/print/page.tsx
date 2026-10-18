@@ -14,19 +14,27 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
   const { id } = await params;
   const order = await getAdminOrder(id).catch(() => null);
   if (!order) notFound();
-  const [settings, requestHeaders, t] = await Promise.all([getSettings(), headers(), getDictionary()]);
+  const [settings, requestHeaders, t] = await Promise.all([
+    getSettings(),
+    headers(),
+    getDictionary(),
+  ]);
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
 
   return (
-    <div className="mx-auto max-w-2xl bg-white p-8 text-sm text-black">
-      <div className="flex items-start justify-between border-b-2 border-black pb-4">
+    <div className="mx-auto max-w-2xl bg-[#fff] p-8 text-sm text-[#000]">
+      <div className="flex items-start justify-between border-b-2 border-[#000] pb-4">
         <div>
           <p className="font-display text-2xl tracking-[0.24em]">{settings.general.name}</p>
-          <p className="text-xs">{settings.general.phone} · {settings.general.email}</p>
+          <p className="text-xs">
+            {settings.general.phone} · {settings.general.email}
+          </p>
         </div>
         <div className="text-end">
           <p className="text-lg font-bold">{t.adminPrint.packingSlip}</p>
-          <p><bdi>{order.orderNumber}</bdi></p>
+          <p>
+            <bdi>{order.orderNumber}</bdi>
+          </p>
           <p className="text-xs">{formatDateTimeFR(order.placedAt, t.locale)}</p>
         </div>
       </div>
@@ -37,22 +45,30 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
           <p>
             {order.firstName} {order.lastName}
           </p>
-          <p><bdi>{formatPhoneDisplay(order.phone)}</bdi></p>
+          <p>
+            <bdi>{formatPhoneDisplay(order.phone)}</bdi>
+          </p>
           <p>
             {order.address}, {order.communeName}, {order.wilayaName}
           </p>
-          {order.notes && <p className="mt-1 italic">{t.adminPrint.note} {order.notes}</p>}
+          {order.notes && (
+            <p className="mt-1 italic">
+              {t.adminPrint.note} {order.notes}
+            </p>
+          )}
         </div>
         <div className="text-end">
           <p className="font-bold">{t.adminPrint.payment}</p>
           <p>{t.adminPrint.cod}</p>
-          <p className="mt-2 text-xl font-bold">{t.adminPrint.collect} {formatDA(order.total, t.locale)}</p>
+          <p className="mt-2 text-xl font-bold">
+            {t.adminPrint.collect} {formatDA(order.total, t.locale)}
+          </p>
         </div>
       </div>
 
       <table className="mt-6 w-full border-collapse text-sm">
         <thead>
-          <tr className="border-b-2 border-black text-start">
+          <tr className="border-b-2 border-[#000] text-start">
             <th className="py-2">{t.adminPrint.product}</th>
             <th className="py-2">{t.adminPrint.sku}</th>
             <th className="py-2 text-end">{t.adminPrint.qty}</th>
@@ -62,7 +78,7 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
         </thead>
         <tbody>
           {order.items.map((item) => (
-            <tr key={item.id} className="border-b border-black/20">
+            <tr key={item.id} className="border-b border-[#000]/20">
               <td className="py-2">
                 {item.productName}
                 {item.variantLabel ? ` (${item.variantLabel})` : ""}
@@ -77,16 +93,36 @@ export default async function PrintSlipPage({ params }: { params: Promise<{ id: 
       </table>
 
       <div className="mt-4 space-y-1 text-end">
-          <p>{t.adminPrint.subtotal}: {formatDA(order.subtotal, t.locale)}</p>
-          {order.promotionDiscount > 0 && <p>{t.adminPrint.promotion}: −{formatDA(order.promotionDiscount, t.locale)}</p>}
-          <p>{t.adminPrint.discount}: −{formatDA(order.discount, t.locale)}</p>
-          <p>{t.adminPrint.delivery}: {formatDA(order.shipping, t.locale)}</p>
-          <p className="text-lg font-bold">{t.adminPrint.total}: {formatDA(order.total, t.locale)}</p>
+        <p>
+          {t.adminPrint.subtotal}: {formatDA(order.subtotal, t.locale)}
+        </p>
+        {order.promotionDiscount > 0 && (
+          <p>
+            {t.adminPrint.promotion}: −{formatDA(order.promotionDiscount, t.locale)}
+          </p>
+        )}
+        <p>
+          {t.adminPrint.discount}: −{formatDA(order.discount, t.locale)}
+        </p>
+        <p>
+          {t.adminPrint.delivery}: {formatDA(order.shipping, t.locale)}
+        </p>
+        <p className="text-lg font-bold">
+          {t.adminPrint.total}: {formatDA(order.total, t.locale)}
+        </p>
       </div>
 
-      <p className="mt-8 border-t border-black/20 pt-2 text-xs">☐ {t.adminPrint.packed} &nbsp;&nbsp; ☐ {t.adminPrint.checked} &nbsp;&nbsp; {t.adminPrint.signature} __________</p>
+      <p className="mt-8 border-t border-[#000]/20 pt-2 text-xs">
+        ☐ {t.adminPrint.packed} &nbsp;&nbsp; ☐ {t.adminPrint.checked} &nbsp;&nbsp;{" "}
+        {t.adminPrint.signature} __________
+      </p>
 
-      <script nonce={nonce} dangerouslySetInnerHTML={{ __html: "window.addEventListener('load', () => window.print());" }} />
+      <script
+        nonce={nonce}
+        dangerouslySetInnerHTML={{
+          __html: "window.addEventListener('load', () => window.print());",
+        }}
+      />
     </div>
   );
 }

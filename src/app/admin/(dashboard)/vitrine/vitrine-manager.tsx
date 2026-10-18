@@ -18,6 +18,22 @@ import type { HomepageSectionId } from "@/lib/settings";
 
 type VitrineData = Awaited<ReturnType<typeof getVitrineData>>;
 
+/** ISO instant → "YYYY-MM-DDTHH:mm" in the admin's local timezone. */
+function toLocalInputValue(iso: string | null | undefined): string {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
+}
+
+/** "YYYY-MM-DDTHH:mm" (local, as the input entered it) → ISO instant. */
+function toIsoInstant(value: string): string | null {
+  if (!value) return null;
+  const time = Date.parse(value);
+  return Number.isFinite(time) ? new Date(time).toISOString() : null;
+}
+
 export function VitrineManager({ data }: { data: VitrineData }) {
   const router = useRouter();
   const { t } = useLocale();
@@ -31,8 +47,8 @@ export function VitrineManager({ data }: { data: VitrineData }) {
     categoryCount: data.display.categoryCount,
     catalogPageSize: data.catalogPageSize,
   });
-  const [schedStart, setSchedStart] = useState(data.announcement.startsAt?.slice(0, 16) ?? "");
-  const [schedEnd, setSchedEnd] = useState(data.announcement.endsAt?.slice(0, 16) ?? "");
+  const [schedStart, setSchedStart] = useState(toLocalInputValue(data.announcement.startsAt));
+  const [schedEnd, setSchedEnd] = useState(toLocalInputValue(data.announcement.endsAt));
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -103,12 +119,15 @@ export function VitrineManager({ data }: { data: VitrineData }) {
     router.refresh();
   }
 
-  /** datetime-local gives "YYYY-MM-DDTHH:mm" (no offset); the server parses it. */
+  /** datetime-local gives "YYYY-MM-DDTHH:mm" (local time); send a UTC instant. */
   async function saveSchedule() {
     setPending(true);
     setError(null);
     setMessage(null);
-    const result = await saveAnnouncementScheduleAction({ startsAt: schedStart, endsAt: schedEnd });
+    const result = await saveAnnouncementScheduleAction({
+      startsAt: toIsoInstant(schedStart),
+      endsAt: toIsoInstant(schedEnd),
+    });
     setPending(false);
     if (!result.ok) {
       setError(result.error ?? t.actions.wentWrong);
@@ -146,7 +165,12 @@ export function VitrineManager({ data }: { data: VitrineData }) {
                   onChange={() => toggleSection(entry.id)}
                   className="h-4 w-4 shrink-0 accent-[#1c1a17]"
                 />
-                <span className={cn("truncate text-sm", !entry.visible && "text-ink-muted line-through")}>
+                <span
+                  className={cn(
+                    "truncate text-sm",
+                    !entry.visible && "text-ink-muted line-through",
+                  )}
+                >
                   {t.adminVitrine.names[entry.id] ?? entry.id}
                 </span>
               </label>
@@ -173,7 +197,13 @@ export function VitrineManager({ data }: { data: VitrineData }) {
             </li>
           ))}
         </ul>
-        <Button type="button" size="sm" disabled={pending} onClick={() => void saveSections()} className="mt-4">
+        <Button
+          type="button"
+          size="sm"
+          disabled={pending}
+          onClick={() => void saveSections()}
+          className="mt-4"
+        >
           {pending ? "…" : t.adminVitrine.saveSections}
         </Button>
         {message && (
@@ -206,7 +236,13 @@ export function VitrineManager({ data }: { data: VitrineData }) {
               </option>
             ))}
           </select>
-          <Button type="button" size="sm" disabled={pending} onClick={() => void saveSpotlight()} className="mt-3">
+          <Button
+            type="button"
+            size="sm"
+            disabled={pending}
+            onClick={() => void saveSpotlight()}
+            className="mt-3"
+          >
             {pending ? "…" : t.adminVitrine.saveSpotlight}
           </Button>
         </section>
@@ -217,24 +253,32 @@ export function VitrineManager({ data }: { data: VitrineData }) {
           </h2>
           <div className="grid gap-3 sm:grid-cols-2">
             <label className="block text-sm">
-              <span className="mb-1 block text-xs text-ink-muted">{t.adminVitrine.featuredCount}</span>
+              <span className="mb-1 block text-xs text-ink-muted">
+                {t.adminVitrine.featuredCount}
+              </span>
               <input
                 type="number"
                 min={2}
                 max={24}
                 value={display.featuredCount}
-                onChange={(event) => setDisplay({ ...display, featuredCount: Number(event.target.value) })}
+                onChange={(event) =>
+                  setDisplay({ ...display, featuredCount: Number(event.target.value) })
+                }
                 className="field min-h-10"
               />
             </label>
             <label className="block text-sm">
-              <span className="mb-1 block text-xs text-ink-muted">{t.adminVitrine.bestSellersCount}</span>
+              <span className="mb-1 block text-xs text-ink-muted">
+                {t.adminVitrine.bestSellersCount}
+              </span>
               <input
                 type="number"
                 min={2}
                 max={24}
                 value={display.bestSellersCount}
-                onChange={(event) => setDisplay({ ...display, bestSellersCount: Number(event.target.value) })}
+                onChange={(event) =>
+                  setDisplay({ ...display, bestSellersCount: Number(event.target.value) })
+                }
                 className="field min-h-10"
               />
             </label>
@@ -245,35 +289,51 @@ export function VitrineManager({ data }: { data: VitrineData }) {
                 min={2}
                 max={24}
                 value={display.newInCount}
-                onChange={(event) => setDisplay({ ...display, newInCount: Number(event.target.value) })}
+                onChange={(event) =>
+                  setDisplay({ ...display, newInCount: Number(event.target.value) })
+                }
                 className="field min-h-10"
               />
             </label>
             <label className="block text-sm">
-              <span className="mb-1 block text-xs text-ink-muted">{t.adminVitrine.categoryCount}</span>
+              <span className="mb-1 block text-xs text-ink-muted">
+                {t.adminVitrine.categoryCount}
+              </span>
               <input
                 type="number"
                 min={2}
                 max={12}
                 value={display.categoryCount}
-                onChange={(event) => setDisplay({ ...display, categoryCount: Number(event.target.value) })}
+                onChange={(event) =>
+                  setDisplay({ ...display, categoryCount: Number(event.target.value) })
+                }
                 className="field min-h-10"
               />
             </label>
             <label className="block text-sm sm:col-span-2">
-              <span className="mb-1 block text-xs text-ink-muted">{t.adminVitrine.catalogPageSize}</span>
+              <span className="mb-1 block text-xs text-ink-muted">
+                {t.adminVitrine.catalogPageSize}
+              </span>
               <input
                 type="number"
                 min={6}
                 max={48}
                 step={6}
                 value={display.catalogPageSize}
-                onChange={(event) => setDisplay({ ...display, catalogPageSize: Number(event.target.value) })}
+                onChange={(event) =>
+                  setDisplay({ ...display, catalogPageSize: Number(event.target.value) })
+                }
                 className="field min-h-10"
               />
             </label>
           </div>
-          <Button type="button" size="sm" disabled={pending} onClick={() => void saveDisplay()} className="mt-3">
+          <Button
+            type="button"
+            size="sm"
+            disabled={pending}
+            onClick={() => void saveDisplay()}
+            className="mt-3"
+          >
             {pending ? "…" : t.adminVitrine.saveDisplay}
           </Button>
         </section>
@@ -324,7 +384,10 @@ export function VitrineManager({ data }: { data: VitrineData }) {
           </div>
         </section>
 
-        <section className="border hairline bg-white p-5" aria-label={t.adminVitrine.collectionOrder}>
+        <section
+          className="border hairline bg-white p-5"
+          aria-label={t.adminVitrine.collectionOrder}
+        >
           <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">
             {t.adminVitrine.collectionOrder}
           </h2>
