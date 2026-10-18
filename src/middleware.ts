@@ -119,7 +119,7 @@ async function hasActiveAdminSession(request: NextRequest): Promise<boolean> {
 
 function maintenanceResponse(csp: string, localeCookie?: string): NextResponse {
   const lang = localeCookie === "ar" ? "ar" : localeCookie === "en" ? "en" : "fr";
-  const heading = "COMING SOON";
+  const heading = lang === "ar" ? "قريبًا" : "COMING SOON";
   const title =
     lang === "ar"
       ? "المتجر مغلق مؤقتًا | Hanadi Store"
@@ -133,7 +133,7 @@ function maintenanceResponse(csp: string, localeCookie?: string): NextResponse {
         ? "Our boutique is temporarily unavailable during an update. Please come back in a few moments."
         : "Notre boutique est temporairement indisponible pendant une mise à jour. Merci de revenir dans quelques instants.";
   return new NextResponse(
-    `<!doctype html><html lang="${lang}" dir="${lang === "ar" ? "rtl" : "ltr"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#faf8f4"><title>${title}</title><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;min-height:100svh;display:grid;place-items:center;padding:1.5rem;background:#faf8f4;color:#1c1a17;font-family:Georgia,"Times New Roman",serif;text-align:center}main{width:min(100%,42rem);padding:clamp(2rem,8vw,5rem) 1.5rem}strong{display:block;margin-bottom:clamp(2.5rem,8vw,4rem);color:#b08d57;font-size:clamp(1.25rem,4vw,1.8rem);font-weight:400;letter-spacing:.32em;text-transform:uppercase}.ornament{width:3rem;height:1px;margin:0 auto 2rem;background:#b08d57}h1{margin:0;font-size:clamp(2.4rem,9vw,4.75rem);font-weight:400;letter-spacing:.12em;line-height:1.05}p{max-width:29rem;margin:1.5rem auto 0;color:#665f56;font-family:Arial,sans-serif;font-size:.95rem;line-height:1.8}@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}</style></head><body><main><strong>Hanadi Store</strong><div class="ornament" aria-hidden="true"></div><h1>${heading}</h1><p>${body}</p></main></body></html>`,
+    `<!doctype html><html lang="${lang}" dir="${lang === "ar" ? "rtl" : "ltr"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="robots" content="noindex,nofollow"><meta name="theme-color" content="#faf8f4"><title>${title}</title><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;min-height:100svh;display:grid;place-items:center;padding:1.5rem;background:#faf8f4;color:#1c1a17;font-family:Georgia,"Times New Roman",serif;text-align:center}main{width:min(100%,42rem);padding:clamp(2rem,8vw,5rem) 1.5rem}strong{display:block;margin-bottom:clamp(2.5rem,8vw,4rem);color:#b08d57;font-size:clamp(1.25rem,4vw,1.8rem);font-weight:400;letter-spacing:.32em;text-transform:uppercase}.ornament{width:3rem;height:1px;margin:0 auto 2rem;background:#b08d57}h1{margin:0;font-size:clamp(2.4rem,9vw,4.75rem);font-weight:400;letter-spacing:.12em;line-height:1.05}p{max-width:29rem;margin:1.5rem auto 0;color:#665f56;font-family:Arial,sans-serif;font-size:.95rem;line-height:1.8}@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important}}</style></head><body><main><strong>Hanadi Store</strong><div class="ornament" aria-hidden="true"></div><h1 style="${lang === "ar" ? "font-family:Tahoma,Arial,sans-serif;letter-spacing:normal;line-height:1.35" : ""}">${heading}</h1><p>${body}</p></main></body></html>`,
     {
       status: 503,
       headers: {
