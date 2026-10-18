@@ -3,6 +3,8 @@ import ar from "./ar";
 import en from "./en";
 import fr from "./fr";
 import { parseLocale, DEFAULT_LOCALE } from "./locales";
+import { BRAND_CONFIG } from "@/config/brand";
+import { resolveSiteMetadata } from "./metadata";
 
 function leafPaths(value: unknown, prefix = ""): string[] {
   if (typeof value === "string") return [prefix];
@@ -30,6 +32,33 @@ describe("i18n dictionaries", () => {
         expect((value as string).length, path).toBeGreaterThan(0);
       }
     }
+  });
+
+  it("keeps Arabic site metadata and maintenance copy localized", () => {
+    expect(ar.siteMetadata.titleSuffix).toContain("الدفع عند الاستلام");
+    expect(ar.siteMetadata.description).toContain("الجزائر");
+    expect(ar.maintenance.heading).toBe("قريبًا");
+    expect(ar.maintenance.title).toContain("{name}");
+    expect(ar.maintenance.body).toContain("التحديثات");
+    expect(ar.header.ok).toBe("حسنًا");
+  });
+
+  it("localizes default SEO but preserves custom admin SEO text", () => {
+    expect(
+      resolveSiteMetadata(
+        {
+          titleSuffix: BRAND_CONFIG.defaultTitleSuffix,
+          defaultDescription: BRAND_CONFIG.description,
+        },
+        ar.siteMetadata,
+      ),
+    ).toEqual(ar.siteMetadata);
+    expect(
+      resolveSiteMetadata(
+        { titleSuffix: "Custom title", defaultDescription: "Custom description" },
+        ar.siteMetadata,
+      ),
+    ).toEqual({ titleSuffix: "Custom title", description: "Custom description" });
   });
 
   it("parseLocale falls back to the default", () => {

@@ -2,6 +2,15 @@ import type { FrDictionary } from "./fr";
 
 const en: FrDictionary = {
   locale: "en",
+  siteMetadata: {
+    titleSuffix: "Modern jewellery, bags & accessories | Cash on delivery",
+    description: "Modern jewellery, bags and accessories delivered across Algeria. Pay on delivery.",
+  },
+  maintenance: {
+    heading: "Coming soon",
+    title: "{name} — Coming soon",
+    body: "We’re preparing something new. The shop will be back soon.",
+  },
   orderErrors: {
     validationReview: "Please review the highlighted fields and try again.",
     codDisabled: "Cash on delivery is temporarily unavailable.",

@@ -1,5 +1,14 @@
 const fr = {
   locale: "fr",
+  siteMetadata: {
+    titleSuffix: "Bijoux et accessoires modernes | Paiement à la livraison",
+    description: "Bijoux, sacs et accessoires modernes livrés partout en Algérie. Paiement à la livraison.",
+  },
+  maintenance: {
+    heading: "De retour bientôt",
+    title: "{name} — De retour bientôt",
+    body: "Nous préparons quelques nouveautés. La boutique revient bientôt.",
+  },
   orderErrors: {
     validationReview: "Veuillez vérifier les champs surlignés et réessayer.",
     codDisabled: "Le paiement à la livraison est temporairement indisponible.",

@@ -5,6 +5,7 @@ import "./globals.css";
 import { cookies } from "next/headers";
 import { getSettings } from "@/lib/settings";
 import { getDictionary, getLocale } from "@/lib/i18n/server";
+import { resolveSiteMetadata } from "@/lib/i18n/metadata";
 import { THEME_COOKIE, parseTheme } from "@/lib/i18n/theme";
 import { localeDir } from "@/lib/i18n/locales";
 import { LocaleProvider } from "@/lib/i18n/provider";
@@ -55,28 +56,36 @@ const sansAr = Almarai({
 });
 
 export async function generateMetadata(): Promise<Metadata> {
-  const [settings, locale] = await Promise.all([getSettings(), getLocale()]);
+  const [settings, locale, dictionary] = await Promise.all([
+    getSettings(),
+    getLocale(),
+    getDictionary(),
+  ]);
   const name = settings.general.name || BRAND_CONFIG.name;
   const base = appUrl();
   const ogImage = settings.seo.defaultOgImage || "/og-default.svg";
+  const siteMetadata = resolveSiteMetadata(settings.seo, dictionary.siteMetadata);
+  const title = `${name} — ${siteMetadata.titleSuffix}`;
   return {
     metadataBase: new URL(base),
     applicationName: name,
     title: {
-      default: `${name} — ${settings.seo.titleSuffix}`,
+      default: title,
       template: `%s · ${name}`,
     },
-    description: settings.seo.defaultDescription,
+    description: siteMetadata.description,
     openGraph: {
       siteName: name,
       type: "website",
       locale: locale === "ar" ? "ar_DZ" : locale === "en" ? "en_US" : "fr_DZ",
+      title,
+      description: siteMetadata.description,
       images: ogImage ? [{ url: ogImage }] : undefined,
     },
     twitter: {
       card: "summary_large_image",
-      title: `${name} — ${settings.seo.titleSuffix}`,
-      description: settings.seo.defaultDescription,
+      title,
+      description: siteMetadata.description,
       images: ogImage ? [ogImage] : undefined,
     },
     appleWebApp: {
@@ -122,7 +131,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   ) as React.CSSProperties | undefined;
 
   return (
-    <html lang={locale} dir={localeDir(locale)} data-theme={theme} className={`${display.variable} ${sans.variable} ${displayAr.variable} ${sansAr.variable}`}>
+    <html
+      lang={locale}
+      dir={localeDir(locale)}
+      data-theme={theme}
+      className={`${display.variable} ${sans.variable} ${displayAr.variable} ${sansAr.variable}`}
+    >
       <body style={style} className="min-h-screen">
         <a
           href="#main-content"
