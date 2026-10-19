@@ -39,8 +39,8 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
 - `src/config/brand.ts` — brand values; never hard-code brand identity elsewhere
 - `src/lib/` — cross-cutting: `prisma`, `auth/*`, `phone`, `money`, `validation/*`,
   `settings`, `storage`, `notifications`, `meta-capi`, `rate-limit`, `audit`,
-  `i18n/` (FR/EN dictionaries, locale cookie, provider, server helpers)
-- `src/components/locale-toggle.tsx` — FR/EN switcher (header + admin topbar)
+  `i18n/` (FR/EN/AR dictionaries, locale cookie, provider, server helpers)
+- `src/components/locale-toggle.tsx` — FR/EN/AR switcher (header + admin topbar)
 - `src/server/` — domain services (`catalog`, `cart`, `orders`, `coupons`,
   `promotions`, `inventory`, `delivery`, `risk`, `analytics`, `navigation`)
 - `src/server/actions/` — server actions only (files with `"use server"` export
@@ -78,10 +78,10 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
    `settingsValue`. Reuse these before Prisma work; add a local schema for
    domain-specific form payloads.
 10. **Validate after authorization, before data access.** Admin actions must
-   call `requirePermission()` first, then `safeParse()` all arguments, and only
-   then execute a Prisma query or mutation. Invalid list/filter input returns a
-   bounded empty result; invalid mutations return a controlled error object or
-   `AppError`, never an unhandled Zod/Prisma exception.
+    call `requirePermission()` first, then `safeParse()` all arguments, and only
+    then execute a Prisma query or mutation. Invalid list/filter input returns a
+    bounded empty result; invalid mutations return a controlled error object or
+    `AppError`, never an unhandled Zod/Prisma exception.
 11. **Concurrent writes must be serialized or conditional.** Absolute
     inventory edits use a PostgreSQL transaction advisory lock per variant;
     preserve that invariant for any new stock or reservation operation.
@@ -94,11 +94,13 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
     package is vendored under `vendor/braces` and pinned by the npm override;
     update it only with a reviewed upstream replacement.
 14. **No hard-coded user-facing copy outside the dictionaries.** Server
-    actions use `getActionT()`, server components use `getDictionary()`,
-    client components use `useLocale()` — every FR/EN key lives in both
-    `src/lib/i18n/fr.ts` and `en.ts` (shape enforced by
+    actions use `getActionT()` (storefront) or `getAdminActionT()` (admin),
+    server components use `getDictionary()`, client components use
+    `useLocale()` — every FR/EN/AR key lives in all three of
+    `src/lib/i18n/fr.ts`, `en.ts`, and `ar.ts` (shape enforced by
     `dictionaries.test.ts`). A success/error string typed directly into an
     action or component is a bug even if it reads correctly in one language.
+    Admin and API-route specifics: see "October 2026 audit additions".
 15. **Product images may be absolute or app-relative.** The local storage
     driver returns `/uploads/…` paths; S3/R2 returns absolute URLs.
     `productImageUrl` accepts both (absolute http(s) or a `/`-rooted path —
@@ -125,15 +127,17 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
     do not add `revalidate` expecting edge-cached HTML. Every
     catalog-affecting admin mutation calls `revalidateTag()` next to its
     existing `revalidatePath()`. A stale badge can never oversell or
-  misprice because cart/checkout revalidate availability and recompute
-  prices server-side.
+    misprice because cart/checkout revalidate availability and recompute
+    prices server-side.
 
 ## October 2026 audit additions (verified fixes — preserve these)
 
 - **Idempotency losers never 500.** Concurrent same-key checkouts race on the
-  `IdempotencyKey` insert; the loser polls for the winner's settled result and
-  replays it, else returns `CHECKOUT_IN_PROGRESS` (409) for a client retry.
-  Never remove the `P2002` catch in `createOrder` without a replacement.
+  `IdempotencyKey` insert; the loser re-queries on a fresh connection (the
+  aborted transaction's connection is poisoned — 25P02), polls for the
+  winner's settled result and replays it, else returns `CHECKOUT_IN_PROGRESS`
+  (409) for a client retry. Never remove the `P2002` catch in `createOrder`
+  without a replacement.
 - **Sessions carry identity only.** `getAdminSession`/`getCustomerSession`
   select ids, status, and role — never `passwordHash`/`twoFactorSecret`.
   Password and 2FA actions re-query credentials by id on demand.
@@ -148,6 +152,53 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
 - **Audit metadata is scrubbed.** `recordAudit` redacts `password*`, `*token*`,
   `*secret*`, `api*key*` keys recursively. Business identifiers (order numbers,
   resource IDs, emails) pass through intentionally.
+- **Admin copy resolves through `getAdminActionT()`.** Admin server actions
+  and admin API routes pull error copy from the locale cookie via
+  `getAdminActionT()` (flat `Dictionary["adminErrors"]`); admin screens use
+  `useLocale()`. Do not merge `adminErrors` into `getActionT()` — storefront
+  and admin wordings collide on shared keys. Non-AppError branches use
+  `t.forbidden`/`t.wentWrong`; `error.userMessage` stays English at the
+  developer boundary (CSV export routes are plain downloads and the alerts
+  poller only checks `response.ok`, so raw messages never render).
+  `/api/internal/*` cron routes stay English by design. Admin rate limits
+  surface as 429, never masked as 403.
+- **Deliberately untranslated literals.** The honeypot label `"Website"`
+  (`ui.tsx`, `aria-hidden`, invisible), the trilingual locale-toggle
+  `aria-label` (`"Langue / Language / اللغة"`), and brand proper nouns
+  (WhatsApp footer link). Do not "fix" these.
+- **Dark-mode hardcode overrides must escape `#` in class references.** In
+  `[data-theme="dark"] .text-\[\#9e342e\] { … }` a missing `\#` makes the
+  selector invalid (class + unrestricted hash) and browsers and Lightning CSS
+  drop the entire rule — three overrides were silently dead that way and it
+  caused the three historic CSS build warnings. After editing that block,
+  verify `npm run build` prints no CSS warnings and the override colors
+  appear in `.next/static/css`.
+- **Only above-the-fold images are eager.** The first two product-grid cards,
+  collection banner, and sticky-header logo carry `priority`; the root layout
+  preconnects to the S3/R2 image origin and middleware appends that origin to
+  CSP `connect-src` (Edge-safe helper in `brand.ts`). Everything else stays
+  lazy — no below-fold `priority`.
+- **Uploads encode lossy WebP q88** (effort 6, ~5–10× smaller than the
+  previous lossless pipeline — an intentional replacement, not a regression)
+  and pre-check `content-length` before buffering. Keep the 8 MB cap and
+  signature validation.
+- **Admin login is constant-work and TOTP-aware.** Unknown/disabled accounts
+  still run a dummy password verification (no enumeration timing) and TOTP
+  failures count toward the five-failure lockout.
+- **Search analytics only surface corroborated terms** (count ≥ 2, length
+  ≤ 40); retention purges idle search terms. Promotion badges rank percentage
+  vs fixed promotions by actual dinar discount, never mixed units.
+- **Notification channel toggles filter real dispatch** (all-off is merchant
+  intent — audited, not a failure); per-status outbox effects use
+  `ORDER_STATUS_UPDATE_<STATUS>` dedupe keys so later transitions are never
+  swallowed. Guest checkout strips a taken email from the customer row
+  instead of failing the sale (the `P2002` catch stays as the race guard).
+  Cancelling an order from admin releases the coupon redemption and usage
+  slot; cart coupon preview matches checkout (post-promotion line totals).
+- **Hot-path composite indexes ship in a versioned migration and are
+  pre-created by `db:deploy`** (Order phone/status/customerId + createdAt,
+  Cart status+updatedAt, Notification status+createdAt). Follow the same
+  pattern for any new hot-path index.
 
 ## Database workflow
 
@@ -170,9 +221,9 @@ complete typecheck, lint, test, production-build, and dependency-audit suite.
 ## UX bar
 
 Feminine, minimal, editorial, fast on 3G and 360px screens. French by default
-with a full English toggle (see i18n rules below). `prefers-reduced-motion`
-is respected globally. No placeholder buttons — every control must work or
-not exist.
+with full English and Arabic toggles (see i18n rules below).
+`prefers-reduced-motion` is respected globally. No placeholder buttons —
+every control must work or not exist.
 
 Minimal direction (October 2026 refresh, do not regress):
 
@@ -218,7 +269,6 @@ Minimal direction (October 2026 refresh, do not regress):
   `CollectionProduct.sortOrder`; global carousels by `isFeatured` then product
   `sortOrder`. Vitrine actions live in `src/server/actions/vitrine.ts`
   (`catalog:write`, audited).
-
 
 ## Mobile and browser compatibility rules
 

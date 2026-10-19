@@ -11,14 +11,14 @@ selling in **Algeria** with **Cash on Delivery (COD)**. Mobile-first, trilingual
 
 ## Stack
 
-| Layer      | Choice                                                        |
-| ---------- | ------------------------------------------------------------- |
-| Frontend   | Next.js 15 (App Router), React 19, TypeScript (strict), Tailwind CSS 4 |
-| Backend    | Next.js Server Actions + Route Handlers (modular monolith)    |
-| Database   | PostgreSQL 16+ with Prisma ORM 6                              |
-| Auth       | Argon2id passwords, opaque sessions (HTTP-only cookies), TOTP 2FA for staff |
-| Storage    | S3-compatible object storage (R2/S3/MinIO) · local disk in dev |
-| Deploy     | `output: "standalone"` — Vercel, VPS, or any Node host        |
+| Layer    | Choice                                                                      |
+| -------- | --------------------------------------------------------------------------- |
+| Frontend | Next.js 15 (App Router), React 19, TypeScript (strict), Tailwind CSS 4      |
+| Backend  | Next.js Server Actions + Route Handlers (modular monolith)                  |
+| Database | PostgreSQL 16+ with Prisma ORM 6                                            |
+| Auth     | Argon2id passwords, opaque sessions (HTTP-only cookies), TOTP 2FA for staff |
+| Storage  | S3-compatible object storage (R2/S3/MinIO) · local disk in dev              |
+| Deploy   | `output: "standalone"` — Vercel, VPS, or any Node host                      |
 
 Money is stored as **integer dinars** (no floats). Prices, delivery fees and
 discounts are **always recomputed server-side** — the client can never submit a price.
@@ -73,19 +73,19 @@ reset its password manually.
 
 See `.env.example` for the full list. Highlights:
 
-| Variable | Purpose |
-| -------- | ------- |
-| `DATABASE_URL` | PostgreSQL connection string |
-| `DIRECT_URL` | Optional direct PostgreSQL connection for online index creation when `DATABASE_URL` uses a pooler |
-| `AUTH_SECRET` | 32+ random bytes — sessions, order tokens, 2FA encryption |
-| `STORAGE_DRIVER` | `local` (dev) or `s3` (**required in production**) |
-| `STORAGE_BUCKET/ENDPOINT/ACCESS_KEY/SECRET_KEY/PUBLIC_HOST` | S3-compatible storage |
-| `EMAIL_PROVIDER/SMS_PROVIDER/WHATSAPP_PROVIDER` | `resend` / `twilio` / `meta`, or `console` (log only) |
-| `META_PIXEL_ID` | Optional server-side Meta Conversions API identifier |
-| `UPSTASH_REDIS_REST_URL/TOKEN` | Optional distributed rate limiting; production falls back to shared PostgreSQL buckets, while memory fallback is development/test only |
-| `TRUSTED_CLIENT_IP_HEADER` | Header overwritten by the trusted reverse proxy (default `x-real-ip`); required for production public mutation rate limits |
-| `ORDER_OUTBOX_SECRET` | 32+ random bytes used only by the scheduled order-effect retry endpoint; required in production |
-| `CHECKOUT_TX_TIMEOUT_MS` | Optional checkout transaction budget in ms (default 5000, clamped 5000–60000). Raise only when the database is far from the app server (e.g. local dev against a remote DB) |
+| Variable                                                    | Purpose                                                                                                                                                                     |
+| ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `DATABASE_URL`                                              | PostgreSQL connection string                                                                                                                                                |
+| `DIRECT_URL`                                                | Optional direct PostgreSQL connection for online index creation when `DATABASE_URL` uses a pooler                                                                           |
+| `AUTH_SECRET`                                               | 32+ random bytes — sessions, order tokens, 2FA encryption                                                                                                                   |
+| `STORAGE_DRIVER`                                            | `local` (dev) or `s3` (**required in production**)                                                                                                                          |
+| `STORAGE_BUCKET/ENDPOINT/ACCESS_KEY/SECRET_KEY/PUBLIC_HOST` | S3-compatible storage                                                                                                                                                       |
+| `EMAIL_PROVIDER/SMS_PROVIDER/WHATSAPP_PROVIDER`             | `resend` / `twilio` / `meta`, or `console` (log only)                                                                                                                       |
+| `META_PIXEL_ID`                                             | Optional server-side Meta Conversions API identifier                                                                                                                        |
+| `UPSTASH_REDIS_REST_URL/TOKEN`                              | Optional distributed rate limiting; production falls back to shared PostgreSQL buckets, while memory fallback is development/test only                                      |
+| `TRUSTED_CLIENT_IP_HEADER`                                  | Header overwritten by the trusted reverse proxy (default `x-real-ip`); required for production public mutation rate limits                                                  |
+| `ORDER_OUTBOX_SECRET`                                       | 32+ random bytes used only by the scheduled order-effect retry endpoint; required in production                                                                             |
+| `CHECKOUT_TX_TIMEOUT_MS`                                    | Optional checkout transaction budget in ms (default 5000, clamped 5000–60000). Raise only when the database is far from the app server (e.g. local dev against a remote DB) |
 
 Never commit `.env`.
 
@@ -143,8 +143,7 @@ anomalies and shared phones produce `LOW/MEDIUM/HIGH` review flags. The system
 never auto-rejects a customer.
 
 **Sessions** — opaque 256-bit tokens, SHA-256-hashed in the DB, HTTP-only
-`SameSite=Lax` cookies. Staff sessions expire in 7 days, customer sessions in
-30. Role-based permissions gate every admin action server-side.
+`SameSite=Lax` cookies. Staff sessions expire in 7 days, customer sessions in 30. Role-based permissions gate every admin action server-side.
 
 **Inventory strategy (COD)** — stock is decremented atomically at order creation
 (Option B) and restored on cancellation/return, with every movement logged in
@@ -165,9 +164,10 @@ third-party assets or copy):
   newsletter) on every page via `SiteChrome`; French contact page
   (`/contact`) with e-mail / téléphone / horaires; slim underline newsletter
   block on the homepage.
-- Slim search overlay (underline field + OK), flat minimal buttons
-  site-wide (no gradients, shine sweeps, or lift-and-glow hovers; sharp
-  corners everywhere).
+- Slim search overlay (underline field + OK), flat silver-white pill buttons
+  site-wide (999px radius; ink primary, gold accent, ink-fill outline, and
+  border-only ghost variants — no gradients, shine sweeps, or lift/glow
+  hovers; icon circles and badges stay circular).
 - Always-visible sticky header: travels with you while scrolling; the brand
   mark smoothly scales to 82% once scrolled (transform-only, no layout
   shift), disabled under `prefers-reduced-motion`.
@@ -192,17 +192,60 @@ third-party assets or copy):
 - Seed data is French (re-runnable). Product names/descriptions remain
   merchandising content, editable per product under Admin → Produits.
 
+## October 2026 audit waves
+
+After the storefront refresh, a full audit shipped as five themed waves —
+each pushed to production only after `typecheck`, `lint`, `test`, and a
+warning-free `build`:
+
+- **Performance (`69bf06c`, `9cd6a17`)** — uploads encode lossy WebP q88
+  (5–10× smaller than the previous lossless pipeline), product cards download
+  only the visible carousel image, display/sans fonts moved to
+  `next/font/google` self-hosted WOFF2 subsets (~2.4 MB of TTF removed),
+  homepage and product pages fetch in one parallel wave, wishlist uses a
+  single per-page snapshot, gallery zoom writes CSS variables instead of
+  re-rendering per frame, DB hot paths use EXISTS and new composite indexes
+  (Order/Cart/Notification, pre-created by `db:deploy`), and above-the-fold
+  images (first two product cards, collection banner, header logo) load
+  eagerly with a preconnect to the image origin.
+- **Checkout & reliability (`049e7bf`, `730d32a`)** — idempotency losers
+  recover on a fresh connection (no 500s), cancelling an order releases the
+  coupon redemption and usage slot, per-status notification effects dedupe
+  correctly, admin login verification is constant-work with TOTP counted in
+  the lockout, guest checkout strips a taken email instead of failing the
+  sale, Réglages channel toggles now filter real notification dispatch,
+  popular searches surface only corroborated terms, delivery reference
+  lookups are cached (300s) and rate-limited while checkout still resolves
+  rates live, and promotion badges rank by actual dinar discount.
+- **Storefront UX (`3628810`)** — clearer error states, focus-trapped
+  dialogs/drawers with Escape/backdrop close, fuller touch targets, and
+  motion-safe hover treatments under `prefers-reduced-motion`.
+- **Admin localization (`e4c8571`, `405fc7d`)** — the whole back office
+  (screens, server actions, admin API routes) now renders FR/EN/AR user copy
+  from the dictionaries; a dedicated `adminErrors` section carries every
+  error message, admin rate limits surface as 429 instead of being masked as
+  403, and no hard-coded user-facing string remains outside deliberate
+  exceptions (honeypot label, trilingual locale-toggle aria-label, brand
+  proper nouns).
+- **Dark mode (`b9e4cea`)** — three `[data-theme="dark"]` overrides for
+  hardcoded feedback colors (`.text-[#9e342e]`, `.bg-[#fff8f7]`,
+  `.bg-[#9e342e]/5`, `.border-[#9e342e]/30`) were silently dead: the class
+  reference never escaped `#`, making the selector invalid, so browsers
+  dropped the rules (and the build printed three CSS warnings). With the
+  escape fixed, error alerts, stock-zero figures, and destructive buttons
+  keep their intended dark-theme contrast and the build is warning-free.
+
 ## Admin guide
 
-| Area | Path |
-| ---- | ---- |
-| Dashboard, analytics | `/admin`, `/admin/analytics` |
-| Orders (filter/search/status/notes/print/CSV) | `/admin/orders` |
-| Products, categories, collections, inventory | `/admin/products…` |
-| Storefront composer (blocks, spotlight, order) | `/admin/vitrine` |
+| Area                                                    | Path                                                     |
+| ------------------------------------------------------- | -------------------------------------------------------- |
+| Dashboard, analytics                                    | `/admin`, `/admin/analytics`                             |
+| Orders (filter/search/status/notes/print/CSV)           | `/admin/orders`                                          |
+| Products, categories, collections, inventory            | `/admin/products…`                                       |
+| Storefront composer (blocks, spotlight, order)          | `/admin/vitrine`                                         |
 | Coupons, promotions, delivery rates (CSV import/export) | `/admin/coupons`, `/admin/promotions`, `/admin/delivery` |
-| Customers, reviews, messages, newsletter | `/admin/customers…` |
-| Pages, FAQ, announcements, settings, staff, audit | `/admin/content…` |
+| Customers, reviews, messages, newsletter                | `/admin/customers…`                                      |
+| Pages, FAQ, announcements, settings, staff, audit       | `/admin/content…`                                        |
 
 Staff roles: `SUPER_ADMIN, ADMIN, ORDER_MANAGER, PRODUCT_MANAGER,
 CUSTOMER_SUPPORT, ANALYST` — each with a least-privilege permission set
@@ -236,7 +279,7 @@ existing `sortOrder` columns).
 **Admin → Promotions**: automatic, code-less discounts with a server-clocked
 time window and optional collection/product scope. The single best applicable
 promotion wins and never stacks; percentages are hard-capped at 90%.
-Evaluated inside the order transaction *before* coupons (coupons apply to the
+Evaluated inside the order transaction _before_ coupons (coupons apply to the
 remainder). Every order stores `promotionId + promotionDiscount`, shown on the
 confirmation page, admin detail, print slip and CSV export. Product pages
 display an informational badge while a promotion covers them.
@@ -337,6 +380,7 @@ deployments are enabled for staging. The `Promote staging to production`
 workflow runs only after the all-push `CI/CD` workflow succeeds for staging;
 it verifies that the branch has not advanced since the tested commit, opens or
 reuses a staging-to-main pull request, and enables automatic squash merge.
+When staging already matches `main` (nothing to promote), it exits cleanly.
 Merging `main` then triggers Vercel's linked Git integration to deploy the
 tested commit to the production domains.
 
@@ -350,11 +394,11 @@ optional check as skipped while still running the public safety checks.
 
 ## Scripts
 
-| Command | Purpose |
-| ------- | ------- |
-| `npm run dev / build / start` | develop / build / run production |
-| `npm run typecheck / lint / test` | `tsc --noEmit` / ESLint / Vitest |
-| `npm run db:generate / db:migrate / db:deploy / db:seed / db:studio` | Prisma workflows |
+| Command                                                              | Purpose                          |
+| -------------------------------------------------------------------- | -------------------------------- |
+| `npm run dev / build / start`                                        | develop / build / run production |
+| `npm run typecheck / lint / test`                                    | `tsc --noEmit` / ESLint / Vitest |
+| `npm run db:generate / db:migrate / db:deploy / db:seed / db:studio` | Prisma workflows                 |
 
 ## Catalog data cache (function-cost control)
 
@@ -386,17 +430,15 @@ Rules:
 - [ ] Staff accounts created, demo admin disabled, 2FA enabled
 - [ ] Backups scheduled and restore tested
 
-
 ## Safe database deployment
 
 For existing databases, use `npm run db:deploy` rather than invoking `prisma migrate deploy` directly. It verifies and creates the FK lookup indexes with `CREATE INDEX CONCURRENTLY` before Prisma applies migrations; the migration itself uses `IF NOT EXISTS` as a safe fallback. If `DATABASE_URL` points through a transaction pooler, set `DIRECT_URL` to the provider's direct PostgreSQL connection for the online-index step. On a fresh database, the runner skips tables/columns that do not exist yet, and the migration creates the indexes after the schema is established.
-
 
 ## Cross-browser and mobile support
 
 The storefront is designed mobile-first for narrow 360px screens through desktop layouts and is validated for current Chromium, Safari/WebKit, and Firefox browsers on Android, iPhone/iPad, tablets, and desktop. Compatibility safeguards include Android/iOS web-app metadata and `/manifest.webmanifest`, safe viewport handling for browser URL bars and iOS standalone mode, touch and coarse-pointer fallbacks, narrow-screen overflow protection, mobile-safe modal and cart-drawer scrolling, readable fallbacks when `backdrop-filter` is unavailable, a checkout selected-state fallback for browsers without CSS `:has()`, and global `prefers-reduced-motion` support.
 
-When changing mobile UI, preserve keyboard access, visible focus, minimum touch targets, readable form text (at least 16px on small screens to prevent iOS auto-zoom), and French copy. Validate at minimum at 360px, 390px, 768px, 1024px, and desktop widths. Every user-facing string must exist in both `src/lib/i18n/fr.ts` and `en.ts`.
+When changing mobile UI, preserve keyboard access, visible focus, minimum touch targets, readable form text (at least 16px on small screens to prevent iOS auto-zoom), and French copy. Validate at minimum at 360px, 390px, 768px, 1024px, and desktop widths. Every user-facing string must exist in all of `src/lib/i18n/fr.ts`, `en.ts`, and `ar.ts`.
 
 ## GitHub and Vercel deployment constraint
 
