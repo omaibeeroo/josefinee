@@ -27,16 +27,25 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
   const router = useRouter();
   const { t } = useLocale();
   const [search, setSearch] = useState("");
-  const [editing, setEditing] = useState<{ wilayaId: string; wilayaName: string; method: string; price: string; etaMin: string; etaMax: string; isActive: boolean } | null>(null);
+  const [editing, setEditing] = useState<{
+    wilayaId: string;
+    wilayaName: string;
+    method: string;
+    price: string;
+    etaMin: string;
+    etaMax: string;
+    isActive: boolean;
+  } | null>(null);
   const [csv, setCsv] = useState("");
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
 
-  const visible = wilayas.filter((wilaya) =>
-    !search.trim() ||
-    wilaya.name.toLowerCase().includes(search.trim().toLowerCase()) ||
-    String(wilaya.code).includes(search.trim()),
+  const visible = wilayas.filter(
+    (wilaya) =>
+      !search.trim() ||
+      wilaya.name.toLowerCase().includes(search.trim().toLowerCase()) ||
+      String(wilaya.code).includes(search.trim()),
   );
 
   async function submitRate(event: FormEvent) {
@@ -83,16 +92,22 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <Input value={search} onChange={(event) => setSearch(event.target.value)} placeholder={t.adminDelivery.searchPh} aria-label={t.adminDelivery.searchLabel} className="max-w-xs" />
-        <a
-          href="/api/admin/delivery/export"
-          className="btn btn-ghost min-h-10 px-4 text-xs"
-        >
+        <Input
+          value={search}
+          onChange={(event) => setSearch(event.target.value)}
+          placeholder={t.adminDelivery.searchPh}
+          aria-label={t.adminDelivery.searchLabel}
+          className="max-w-xs"
+        />
+        <a href="/api/admin/delivery/export" className="btn btn-ghost min-h-10 px-4 text-xs">
           {t.adminDelivery.exportCsv}
         </a>
       </div>
       {error && (
-        <p className="border border-[#9e342e]/30 bg-red-50 px-4 py-2 text-sm text-[#9e342e]" role="alert">
+        <p
+          className="border border-[#9e342e]/30 bg-red-50 px-4 py-2 text-sm text-[#9e342e]"
+          role="alert"
+        >
           {error}
         </p>
       )}
@@ -106,11 +121,11 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
         <table className="w-full min-w-[760px] text-start text-sm">
           <thead>
             <tr className="border-b hairline text-xs uppercase tracking-[0.1em] text-ink-muted">
-              <th className="px-4 py-3">Wilaya</th>
-              <th className="px-4 py-3">Home</th>
-              <th className="px-4 py-3">Stopdesk</th>
-              <th className="px-4 py-3">Express</th>
-              <th className="px-4 py-3">Standard</th>
+              <th className="px-4 py-3">{t.adminDelivery.colWilaya}</th>
+              <th className="px-4 py-3">{t.adminDelivery.colHome}</th>
+              <th className="px-4 py-3">{t.adminDelivery.colStopdesk}</th>
+              <th className="px-4 py-3">{t.adminDelivery.colExpress}</th>
+              <th className="px-4 py-3">{t.adminDelivery.colStandard}</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-line">
@@ -142,14 +157,23 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
                         >
                           {formatDA(rate.price, t.locale)}
                           <span className="block text-xs text-ink-muted">
-                            {rate.etaMinDays}–{rate.etaMaxDays}{t.adminDelivery.daysShort}
+                            {rate.etaMinDays}–{rate.etaMaxDays}
+                            {t.adminDelivery.daysShort}
                           </span>
                         </button>
                       ) : (
                         <button
                           type="button"
                           onClick={() =>
-                            setEditing({ wilayaId: wilaya.id, wilayaName: `${wilaya.code} — ${wilaya.name}`, method, price: "800", etaMin: "2", etaMax: "4", isActive: true })
+                            setEditing({
+                              wilayaId: wilaya.id,
+                              wilayaName: `${wilaya.code} — ${wilaya.name}`,
+                              method,
+                              price: "800",
+                              etaMin: "2",
+                              etaMax: "4",
+                              isActive: true,
+                            })
                           }
                           className="text-xs text-ink-muted underline underline-offset-2"
                         >
@@ -166,21 +190,49 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
       </div>
 
       {editing && (
-        <form onSubmit={submitRate} className="grid gap-3 border hairline bg-white p-5 sm:grid-cols-5">
+        <form
+          onSubmit={submitRate}
+          className="grid gap-3 border hairline bg-white p-5 sm:grid-cols-5"
+        >
           <p className="font-medium sm:col-span-5">
             {editing.wilayaName} · {t.delivery[editing.method as keyof typeof t.delivery]}
           </p>
           <Field label={t.adminDelivery.priceDa}>
-            <Input type="number" min={0} value={editing.price} onChange={(event) => setEditing({ ...editing, price: event.target.value })} required />
+            <Input
+              type="number"
+              min={0}
+              value={editing.price}
+              onChange={(event) => setEditing({ ...editing, price: event.target.value })}
+              required
+            />
           </Field>
           <Field label={t.adminDelivery.etaMin}>
-            <Input type="number" min={0} max={30} value={editing.etaMin} onChange={(event) => setEditing({ ...editing, etaMin: event.target.value })} required />
+            <Input
+              type="number"
+              min={0}
+              max={30}
+              value={editing.etaMin}
+              onChange={(event) => setEditing({ ...editing, etaMin: event.target.value })}
+              required
+            />
           </Field>
           <Field label={t.adminDelivery.etaMax}>
-            <Input type="number" min={0} max={30} value={editing.etaMax} onChange={(event) => setEditing({ ...editing, etaMax: event.target.value })} required />
+            <Input
+              type="number"
+              min={0}
+              max={30}
+              value={editing.etaMax}
+              onChange={(event) => setEditing({ ...editing, etaMax: event.target.value })}
+              required
+            />
           </Field>
           <label className="flex items-center gap-2 self-end pb-3 text-sm">
-            <input type="checkbox" checked={editing.isActive} onChange={(event) => setEditing({ ...editing, isActive: event.target.checked })} className="h-4 w-4 accent-[#1c1a17]" />
+            <input
+              type="checkbox"
+              checked={editing.isActive}
+              onChange={(event) => setEditing({ ...editing, isActive: event.target.checked })}
+              className="h-4 w-4 accent-[#1c1a17]"
+            />
             {t.adminDelivery.active}
           </label>
           <div className="flex items-end gap-2">
@@ -205,7 +257,13 @@ export function DeliveryManager({ wilayas }: { wilayas: WilayaRates[] }) {
           placeholder={"16,HOME,600,1,2,1\n16,STOPDESK,350,1,2,1"}
           className="field mt-3 font-mono text-xs"
         />
-        <Button type="button" disabled={pending || !csv.trim()} size="sm" className="mt-3" onClick={() => void importCsv()}>
+        <Button
+          type="button"
+          disabled={pending || !csv.trim()}
+          size="sm"
+          className="mt-3"
+          onClick={() => void importCsv()}
+        >
           {pending ? t.adminDelivery.importing : t.adminDelivery.importCsv}
         </Button>
       </details>

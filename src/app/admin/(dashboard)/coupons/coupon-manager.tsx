@@ -356,7 +356,7 @@ export function CouponManager({
                 />
               </Field>
               <div>
-                <p className="field-label">Collections</p>
+                <p className="field-label">{t.adminCoupon.collections}</p>
                 <div className="flex max-h-40 flex-wrap gap-2 overflow-y-auto border hairline p-2">
                   {collections.map((collection) => (
                     <label key={collection.slug} className="flex items-center gap-1.5 text-sm">

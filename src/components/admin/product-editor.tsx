@@ -384,7 +384,7 @@ export function ProductEditor({
         <section className="border hairline bg-white p-5" aria-label={t.adminEditor.images}>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-sm font-medium uppercase tracking-[0.14em]">
-              Images ({state.images.length}/20)
+              {t.adminEditor.imagesCount.replace("{count}", String(state.images.length))}
             </h2>
             <label className="btn btn-ghost min-h-10 cursor-pointer px-4 text-xs">
               {uploading ? t.adminEditor.uploading : t.adminEditor.upload}
@@ -643,7 +643,7 @@ export function ProductEditor({
             {state.variants.map((variant, variantIndex) => (
               <div key={variantIndex} className="grid gap-2 border hairline p-3 lg:grid-cols-6">
                 <div className="lg:col-span-2">
-                  <label className="field-label">SKU *</label>
+                  <label className="field-label">{t.adminEditor.sku} *</label>
                   <Input
                     value={variant.sku}
                     onChange={(event) => {
@@ -721,7 +721,7 @@ export function ProductEditor({
                       }}
                       className="h-4 w-4 accent-[#1c1a17]"
                     />
-                    Active
+                    {t.adminEditor.activeSt}
                   </label>
                   <button
                     type="button"
