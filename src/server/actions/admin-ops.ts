@@ -1,10 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { AppError, toUserMessage } from "@/lib/errors";
 import { requirePermission } from "@/lib/auth/rbac";
 import { recordAudit } from "@/lib/audit";
+import { CACHE_TAG_DELIVERY } from "@/lib/cache";
 import { flattenZodErrors } from "@/lib/validation/common";
 import {
   adminId,
@@ -286,7 +287,9 @@ export async function saveDeliveryRateAction(input: z.infer<typeof rateSchema>) 
   if (!wilaya) return { ok: false as const, error: "Wilaya not found." };
   try {
     await prisma.deliveryRate.upsert({
-      where: { wilayaId_method: { wilayaId: data.wilayaId, method: data.method as DeliveryMethod } },
+      where: {
+        wilayaId_method: { wilayaId: data.wilayaId, method: data.method as DeliveryMethod },
+      },
       create: {
         wilayaId: data.wilayaId,
         method: data.method as DeliveryMethod,
@@ -312,6 +315,7 @@ export async function saveDeliveryRateAction(input: z.infer<typeof rateSchema>) 
     resourceId: data.wilayaId,
     metadata: { method: data.method, price: data.price },
   });
+  revalidateTag(CACHE_TAG_DELIVERY);
   revalidatePath("/admin/delivery");
   return { ok: true as const };
 }
@@ -410,6 +414,7 @@ export async function importDeliveryCsvAction(csv: string) {
     resource: "DeliveryRate",
     metadata: { updated },
   });
+  revalidateTag(CACHE_TAG_DELIVERY);
   revalidatePath("/admin/delivery");
   return { ok: true as const, updated, errors: errors.slice(0, 10) };
 }
@@ -418,9 +423,7 @@ export async function importDeliveryCsvAction(csv: string) {
 
 export async function listCustomersAdmin(params: { search?: string; page?: number }) {
   await requirePermission("customers:read");
-  const parsed = z
-    .object({ search: adminSearch, page: adminPage })
-    .safeParse(params);
+  const parsed = z.object({ search: adminSearch, page: adminPage }).safeParse(params);
   if (!parsed.success) return { items: [], total: 0, page: 1, totalPages: 1 };
   const page = parsed.data.page;
   const pageSize = 20;
@@ -499,9 +502,13 @@ export async function setCustomerStatusAction(id: string, status: "ACTIVE" | "BL
   const actor = await requirePermission("customers:write");
   const parsedId = adminId.safeParse(id);
   const parsedStatus = customerStatus.safeParse(status);
-  if (!parsedId.success || !parsedStatus.success) return { ok: false as const, error: "Invalid customer status update." };
+  if (!parsedId.success || !parsedStatus.success)
+    return { ok: false as const, error: "Invalid customer status update." };
   try {
-    await prisma.customer.update({ where: { id: parsedId.data }, data: { status: parsedStatus.data } });
+    await prisma.customer.update({
+      where: { id: parsedId.data },
+      data: { status: parsedStatus.data },
+    });
     await prisma.customerSession.updateMany({
       where: { customerId: parsedId.data },
       data: { revokedAt: new Date() },
@@ -592,7 +599,8 @@ export async function setMessageStatusAction(
   const actor = await requirePermission("messages:write");
   const parsedId = adminId.safeParse(id);
   const parsedStatus = messageStatus.safeParse(status);
-  if (!parsedId.success || !parsedStatus.success) return { ok: false as const, error: "Invalid message status update." };
+  if (!parsedId.success || !parsedStatus.success)
+    return { ok: false as const, error: "Invalid message status update." };
   try {
     await prisma.contactMessage.update({
       where: { id: parsedId.data },

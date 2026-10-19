@@ -22,6 +22,7 @@ import type { CatalogQuery } from "@/server/catalog";
  */
 export const CACHE_TAG_CATALOG = "catalog";
 export const CACHE_TAG_NAVIGATION = "navigation";
+export const CACHE_TAG_DELIVERY = "delivery";
 
 /** Backstop freshness for catalog reads when no mutation revalidates first. */
 export const CATALOG_REVALIDATE_SECONDS = 300;
@@ -32,8 +33,7 @@ export const CATALOG_REVALIDATE_SECONDS = 300;
  * the caller built the object.
  */
 export function stableCatalogQueryKey(query: CatalogQuery): string {
-  const sorted = (values: string[] | undefined): string[] =>
-    [...(values ?? [])].sort();
+  const sorted = (values: string[] | undefined): string[] => [...(values ?? [])].sort();
   return JSON.stringify({
     ids: sorted(query.ids),
     categorySlugs: sorted(query.categorySlugs ?? (query.categorySlug ? [query.categorySlug] : [])),

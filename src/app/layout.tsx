@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import localFont from "next/font/local";
-import { Almarai, El_Messiri } from "next/font/google";
+import { Almarai, Cormorant_Garamond, El_Messiri, Inter } from "next/font/google";
 import "./globals.css";
 import { cookies } from "next/headers";
 import { getSettings } from "@/lib/settings";
@@ -16,24 +15,18 @@ import { CookiePreferences } from "@/components/cookie-consent";
 import { NavigationProgress } from "@/components/navigation-progress";
 import { headers } from "next/headers";
 
-const display = localFont({
-  src: [
-    { path: "../../public/fonts/cormorant-garamond-400.ttf", weight: "400" },
-    { path: "../../public/fonts/cormorant-garamond-500.ttf", weight: "500" },
-    { path: "../../public/fonts/cormorant-garamond-600.ttf", weight: "600" },
-    { path: "../../public/fonts/cormorant-garamond-700.ttf", weight: "700" },
-  ],
+// Latin faces come from Google Fonts so Next self-hosts subset WOFF2 (tiny
+// payloads, no TTF downloads). French/English only need the latin subset.
+const display = Cormorant_Garamond({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-display",
   display: "swap",
 });
 
-const sans = localFont({
-  src: [
-    { path: "../../public/fonts/inter-400.ttf", weight: "400" },
-    { path: "../../public/fonts/inter-500.ttf", weight: "500" },
-    { path: "../../public/fonts/inter-600.ttf", weight: "600" },
-    { path: "../../public/fonts/inter-700.ttf", weight: "700" },
-  ],
+const sans = Inter({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
   variable: "--font-sans",
   display: "swap",
 });

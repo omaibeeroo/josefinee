@@ -51,6 +51,7 @@ export async function getCustomerOrders() {
   const orders = await prisma.order.findMany({
     where: { customerId: customer.id },
     orderBy: { createdAt: "desc" },
+    take: 50,
     select: {
       orderNumber: true,
       status: true,
@@ -183,7 +184,12 @@ export async function saveAddressAction(input: z.infer<typeof addressSchema>) {
       } else {
         const count = await tx.address.count({ where: { customerId: customer.id } });
         await tx.address.create({
-          data: { ...data, id: undefined, customerId: customer.id, isDefault: data.isDefault || count === 0 },
+          data: {
+            ...data,
+            id: undefined,
+            customerId: customer.id,
+            isDefault: data.isDefault || count === 0,
+          },
         });
       }
     });

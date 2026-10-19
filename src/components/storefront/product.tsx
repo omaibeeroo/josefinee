@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Heart, Plus } from "lucide-react";
@@ -10,6 +10,32 @@ import { Badge, Button, Modal, Price, QuantitySelector, Stars } from "@/componen
 import { getWishlistIdsAction, toggleWishlistAction } from "@/server/actions/engagement";
 
 const GUEST_WISHLIST_KEY = "hanadi-wishlist";
+const GUEST_WISHLIST_EVENT = "hanadi-wishlist";
+const WISHLIST_STATE_EVENT = "hanadi-wishlist-state";
+
+type WishlistIdsSnapshot = { loggedIn: boolean; ids: string[] };
+
+// One shared request per page load: cards, carousels and the product page all
+// need the same id list, and a per-button fetch is a server-action storm.
+let wishlistIdsCache: WishlistIdsSnapshot | null = null;
+let wishlistIdsRequest: Promise<WishlistIdsSnapshot> | null = null;
+
+function wishlistIdsSnapshot(): Promise<WishlistIdsSnapshot> {
+  if (wishlistIdsCache) return Promise.resolve(wishlistIdsCache);
+  wishlistIdsRequest ??= getWishlistIdsAction()
+    .then((state) => {
+      wishlistIdsCache = state;
+      return state;
+    })
+    .catch(() => {
+      // Do not cache failures — the next mount retries.
+      return { loggedIn: false, ids: [] } satisfies WishlistIdsSnapshot;
+    })
+    .finally(() => {
+      wishlistIdsRequest = null;
+    });
+  return wishlistIdsRequest;
+}
 
 export function readGuestWishlist(): string[] {
   if (typeof window === "undefined") return [];
@@ -27,7 +53,7 @@ export function readGuestWishlist(): string[] {
 function writeGuestWishlist(ids: string[]): void {
   try {
     window.localStorage.setItem(GUEST_WISHLIST_KEY, JSON.stringify(ids));
-    window.dispatchEvent(new Event("hanadi-wishlist"));
+    window.dispatchEvent(new Event(GUEST_WISHLIST_EVENT));
   } catch {
     // storage unavailable — the heart simply stays local to this page view
   }
@@ -68,8 +94,8 @@ export function ProductImage({
       </span>
     );
   }
-  // Served byte-identical (no optimizer recompression): uploads are stored
-  // lossless, so any quality setting here would only throw detail away.
+  // Uploads are re-encoded to compact quality-88 WebP at upload time, so the
+  // stored file is already the optimized payload; serve it byte-identical.
   return (
     <Image
       src={url}
@@ -134,19 +160,16 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
           className="block aspect-[3/4]"
         >
           <div className="absolute inset-0 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]">
-            {images.map((image, imageIndex) => (
-              <div
-                key={`${image.url}-${imageIndex}`}
-                aria-hidden={imageIndex === current ? undefined : true}
-                className={cn(
-                  "absolute inset-0 transition-opacity duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]",
-                  imageIndex === current ? "opacity-100" : "pointer-events-none opacity-0",
-                )}
-              >
-                <ProductImage url={image.url} alt={image.alt || product.name} />
+            {count > 0 ? (
+              <div key={`${images[current]?.url}-${current}`} className="absolute inset-0">
+                <ProductImage
+                  url={images[current]?.url ?? null}
+                  alt={images[current]?.alt || product.name}
+                />
               </div>
-            ))}
-            {count === 0 && <ProductImage url={null} alt={product.name} />}
+            ) : (
+              <ProductImage url={null} alt={product.name} />
+            )}
           </div>
         </Link>
         {count > 1 && (
@@ -343,7 +366,7 @@ export function ProductGallery({
   const { t } = useLocale();
   const [active, setActive] = useState(0);
   const [fullscreen, setFullscreen] = useState(false);
-  const [zoomPoint, setZoomPoint] = useState({ x: 50, y: 50 });
+  const zoomFrameRef = useRef<HTMLDivElement>(null);
   const current = images[Math.min(active, images.length - 1)];
 
   return (
@@ -352,19 +375,23 @@ export function ProductGallery({
         type="button"
         onClick={() => setFullscreen(true)}
         onMouseMove={(event) => {
+          // Direct CSS custom-property writes: no React state per mousemove.
+          const frame = zoomFrameRef.current;
+          if (!frame) return;
           const rect = event.currentTarget.getBoundingClientRect();
-          setZoomPoint({
-            x: ((event.clientX - rect.left) / rect.width) * 100,
-            y: ((event.clientY - rect.top) / rect.height) * 100,
-          });
+          frame.style.setProperty(
+            "--zoom-x",
+            `${((event.clientX - rect.left) / rect.width) * 100}%`,
+          );
+          frame.style.setProperty(
+            "--zoom-y",
+            `${((event.clientY - rect.top) / rect.height) * 100}%`,
+          );
         }}
         className="product-gallery-hero group relative block aspect-[3/4] w-full overflow-hidden bg-cream"
         aria-label={t.product.openGallery}
       >
-        <div
-          className="product-zoom-frame absolute inset-0"
-          style={{ "--zoom-x": `${zoomPoint.x}%`, "--zoom-y": `${zoomPoint.y}%` } as CSSProperties}
-        >
+        <div ref={zoomFrameRef} className="product-zoom-frame absolute inset-0">
           {current ? (
             <ProductImage
               url={current.url}
@@ -648,18 +675,23 @@ function WishlistButton({
 
   useEffect(() => {
     let cancelled = false;
-    void getWishlistIdsAction()
-      .then((state) => {
-        if (cancelled) return;
-        setSaved(
-          state.loggedIn ? state.ids.includes(productId) : readGuestWishlist().includes(productId),
-        );
-      })
-      .catch(() => {
-        if (!cancelled) setSaved(readGuestWishlist().includes(productId));
-      });
+    const apply = (state: WishlistIdsSnapshot) => {
+      if (cancelled) return;
+      setSaved(
+        state.loggedIn ? state.ids.includes(productId) : readGuestWishlist().includes(productId),
+      );
+    };
+    wishlistIdsSnapshot()
+      .then(apply)
+      .catch(() => apply({ loggedIn: false, ids: [] }));
+    const onChange = () => apply(wishlistIdsCache ?? { loggedIn: false, ids: [] });
+    const onGuest = () => apply({ loggedIn: false, ids: [] });
+    window.addEventListener(WISHLIST_STATE_EVENT, onChange);
+    window.addEventListener(GUEST_WISHLIST_EVENT, onGuest);
     return () => {
       cancelled = true;
+      window.removeEventListener(WISHLIST_STATE_EVENT, onChange);
+      window.removeEventListener(GUEST_WISHLIST_EVENT, onGuest);
     };
   }, [productId]);
 
@@ -669,6 +701,17 @@ function WishlistButton({
     setPending(false);
     if (result.ok) {
       setSaved(result.saved);
+      if (wishlistIdsCache) {
+        wishlistIdsCache = {
+          ...wishlistIdsCache,
+          ids: result.saved
+            ? wishlistIdsCache.ids.includes(productId)
+              ? wishlistIdsCache.ids
+              : [...wishlistIdsCache.ids, productId]
+            : wishlistIdsCache.ids.filter((id) => id !== productId),
+        };
+        window.dispatchEvent(new Event(WISHLIST_STATE_EVENT));
+      }
       if (result.saved) pixelEvent("AddToWishlist", { content_ids: [productId] });
       return;
     }

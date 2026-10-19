@@ -57,7 +57,9 @@ export async function applyProductWatermark(image: Buffer): Promise<{
   } catch {
     throw new AppError("INVALID_WATERMARK", "Product watermark must be a valid image file.", 500);
   }
-  const buffer = await sharp(image).composite([{ input: overlay, gravity: "southeast" }]).toBuffer();
+  const buffer = await sharp(image)
+    .composite([{ input: overlay, gravity: "southeast" }])
+    .toBuffer();
   return { buffer, watermarked: true };
 }
 
@@ -97,18 +99,23 @@ export async function storeImage(file: {
     throw new AppError("INVALID_FILE", "The uploaded file is not a valid image.");
   }
 
-  // True-lossless catalog encode: bit-exact WebP (no quantization at all)
-  // so what the admin uploads is what the customer sees — metal glints,
-  // stone facets and fabric weave survive untouched. Only downscaled when
-  // the source exceeds MAX_DIMENSION (never upscaled). Effort 6 costs CPU
-  // once at upload time; rendering stays cheap because the file is served
-  // byte-identical (see ProductImage `unoptimized`).
+  // High-quality lossy WebP (q88): visually indistinguishable from lossless
+  // for catalog photography while 5–10× smaller — the difference between a
+  // slow and a fast product grid on 3G. Only downscaled when the source
+  // exceeds MAX_DIMENSION (never upscaled). Effort 6 costs CPU once at
+  // upload time; rendering stays cheap because files are served directly
+  // (see ProductImage `unoptimized`).
   const resized = await sharp(file.buffer)
     .rotate()
-    .resize({ width: MAX_DIMENSION, height: MAX_DIMENSION, fit: "inside", withoutEnlargement: true })
+    .resize({
+      width: MAX_DIMENSION,
+      height: MAX_DIMENSION,
+      fit: "inside",
+      withoutEnlargement: true,
+    })
     .toBuffer();
   const marked = await applyProductWatermark(resized);
-  const processed = await sharp(marked.buffer).webp({ lossless: true, effort: 6 }).toBuffer();
+  const processed = await sharp(marked.buffer).webp({ quality: 88, effort: 6 }).toBuffer();
 
   const output = await sharp(processed).metadata();
   const width = output.width ?? metadata.width ?? MAX_DIMENSION;
@@ -146,11 +153,7 @@ export async function storeImage(file: {
 
     const publicHost = (process.env.STORAGE_PUBLIC_HOST || "").split(",")[0]?.trim();
     if (!publicHost) {
-      throw new AppError(
-        "STORAGE_MISCONFIGURED",
-        "Storage public host is not configured.",
-        500,
-      );
+      throw new AppError("STORAGE_MISCONFIGURED", "Storage public host is not configured.", 500);
     }
     const base = publicHost.startsWith("http") ? publicHost : `https://${publicHost}`;
     return {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { Fragment } from "react";
+import { unstable_cache } from "next/cache";
 import { getSettings } from "@/lib/settings";
 import { resolveSiteMetadata } from "@/lib/i18n/metadata";
 import {
@@ -11,6 +12,7 @@ import {
 } from "@/server/catalog";
 import { getDictionary } from "@/lib/i18n/server";
 import { prisma } from "@/lib/prisma";
+import { CACHE_TAG_CATALOG, CATALOG_REVALIDATE_SECONDS } from "@/lib/cache";
 import {
   CategoryGrid,
   FeaturedCollection,
@@ -33,61 +35,88 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
+// Homepage display reads that do not belong to the catalog module but share
+// the catalog staleness contract (see src/lib/cache.ts). Order status changes
+// have no catalog tag to revalidate, so the delivered count rides the 300s
+// backstop — it is social proof, never money or stock truth.
+const getHomeCategoryTiles = unstable_cache(
+  async (take: number) =>
+    (
+      await prisma.category.findMany({
+        where: { isActive: true, parentId: null },
+        orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+        select: {
+          name: true,
+          slug: true,
+          image: true,
+          _count: { select: { products: { where: { status: "ACTIVE" } } } },
+        },
+        take,
+      })
+    ).map((category) => ({
+      name: category.name,
+      slug: category.slug,
+      image: category.image,
+      count: category._count.products,
+    })),
+  ["home:category-tiles"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_CATALOG] },
+);
+
+const getHomeDeliveredCount = unstable_cache(
+  async () => prisma.order.count({ where: { status: "DELIVERED" } }),
+  ["home:delivered-count"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS },
+);
+
+const getHomeFeaturedCollection = unstable_cache(
+  async (slug: string) =>
+    prisma.collection.findFirst({
+      where: { slug, isActive: true },
+      select: { name: true, slug: true, description: true, image: true },
+    }),
+  ["home:featured-collection"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_CATALOG] },
+);
+
 async function getHomeData() {
   // Settings first (React-cached single-row reads), then one catalog wave
-  // sized by the Admin → Vitrine display density knobs. Only the
-  // featured-collection lookup waits on settings below.
+  // sized by the Admin → Vitrine display density knobs. Every independent
+  // read — including the featured collection, delivered count and the
+  // hand-picked spotlight — joins the same wave.
   const settings = await getSettings();
   const display = settings.homepage.display;
-  const [featuredResult, newInResult, bestSellersResult, categoriesResult, deliveredResult] =
-    await Promise.all([
-      getFeaturedProducts(display.featuredCount).then(
-        (value) => ({ status: "fulfilled" as const, value }),
-        () => ({ status: "rejected" as const, value: [] }),
-      ),
-      getNewInProducts(display.newInCount).then(
-        (value) => ({ status: "fulfilled" as const, value }),
-        () => ({ status: "rejected" as const, value: [] }),
-      ),
-      getBestSellers(display.bestSellersCount).then(
-        (value) => ({ status: "fulfilled" as const, value }),
-        () => ({ status: "rejected" as const, value: [] }),
-      ),
-      prisma.category
-        .findMany({
-          where: { isActive: true, parentId: null },
-          orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-          select: {
-            name: true,
-            slug: true,
-            image: true,
-            _count: { select: { products: { where: { status: "ACTIVE" } } } },
-          },
-          take: display.categoryCount,
-        })
-        .then(
-          (value) => ({ status: "fulfilled" as const, value }),
-          (error: unknown) => {
-            console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
-            return {
-              status: "rejected" as const,
-              value: [] as Array<{
-                name: string;
-                slug: string;
-                image: string | null;
-                _count: { products: number };
-              }>,
-            };
-          },
-        ),
-      prisma.order.count({ where: { status: "DELIVERED" } }).then(
-        (value) => ({ status: "fulfilled" as const, value }),
-        (error: unknown) => {
-          console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
-          return { status: "rejected" as const, value: 0 };
-        },
-      ),
-    ]);
+  const spotlightId = settings.homepage.spotlightProductId;
+  const fulfilled = <T,>(value: T) => ({ status: "fulfilled" as const, value });
+  const failed = <T,>(value: T) => ({ status: "rejected" as const, value });
+  const [
+    featuredResult,
+    newInResult,
+    bestSellersResult,
+    categoriesResult,
+    deliveredResult,
+    featuredCollectionResult,
+    spotlightResult,
+    dictionaryResult,
+  ] = await Promise.all([
+    getFeaturedProducts(display.featuredCount).then(fulfilled, () => failed([])),
+    getNewInProducts(display.newInCount).then(fulfilled, () => failed([])),
+    getBestSellers(display.bestSellersCount).then(fulfilled, () => failed([])),
+    getHomeCategoryTiles(display.categoryCount).then(fulfilled, () => failed([])),
+    getHomeDeliveredCount().then(fulfilled, (error: unknown) => {
+      console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
+      return failed(0);
+    }),
+    getHomeFeaturedCollection(settings.homepage.featuredCollectionSlug).then(fulfilled, () => {
+      return failed(null);
+    }),
+    spotlightId
+      ? getStorefrontProducts({ ids: [spotlightId], pageSize: 1 }).then(fulfilled, () =>
+          failed(null),
+        )
+      : Promise.resolve(fulfilled(null)),
+    getDictionary().then(fulfilled),
+  ]);
   const featured = featuredResult.value;
   const newIn = newInResult.value;
   const bestSellers = bestSellersResult.value;
@@ -100,46 +129,18 @@ async function getHomeData() {
     console.error("[home] product data failed");
   }
 
-  const categoryTiles: Array<{ name: string; slug: string; image: string | null; count: number }> =
-    categoriesResult.status === "fulfilled"
-      ? categoriesResult.value.map((category) => ({
-          name: category.name,
-          slug: category.slug,
-          image: category.image,
-          count: category._count.products,
-        }))
-      : [];
-  let featuredCollection: {
-    name: string;
-    slug: string;
-    description: string | null;
-    image: string | null;
-  } | null = null;
-  try {
-    featuredCollection = await prisma.collection.findFirst({
-      where: { slug: settings.homepage.featuredCollectionSlug, isActive: true },
-      select: { name: true, slug: true, description: true, image: true },
-    });
-  } catch (error) {
-    console.error("[home] data failed", error instanceof Error ? error.name : "unknown");
-  }
+  const categoryTiles = categoriesResult.value ?? [];
+  const featuredCollection = featuredCollectionResult.value;
   const deliveredCount =
     settings.homepage.socialProofOverride > 0
       ? settings.homepage.socialProofOverride
       : deliveredResult.value;
-  const t = await getDictionary();
+  const t = dictionaryResult.value;
 
   // Hand-picked spotlight product from Admin → Vitrine, else first featured.
   let spotlight = featured[0] ?? null;
-  const spotlightId = settings.homepage.spotlightProductId;
-  if (spotlightId) {
-    try {
-      const picked = await getStorefrontProducts({ ids: [spotlightId], pageSize: 1 });
-      if (picked.items[0]) spotlight = picked.items[0];
-    } catch (error) {
-      console.error("[home] spotlight failed", error instanceof Error ? error.name : "unknown");
-    }
-  }
+  const picked = spotlightResult.value;
+  if (picked?.items[0]) spotlight = picked.items[0];
 
   return {
     settings,

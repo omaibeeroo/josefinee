@@ -77,16 +77,18 @@ async function getReviews(productId: string) {
 
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const product = await getCachedProductBySlug(slug);
+  // Single parallel round: product, settings, nonce headers and dictionary
+  // never depend on each other.
+  const [product, settings, requestHeaders, t] = await Promise.all([
+    getCachedProductBySlug(slug),
+    getSettings(),
+    headers(),
+    getDictionary(),
+  ]);
   if (!product) notFound();
-
-  const [settings, requestHeaders] = await Promise.all([getSettings(), headers()]);
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
   const [related, reviews, promotion] = await Promise.all([
-    getRelatedProducts(
-      product.id,
-      product.category ? await categoryIdOf(product.category.slug) : null,
-    ),
+    getRelatedProducts(product.id, product.categoryId),
     getReviews(product.id),
     getProductPromotion(product.id, product.collectionIds),
   ]);
@@ -131,7 +133,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       : {}),
   };
 
-  const t = await getDictionary();
   const reviewsAvg =
     product.ratingCount > 0
       ? product.ratingAvg
@@ -363,11 +364,4 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       </div>
     </div>
   );
-}
-
-async function categoryIdOf(slug: string): Promise<string | null> {
-  const category = await prisma.category
-    .findUnique({ where: { slug }, select: { id: true } })
-    .catch(() => null);
-  return category?.id ?? null;
 }

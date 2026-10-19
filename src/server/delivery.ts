@@ -1,7 +1,9 @@
 import "server-only";
 import type { Prisma } from "@prisma/client";
+import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { AppError } from "@/lib/errors";
+import { CACHE_TAG_DELIVERY, CATALOG_REVALIDATE_SECONDS } from "@/lib/cache";
 import type { DeliveryMethod } from "@prisma/client";
 
 type DbClient = typeof prisma | Prisma.TransactionClient;
@@ -56,8 +58,13 @@ export async function getDeliveryOptions(wilayaId: string): Promise<DeliveryOpti
   }));
 }
 
-/** Lowest active HOME rate nationwide — an honest "delivery from" estimate. */
-export async function getDeliveryFloor(): Promise<{ minHome: number } | null> {
+/**
+ * Lowest active HOME rate nationwide — an honest "delivery from" estimate.
+ * Display-only: checkout always resolves the concrete rate live. Cached with
+ * the delivery tag; admin rate mutations revalidate it next to their path
+ * revalidation.
+ */
+async function getDeliveryFloorFresh(): Promise<{ minHome: number } | null> {
   try {
     const cheapest = await prisma.deliveryRate.findFirst({
       where: { method: "HOME", isActive: true, wilaya: { isActive: true } },
@@ -69,6 +76,16 @@ export async function getDeliveryFloor(): Promise<{ minHome: number } | null> {
     console.error("[delivery] floor failed", error instanceof Error ? error.name : "unknown");
     return null;
   }
+}
+
+const getDeliveryFloorCached = unstable_cache(
+  async () => getDeliveryFloorFresh(),
+  ["delivery:floor"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_DELIVERY] },
+);
+
+export async function getDeliveryFloor(): Promise<{ minHome: number } | null> {
+  return getDeliveryFloorCached();
 }
 
 export async function resolveDeliveryRate(

@@ -25,6 +25,40 @@ export async function listOrders(filters: OrderFilters) {
   const safeFilters = parsed.data;
   const page = safeFilters.page;
 
+  const where = buildOrderWhere(safeFilters);
+
+  const [items, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      select: orderSummarySelect,
+    }),
+    prisma.order.count({ where }),
+  ]);
+
+  return { items, total, page, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
+}
+
+type SafeOrderFilters = z.infer<typeof orderFilters>;
+
+const orderSummarySelect = {
+  id: true,
+  orderNumber: true,
+  status: true,
+  firstName: true,
+  lastName: true,
+  phone: true,
+  wilayaName: true,
+  communeName: true,
+  total: true,
+  riskLevel: true,
+  createdAt: true,
+  _count: { select: { items: true } },
+} satisfies Prisma.OrderSelect;
+
+function buildOrderWhere(safeFilters: SafeOrderFilters): Prisma.OrderWhereInput {
   const where: Prisma.OrderWhereInput = {};
   if (safeFilters.status) where.status = safeFilters.status as OrderStatus;
   if (safeFilters.wilayaId) where.wilayaId = safeFilters.wilayaId;
@@ -48,32 +82,7 @@ export async function listOrders(filters: OrderFilters) {
       { email: { contains: term, mode: "insensitive" } },
     ];
   }
-
-  const [items, total] = await Promise.all([
-    prisma.order.findMany({
-      where,
-      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
-      skip: (page - 1) * PAGE_SIZE,
-      take: PAGE_SIZE,
-      select: {
-        id: true,
-        orderNumber: true,
-        status: true,
-        firstName: true,
-        lastName: true,
-        phone: true,
-        wilayaName: true,
-        communeName: true,
-        total: true,
-        riskLevel: true,
-        createdAt: true,
-        _count: { select: { items: true } },
-      },
-    }),
-    prisma.order.count({ where }),
-  ]);
-
-  return { items, total, page, totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)) };
+  return where;
 }
 
 export async function getAdminOrder(id: string) {
@@ -347,15 +356,26 @@ export async function exportOrdersCsv(filters: OrderFilters): Promise<string> {
   await requirePermission("orders:read");
   const parsedFilters = orderFilters.safeParse(filters);
   if (!parsedFilters.success) return "";
-  filters = parsedFilters.data;
+  const safeFilters = parsedFilters.data;
 
   // Page through every matching order — exports are complete, not truncated.
+  // Count once, then fetch pages directly: listOrders would re-run the same
+  // filtered count on every page (up to 500 redundant counts per export).
+  const where = buildOrderWhere(safeFilters);
+  const total = await prisma.order.count({ where });
   const summaries: Awaited<ReturnType<typeof listOrders>>["items"] = [];
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
   let page = 1;
   for (;;) {
-    const chunk = await listOrders({ ...filters, page });
-    summaries.push(...chunk.items);
-    if (page >= chunk.totalPages) break;
+    const chunk = await prisma.order.findMany({
+      where,
+      orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+      select: orderSummarySelect,
+    });
+    summaries.push(...chunk);
+    if (page >= totalPages) break;
     page += 1;
     if (page > 500) break; // sanity cap: 10,000 orders per export
   }
@@ -427,7 +447,7 @@ export async function exportOrdersCsv(filters: OrderFilters): Promise<string> {
     actorUserId: actor.id,
     action: "ORDERS_EXPORTED",
     resource: "Order",
-    metadata: { count: summaries.length, filters },
+    metadata: { count: summaries.length, filters: safeFilters },
   });
   return lines.join("\n");
 }

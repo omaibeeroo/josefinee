@@ -6,30 +6,50 @@ require("@next/env").loadEnvConfig(process.cwd());
 const { PrismaClient } = require("@prisma/client");
 const connectionString = process.env.DIRECT_URL || process.env.DATABASE_URL;
 if (!connectionString) {
-  throw new Error("Set DATABASE_URL (or DIRECT_URL for direct PostgreSQL access) before running online index preparation.");
+  throw new Error(
+    "Set DATABASE_URL (or DIRECT_URL for direct PostgreSQL access) before running online index preparation.",
+  );
 }
 
 const prisma = new PrismaClient({ datasourceUrl: connectionString });
 const indexes = [
-  { table: "Address", column: "wilayaId", name: "Address_wilayaId_idx" },
-  { table: "Address", column: "communeId", name: "Address_communeId_idx" },
-  { table: "CartItem", column: "variantId", name: "CartItem_variantId_idx" },
-  { table: "CouponCollection", column: "collectionId", name: "CouponCollection_collectionId_idx" },
-  { table: "CouponProduct", column: "productId", name: "CouponProduct_productId_idx" },
-  { table: "CouponRedemption", column: "customerId", name: "CouponRedemption_customerId_idx" },
-  { table: "CouponWilaya", column: "wilayaId", name: "CouponWilaya_wilayaId_idx" },
-  { table: "InventoryTransaction", column: "userId", name: "InventoryTransaction_userId_idx" },
-  { table: "Order", column: "communeId", name: "Order_communeId_idx" },
-  { table: "Order", column: "couponId", name: "Order_couponId_idx" },
-  { table: "Order", column: "promotionId", name: "Order_promotionId_idx" },
-  { table: "OrderStatusHistory", column: "changedByUserId", name: "OrderStatusHistory_changedByUserId_idx" },
-  { table: "Promotion", column: "collectionId", name: "Promotion_collectionId_idx" },
-  { table: "PromotionProduct", column: "productId", name: "PromotionProduct_productId_idx" },
-  { table: "Review", column: "customerId", name: "Review_customerId_idx" },
-  { table: "Review", column: "orderId", name: "Review_orderId_idx" },
+  { table: "Address", columns: ["wilayaId"], name: "Address_wilayaId_idx" },
+  { table: "Address", columns: ["communeId"], name: "Address_communeId_idx" },
+  { table: "CartItem", columns: ["variantId"], name: "CartItem_variantId_idx" },
+  {
+    table: "CouponCollection",
+    columns: ["collectionId"],
+    name: "CouponCollection_collectionId_idx",
+  },
+  { table: "CouponProduct", columns: ["productId"], name: "CouponProduct_productId_idx" },
+  { table: "CouponRedemption", columns: ["customerId"], name: "CouponRedemption_customerId_idx" },
+  { table: "CouponWilaya", columns: ["wilayaId"], name: "CouponWilaya_wilayaId_idx" },
+  { table: "InventoryTransaction", columns: ["userId"], name: "InventoryTransaction_userId_idx" },
+  { table: "Order", columns: ["communeId"], name: "Order_communeId_idx" },
+  { table: "Order", columns: ["couponId"], name: "Order_couponId_idx" },
+  { table: "Order", columns: ["promotionId"], name: "Order_promotionId_idx" },
+  {
+    table: "OrderStatusHistory",
+    columns: ["changedByUserId"],
+    name: "OrderStatusHistory_changedByUserId_idx",
+  },
+  { table: "Promotion", columns: ["collectionId"], name: "Promotion_collectionId_idx" },
+  { table: "PromotionProduct", columns: ["productId"], name: "PromotionProduct_productId_idx" },
+  { table: "Review", columns: ["customerId"], name: "Review_customerId_idx" },
+  { table: "Review", columns: ["orderId"], name: "Review_orderId_idx" },
+  { table: "Order", columns: ["phone", "createdAt"], name: "Order_phone_createdAt_idx" },
+  { table: "Order", columns: ["status", "createdAt"], name: "Order_status_createdAt_idx" },
+  { table: "Order", columns: ["customerId", "createdAt"], name: "Order_customerId_createdAt_idx" },
+  { table: "Cart", columns: ["status", "updatedAt"], name: "Cart_status_updatedAt_idx" },
+  {
+    table: "Notification",
+    columns: ["status", "createdAt"],
+    name: "Notification_status_createdAt_idx",
+  },
 ];
 
-const normalizeIndexDefinition = (definition) => definition.replaceAll('"', "").replace(/\s+/g, " ").trim().toLowerCase();
+const normalizeIndexDefinition = (definition) =>
+  definition.replaceAll('"', "").replace(/\s+/g, " ").trim().toLowerCase();
 
 async function getIndex(name) {
   const rows = await prisma.$queryRaw`
@@ -46,32 +66,41 @@ async function getIndex(name) {
   return rows[0] ?? null;
 }
 
-async function tableAndColumnExist(table, column) {
+async function tableAndColumnsExist(table, columns) {
   const rows = await prisma.$queryRaw`
     SELECT EXISTS (
       SELECT 1 FROM information_schema.tables
        WHERE table_schema = 'public' AND table_name = ${table}
     ) AS table_exists,
-    EXISTS (
-      SELECT 1 FROM information_schema.columns
-       WHERE table_schema = 'public' AND table_name = ${table} AND column_name = ${column}
-    ) AS column_exists
+    (
+      SELECT COUNT(*) FROM information_schema.columns
+       WHERE table_schema = 'public' AND table_name = ${table}
+         AND column_name = ANY(${columns})
+    ) AS columns_found
   `;
-  return rows[0];
+  const state = rows[0];
+  return {
+    tableExists: state.table_exists,
+    columnsExist: Number(state.columns_found) === columns.length,
+  };
 }
 
-async function ensureIndex({ table, column, name }) {
-  const schemaState = await tableAndColumnExist(table, column);
-  if (!schemaState.table_exists || !schemaState.column_exists) {
+async function ensureIndex({ table, columns, name }) {
+  const schemaState = await tableAndColumnsExist(table, columns);
+  if (!schemaState.tableExists || !schemaState.columnsExist) {
     return "deferred";
   }
 
-  const expectedSuffix = `on public.${table.toLowerCase()} using btree (${column.toLowerCase()})`;
+  const expectedSuffix = `on public.${table.toLowerCase()} using btree (${columns
+    .map((column) => column.toLowerCase())
+    .join(", ")})`;
   let existing = await getIndex(name);
   if (existing) {
     const definition = normalizeIndexDefinition(existing.definition);
     if (existing.table_name !== table || !definition.endsWith(expectedSuffix)) {
-      throw new Error(`Existing index ${name} does not match the expected ${table}(${column}) index; refusing to alter it.`);
+      throw new Error(
+        `Existing index ${name} does not match the expected ${table}(${columns.join(", ")}) index; refusing to alter it.`,
+      );
     }
     if (existing.valid && existing.ready) {
       return "existing";
@@ -80,8 +109,9 @@ async function ensureIndex({ table, column, name }) {
     await prisma.$executeRawUnsafe(`DROP INDEX CONCURRENTLY IF EXISTS public."${name}"`);
   }
 
+  const columnList = columns.map((column) => `"${column}"`).join(", ");
   await prisma.$executeRawUnsafe(
-    `CREATE INDEX CONCURRENTLY IF NOT EXISTS "${name}" ON public."${table}" ("${column}")`,
+    `CREATE INDEX CONCURRENTLY IF NOT EXISTS "${name}" ON public."${table}" (${columnList})`,
   );
   existing = await getIndex(name);
   if (!existing || existing.table_name !== table || !existing.valid || !existing.ready) {
@@ -104,7 +134,9 @@ try {
     else if (result === "existing") existing += 1;
     else deferred += 1;
   }
-  console.log(`Online FK indexes: created=${created}, already_valid=${existing}, deferred_until_schema_migration=${deferred}.`);
+  console.log(
+    `Online FK indexes: created=${created}, already_valid=${existing}, deferred_until_schema_migration=${deferred}.`,
+  );
 } finally {
   await prisma.$disconnect();
 }

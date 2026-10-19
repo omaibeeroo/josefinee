@@ -633,6 +633,7 @@ model Cart {
 
   @@index([customerId])
   @@index([status])
+  @@index([status, updatedAt])
 }
 
 model CartItem {
@@ -727,6 +728,9 @@ model Order {
   @@index([communeId])
   @@index([couponId])
   @@index([promotionId])
+  @@index([phone, createdAt])
+  @@index([status, createdAt])
+  @@index([customerId, createdAt])
 }
 
 model OrderItem {
@@ -991,6 +995,7 @@ model Notification {
   @@index([orderId])
   @@index([status])
   @@index([createdAt])
+  @@index([status, createdAt])
 }
 
 model OrderOutboxEvent {
