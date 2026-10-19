@@ -199,6 +199,12 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
   pre-created by `db:deploy`** (Order phone/status/customerId + createdAt,
   Cart status+updatedAt, Notification status+createdAt). Follow the same
   pattern for any new hot-path index.
+- **Maintenance detection is a response header, never localized copy.** The
+  localized 503 from `maintenanceResponse()` in `src/middleware.ts` carries
+  `X-Hanadi-Maintenance: coming-soon`; `scripts/smoke-production-deployment.sh`
+  probes that header (legacy `COMING SOON` body text remains only as a
+  fallback for older deployments). Localizing the page once silently reddened
+  every production smoke run — never reintroduce body-copy matching.
 
 ## Database workflow
 

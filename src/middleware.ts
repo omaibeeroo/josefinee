@@ -165,6 +165,9 @@ function maintenanceResponse(csp: string, localeCookie?: string): NextResponse {
       "Retry-After": "300",
       "Content-Security-Policy": csp,
       "X-Content-Type-Options": "nosniff",
+      // Stable machine marker for scripts/smoke-production-deployment.sh; the
+      // 503 body copy is localized, so text matching must never be the contract.
+      "X-Hanadi-Maintenance": "coming-soon",
     },
   });
 }

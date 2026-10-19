@@ -30,17 +30,24 @@ expect_status() {
 }
 
 root_body="$(mktemp)"
-trap 'rm -f "$root_body"' EXIT
+root_headers="$(mktemp)"
+trap 'rm -f "$root_body" "$root_headers"' EXIT
 mode=""
 root_status=""
 for attempt in $(seq 1 30); do
   # Deployment-status events can arrive while the URL is still warming up.
-  root_status="$(curl --silent --output "$root_body" --write-out '%{http_code}' "$BASE_URL/" 2>/dev/null || true)"
+  root_status="$(curl --silent --dump-header "$root_headers" --output "$root_body" --write-out '%{http_code}' "$BASE_URL/" 2>/dev/null || true)"
   if [[ "$root_status" == "200" ]]; then
     mode="storefront"
     break
   fi
-  if [[ "$root_status" == "503" ]] && grep -Fq 'COMING SOON' "$root_body"; then
+  # Maintenance is detected by the stable response header set in
+  # src/middleware.ts; the localized 503 body is never the contract. The
+  # legacy text check only covers deployments older than the header.
+  if [[ "$root_status" == "503" ]] && {
+    grep -Eiq '^x-hanadi-maintenance:[[:space:]]*coming-soon' "$root_headers" ||
+      grep -Fq 'COMING SOON' "$root_body"
+  }; then
     mode="maintenance"
     break
   fi
