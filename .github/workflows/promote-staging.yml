@@ -31,7 +31,17 @@ jobs:
             exit 1
           fi
 
+      - name: Skip when staging already matches main
+        id: sync_check
+        run: |
+          ahead_by="$(gh api "repos/${REPOSITORY}/compare/main...staging" --jq '.ahead_by')"
+          if [[ "$ahead_by" == "0" ]]; then
+            echo "Staging matches main; nothing to promote."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Open or reuse staging promotion pull request
+        if: steps.sync_check.outputs.skip != 'true'
         id: promotion_pr
         run: |
           pr_number="$(gh pr list --repo "$REPOSITORY" --head staging --base main --state open --json number --jq '.[0].number')"
@@ -47,6 +57,7 @@ jobs:
           echo "number=$pr_number" >> "$GITHUB_OUTPUT"
 
       - name: Merge promotion pull request
+        if: steps.sync_check.outputs.skip != 'true'
         run: |
           gh pr merge "${{ steps.promotion_pr.outputs.number }}" \
             --repo "$REPOSITORY" \
