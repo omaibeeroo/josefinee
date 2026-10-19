@@ -111,7 +111,13 @@ export function ProductImage({
 
 /* ----------------------------------------------------------- Product card */
 
-export function ProductCard({ product }: { product: StoreProductCard }) {
+export function ProductCard({
+  product,
+  priority,
+}: {
+  product: StoreProductCard;
+  priority?: boolean;
+}) {
   const { t } = useLocale();
   const { add } = useCart();
   const [pending, setPending] = useState(false);
@@ -174,6 +180,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
                 <ProductImage
                   url={images[current]?.url ?? null}
                   alt={images[current]?.alt || product.name}
+                  priority={priority && current === 0}
                 />
               </div>
             ) : (

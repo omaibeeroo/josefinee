@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from "next/server";
-import { BRAND_CONFIG } from "@/config/brand";
+import { BRAND_CONFIG, storagePublicOrigin } from "@/config/brand";
 import dictionaries from "@/lib/i18n";
 import { LOCALE_COOKIE, parseLocale } from "@/lib/i18n/locales";
 
@@ -7,6 +7,9 @@ export async function middleware(request: NextRequest) {
   const nonce = btoa(crypto.randomUUID());
   const development = process.env.NODE_ENV !== "production";
   const maintenanceEnabled = process.env.PUBLIC_SITE_MAINTENANCE === "true";
+  // Product images may be served from S3/R2; the layout preconnects to that
+  // origin, which requires it in connect-src for the hint to survive CSP.
+  const storageOrigin = storagePublicOrigin();
   const csp = [
     "default-src 'self'",
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic' https://www.googletagmanager.com https://connect.facebook.net https://analytics.tiktok.com${development ? " 'unsafe-eval'" : ""}`,
@@ -14,7 +17,7 @@ export async function middleware(request: NextRequest) {
     "font-src 'self' https://fonts.gstatic.com",
     "img-src 'self' data: blob: https: *.facebook.com *.fbcdn.net *.tiktokcdn.com",
     "media-src 'self' https:",
-    `connect-src 'self'${development ? " ws:" : ""} https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://graph.facebook.com https://connect.facebook.net https://analytics.tiktok.com https://*.tiktok.com`,
+    `connect-src 'self'${development ? " ws:" : ""} https://www.google-analytics.com https://*.google-analytics.com https://www.googletagmanager.com https://graph.facebook.com https://connect.facebook.net https://analytics.tiktok.com https://*.tiktok.com${storageOrigin ? ` ${storageOrigin}` : ""}`,
     "frame-src https://www.facebook.com",
     "object-src 'none'",
     "frame-ancestors 'none'",

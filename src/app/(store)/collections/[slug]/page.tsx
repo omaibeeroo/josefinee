@@ -17,18 +17,18 @@ export const dynamic = "force-dynamic";
 
 const getCollection = cache((slug: string) =>
   prisma.collection.findFirst({
-      where: { slug, isActive: true },
-      select: {
-        id: true,
-        name: true,
-        slug: true,
-        description: true,
-        image: true,
-        type: true,
-        seoTitle: true,
-        seoDescription: true,
-      },
-    }),
+    where: { slug, isActive: true },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      description: true,
+      image: true,
+      type: true,
+      seoTitle: true,
+      seoDescription: true,
+    },
+  }),
 );
 
 export async function generateMetadata({
@@ -74,7 +74,9 @@ export default async function CollectionPage({
   if (!collection) notFound();
 
   const query = parseCatalogParams(queryParams);
-  after(() => trackEvent({ name: ANALYTICS_EVENTS.VIEW_COLLECTION, props: { slug: collection.slug } }));
+  after(() =>
+    trackEvent({ name: ANALYTICS_EVENTS.VIEW_COLLECTION, props: { slug: collection.slug } }),
+  );
   const [result, t] = await Promise.all([
     getStorefrontProducts({
       ...query,
@@ -102,6 +104,7 @@ export default async function CollectionPage({
               alt={collection.name}
               fill
               sizes="(max-width: 768px) 100vw, 1200px"
+              priority
               unoptimized
               className="object-cover"
             />
@@ -114,15 +117,15 @@ export default async function CollectionPage({
         <div className="flex gap-8">
           <div className="min-w-0 flex-1">
             {result.items.length === 0 ? (
-                <EmptyState
-                  title={t.collections.emptyCollection}
-                  message={t.collections.emptyCollectionHint}
-                  action={
-                    <Link href="/shop" className="btn btn-outline">
-                      {t.collections.viewShop}
-                    </Link>
-                  }
-                />
+              <EmptyState
+                title={t.collections.emptyCollection}
+                message={t.collections.emptyCollectionHint}
+                action={
+                  <Link href="/shop" className="btn btn-outline">
+                    {t.collections.viewShop}
+                  </Link>
+                }
+              />
             ) : (
               <>
                 <ProductGrid products={result.items} />

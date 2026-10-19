@@ -8,7 +8,7 @@ import { resolveSiteMetadata } from "@/lib/i18n/metadata";
 import { THEME_COOKIE, parseTheme } from "@/lib/i18n/theme";
 import { localeDir } from "@/lib/i18n/locales";
 import { LocaleProvider } from "@/lib/i18n/provider";
-import { BRAND_CONFIG, appUrl } from "@/config/brand";
+import { BRAND_CONFIG, appUrl, storagePublicOrigin } from "@/config/brand";
 import { CartProvider } from "@/components/storefront/cart-ui";
 import { Pixels } from "@/components/pixels";
 import { CookiePreferences } from "@/components/cookie-consent";
@@ -111,6 +111,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   ]);
   const theme = parseTheme(cookieStore.get(THEME_COOKIE)?.value);
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
+  const imageOrigin = storagePublicOrigin();
   // Admin brand colors apply in light mode only; dark mode uses its own
   // fixed palette so text stays readable on dark surfaces.
   const style = (
@@ -130,6 +131,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
       data-theme={theme}
       className={`${display.variable} ${sans.variable} ${displayAr.variable} ${sansAr.variable}`}
     >
+      {imageOrigin && <link rel="preconnect" href={imageOrigin} />}
       <body style={style} className="min-h-screen">
         <a
           href="#main-content"

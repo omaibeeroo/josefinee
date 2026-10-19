@@ -8,8 +8,8 @@ import type { StoreProductCard } from "@/server/catalog";
 export function ProductGrid({ products }: { products: StoreProductCard[] }) {
   return (
     <div className="motion-stagger grid grid-cols-2 gap-x-3 gap-y-8 md:grid-cols-3 md:gap-x-5 lg:grid-cols-2">
-      {products.map((product) => (
-        <ProductCard key={product.id} product={product} />
+      {products.map((product, index) => (
+        <ProductCard key={product.id} product={product} priority={index < 2} />
       ))}
     </div>
   );
@@ -17,13 +17,7 @@ export function ProductGrid({ products }: { products: StoreProductCard[] }) {
 
 const SORT_VALUES = ["featured", "newest", "price-asc", "price-desc", "best-selling"] as const;
 
-export function CatalogToolbar({
-  total,
-  title,
-}: {
-  total: number;
-  title?: string;
-}) {
+export function CatalogToolbar({ total, title }: { total: number; title?: string }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();

@@ -76,6 +76,7 @@ function BrandMark({
           alt={brandName}
           width={120}
           height={36}
+          priority
           unoptimized
           className={cn("h-9 w-auto", mobile && "h-7 max-w-[7.5rem]")}
         />

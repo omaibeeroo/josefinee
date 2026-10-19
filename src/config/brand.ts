@@ -51,6 +51,24 @@ export const isS3Configured = (): boolean =>
     process.env.STORAGE_BUCKET && process.env.STORAGE_ACCESS_KEY && process.env.STORAGE_SECRET_KEY,
   );
 
+/**
+ * Origin serving uploaded product images when S3/R2 storage is configured.
+ * Used by the root layout to <link rel="preconnect"> so the first product
+ * image on a slow connection skips a fresh DNS + TLS handshake, and by the
+ * middleware CSP so the preconnect hint survives connect-src. Null for the
+ * local driver (same-origin /uploads). Mirrors the storage driver's own
+ * host parsing (first comma-separated entry, https assumed).
+ */
+export function storagePublicOrigin(): string | null {
+  const host = (process.env.STORAGE_PUBLIC_HOST || "").split(",")[0]?.trim();
+  if (!host) return null;
+  try {
+    return new URL(host.startsWith("http") ? host : `https://${host}`).origin;
+  } catch {
+    return null;
+  }
+}
+
 /** Public canonical application origin; production must configure APP_URL explicitly. */
 export function appUrl(): string {
   const isVercelPreview = process.env.VERCEL_ENV === "preview";
