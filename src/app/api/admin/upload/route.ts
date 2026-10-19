@@ -4,6 +4,7 @@ import { assertSameOrigin } from "@/lib/csrf";
 import { enforceRateLimit, LIMITS } from "@/lib/rate-limit";
 import { storeImage } from "@/lib/storage";
 import { toUserMessage, isAppError } from "@/lib/errors";
+import { getAdminActionT } from "@/lib/i18n/server";
 import { recordAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
@@ -16,14 +17,15 @@ const NO_STORE = { "Cache-Control": "no-store" };
  */
 export async function POST(request: Request) {
   const session = await getAdminSession();
+  const t = await getAdminActionT();
   if (!session) {
     return Response.json(
-      { ok: false, error: "Please sign in." },
+      { ok: false, error: t.signInRequired },
       { status: 401, headers: NO_STORE },
     );
   }
   if (!can(session.user, "products:write")) {
-    return Response.json({ ok: false, error: "Forbidden." }, { status: 403, headers: NO_STORE });
+    return Response.json({ ok: false, error: t.forbidden }, { status: 403, headers: NO_STORE });
   }
 
   try {
@@ -35,7 +37,7 @@ export async function POST(request: Request) {
     const declaredLength = Number(request.headers.get("content-length") ?? "");
     if (Number.isFinite(declaredLength) && declaredLength > 8 * 1024 * 1024 + 64 * 1024) {
       return Response.json(
-        { ok: false, error: "Image is too large." },
+        { ok: false, error: t.imageTooLarge },
         { status: 413, headers: NO_STORE },
       );
     }
@@ -44,13 +46,13 @@ export async function POST(request: Request) {
     const file = form.get("file");
     if (!(file instanceof File)) {
       return Response.json(
-        { ok: false, error: "No file provided." },
+        { ok: false, error: t.noFileProvided },
         { status: 400, headers: NO_STORE },
       );
     }
     if (file.size > 8 * 1024 * 1024) {
       return Response.json(
-        { ok: false, error: "Image is too large." },
+        { ok: false, error: t.imageTooLarge },
         { status: 413, headers: NO_STORE },
       );
     }

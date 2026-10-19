@@ -22,7 +22,7 @@ import {
   verifyTotp,
 } from "@/lib/auth/totp";
 import { getSettings } from "@/lib/settings";
-import { getActionT } from "@/lib/i18n/server";
+import { getActionT, getAdminActionT } from "@/lib/i18n/server";
 import { z } from "zod";
 import { adminId, userStatus } from "@/lib/validation/admin";
 
@@ -462,10 +462,10 @@ export async function createUserAction(input: z.infer<typeof createUserSchema>) 
 
 export async function setUserStatusAction(userId: string, status: "ACTIVE" | "DISABLED") {
   const actor = await requirePermission("users:manage");
+  const t = await getAdminActionT();
   const parsed = z.object({ userId: adminId, status: userStatus }).safeParse({ userId, status });
-  if (!parsed.success) return { ok: false as const, error: "Invalid user status update." };
-  if (actor.id === parsed.data.userId)
-    return { ok: false as const, error: "You cannot disable your own account." };
+  if (!parsed.success) return { ok: false as const, error: t.invalidStatusUpdate };
+  if (actor.id === parsed.data.userId) return { ok: false as const, error: t.cannotDisableSelf };
   try {
     await prisma.$transaction([
       prisma.user.update({
@@ -478,7 +478,7 @@ export async function setUserStatusAction(userId: string, status: "ACTIVE" | "DI
       }),
     ]);
   } catch {
-    return { ok: false as const, error: "User not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -492,13 +492,14 @@ export async function setUserStatusAction(userId: string, status: "ACTIVE" | "DI
 
 export async function resetUserPasswordAction(userId: string, password: string) {
   const actor = await requirePermission("users:manage");
+  const t = await getAdminActionT();
   const parsed = z
     .object({ userId: adminId, password: z.string().max(200) })
     .safeParse({ userId, password });
   if (!parsed.success || !isStrongPassword(parsed.data.password)) {
     return {
       ok: false as const,
-      error: "Password must be 10+ chars with mixed case and a number.",
+      error: t.adminPasswordPolicy,
     };
   }
   try {
@@ -518,7 +519,7 @@ export async function resetUserPasswordAction(userId: string, password: string) 
       }),
     ]);
   } catch {
-    return { ok: false as const, error: "User not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,

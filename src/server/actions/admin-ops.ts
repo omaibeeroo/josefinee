@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { AppError, toUserMessage } from "@/lib/errors";
 import { requirePermission } from "@/lib/auth/rbac";
 import { recordAudit } from "@/lib/audit";
+import { getAdminActionT } from "@/lib/i18n/server";
 import { CACHE_TAG_DELIVERY } from "@/lib/cache";
 import { flattenZodErrors } from "@/lib/validation/common";
 import {
@@ -94,28 +95,29 @@ export async function getCouponForEdit(id: string) {
 
 export async function saveCouponAction(input: z.infer<typeof couponSchema>) {
   const actor = await requirePermission("coupons:write");
+  const t = await getAdminActionT();
   const parsed = couponSchema.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false as const,
-      error: "Please review the coupon fields.",
+      error: t.reviewFields,
       fields: flattenZodErrors(parsed.error),
     };
   }
   const data = parsed.data;
   const code = data.code.trim().toUpperCase();
   if (data.startsAt && data.endsAt && new Date(data.startsAt) >= new Date(data.endsAt)) {
-    return { ok: false as const, error: "The end date must be after the start date." };
+    return { ok: false as const, error: t.endAfterStart };
   }
 
   if (data.type === "PERCENTAGE" && (data.value < 1 || data.value > 90)) {
-    return { ok: false as const, error: "Percentage must be between 1 and 90." };
+    return { ok: false as const, error: t.percentageRange };
   }
 
   const clash = await prisma.coupon.findFirst({
     where: { code, id: data.id ? { not: data.id } : undefined },
   });
-  if (clash) return { ok: false as const, error: "This code is already in use." };
+  if (clash) return { ok: false as const, error: t.couponCodeTaken };
 
   const productSkus = (data.productSkus ?? "")
     .split(",")
@@ -131,7 +133,10 @@ export async function saveCouponAction(input: z.infer<typeof couponSchema>) {
   const foundSkus = new Set(products.map((product) => product.sku));
   const missing = productSkus.filter((sku) => !foundSkus.has(sku));
   if (missing.length > 0) {
-    return { ok: false as const, error: `Unknown product SKUs: ${missing.join(", ")}.` };
+    return {
+      ok: false as const,
+      error: t.unknownProductSkus.replace("{skus}", missing.join(", ")),
+    };
   }
 
   const collections =
@@ -152,7 +157,7 @@ export async function saveCouponAction(input: z.infer<typeof couponSchema>) {
     collections.length !== new Set(data.collectionSlugs).size ||
     wilayas.length !== new Set(data.wilayaCodes).size
   ) {
-    return { ok: false as const, error: "One or more coupon targets do not exist." };
+    return { ok: false as const, error: t.couponTargetsMissing };
   }
   if (
     !data.appliesToAll &&
@@ -162,7 +167,7 @@ export async function saveCouponAction(input: z.infer<typeof couponSchema>) {
   ) {
     return {
       ok: false as const,
-      error: "Choose at least one target or explicitly enable whole-store scope.",
+      error: t.couponScopeRequired,
     };
   }
 
@@ -225,8 +230,9 @@ export async function saveCouponAction(input: z.infer<typeof couponSchema>) {
 
 export async function deleteCouponAction(id: string) {
   const actor = await requirePermission("coupons:write");
+  const t = await getAdminActionT();
   const parsedId = adminId.safeParse(id);
-  if (!parsedId.success) return { ok: false as const, error: "Invalid coupon ID." };
+  if (!parsedId.success) return { ok: false as const, error: t.invalidId };
   try {
     const redemptions = await prisma.couponRedemption.count({ where: { couponId: parsedId.data } });
     if (redemptions > 0) {
@@ -235,7 +241,7 @@ export async function deleteCouponAction(id: string) {
       await prisma.coupon.delete({ where: { id: parsedId.data } });
     }
   } catch {
-    return { ok: false as const, error: "Coupon not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -275,16 +281,17 @@ const rateSchema = z.object({
 
 export async function saveDeliveryRateAction(input: z.infer<typeof rateSchema>) {
   const actor = await requirePermission("delivery:write");
+  const t = await getAdminActionT();
   const parsed = rateSchema.safeParse(input);
   if (!parsed.success || parsed.data.etaMaxDays < parsed.data.etaMinDays) {
-    return { ok: false as const, error: "Please review the delivery rate fields." };
+    return { ok: false as const, error: t.reviewFields };
   }
   const data = parsed.data;
   const wilaya = await prisma.wilaya.findUnique({
     where: { id: data.wilayaId },
     select: { id: true },
   });
-  if (!wilaya) return { ok: false as const, error: "Wilaya not found." };
+  if (!wilaya) return { ok: false as const, error: t.wilayaNotFound };
   try {
     await prisma.deliveryRate.upsert({
       where: {
@@ -306,7 +313,7 @@ export async function saveDeliveryRateAction(input: z.infer<typeof rateSchema>) 
       },
     });
   } catch {
-    return { ok: false as const, error: "Could not save this delivery rate." };
+    return { ok: false as const, error: t.deliveryRateSaveFailed };
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -322,9 +329,10 @@ export async function saveDeliveryRateAction(input: z.infer<typeof rateSchema>) 
 
 export async function importDeliveryCsvAction(csv: string) {
   const actor = await requirePermission("delivery:write");
+  const t = await getAdminActionT();
   const parsedCsv = deliveryCsv.safeParse(csv);
   if (!parsedCsv.success || Buffer.byteLength(parsedCsv.data, "utf8") > 1_000_000)
-    return { ok: false as const, error: "CSV is too large." };
+    return { ok: false as const, error: t.csvTooLarge };
   csv = parsedCsv.data;
   // Columns: wilaya_code,method,price,eta_min,eta_max,active
   const lines = csv
@@ -339,8 +347,7 @@ export async function importDeliveryCsvAction(csv: string) {
   const byCode = new Map(wilayas.map((wilaya) => [wilaya.code, wilaya.id]));
   const methods = ["HOME", "STOPDESK", "EXPRESS", "STANDARD"];
 
-  if (lines.length - start > 2000)
-    return { ok: false as const, error: "CSV contains too many rows." };
+  if (lines.length - start > 2000) return { ok: false as const, error: t.csvTooManyRows };
   const updates: Array<{
     wilayaId: string;
     method: DeliveryMethod;
@@ -500,10 +507,11 @@ export async function getCustomerDetail(id: string) {
 
 export async function setCustomerStatusAction(id: string, status: "ACTIVE" | "BLOCKED") {
   const actor = await requirePermission("customers:write");
+  const t = await getAdminActionT();
   const parsedId = adminId.safeParse(id);
   const parsedStatus = customerStatus.safeParse(status);
   if (!parsedId.success || !parsedStatus.success)
-    return { ok: false as const, error: "Invalid customer status update." };
+    return { ok: false as const, error: t.invalidStatusUpdate };
   try {
     await prisma.customer.update({
       where: { id: parsedId.data },
@@ -514,7 +522,7 @@ export async function setCustomerStatusAction(id: string, status: "ACTIVE" | "BL
       data: { revokedAt: new Date() },
     });
   } catch {
-    return { ok: false as const, error: "Customer not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -529,15 +537,16 @@ export async function setCustomerStatusAction(id: string, status: "ACTIVE" | "BL
 
 export async function updateCustomerNotesAction(id: string, notes: string) {
   const actor = await requirePermission("customers:write");
+  const t = await getAdminActionT();
   const parsed = z.object({ id: adminId, notes: customerNotes }).safeParse({ id, notes });
-  if (!parsed.success) return { ok: false as const, error: "Invalid customer notes." };
+  if (!parsed.success) return { ok: false as const, error: t.invalidNotes };
   try {
     await prisma.customer.update({
       where: { id: parsed.data.id },
       data: { riskNotes: parsed.data.notes.trim() || null },
     });
   } catch {
-    return { ok: false as const, error: "Customer not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -562,12 +571,13 @@ export async function listSubscribersAdmin() {
 
 export async function deleteSubscriberAction(id: string) {
   const actor = await requirePermission("newsletter:write");
+  const t = await getAdminActionT();
   const parsedId = adminId.safeParse(id);
-  if (!parsedId.success) return { ok: false as const, error: "Invalid subscriber ID." };
+  if (!parsedId.success) return { ok: false as const, error: t.invalidId };
   try {
     await prisma.newsletterSubscriber.delete({ where: { id: parsedId.data } });
   } catch {
-    return { ok: false as const, error: "Subscriber not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -597,17 +607,18 @@ export async function setMessageStatusAction(
   status: "NEW" | "IN_PROGRESS" | "RESOLVED" | "SPAM",
 ) {
   const actor = await requirePermission("messages:write");
+  const t = await getAdminActionT();
   const parsedId = adminId.safeParse(id);
   const parsedStatus = messageStatus.safeParse(status);
   if (!parsedId.success || !parsedStatus.success)
-    return { ok: false as const, error: "Invalid message status update." };
+    return { ok: false as const, error: t.invalidStatusUpdate };
   try {
     await prisma.contactMessage.update({
       where: { id: parsedId.data },
       data: { status: parsedStatus.data },
     });
   } catch {
-    return { ok: false as const, error: "Message not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -644,11 +655,12 @@ export async function listPagesAdmin() {
 
 export async function savePageAction(input: z.infer<typeof pageSchema>) {
   const actor = await requirePermission("content:write");
+  const t = await getAdminActionT();
   const parsed = pageSchema.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false as const,
-      error: "Please review the page fields.",
+      error: t.reviewFields,
       fields: flattenZodErrors(parsed.error),
     };
   }
@@ -704,8 +716,9 @@ export async function listFaqAdmin() {
 
 export async function saveFaqAction(input: z.infer<typeof faqSchema>) {
   const actor = await requirePermission("content:write");
+  const t = await getAdminActionT();
   const parsed = faqSchema.safeParse(input);
-  if (!parsed.success) return { ok: false as const, error: "Please review the FAQ fields." };
+  if (!parsed.success) return { ok: false as const, error: t.reviewFields };
   const data = parsed.data;
   const { id: _faqId, ...faqData } = data;
   const saved = data.id
@@ -724,12 +737,13 @@ export async function saveFaqAction(input: z.infer<typeof faqSchema>) {
 
 export async function deleteFaqAction(id: string) {
   const actor = await requirePermission("content:write");
+  const t = await getAdminActionT();
   const parsedId = adminId.safeParse(id);
-  if (!parsedId.success) return { ok: false as const, error: "Invalid FAQ ID." };
+  if (!parsedId.success) return { ok: false as const, error: t.invalidId };
   try {
     await prisma.faqItem.delete({ where: { id: parsedId.data } });
   } catch {
-    return { ok: false as const, error: "FAQ not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -756,25 +770,26 @@ export async function listAnnouncementsAdmin() {
 
 export async function saveAnnouncementAction(input: z.infer<typeof announcementSchema>) {
   const actor = await requirePermission("content:write");
+  const t = await getAdminActionT();
   const parsed = announcementSchema.safeParse(input);
-  if (!parsed.success) return { ok: false as const, error: "Please review the announcement." };
+  if (!parsed.success) return { ok: false as const, error: t.reviewFields };
   const data = parsed.data;
   if (data.href) {
     if (data.href.startsWith("//") || /^(javascript|data|vbscript):/i.test(data.href)) {
-      return { ok: false as const, error: "Please provide a safe announcement link." };
+      return { ok: false as const, error: t.announcementLinkSafe };
     }
     if (data.href.startsWith("http://"))
-      return { ok: false as const, error: "Announcement links must use HTTPS." };
+      return { ok: false as const, error: t.announcementLinkHttps };
     if (data.href.startsWith("https://")) {
       try {
         new URL(data.href);
       } catch {
-        return { ok: false as const, error: "Please provide a valid announcement link." };
+        return { ok: false as const, error: t.announcementLinkValid };
       }
     } else if (!data.href.startsWith("/")) {
       return {
         ok: false as const,
-        error: "Announcement links must be relative paths or HTTPS URLs.",
+        error: t.announcementLinkScheme,
       };
     }
   }
@@ -798,12 +813,13 @@ export async function saveAnnouncementAction(input: z.infer<typeof announcementS
 
 export async function deleteAnnouncementAction(id: string) {
   const actor = await requirePermission("content:write");
+  const t = await getAdminActionT();
   const parsedId = adminId.safeParse(id);
-  if (!parsedId.success) return { ok: false as const, error: "Invalid announcement ID." };
+  if (!parsedId.success) return { ok: false as const, error: t.invalidId };
   try {
     await prisma.announcement.delete({ where: { id: parsedId.data } });
   } catch {
-    return { ok: false as const, error: "Announcement not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -819,10 +835,11 @@ export async function deleteAnnouncementAction(id: string) {
 
 export async function saveSettingsAction(key: string, value: unknown) {
   const actor = await requirePermission("settings:write");
+  const t = await getAdminActionT();
   const { DEFAULT_SETTINGS, updateSettingsSection } = await import("@/lib/settings");
   const parsed = z.object({ key: settingsKey, value: settingsValue }).safeParse({ key, value });
   if (!parsed.success || !Object.prototype.hasOwnProperty.call(DEFAULT_SETTINGS, parsed.data.key)) {
-    return { ok: false as const, error: "Invalid settings value." };
+    return { ok: false as const, error: t.invalidSettingsValue };
   }
   const section = parsed.data.key as keyof typeof DEFAULT_SETTINGS;
   await updateSettingsSection(section, parsed.data.value as never);
@@ -864,23 +881,24 @@ const promotionSchema = z.object({
 
 export async function savePromotionAction(input: z.infer<typeof promotionSchema>) {
   const actor = await requirePermission("promotions:write");
+  const t = await getAdminActionT();
   const parsed = promotionSchema.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false as const,
-      error: "Please review the promotion fields.",
+      error: t.reviewFields,
       fields: flattenZodErrors(parsed.error),
     };
   }
   const data = parsed.data;
 
   if (data.type === "PERCENTAGE" && (data.value < 1 || data.value > 90)) {
-    return { ok: false as const, error: "Percentage must be between 1 and 90." };
+    return { ok: false as const, error: t.percentageRange };
   }
   const startsAt = new Date(data.startsAt);
   const endsAt = new Date(data.endsAt);
   if (!(startsAt < endsAt)) {
-    return { ok: false as const, error: "The end date must be after the start date." };
+    return { ok: false as const, error: t.endAfterStart };
   }
 
   const productSkus = (data.productSkus ?? "")
@@ -897,7 +915,10 @@ export async function savePromotionAction(input: z.infer<typeof promotionSchema>
   const found = new Set(products.map((product) => product.sku));
   const missing = productSkus.filter((sku) => !found.has(sku));
   if (missing.length > 0) {
-    return { ok: false as const, error: `Unknown product SKUs: ${missing.join(", ")}.` };
+    return {
+      ok: false as const,
+      error: t.unknownProductSkus.replace("{skus}", missing.join(", ")),
+    };
   }
 
   let collectionId: string | null = null;
@@ -907,13 +928,13 @@ export async function savePromotionAction(input: z.infer<typeof promotionSchema>
       where: { id: data.id },
       select: { collectionId: true },
     });
-    if (!existing) return { ok: false as const, error: "Promotion not found." };
+    if (!existing) return { ok: false as const, error: t.promotionNotFound };
     collectionId = existing.collectionId;
     preserveExistingScope = true;
   }
   if (data.collectionSlug) {
     const collection = await prisma.collection.findUnique({ where: { slug: data.collectionSlug } });
-    if (!collection) return { ok: false as const, error: "Unknown collection slug." };
+    if (!collection) return { ok: false as const, error: t.unknownCollectionSlug };
     collectionId = collection.id;
   }
 
@@ -966,8 +987,9 @@ export async function savePromotionAction(input: z.infer<typeof promotionSchema>
 
 export async function deletePromotionAction(id: string) {
   const actor = await requirePermission("promotions:write");
+  const t = await getAdminActionT();
   const parsedId = adminId.safeParse(id);
-  if (!parsedId.success) return { ok: false as const, error: "Invalid promotion ID." };
+  if (!parsedId.success) return { ok: false as const, error: t.invalidId };
   try {
     const orders = await prisma.order.count({ where: { promotionId: parsedId.data } });
     if (orders > 0) {
@@ -976,7 +998,7 @@ export async function deletePromotionAction(id: string) {
       await prisma.promotion.delete({ where: { id: parsedId.data } });
     }
   } catch {
-    return { ok: false as const, error: "Promotion not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,

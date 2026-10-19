@@ -1,12 +1,14 @@
 import { requirePermission } from "@/lib/auth/rbac";
 import { exportOrdersCsv } from "@/server/actions/admin-orders";
 import { enforceRateLimit, LIMITS } from "@/lib/rate-limit";
+import { getAdminActionT } from "@/lib/i18n/server";
 import { z } from "zod";
 
 export const dynamic = "force-dynamic";
 const NO_STORE = { "Cache-Control": "no-store" };
 
 export async function GET(request: Request) {
+  const t = await getAdminActionT();
   let actorId: string;
   try {
     const actor = await requirePermission("orders:export");
@@ -14,14 +16,20 @@ export async function GET(request: Request) {
   } catch (error) {
     const { isAppError } = await import("@/lib/errors");
     if (isAppError(error)) {
-      return Response.json({ ok: false, error: error.userMessage }, { status: error.status, headers: NO_STORE });
+      return Response.json(
+        { ok: false, error: error.userMessage },
+        { status: error.status, headers: NO_STORE },
+      );
     }
-    return Response.json({ ok: false, error: "Something went wrong." }, { status: 500, headers: NO_STORE });
+    return Response.json({ ok: false, error: t.wentWrong }, { status: 500, headers: NO_STORE });
   }
   try {
     await enforceRateLimit({ ...LIMITS.export, key: `orders-export:${actorId}` });
   } catch {
-    return Response.json({ ok: false, error: "Too many export requests." }, { status: 429, headers: NO_STORE });
+    return Response.json(
+      { ok: false, error: t.exportRateLimited },
+      { status: 429, headers: NO_STORE },
+    );
   }
   const { searchParams } = new URL(request.url);
   const parsed = z
@@ -51,7 +59,10 @@ export async function GET(request: Request) {
     !parsed.success ||
     (parsed.data.from && parsed.data.to && new Date(parsed.data.from) > new Date(parsed.data.to))
   ) {
-    return Response.json({ ok: false, error: "Invalid export filters." }, { status: 400, headers: NO_STORE });
+    return Response.json(
+      { ok: false, error: t.exportFiltersInvalid },
+      { status: 400, headers: NO_STORE },
+    );
   }
   const csv = await exportOrdersCsv({
     ...parsed.data,

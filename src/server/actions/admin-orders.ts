@@ -9,6 +9,7 @@ import { incrementStock } from "@/server/inventory";
 import { sendOrderStatusUpdate, sendShippingNotification } from "@/lib/notifications";
 import { LOCALE_COOKIE, parseLocale } from "@/lib/i18n/locales";
 import dictionaries from "@/lib/i18n";
+import { getAdminActionT } from "@/lib/i18n/server";
 import { cookies } from "next/headers";
 import type { OrderStatus, Prisma } from "@prisma/client";
 import { z } from "zod";
@@ -134,6 +135,8 @@ export async function changeOrderStatusAction(
   notify = true,
 ) {
   const actor = await requirePermission("orders:write");
+  const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
+  const t = dictionaries[locale];
   const parsedInput = z
     .object({
       orderId: adminId,
@@ -153,7 +156,7 @@ export async function changeOrderStatusAction(
       notify: z.boolean(),
     })
     .safeParse({ orderId, status, note, notify });
-  if (!parsedInput.success) return { ok: false as const, error: "Invalid order status update." };
+  if (!parsedInput.success) return { ok: false as const, error: t.adminErrors.invalidStatusUpdate };
   // Use validated values from here on (never the raw arguments).
   orderId = parsedInput.data.orderId;
   status = parsedInput.data.status;
@@ -164,11 +167,9 @@ export async function changeOrderStatusAction(
     where: { id: orderId },
     include: { items: true },
   });
-  if (!order) return { ok: false as const, error: "Order not found." };
+  if (!order) return { ok: false as const, error: t.adminErrors.orderNotFound };
   if (order.status === status) return { ok: true as const };
 
-  const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
-  const t = dictionaries[locale];
   if (!allowedNextStatuses(order.status).includes(status)) {
     return {
       ok: false as const,
@@ -328,17 +329,18 @@ export async function changeOrderStatusAction(
 
 export async function updateAdminNotesAction(orderId: string, notes: string) {
   const actor = await requirePermission("orders:write");
+  const t = await getAdminActionT();
   const parsed = z
     .object({ orderId: adminId, notes: z.string().max(4000) })
     .safeParse({ orderId, notes });
-  if (!parsed.success) return { ok: false as const, error: "Invalid order note." };
+  if (!parsed.success) return { ok: false as const, error: t.invalidNotes };
   try {
     await prisma.order.update({
       where: { id: parsed.data.orderId },
       data: { adminNotes: parsed.data.notes.trim() || null },
     });
   } catch {
-    return { ok: false as const, error: "Order not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,

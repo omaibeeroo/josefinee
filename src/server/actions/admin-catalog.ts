@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { AppError, toUserMessage } from "@/lib/errors";
 import { requirePermission } from "@/lib/auth/rbac";
 import { recordAudit } from "@/lib/audit";
+import { getAdminActionT } from "@/lib/i18n/server";
 import { setStock } from "@/server/inventory";
 import { flattenZodErrors } from "@/lib/validation/common";
 import { adminId, productListParams, productStatus, reviewStatus } from "@/lib/validation/admin";
@@ -152,11 +153,12 @@ async function ensureUniqueSlug(base: string, excludeId?: string): Promise<strin
 
 export async function saveProductAction(input: ProductInput) {
   const actor = await requirePermission("products:write");
+  const t = await getAdminActionT();
   const parsed = productSchema.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false as const,
-      error: "Please review the product fields.",
+      error: t.reviewFields,
       fields: flattenZodErrors(parsed.error),
     };
   }
@@ -165,13 +167,13 @@ export async function saveProductAction(input: ProductInput) {
 
   if (data.categoryId) {
     const category = await prisma.category.findUnique({ where: { id: data.categoryId } });
-    if (!category) return { ok: false as const, error: "Selected category does not exist." };
+    if (!category) return { ok: false as const, error: t.categoryMissing };
   }
 
   // SKU uniqueness across all variants (excluding this product's own variants).
   const skus = data.variants.map((variant) => variant.sku.trim());
   if (new Set(skus.map((sku) => sku.toLowerCase())).size !== skus.length) {
-    return { ok: false as const, error: "Variant SKUs must be unique within the product." };
+    return { ok: false as const, error: t.variantSkuUnique };
   }
   const conflicting = await prisma.productVariant.findMany({
     where: {
@@ -181,7 +183,10 @@ export async function saveProductAction(input: ProductInput) {
     select: { sku: true },
   });
   if (conflicting.length > 0) {
-    return { ok: false as const, error: `SKU already in use: ${conflicting[0]?.sku}.` };
+    return {
+      ok: false as const,
+      error: t.skuInUse.replace("{sku}", conflicting[0]?.sku ?? ""),
+    };
   }
 
   // Lazy-loaded to keep sanitize-html out of product-list function bundles.
@@ -468,8 +473,9 @@ export async function saveProductAction(input: ProductInput) {
 
 export async function archiveProductAction(id: string) {
   const actor = await requirePermission("products:delete");
+  const t = await getAdminActionT();
   const parsedId = adminId.safeParse(id);
-  if (!parsedId.success) return { ok: false as const, error: "Invalid product ID." };
+  if (!parsedId.success) return { ok: false as const, error: t.invalidId };
   try {
     const orderItems = await prisma.orderItem.count({ where: { productId: parsedId.data } });
     if (orderItems > 0) {
@@ -481,7 +487,7 @@ export async function archiveProductAction(id: string) {
       await prisma.product.delete({ where: { id: parsedId.data } });
     }
   } catch {
-    return { ok: false as const, error: "Product not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -496,19 +502,24 @@ export async function archiveProductAction(id: string) {
 
 export async function setProductStatusAction(id: string, status: "DRAFT" | "ACTIVE" | "ARCHIVED") {
   const actor = await requirePermission("products:write");
+  const t = await getAdminActionT();
   const parsedId = adminId.safeParse(id);
   const parsedStatus = productStatus.safeParse(status);
   if (!parsedId.success || !parsedStatus.success) {
-    return { ok: false as const, error: "Invalid product status update." };
+    return { ok: false as const, error: t.invalidStatusUpdate };
   }
-  const current = await prisma.product.findUnique({ where: { id: parsedId.data }, select: { status: true } });
-  if (!current) return { ok: false as const, error: "Product not found." };
+  const current = await prisma.product.findUnique({
+    where: { id: parsedId.data },
+    select: { status: true },
+  });
+  if (!current) return { ok: false as const, error: t.productNotFound };
   await prisma.product.update({
     where: { id: parsedId.data },
     data: {
       status: parsedStatus.data,
       archivedAt: parsedStatus.data === "ARCHIVED" ? new Date() : null,
-      publishedAt: parsedStatus.data === "ACTIVE" && current.status !== "ACTIVE" ? new Date() : undefined,
+      publishedAt:
+        parsedStatus.data === "ACTIVE" && current.status !== "ACTIVE" ? new Date() : undefined,
     },
   });
   await recordAudit({
@@ -538,11 +549,12 @@ export async function listCategoriesAdmin() {
 
 export async function saveCategoryAction(input: unknown) {
   const actor = await requirePermission("catalog:write");
+  const t = await getAdminActionT();
   const parsed = categorySchema.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false as const,
-      error: "Please review the category fields.",
+      error: t.reviewFields,
       fields: flattenZodErrors(parsed.error),
     };
   }
@@ -551,9 +563,9 @@ export async function saveCategoryAction(input: unknown) {
   const clash = await prisma.category.findFirst({
     where: { slug, id: data.id ? { not: data.id } : undefined },
   });
-  if (clash) return { ok: false as const, error: "Another category already uses this slug." };
+  if (clash) return { ok: false as const, error: t.slugTaken };
   if (data.parentId && data.parentId === data.id) {
-    return { ok: false as const, error: "A category cannot be its own parent." };
+    return { ok: false as const, error: t.categoryOwnParent };
   }
 
   let saved: { id: string };
@@ -589,7 +601,7 @@ export async function saveCategoryAction(input: unknown) {
           select: { id: true },
         });
   } catch {
-    return { ok: false as const, error: "Another category already uses this slug." };
+    return { ok: false as const, error: t.slugTaken };
   }
 
   await recordAudit({
@@ -606,8 +618,9 @@ export async function saveCategoryAction(input: unknown) {
 
 export async function deleteCategoryAction(id: string) {
   const actor = await requirePermission("catalog:write");
+  const t = await getAdminActionT();
   const parsedId = adminId.safeParse(id);
-  if (!parsedId.success) return { ok: false as const, error: "Invalid category ID." };
+  if (!parsedId.success) return { ok: false as const, error: t.invalidId };
   try {
     const [products, children] = await Promise.all([
       prisma.product.count({ where: { categoryId: parsedId.data } }),
@@ -616,13 +629,14 @@ export async function deleteCategoryAction(id: string) {
     if (products > 0 || children > 0) {
       return {
         ok: false as const,
-        error: "This category still has products or subcategories. Move them first.",
+        error: t.categoryNotEmpty,
       };
     }
     await prisma.category.delete({ where: { id: parsedId.data } });
   } catch {
-    return { ok: false as const, error: "Category not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
+
   await recordAudit({
     actorUserId: actor.id,
     action: "CATEGORY_DELETED",
@@ -637,11 +651,12 @@ export async function deleteCategoryAction(id: string) {
 
 export async function saveCollectionAction(input: unknown) {
   const actor = await requirePermission("catalog:write");
+  const t = await getAdminActionT();
   const parsed = collectionSchema.safeParse(input);
   if (!parsed.success) {
     return {
       ok: false as const,
-      error: "Please review the collection fields.",
+      error: t.reviewFields,
       fields: flattenZodErrors(parsed.error),
     };
   }
@@ -650,61 +665,61 @@ export async function saveCollectionAction(input: unknown) {
   const clash = await prisma.collection.findFirst({
     where: { slug, id: data.id ? { not: data.id } : undefined },
   });
-  if (clash) return { ok: false as const, error: "Another collection already uses this slug." };
+  if (clash) return { ok: false as const, error: t.slugTaken };
 
   let saved: { id: string; slug: string };
   try {
     saved = await prisma.$transaction(async (tx) => {
-    const collection = data.id
-      ? await tx.collection.update({
-          where: { id: data.id },
-          data: {
-            name: data.name,
-            slug,
-            description: data.description || null,
-            image: data.image || null,
-            type: data.type,
-            sortOrder: data.sortOrder,
-            isActive: data.isActive,
-            isFeatured: data.isFeatured,
-            showInNav: data.showInNav,
-            seoTitle: data.seoTitle || null,
-            seoDescription: data.seoDescription || null,
-          },
-        })
-      : await tx.collection.create({
-          data: {
-            name: data.name,
-            slug,
-            description: data.description || null,
-            image: data.image || null,
-            type: data.type,
-            sortOrder: data.sortOrder,
-            isActive: data.isActive,
-            isFeatured: data.isFeatured,
-            showInNav: data.showInNav,
-            seoTitle: data.seoTitle || null,
-            seoDescription: data.seoDescription || null,
-          },
-        });
+      const collection = data.id
+        ? await tx.collection.update({
+            where: { id: data.id },
+            data: {
+              name: data.name,
+              slug,
+              description: data.description || null,
+              image: data.image || null,
+              type: data.type,
+              sortOrder: data.sortOrder,
+              isActive: data.isActive,
+              isFeatured: data.isFeatured,
+              showInNav: data.showInNav,
+              seoTitle: data.seoTitle || null,
+              seoDescription: data.seoDescription || null,
+            },
+          })
+        : await tx.collection.create({
+            data: {
+              name: data.name,
+              slug,
+              description: data.description || null,
+              image: data.image || null,
+              type: data.type,
+              sortOrder: data.sortOrder,
+              isActive: data.isActive,
+              isFeatured: data.isFeatured,
+              showInNav: data.showInNav,
+              seoTitle: data.seoTitle || null,
+              seoDescription: data.seoDescription || null,
+            },
+          });
 
-    if (data.type === "MANUAL") {
-      await tx.collectionProduct.deleteMany({ where: { collectionId: collection.id } });
-      if (data.productIds.length > 0) {
-        await tx.collectionProduct.createMany({
-          data: data.productIds.map((productId, index) => ({
-            collectionId: collection.id,
-            productId,
-            sortOrder: index,
-          })),
-          skipDuplicates: true,
-        });
+      if (data.type === "MANUAL") {
+        await tx.collectionProduct.deleteMany({ where: { collectionId: collection.id } });
+        if (data.productIds.length > 0) {
+          await tx.collectionProduct.createMany({
+            data: data.productIds.map((productId, index) => ({
+              collectionId: collection.id,
+              productId,
+              sortOrder: index,
+            })),
+            skipDuplicates: true,
+          });
+        }
       }
-    }
       return collection;
     });
   } catch {
-    return { ok: false as const, error: "Another collection already uses this slug." };
+    return { ok: false as const, error: t.slugTaken };
   }
 
   await recordAudit({
@@ -722,12 +737,13 @@ export async function saveCollectionAction(input: unknown) {
 
 export async function deleteCollectionAction(id: string) {
   const actor = await requirePermission("catalog:write");
+  const t = await getAdminActionT();
   const parsedId = adminId.safeParse(id);
-  if (!parsedId.success) return { ok: false as const, error: "Invalid collection ID." };
+  if (!parsedId.success) return { ok: false as const, error: t.invalidId };
   try {
     await prisma.collection.delete({ where: { id: parsedId.data } });
   } catch {
-    return { ok: false as const, error: "Collection not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -745,7 +761,9 @@ export async function deleteCollectionAction(id: string) {
 
 export async function listReviewsAdmin(status?: string) {
   await requirePermission("reviews:moderate");
-  const parsedStatus = status ? z.enum(["PENDING", "APPROVED", "REJECTED"]).safeParse(status) : null;
+  const parsedStatus = status
+    ? z.enum(["PENDING", "APPROVED", "REJECTED"]).safeParse(status)
+    : null;
   if (parsedStatus && !parsedStatus.success) return [];
   return prisma.review.findMany({
     where: parsedStatus?.success ? { status: parsedStatus.data } : {},
@@ -771,10 +789,11 @@ async function recomputeRating(productId: string) {
 
 export async function moderateReviewAction(id: string, status: "APPROVED" | "REJECTED") {
   const actor = await requirePermission("reviews:moderate");
+  const t = await getAdminActionT();
   const parsedId = adminId.safeParse(id);
   const parsedStatus = reviewStatus.safeParse(status);
   if (!parsedId.success || !parsedStatus.success) {
-    return { ok: false as const, error: "Invalid review moderation request." };
+    return { ok: false as const, error: t.invalidReviewRequest };
   }
   let review: { id: string; productId: string };
   try {
@@ -785,7 +804,7 @@ export async function moderateReviewAction(id: string, status: "APPROVED" | "REJ
     });
     await recomputeRating(review.productId);
   } catch {
-    return { ok: false as const, error: "Review not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,
@@ -802,18 +821,19 @@ export async function moderateReviewAction(id: string, status: "APPROVED" | "REJ
 
 export async function deleteReviewAction(id: string) {
   const actor = await requirePermission("reviews:moderate");
+  const t = await getAdminActionT();
   const parsedId = adminId.safeParse(id);
-  if (!parsedId.success) return { ok: false as const, error: "Invalid review ID." };
+  if (!parsedId.success) return { ok: false as const, error: t.invalidId };
   const review = await prisma.review.findUnique({
     where: { id: parsedId.data },
     select: { id: true, productId: true },
   });
-  if (!review) return { ok: false as const, error: "Review not found." };
+  if (!review) return { ok: false as const, error: t.reviewNotFound };
   try {
     await prisma.review.delete({ where: { id: parsedId.data } });
     await recomputeRating(review.productId);
   } catch {
-    return { ok: false as const, error: "Review not found or already changed." };
+    return { ok: false as const, error: t.notFoundOrChanged };
   }
   await recordAudit({
     actorUserId: actor.id,

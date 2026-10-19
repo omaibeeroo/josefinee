@@ -1,12 +1,14 @@
 import { requirePermission } from "@/lib/auth/rbac";
 import { listDeliveryRates } from "@/server/actions/admin-ops";
 import { enforceRateLimit, LIMITS } from "@/lib/rate-limit";
+import { getAdminActionT } from "@/lib/i18n/server";
 import { recordAudit } from "@/lib/audit";
 
 export const dynamic = "force-dynamic";
 const NO_STORE = { "Cache-Control": "no-store" };
 
 export async function GET() {
+  const t = await getAdminActionT();
   let actor;
   try {
     actor = await requirePermission("delivery:read");
@@ -19,7 +21,7 @@ export async function GET() {
         { status: error.status, headers: NO_STORE },
       );
     }
-    return Response.json({ ok: false, error: "Something went wrong." }, { status: 500, headers: NO_STORE });
+    return Response.json({ ok: false, error: t.wentWrong }, { status: 500, headers: NO_STORE });
   }
   const wilayas = await listDeliveryRates();
   const lines = ["wilaya_code,method,price,eta_min,eta_max,active"];

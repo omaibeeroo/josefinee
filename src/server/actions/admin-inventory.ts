@@ -5,6 +5,7 @@ import { CACHE_TAG_CATALOG } from "@/lib/cache";
 import { prisma } from "@/lib/prisma";
 import { toUserMessage } from "@/lib/errors";
 import { requirePermission } from "@/lib/auth/rbac";
+import { getAdminActionT } from "@/lib/i18n/server";
 import { recordAudit } from "@/lib/audit";
 import { setStock } from "@/server/inventory";
 import { z } from "zod";
@@ -102,15 +103,16 @@ const adjustSchema = z.object({
 
 export async function adjustStockAction(input: z.infer<typeof adjustSchema>) {
   const actor = await requirePermission("inventory:write");
+  const t = await getAdminActionT();
   const parsed = adjustSchema.safeParse(input);
-  if (!parsed.success) return { ok: false as const, error: "Invalid stock value." };
+  if (!parsed.success) return { ok: false as const, error: t.invalidStockValue };
 
   try {
     await prisma.$transaction(async (tx) => {
       await setStock(tx, {
         variantId: parsed.data.variantId,
         stock: parsed.data.stock,
-        reason: parsed.data.reason || "Manual adjustment",
+        reason: parsed.data.reason || t.manualAdjustment,
         userId: actor.id,
       });
     });

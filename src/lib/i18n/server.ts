@@ -24,3 +24,8 @@ export async function getActionT(): Promise<
   const dictionary = await getDictionary();
   return { ...dictionary.actions, ...dictionary.actionErrors, ...dictionary.orderErrors };
 }
+
+/** Locale-aware error strings for the admin back office (actions + route handlers). */
+export async function getAdminActionT(): Promise<Dictionary["adminErrors"]> {
+  return (await getDictionary()).adminErrors;
+}
