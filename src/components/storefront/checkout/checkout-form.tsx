@@ -18,19 +18,29 @@ import type { CommuneOption, DeliveryOption, WilayaOption } from "@/server/deliv
 
 const CHECKOUT_IDEMPOTENCY_KEY = "hanadi.checkout.idempotency.v1";
 
-export function CheckoutHeading({ level = "h1" }: { level?: "h1" | "h2" }) {
+export function CheckoutHeading({
+  level = "h1",
+  compact = false,
+  showSubtitle = true,
+}: {
+  level?: "h1" | "h2";
+  compact?: boolean;
+  showSubtitle?: boolean;
+}) {
   const { t } = useLocale();
-  const headingClass = "font-display text-4xl font-medium md:text-5xl";
+  const headingClass = compact
+    ? "font-display text-3xl leading-tight font-medium"
+    : "font-display text-4xl font-medium md:text-5xl";
 
   return (
-    <div className="mb-8 text-center">
+    <div className={compact ? "mb-5 text-center" : "mb-8 text-center"}>
       <p className="eyebrow mb-2">{t.checkout.eyebrow}</p>
       {level === "h1" ? (
         <h1 className={headingClass}>{t.checkout.title}</h1>
       ) : (
         <h2 className={headingClass}>{t.checkout.title}</h2>
       )}
-      <p className="mt-3 text-ink-soft">{t.checkout.subtitle}</p>
+      {showSubtitle && <p className="mt-3 text-ink-soft">{t.checkout.subtitle}</p>}
     </div>
   );
 }
@@ -47,12 +57,14 @@ export function CheckoutForm({
   freeDeliveryThreshold,
   defaultDeliveryMethod,
   promotion,
+  showPaymentNote = true,
 }: {
   wilayas: WilayaOption[];
   initialCart: { items: CartLine[]; subtotal: number; count: number };
   freeDeliveryThreshold: number;
   defaultDeliveryMethod: string;
   promotion: { name: string; discount: number } | null;
+  showPaymentNote?: boolean;
 }) {
   const router = useRouter();
   const { t } = useLocale();
@@ -462,10 +474,12 @@ export function CheckoutForm({
             ? t.checkout.submitPending
             : t.checkout.submit.replace("{total}", formatDA(total, t.locale))}
         </Button>
-        <p className="text-center text-xs text-ink-muted">
-          {t.checkout.payNotePrefix}{" "}
-          {t.checkout.payNote.replace("{total}", formatDA(total, t.locale))}
-        </p>
+        {showPaymentNote && (
+          <p className="text-center text-xs text-ink-muted">
+            {t.checkout.payNotePrefix}{" "}
+            {t.checkout.payNote.replace("{total}", formatDA(total, t.locale))}
+          </p>
+        )}
       </form>
 
       <aside className="lg:sticky lg:top-32 lg:self-start" aria-label={t.checkout.summary}>

@@ -244,27 +244,6 @@ export function ProductCard({
           )}
         </div>
         <WishlistButton productId={product.id} className="absolute end-2 top-2" />
-        {!soldOut && !product.hasVariants && (
-          <button
-            type="button"
-            disabled={pending}
-            onClick={() => void quickAdd()}
-            className="absolute inset-x-0 bottom-0 hidden bg-gradient-to-t from-ink/60 via-ink/20 to-transparent pb-3 pt-10 text-[0.7rem] font-medium uppercase tracking-[0.2em] text-ivory opacity-0 transition-all duration-200 group-hover:opacity-100 group-focus-within:opacity-100 md:block"
-          >
-            {pending ? t.product.adding : t.product.addToBag}
-          </button>
-        )}
-        {!soldOut && !product.hasVariants && (
-          <button
-            type="button"
-            disabled={pending}
-            aria-label={`${t.product.addFor} ${product.name} ${t.product.toBag}`}
-            onClick={() => void quickAdd()}
-            className="absolute bottom-2 end-2 flex h-10 w-10 items-center justify-center rounded-full bg-[#fff]/15 text-[#fff] opacity-90 backdrop-blur-[2px] drop-shadow-md transition-all duration-200 hover:bg-[#fff]/30 hover:opacity-100 md:hidden"
-          >
-            <Plus size={18} />
-          </button>
-        )}
       </div>
       <div className="flex flex-1 flex-col items-center pt-3 text-center">
         <Link
@@ -280,6 +259,24 @@ export function ProductCard({
           <div className="mt-1 flex justify-center">
             <Stars value={product.ratingAvg} count={product.ratingCount} />
           </div>
+        )}
+        {!soldOut && !product.hasVariants && (
+          <button
+            type="button"
+            disabled={pending}
+            aria-label={`${t.product.addFor} ${product.name} ${t.product.toBag}`}
+            onClick={() => void quickAdd()}
+            className="product-card-quick-add mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border px-3 py-2 text-[0.65rem] font-medium uppercase tracking-[0.12em] transition-colors disabled:opacity-60"
+          >
+            {pending ? (
+              t.product.adding
+            ) : (
+              <>
+                <Plus size={14} aria-hidden="true" />
+                {t.product.addToBag}
+              </>
+            )}
+          </button>
         )}
         {addError && (
           <p className="mt-1 text-xs text-sale" role="status">
@@ -677,9 +674,9 @@ export function AddToBagPanel({
         <section
           ref={inlineCheckoutRef}
           aria-label={t.checkout.title}
-          className="checkout-page inline-mobile-checkout mb-6 scroll-mt-24 border hairline bg-ivory p-4 shadow-card md:hidden"
+          className="checkout-page inline-mobile-checkout mb-6 scroll-mt-24 md:hidden"
         >
-          <CheckoutHeading level="h2" />
+          <CheckoutHeading level="h2" compact showSubtitle={false} />
           <CheckoutForm
             wilayas={checkoutData.wilayas}
             initialCart={{
@@ -690,6 +687,7 @@ export function AddToBagPanel({
             freeDeliveryThreshold={freeDeliveryThreshold}
             defaultDeliveryMethod={defaultDeliveryMethod}
             promotion={checkoutData.promotion}
+            showPaymentNote={false}
           />
         </section>
       )}

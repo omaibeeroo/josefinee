@@ -5,16 +5,14 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Banknote, Truck } from "lucide-react";
-import { prisma } from "@/lib/prisma";
 import { getProductBySlug, getRelatedProducts } from "@/server/catalog";
 import { getProductPromotion } from "@/server/promotions";
 import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
 import { getSettings } from "@/lib/settings";
 import { AddToBagPanel, ProductGallery, ProductCarousel } from "@/components/storefront/product";
-import { Accordion, SingleStar, Stars } from "@/components/ui";
+import { Accordion, SingleStar } from "@/components/ui";
 import { getDictionary } from "@/lib/i18n/server";
 import { PixelEvent } from "@/components/pixels";
-import { ReviewForm, ReviewToggle } from "./reviews";
 import { serializeForInlineJsonScript } from "@/lib/script-data";
 import { cleanRichText } from "@/lib/sanitize";
 import { formatDA } from "@/lib/money";
@@ -54,27 +52,6 @@ export async function generateMetadata({
   };
 }
 
-async function getReviews(productId: string) {
-  try {
-    return await prisma.review.findMany({
-      where: { productId, status: "APPROVED" },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        authorName: true,
-        rating: true,
-        title: true,
-        body: true,
-        createdAt: true,
-        isVerifiedPurchase: true,
-      },
-      take: 20,
-    });
-  } catch {
-    return [];
-  }
-}
-
 export default async function ProductPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
   // Single parallel round: product, settings, nonce headers and dictionary
@@ -87,9 +64,8 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   ]);
   if (!product) notFound();
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
-  const [related, reviews, promotion] = await Promise.all([
+  const [related, promotion] = await Promise.all([
     getRelatedProducts(product.id, product.categoryId),
-    getReviews(product.id),
     getProductPromotion(product.id, product.collectionIds, product.price),
   ]);
   after(() =>
@@ -133,12 +109,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
       : {}),
   };
 
-  const reviewsAvg =
-    product.ratingCount > 0
-      ? product.ratingAvg
-      : reviews.length > 0
-        ? reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length
-        : 0;
   const detailRows: Array<[string, string | null]> = [
     [t.product.material, product.material],
     [t.product.color, product.color],
@@ -191,12 +161,20 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
 
         <div className="product-detail-info">
           {product.category && <p className="eyebrow mb-2 md:mb-3">{product.category.name}</p>}
-          <div className="product-detail-heading flex items-start justify-between gap-3">
-            <h1 className="product-detail-title min-w-0 font-display text-3xl font-medium leading-[1.05] tracking-tight md:text-6xl">
-              {product.name}
-            </h1>
+          <div className="product-detail-heading flex flex-wrap items-baseline gap-x-3 gap-y-2">
+            <div className="flex min-w-0 flex-1 items-baseline gap-2">
+              <h1 className="product-detail-title min-w-0 font-display text-3xl font-medium leading-[1.05] tracking-tight md:text-6xl">
+                {product.name}
+              </h1>
+              {product.ratingCount > 0 && (
+                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-[#dce1e6] bg-white/75 px-2.5 py-1 text-xs">
+                  <SingleStar value={product.ratingAvg} />
+                  <span className="text-ink-muted">({product.ratingCount})</span>
+                </span>
+              )}
+            </div>
             <p
-              className="product-detail-status mt-1 flex shrink-0 items-center gap-1.5 text-xs font-medium md:mt-2 md:text-sm"
+              className="product-detail-status ms-auto mt-1 flex shrink-0 items-center gap-1.5 text-xs font-medium md:mt-2 md:text-sm"
               role="status"
             >
               <span
@@ -208,11 +186,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               </span>
             </p>
           </div>
-          {product.ratingCount > 0 && (
-            <div className="mt-2 md:mt-3">
-              <Stars value={product.ratingAvg} count={product.ratingCount} />
-            </div>
-          )}
           {promotion && (
             <p
               className="mt-2 inline-block bg-gold/15 px-3 py-1.5 text-sm font-medium text-gold-dark"
@@ -326,40 +299,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
           </div>
         </div>
       </div>
-
-      <section
-        className="mx-auto mt-8 max-w-2xl text-center md:mt-10"
-        aria-label={t.product.reviews}
-      >
-        {reviews.length > 0 && (
-          <div className="review-list">
-            <h2 className="font-display text-3xl font-medium md:text-4xl">
-              {t.product.reviews} · {reviews.length}
-            </h2>
-            <p className="mt-3 flex items-center justify-center">
-              <SingleStar value={reviewsAvg} />
-            </p>
-            <ul className="mt-8 space-y-0">
-              {reviews.map((review) => (
-                <li key={review.id} className="border-t hairline py-6 text-start last:border-b">
-                  <SingleStar value={review.rating} />
-                  {review.title && <p className="mt-2 font-display text-lg">{review.title}</p>}
-                  <p className="mt-1 text-[0.9375rem] leading-relaxed text-ink-soft">
-                    {review.body}
-                  </p>
-                  <p className="mt-2 text-xs uppercase tracking-[0.12em] text-ink-muted">
-                    {review.authorName}
-                    {review.isVerifiedPurchase ? ` · ${t.product.verified}` : ""}
-                  </p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-        <ReviewToggle>
-          <ReviewForm productId={product.id} />
-        </ReviewToggle>
-      </section>
 
       <div className="mt-10 md:mt-14">
         <ProductCarousel title={t.product.alsoLike} products={related} viewAllHref="/shop" />
