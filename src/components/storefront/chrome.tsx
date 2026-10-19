@@ -148,6 +148,8 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const scrolledRef = useRef(false);
+  const scrollFrameRef = useRef<number | null>(null);
   const pathname = usePathname();
   const mobileNavHidden =
     pathname.startsWith("/products/") ||
@@ -160,10 +162,24 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
   }, [pathname]);
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8);
-    onScroll();
+    const syncScrolled = () => {
+      scrollFrameRef.current = null;
+      const scrollY = window.scrollY;
+      const next = scrolledRef.current ? scrollY > 4 : scrollY > 16;
+      if (next === scrolledRef.current) return;
+      scrolledRef.current = next;
+      setScrolled(next);
+    };
+    const onScroll = () => {
+      if (scrollFrameRef.current !== null) return;
+      scrollFrameRef.current = window.requestAnimationFrame(syncScrolled);
+    };
+    syncScrolled();
     window.addEventListener("scroll", onScroll, { passive: true });
-    return () => window.removeEventListener("scroll", onScroll);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      if (scrollFrameRef.current !== null) window.cancelAnimationFrame(scrollFrameRef.current);
+    };
   }, []);
 
   return (

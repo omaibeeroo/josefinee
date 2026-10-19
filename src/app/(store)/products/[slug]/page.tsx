@@ -225,7 +225,11 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
             </p>
           )}
           <div className="product-purchase-panel">
-            <AddToBagPanel product={product} />
+            <AddToBagPanel
+              product={product}
+              freeDeliveryThreshold={settings.commerce.freeDeliveryThreshold}
+              defaultDeliveryMethod={settings.commerce.defaultDeliveryMethod}
+            />
           </div>
 
           <dl className="product-fulfillment mt-5 grid grid-cols-2 gap-3 border-t hairline pt-4 text-sm md:mt-7 md:pt-6">
@@ -262,8 +266,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
                   ? [
                       {
                         title: t.product.description,
-
-                        defaultOpen: true,
                         content: (
                           <div
                             className="rich-text"

@@ -5,8 +5,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Heart, Plus } from "lucide-react";
 import { useCart } from "@/components/storefront/cart-ui";
+import { CheckoutForm, CheckoutHeading } from "@/components/storefront/checkout/checkout-form";
 import { useLocale } from "@/lib/i18n/provider";
 import { Badge, Button, Modal, Price, QuantitySelector, Stars } from "@/components/ui";
+import { getCheckoutData } from "@/server/actions/checkout";
 import { getWishlistIdsAction, toggleWishlistAction } from "@/server/actions/engagement";
 
 const GUEST_WISHLIST_KEY = "hanadi-wishlist";
@@ -589,15 +591,28 @@ function VariantPicker({
 
 /* ------------------------------------------------------ Add to bag panel */
 
-export function AddToBagPanel({ product }: { product: StoreProduct }) {
+type CheckoutData = Awaited<ReturnType<typeof getCheckoutData>>;
+
+export function AddToBagPanel({
+  product,
+  freeDeliveryThreshold,
+  defaultDeliveryMethod,
+}: {
+  product: StoreProduct;
+  freeDeliveryThreshold: number;
+  defaultDeliveryMethod: string;
+}) {
   const { t } = useLocale();
-  const { add } = useCart();
+  const { add, setOpen } = useCart();
   const [variantId, setVariantId] = useState(
     product.defaultVariantId ?? product.variants[0]?.id ?? "",
   );
   const [quantity, setQuantity] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const [inlineCheckoutOpen, setInlineCheckoutOpen] = useState(false);
+  const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
+  const inlineCheckoutRef = useRef<HTMLElement | null>(null);
 
   const selected = useMemo(
     () => product.variants.find((variant) => variant.id === variantId),
@@ -609,6 +624,13 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
     setQuantity((current) => Math.min(current, Math.max(1, maxQuantity)));
   }, [maxQuantity]);
 
+  useEffect(() => {
+    const section = inlineCheckoutRef.current;
+    if (!inlineCheckoutOpen || !section) return;
+    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    section.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
+  }, [inlineCheckoutOpen, checkoutData]);
+
   async function submit(buyNow: boolean) {
     if (!selected || selected.available <= 0) {
       setError(t.product.optionOutOfStock);
@@ -617,7 +639,8 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
     setPending(true);
     setError(null);
     try {
-      const result = await add(selected.id, quantity);
+      if (buyNow) setOpen(false);
+      const result = await add(selected.id, quantity, !buyNow);
       if (!result.ok) {
         setError(result.error ?? t.product.addFailed);
         return;
@@ -628,7 +651,18 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
         currency: "DZD",
       });
       if (buyNow) {
-        window.location.href = "/checkout";
+        if (!window.matchMedia("(max-width: 767px)").matches) {
+          window.location.href = "/checkout";
+          return;
+        }
+        const latestCheckoutData = await getCheckoutData();
+        if (!latestCheckoutData.cart || latestCheckoutData.cart.lines.length === 0) {
+          setError(t.product.addFailed);
+          return;
+        }
+        setCheckoutData(latestCheckoutData);
+        setInlineCheckoutOpen(true);
+        pixelEvent("InitiateCheckout");
       }
     } catch {
       setError(t.product.addFailed);
@@ -639,6 +673,26 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
 
   return (
     <div className="mt-6">
+      {inlineCheckoutOpen && checkoutData?.cart && checkoutData.cart.lines.length > 0 && (
+        <section
+          ref={inlineCheckoutRef}
+          aria-label={t.checkout.title}
+          className="checkout-page inline-mobile-checkout mb-6 scroll-mt-24 border hairline bg-ivory p-4 shadow-card md:hidden"
+        >
+          <CheckoutHeading level="h2" />
+          <CheckoutForm
+            wilayas={checkoutData.wilayas}
+            initialCart={{
+              items: checkoutData.cart.lines,
+              subtotal: checkoutData.cart.subtotal,
+              count: checkoutData.cart.lines.reduce((sum, line) => sum + line.quantity, 0),
+            }}
+            freeDeliveryThreshold={freeDeliveryThreshold}
+            defaultDeliveryMethod={defaultDeliveryMethod}
+            promotion={checkoutData.promotion}
+          />
+        </section>
+      )}
       <VariantPicker product={product} selectedVariantId={variantId} onChange={setVariantId} />
       <div className="product-purchase-price mt-4 text-center">
         <Price
@@ -669,7 +723,7 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
         <Button
           variant="gold"
           onClick={() => void submit(true)}
-          disabled={pending || maxQuantity <= 0}
+          disabled={pending || maxQuantity <= 0 || inlineCheckoutOpen}
           className="product-buy-now w-full"
         >
           {t.product.buyNowCod}

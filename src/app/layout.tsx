@@ -112,17 +112,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const theme = parseTheme(cookieStore.get(THEME_COOKIE)?.value);
   const nonce = requestHeaders.get("x-nonce") ?? undefined;
   const imageOrigin = storagePublicOrigin();
-  // Admin brand colors apply in light mode only; dark mode uses its own
-  // fixed palette so text stays readable on dark surfaces.
-  const style = (
-    theme === "dark"
-      ? undefined
-      : {
-          "--color-gold": settings.general.colors.accent,
-          "--color-ink": settings.general.colors.ink,
-          "--color-ivory": settings.general.colors.background,
-        }
-  ) as React.CSSProperties | undefined;
+  // Keep the configured light palette available in both themes. CSS applies
+  // these values only in light mode, so switching back never needs a refresh.
+  const style = {
+    "--light-color-gold": settings.general.colors.accent,
+    "--light-color-ink": settings.general.colors.ink,
+    "--light-color-ivory": settings.general.colors.background,
+  } as React.CSSProperties;
 
   return (
     <html
@@ -133,6 +129,10 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     >
       {imageOrigin && <link rel="preconnect" href={imageOrigin} />}
       <body style={style} className="min-h-screen">
+        <span className="sr-only" aria-hidden="true" dir="rtl">
+          <span style={{ fontFamily: "var(--font-display-ar)" }}>ـ</span>
+          <span style={{ fontFamily: "var(--font-sans-ar)" }}>ـ</span>
+        </span>
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:start-4 focus:top-4 focus:z-[80] focus:bg-ink focus:px-4 focus:py-2 focus:text-ivory"

@@ -28,6 +28,12 @@
   background: linear-gradient(180deg, #14181d 0%, #10141a 48%, #14181d 100%);
 }
 
+[data-theme="light"] body {
+  --color-ink: var(--light-color-ink);
+  --color-ivory: var(--light-color-ivory);
+  --color-gold: var(--light-color-gold);
+}
+
 [data-theme="dark"] .field {
   background-color: transparent;
   color: var(--color-ink);
@@ -1791,8 +1797,6 @@ html.theme-switching *::after {
   z-index: 50;
   background-color: rgb(233 236 239 / 0.96);
   box-shadow: 0 8px 28px -20px rgb(29 35 43 / 0.72);
-  transform: translate3d(0, 0, 0);
-  will-change: transform;
 }
 
 .mobile-menu-panel {
@@ -2421,7 +2425,7 @@ html[data-theme="light"] {
 [data-theme="dark"] select:-webkit-autofill {
   -webkit-text-fill-color: var(--dark-text);
   box-shadow: 0 0 0 1000px var(--dark-surface) inset;
-  transition: background-color 9999s ease-out;
+  transition: none;
 }
 
 [data-theme="dark"] :focus-visible {

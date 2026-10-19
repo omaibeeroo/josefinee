@@ -4,7 +4,7 @@ import { getSettings } from "@/lib/settings";
 import { getCheckoutData } from "@/server/actions/checkout";
 import { getDictionary } from "@/lib/i18n/server";
 import { EmptyState } from "@/components/ui";
-import { CheckoutForm } from "./checkout-form";
+import { CheckoutForm, CheckoutHeading } from "@/components/storefront/checkout/checkout-form";
 import { PixelEvent } from "@/components/pixels";
 
 export const dynamic = "force-dynamic";
@@ -40,13 +40,7 @@ export default async function CheckoutPage() {
   return (
     <div className="checkout-page container-luxe py-10 md:py-14">
       <PixelEvent name="InitiateCheckout" />
-      <div className="mb-8 text-center">
-        <p className="eyebrow mb-2">{t.checkout.eyebrow}</p>
-        <h1 className="font-display text-4xl font-medium md:text-5xl">{t.checkout.title}</h1>
-        <p className="mt-3 text-ink-soft">
-          {t.checkout.subtitle}
-        </p>
-      </div>
+      <CheckoutHeading />
       <CheckoutForm
         wilayas={wilayas}
         initialCart={{

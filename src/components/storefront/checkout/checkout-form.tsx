@@ -18,6 +18,23 @@ import type { CommuneOption, DeliveryOption, WilayaOption } from "@/server/deliv
 
 const CHECKOUT_IDEMPOTENCY_KEY = "hanadi.checkout.idempotency.v1";
 
+export function CheckoutHeading({ level = "h1" }: { level?: "h1" | "h2" }) {
+  const { t } = useLocale();
+  const headingClass = "font-display text-4xl font-medium md:text-5xl";
+
+  return (
+    <div className="mb-8 text-center">
+      <p className="eyebrow mb-2">{t.checkout.eyebrow}</p>
+      {level === "h1" ? (
+        <h1 className={headingClass}>{t.checkout.title}</h1>
+      ) : (
+        <h2 className={headingClass}>{t.checkout.title}</h2>
+      )}
+      <p className="mt-3 text-ink-soft">{t.checkout.subtitle}</p>
+    </div>
+  );
+}
+
 function newCheckoutKey(): string {
   if (typeof crypto.randomUUID === "function") return crypto.randomUUID();
   const bytes = crypto.getRandomValues(new Uint8Array(16));
@@ -289,12 +306,7 @@ export function CheckoutForm({
             </Field>
           </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field
-              label={t.track.phone}
-              required
-              error={fields.phone}
-              hint={t.checkout.phoneHint}
-            >
+            <Field label={t.track.phone} required error={fields.phone} hint={t.checkout.phoneHint}>
               <Input
                 value={phone}
                 dir="ltr"
@@ -400,7 +412,9 @@ export function CheckoutForm({
 
           {deliveryOptions.length > 0 && (
             <fieldset className="mt-5">
-            <legend dir="auto" className="field-label">{t.checkout.deliveryMode}</legend>
+              <legend dir="auto" className="field-label">
+                {t.checkout.deliveryMode}
+              </legend>
               <div className="grid gap-2 sm:grid-cols-2">
                 {deliveryOptions.map((option) => (
                   <label
@@ -421,23 +435,20 @@ export function CheckoutForm({
                         className="h-4 w-4 accent-[#1c1a17]"
                       />
                       <span dir="auto">
-                        <span className="block font-medium">
-                          {t.delivery[option.method]}
-                        </span>
+                        <span className="block font-medium">{t.delivery[option.method]}</span>
                         <span className="block text-xs text-ink-muted">
                           {option.etaMinDays}–{option.etaMaxDays} {t.checkout.days}
                         </span>
                       </span>
                     </span>
-                      <span dir="auto" className="font-medium">
-                        {freeDelivery ? t.checkout.free : formatDA(option.price, t.locale)}
-                      </span>
+                    <span dir="auto" className="font-medium">
+                      {freeDelivery ? t.checkout.free : formatDA(option.price, t.locale)}
+                    </span>
                   </label>
                 ))}
               </div>
             </fieldset>
           )}
-
         </section>
 
         <Button
@@ -452,14 +463,12 @@ export function CheckoutForm({
             : t.checkout.submit.replace("{total}", formatDA(total, t.locale))}
         </Button>
         <p className="text-center text-xs text-ink-muted">
-          {t.checkout.payNotePrefix} {t.checkout.payNote.replace("{total}", formatDA(total, t.locale))}
+          {t.checkout.payNotePrefix}{" "}
+          {t.checkout.payNote.replace("{total}", formatDA(total, t.locale))}
         </p>
       </form>
 
-      <aside
-        className="lg:sticky lg:top-32 lg:self-start"
-        aria-label={t.checkout.summary}
-      >
+      <aside className="lg:sticky lg:top-32 lg:self-start" aria-label={t.checkout.summary}>
         <div className="checkout-summary border hairline bg-white p-6">
           <h2 dir="auto" className="text-xs font-medium uppercase tracking-[0.2em]">
             {t.checkout.summary}
@@ -483,9 +492,13 @@ export function CheckoutForm({
                   </span>
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p dir="auto" className="text-sm font-medium leading-tight">{item.productName}</p>
+                  <p dir="auto" className="text-sm font-medium leading-tight">
+                    {item.productName}
+                  </p>
                   {item.variantLabel && (
-                    <p dir="auto" className="text-xs text-ink-muted">{item.variantLabel}</p>
+                    <p dir="auto" className="text-xs text-ink-muted">
+                      {item.variantLabel}
+                    </p>
                   )}
                 </div>
                 <p
@@ -522,7 +535,11 @@ export function CheckoutForm({
               </Button>
             </div>
             {couponMessage && (
-              <p dir="auto" className={`mt-2 text-sm ${coupon ? "text-ink-soft" : "text-sale"}`} role="status">
+              <p
+                dir="auto"
+                className={`mt-2 text-sm ${coupon ? "text-ink-soft" : "text-sale"}`}
+                role="status"
+              >
                 {couponMessage}
               </p>
             )}
@@ -530,24 +547,39 @@ export function CheckoutForm({
 
           <dl className="mt-4 space-y-1.5 border-t hairline pt-4 text-sm">
             <div className="flex justify-between">
-              <dt dir="auto" className="text-ink-soft">{t.order.subtotal}</dt>
+              <dt dir="auto" className="text-ink-soft">
+                {t.order.subtotal}
+              </dt>
               <dd dir="ltr">{formatDA(initialCart.subtotal, t.locale)}</dd>
             </div>
             {promotion && promotion.discount > 0 && (
               <div className="flex justify-between text-success">
-                <dt dir="auto">{t.order.promotion} ({promotion.name})</dt>
+                <dt dir="auto">
+                  {t.order.promotion} ({promotion.name})
+                </dt>
                 <dd dir="ltr">−{formatDA(promotion.discount, t.locale)}</dd>
               </div>
             )}
             {discount > 0 && (
               <div className="flex justify-between text-success">
-                <dt dir="auto">{t.order.discount}{coupon ? ` (${coupon.code})` : ""}</dt>
+                <dt dir="auto">
+                  {t.order.discount}
+                  {coupon ? ` (${coupon.code})` : ""}
+                </dt>
                 <dd dir="ltr">−{formatDA(discount, t.locale)}</dd>
               </div>
             )}
             <div className="flex justify-between">
-              <dt dir="auto" className="text-ink-soft">{t.order.delivery}</dt>
-              <dd dir={freeDelivery ? "auto" : "ltr"}>{selectedRate ? (freeDelivery ? t.checkout.free : formatDA(shipping, t.locale)) : "—"}</dd>
+              <dt dir="auto" className="text-ink-soft">
+                {t.order.delivery}
+              </dt>
+              <dd dir={freeDelivery ? "auto" : "ltr"}>
+                {selectedRate
+                  ? freeDelivery
+                    ? t.checkout.free
+                    : formatDA(shipping, t.locale)
+                  : "—"}
+              </dd>
             </div>
             <div className="flex justify-between border-t hairline pt-2 text-base font-medium">
               <dt dir="auto">{t.checkout.totalToPay}</dt>
@@ -556,7 +588,8 @@ export function CheckoutForm({
           </dl>
           {remainingForFree > 0 && (
             <p dir="auto" className="mt-3 text-xs text-ink-muted">
-              {t.checkout.freeShipPrefix} {formatDA(remainingForFree, t.locale)} {t.checkout.freeShipHint}
+              {t.checkout.freeShipPrefix} {formatDA(remainingForFree, t.locale)}{" "}
+              {t.checkout.freeShipHint}
             </p>
           )}
         </div>

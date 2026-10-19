@@ -28,7 +28,11 @@ type CartContextValue = CartSummary & {
   open: boolean;
   setOpen: (open: boolean) => void;
   refresh: () => Promise<void>;
-  add: (variantId: string, quantity?: number) => Promise<{ ok: boolean; error?: string }>;
+  add: (
+    variantId: string,
+    quantity?: number,
+    openDrawer?: boolean,
+  ) => Promise<{ ok: boolean; error?: string }>;
   error: string | null;
   floor: { minHome: number } | null;
 };
@@ -61,13 +65,13 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, [refresh]);
 
   const add = useCallback(
-    async (variantId: string, quantity = 1) => {
+    async (variantId: string, quantity = 1, openDrawer = true) => {
       try {
         const result = await addToCartAction(variantId, quantity);
         if (!result.ok) return { ok: false as const, error: result.error };
         setError(null);
         await refresh();
-        setOpen(true);
+        if (openDrawer) setOpen(true);
         return { ok: true as const };
       } catch {
         return { ok: false as const, error: t.cart.addFailed };
