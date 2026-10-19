@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { BRAND_CONFIG } from "@/config/brand";
 import { getAdminSession } from "@/lib/auth/session";
 import { getDictionary } from "@/lib/i18n/server";
 import { FirstLoginForm } from "./form";
@@ -17,11 +18,9 @@ export default async function FirstLoginPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-b from-white to-cream px-4">
       <div className="w-full max-w-md">
-        <p className="text-center font-display text-3xl tracking-[0.12em]">Hanadi Store</p>
+        <p className="text-center font-display text-3xl tracking-[0.12em]">{BRAND_CONFIG.name}</p>
         <h1 className="mt-4 text-center font-display text-2xl">{t.firstLogin.heading}</h1>
-        <p className="mt-2 text-center text-sm text-ink-soft">
-          {t.firstLogin.hint}
-        </p>
+        <p className="mt-2 text-center text-sm text-ink-soft">{t.firstLogin.hint}</p>
         <FirstLoginForm />
       </div>
     </div>

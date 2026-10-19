@@ -31,7 +31,7 @@ export function AddressesManager({
 }) {
   const { t } = useLocale();
   const router = useRouter();
-  const [editing, setEditing] = useState<Partial<AddressRow> & { id?: string } | null>(null);
+  const [editing, setEditing] = useState<(Partial<AddressRow> & { id?: string }) | null>(null);
   const [communes, setCommunes] = useState<CommuneOption[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
@@ -39,17 +39,34 @@ export function AddressesManager({
   async function startEdit(address?: AddressRow) {
     setError(null);
     if (!address) {
-      setEditing({ firstName: "", lastName: "", phone: "", wilayaId: "", communeId: "", address: "", isDefault: initial.length === 0 });
+      setEditing({
+        firstName: "",
+        lastName: "",
+        phone: "",
+        wilayaId: "",
+        communeId: "",
+        address: "",
+        isDefault: initial.length === 0,
+      });
       setCommunes([]);
       return;
     }
     setEditing({ ...address });
-    setCommunes(await getCommunesAction(address.wilayaId));
+    try {
+      setCommunes(await getCommunesAction(address.wilayaId));
+    } catch {
+      setError(t.account.communesFailed);
+    }
   }
 
   async function onWilayaChange(wilayaId: string) {
     setEditing((previous) => (previous ? { ...previous, wilayaId, communeId: "" } : previous));
-    setCommunes(wilayaId ? await getCommunesAction(wilayaId) : []);
+    try {
+      setCommunes(wilayaId ? await getCommunesAction(wilayaId) : []);
+    } catch {
+      setCommunes([]);
+      setError(t.account.communesFailed);
+    }
   }
 
   async function submit(event: FormEvent) {
@@ -57,29 +74,47 @@ export function AddressesManager({
     if (!editing) return;
     setPending(true);
     setError(null);
-    const result = await saveAddressAction({
-      id: editing.id,
-      label: editing.label ?? undefined,
-      firstName: editing.firstName ?? "",
-      lastName: editing.lastName ?? "",
-      phone: editing.phone ?? "",
-      wilayaId: editing.wilayaId ?? "",
-      communeId: editing.communeId ?? "",
-      address: editing.address ?? "",
-      isDefault: editing.isDefault ?? false,
-    });
-    setPending(false);
-    if (!result.ok) {
-      setError(result.error);
-      return;
+    try {
+      const result = await saveAddressAction({
+        id: editing.id,
+        label: editing.label ?? undefined,
+        firstName: editing.firstName ?? "",
+        lastName: editing.lastName ?? "",
+        phone: editing.phone ?? "",
+        wilayaId: editing.wilayaId ?? "",
+        communeId: editing.communeId ?? "",
+        address: editing.address ?? "",
+        isDefault: editing.isDefault ?? false,
+      });
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      setEditing(null);
+      router.refresh();
+    } catch {
+      setError(t.account.saveFailed);
+    } finally {
+      setPending(false);
     }
-    setEditing(null);
-    router.refresh();
   }
 
   async function remove(id: string) {
-    await deleteAddressAction(id);
-    router.refresh();
+    if (!window.confirm(t.common.confirmDeleteAddress)) return;
+    setPending(true);
+    setError(null);
+    try {
+      const result = await deleteAddressAction(id);
+      if (!result.ok) {
+        setError(result.error);
+        return;
+      }
+      router.refresh();
+    } catch {
+      setError(t.account.deleteFailed);
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
@@ -89,6 +124,12 @@ export function AddressesManager({
           {t.account.addAddress}
         </Button>
       </div>
+
+      {error && !editing && (
+        <p className="mb-4 text-sm text-[#9e342e]" role="alert">
+          {error}
+        </p>
+      )}
 
       {initial.length === 0 && !editing && (
         <p className="border hairline bg-white p-6 text-center text-ink-soft">
@@ -103,7 +144,9 @@ export function AddressesManager({
               <p className="font-medium">
                 {address.label || `${address.firstName} ${address.lastName}`}
                 {address.isDefault && (
-                  <span className="ms-2 text-[0.6875rem] uppercase tracking-[0.14em] text-gold-dark">{t.account.isDefault}</span>
+                  <span className="ms-2 text-[0.6875rem] uppercase tracking-[0.14em] text-gold-dark">
+                    {t.account.isDefault}
+                  </span>
                 )}
               </p>
             </div>
@@ -114,10 +157,20 @@ export function AddressesManager({
               {address.address}, {address.commune.name}, {address.wilaya.name}
             </p>
             <div className="mt-3 flex gap-3 text-xs uppercase tracking-[0.14em]">
-              <button type="button" onClick={() => void startEdit(address)} className="underline underline-offset-2">
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => void startEdit(address)}
+                className="underline underline-offset-2 disabled:opacity-40"
+              >
                 {t.account.edit}
               </button>
-              <button type="button" onClick={() => void remove(address.id)} className="text-ink-muted underline underline-offset-2">
+              <button
+                type="button"
+                disabled={pending}
+                onClick={() => void remove(address.id)}
+                className="text-ink-muted underline underline-offset-2 disabled:opacity-40"
+              >
                 {t.account.delete}
               </button>
             </div>
@@ -127,24 +180,47 @@ export function AddressesManager({
 
       {editing && (
         <form onSubmit={submit} className="mt-6 space-y-4 border hairline bg-white p-6">
-          <h2 className="font-display text-2xl">{editing.id ? t.account.editAddress : t.account.newAddress}</h2>
+          <h2 className="font-display text-2xl">
+            {editing.id ? t.account.editAddress : t.account.newAddress}
+          </h2>
           <Field label={t.account.labelOptional}>
-            <Input value={editing.label ?? ""} onChange={(event) => setEditing({ ...editing, label: event.target.value })} placeholder={t.account.labelHint} />
+            <Input
+              value={editing.label ?? ""}
+              onChange={(event) => setEditing({ ...editing, label: event.target.value })}
+              placeholder={t.account.labelHint}
+            />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t.auth.firstName}>
-              <Input value={editing.firstName ?? ""} onChange={(event) => setEditing({ ...editing, firstName: event.target.value })} required />
+              <Input
+                value={editing.firstName ?? ""}
+                onChange={(event) => setEditing({ ...editing, firstName: event.target.value })}
+                required
+              />
             </Field>
             <Field label={t.auth.lastName}>
-              <Input value={editing.lastName ?? ""} onChange={(event) => setEditing({ ...editing, lastName: event.target.value })} required />
+              <Input
+                value={editing.lastName ?? ""}
+                onChange={(event) => setEditing({ ...editing, lastName: event.target.value })}
+                required
+              />
             </Field>
           </div>
           <Field label={t.auth.phone}>
-            <Input value={editing.phone ?? ""} onChange={(event) => setEditing({ ...editing, phone: event.target.value })} inputMode="tel" required />
+            <Input
+              value={editing.phone ?? ""}
+              onChange={(event) => setEditing({ ...editing, phone: event.target.value })}
+              inputMode="tel"
+              required
+            />
           </Field>
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label={t.account.wilaya}>
-              <Select value={editing.wilayaId ?? ""} onChange={(event) => void onWilayaChange(event.target.value)} required>
+              <Select
+                value={editing.wilayaId ?? ""}
+                onChange={(event) => void onWilayaChange(event.target.value)}
+                required
+              >
                 <option value="">{t.account.choose}</option>
                 {wilayas.map((wilaya) => (
                   <option key={wilaya.id} value={wilaya.id}>
@@ -154,7 +230,11 @@ export function AddressesManager({
               </Select>
             </Field>
             <Field label={t.account.commune}>
-              <Select value={editing.communeId ?? ""} onChange={(event) => setEditing({ ...editing, communeId: event.target.value })} required>
+              <Select
+                value={editing.communeId ?? ""}
+                onChange={(event) => setEditing({ ...editing, communeId: event.target.value })}
+                required
+              >
                 <option value="">{t.account.choose}</option>
                 {communes.map((commune) => (
                   <option key={commune.id} value={commune.id}>
@@ -165,7 +245,12 @@ export function AddressesManager({
             </Field>
           </div>
           <Field label={t.account.address}>
-            <Textarea value={editing.address ?? ""} onChange={(event) => setEditing({ ...editing, address: event.target.value })} required rows={2} />
+            <Textarea
+              value={editing.address ?? ""}
+              onChange={(event) => setEditing({ ...editing, address: event.target.value })}
+              required
+              rows={2}
+            />
           </Field>
           <label className="flex items-center gap-2 text-sm">
             <input

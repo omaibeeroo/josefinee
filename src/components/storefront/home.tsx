@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import { useLocale } from "@/lib/i18n/provider";
+import { BRAND_CONFIG } from "@/config/brand";
 import { Price, Reveal } from "@/components/ui";
 import { formatNumber } from "@/lib/money";
 import type { HomepageSettings } from "@/lib/settings";
@@ -20,16 +21,16 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
       {hasImage ? (
         <>
           <div className="relative aspect-[4/5] w-full sm:aspect-[16/10] md:aspect-[21/9]">
-              <Image
-                src={hero.imageMobile || hero.imageDesktop}
-                alt={hero.headline}
-                fill
-                priority
-                fetchPriority="high"
-                unoptimized
-                sizes="100vw"
-                className="object-cover motion-safe:animate-hero-image"
-              />
+            <Image
+              src={hero.imageMobile || hero.imageDesktop}
+              alt={hero.headline}
+              fill
+              priority
+              fetchPriority="high"
+              unoptimized
+              sizes="100vw"
+              className="object-cover motion-safe:animate-hero-image"
+            />
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/15 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 pb-10 md:pb-16">
@@ -130,10 +131,7 @@ export function FeaturedCollection({
   return (
     <section className="container-luxe" aria-label={title}>
       <Reveal>
-        <Link
-          href={href}
-          className="group relative block overflow-hidden bg-cream transition-[transform,box-shadow] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:shadow-[0_30px_60px_-30px_rgb(29_35_43/0.45)]"
-        >
+        <Link href={href} className="relative block overflow-hidden bg-cream">
           <div
             className={
               image
@@ -148,7 +146,7 @@ export function FeaturedCollection({
                 fill
                 sizes="(max-width: 768px) 100vw, 1200px"
                 unoptimized
-                className="editorial-image object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
+                className="editorial-image object-cover"
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center">
@@ -187,13 +185,12 @@ export function ProductSpotlight({ product }: { product: StoreProductCard }) {
             url={image?.url ?? null}
             alt={product.name}
             sizes="(max-width: 768px) 100vw, 55vw"
-            className="feature-spotlight-image"
           />
         </div>
         <div className="flex flex-col justify-center px-6 py-10 sm:px-10 md:px-14 md:py-14">
           <p className="eyebrow">{t.home.signatureEyebrow}</p>
           <p className="mt-7 text-[0.625rem] uppercase tracking-[0.28em] text-ink-muted">
-            Hanadi Store / {t.home.selectionLabel}
+            {BRAND_CONFIG.name} / {t.home.selectionLabel}
           </p>
           <h2 className="mt-3 max-w-md font-display text-4xl font-medium leading-[1.02] md:text-5xl">
             {product.name}
@@ -202,7 +199,7 @@ export function ProductSpotlight({ product }: { product: StoreProductCard }) {
             <Price price={product.price} compareAt={product.compareAtPrice} />
           </div>
           <p className="mt-5 max-w-sm text-[0.9375rem] leading-relaxed text-ink-soft">
-            {t.home.spotlightText}
+            {t.home.spotlightText.replace("{name}", BRAND_CONFIG.name)}
           </p>
           <Link href={`/products/${product.slug}`} className="btn btn-primary btn-shine mt-8 w-fit">
             {t.home.discoverPiece} <ArrowRight size={15} className="rtl-flip" />
@@ -239,38 +236,39 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
             </h2>
           </div>
           <span className="hidden text-xs uppercase tracking-[0.18em] text-ink-muted sm:block">
-            {t.home.wardobeNote}
+            {t.home.wardobeNote.replace("{name}", BRAND_CONFIG.name)}
           </span>
         </div>
       </Reveal>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
         {categories.map((category, index) => {
-          const image = category.image ?? CATEGORY_PLACEHOLDERS[index % CATEGORY_PLACEHOLDERS.length]!;
+          const image =
+            category.image ?? CATEGORY_PLACEHOLDERS[index % CATEGORY_PLACEHOLDERS.length]!;
           return (
-          <Reveal key={category.slug} delay={Math.min(index, 5) * 70}>
-            <Link
-              href={`/categories/${category.slug}`}
-              className="group relative block overflow-hidden bg-cream transition-[transform,box-shadow] duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:shadow-[0_30px_60px_-30px_rgb(29_35_43/0.45)]"
-            >
-              <div className="relative aspect-[3/4] w-full">
-                <Image
-                  src={image}
-                  alt={category.name}
-                  fill
-                  sizes="(max-width: 768px) 50vw, 16vw"
-                  unoptimized
-                  className="object-cover transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.04]"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-ink/50 to-transparent" />
-                <div className="absolute inset-x-0 bottom-0 p-3 overlay-text md:p-4">
-                  <p className="text-sm font-medium md:text-base">{category.name}</p>
-                  <p className="mt-0.5 flex items-center gap-1 text-[0.6875rem] uppercase tracking-[0.16em] overlay-text-soft">
-                    {t.home.discover} <ArrowRight size={12} className="rtl-flip" />
-                  </p>
+            <Reveal key={category.slug} delay={Math.min(index, 5) * 70}>
+              <Link
+                href={`/categories/${category.slug}`}
+                className="relative block overflow-hidden bg-cream"
+              >
+                <div className="relative aspect-[3/4] w-full">
+                  <Image
+                    src={image}
+                    alt={category.name}
+                    fill
+                    sizes="(max-width: 768px) 50vw, 16vw"
+                    unoptimized
+                    className="object-cover"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-ink/50 to-transparent" />
+                  <div className="absolute inset-x-0 bottom-0 p-3 overlay-text md:p-4">
+                    <p className="text-sm font-medium md:text-base">{category.name}</p>
+                    <p className="mt-0.5 flex items-center gap-1 text-[0.6875rem] uppercase tracking-[0.16em] overlay-text-soft">
+                      {t.home.discover} <ArrowRight size={12} className="rtl-flip" />
+                    </p>
+                  </div>
                 </div>
-              </div>
-            </Link>
-          </Reveal>
+              </Link>
+            </Reveal>
           );
         })}
       </div>

@@ -191,7 +191,7 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
           <div className="relative flex h-16 items-center justify-center">
             <BrandMark brandName={brandName} logoUrl={props.logoUrl} compact={scrolled} />
             <div className="absolute end-0 flex items-center justify-end gap-1">
-                <LocaleToggle className="me-1 hidden xl:flex" />
+              <LocaleToggle className="me-1 hidden xl:flex" />
               <ThemeToggle className="hidden lg:block" />
               <button
                 type="button"
@@ -306,7 +306,10 @@ export function SiteChrome(props: ChromeProps & { children: ReactNode }) {
         </div>
 
         {/* Mobile */}
-        <div dir="ltr" className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-0 px-2 py-2.5 lg:hidden">
+        <div
+          dir="ltr"
+          className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-0 px-2 py-2.5 lg:hidden"
+        >
           <button
             type="button"
             onClick={() => setMenuOpen(true)}
@@ -418,7 +421,9 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           aria-current={isActive("/") ? "page" : undefined}
         >
           <Home size={22} strokeWidth={isActive("/") ? 2 : 1.5} />
-          <span dir="auto" className="max-w-full truncate">{t.header.home}</span>
+          <span dir="auto" className="max-w-full truncate">
+            {t.header.home}
+          </span>
         </Link>
         <Link
           href="/shop"
@@ -426,7 +431,9 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           aria-current={isActive("/shop") ? "page" : undefined}
         >
           <LayoutGrid size={22} strokeWidth={isActive("/shop") ? 2 : 1.5} />
-          <span dir="auto" className="max-w-full truncate">{t.header.shop}</span>
+          <span dir="auto" className="max-w-full truncate">
+            {t.header.shop}
+          </span>
         </Link>
         <button
           type="button"
@@ -442,7 +449,9 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
               </span>
             )}
           </span>
-          <span dir="auto" className="max-w-full truncate">{t.header.openCart.replace(/^Ouvrir |^Open /, "")}</span>
+          <span dir="auto" className="max-w-full truncate">
+            {t.header.cartTab}
+          </span>
         </button>
         <Link
           href="/wishlist"
@@ -450,7 +459,9 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           aria-current={isActive("/wishlist") ? "page" : undefined}
         >
           <Heart size={22} strokeWidth={isActive("/wishlist") ? 2 : 1.5} />
-          <span dir="auto" className="max-w-full truncate">{t.header.wishlist}</span>
+          <span dir="auto" className="max-w-full truncate">
+            {t.header.wishlist}
+          </span>
         </Link>
         <Link
           href="/account"
@@ -458,7 +469,9 @@ function MobileAppNav({ count, onCart }: { count: number; onCart: () => void }) 
           aria-current={isActive("/account") ? "page" : undefined}
         >
           <User size={22} strokeWidth={isActive("/account") ? 2 : 1.5} />
-          <span dir="auto" className="max-w-full truncate">{t.header.account.replace(/^Mon |^My /, "")}</span>
+          <span dir="auto" className="max-w-full truncate">
+            {t.header.accountTab}
+          </span>
         </Link>
       </div>
     </nav>
@@ -504,6 +517,8 @@ function MobileMenu({
     >
       <button
         aria-label={t.header.closeMenu}
+        tabIndex={-1}
+        data-dialog-backdrop
         onClick={onClose}
         className="mobile-menu-backdrop absolute inset-0 bg-ink/40 backdrop-blur-[2px]"
       />
@@ -516,7 +531,7 @@ function MobileMenu({
           <div>
             <p className="font-display text-[1.25rem] leading-none tracking-[0.2em]">{brandName}</p>
             <p className="mt-1.5 text-[0.625rem] uppercase tracking-[0.18em] text-ink-muted">
-              {t.common.currencyNote} · 58 wilayas
+              {t.common.currencyNote} · {t.product.wilayas58}
             </p>
           </div>
           <button
@@ -528,24 +543,20 @@ function MobileMenu({
             <X size={18} />
           </button>
         </div>
-        <nav aria-label={t.header.mobileNav} className="flex-1 overscroll-contain overflow-y-auto px-6 pb-4">
+        <nav
+          aria-label={t.header.mobileNav}
+          className="flex-1 overscroll-contain overflow-y-auto px-6 pb-4"
+        >
           <Link href="/shop" onClick={onClose} className={itemClass}>
             {t.header.shop}
             <ChevronRight size={15} className="text-ink-muted rtl-flip" />
           </Link>
-          <Link
-            href="/collections/new-in"
-            onClick={onClose}
-            className={itemClass}
-          >
+          <Link href="/collections/new-in" onClick={onClose} className={itemClass}>
             {t.header.newIn}
             <ChevronRight size={15} className="text-ink-muted rtl-flip" />
           </Link>
           {categories.map((category) => (
-            <div
-              key={category.slug}
-              className="border-b hairline"
-            >
+            <div key={category.slug} className="border-b hairline">
               <div className="flex items-center justify-between">
                 <Link
                   href={`/categories/${category.slug}`}
@@ -591,9 +602,7 @@ function MobileMenu({
               )}
             </div>
           ))}
-          <div
-            className="border-b hairline"
-          >
+          <div className="border-b hairline">
             <div className="flex items-center justify-between">
               <Link
                 href="/collections"
@@ -633,11 +642,7 @@ function MobileMenu({
               </div>
             )}
           </div>
-          <Link
-            href="/collections/sale"
-            onClick={onClose}
-            className={itemClass}
-          >
+          <Link href="/collections/sale" onClick={onClose} className={itemClass}>
             <span className="text-sale">{t.header.sale}</span>
             <ChevronRight size={15} className="text-sale/60 rtl-flip" />
           </Link>
@@ -719,6 +724,8 @@ function SearchOverlay({
     >
       <button
         aria-label={t.header.closeSearch}
+        tabIndex={-1}
+        data-dialog-backdrop
         onClick={onClose}
         className="absolute inset-0 bg-ink/50"
       />
@@ -827,7 +834,7 @@ function NewsletterMini() {
           disabled={pending}
           className="shrink-0 text-[0.7rem] font-medium uppercase tracking-[0.22em] text-[#fff] underline underline-offset-8 hover:text-gold-dark disabled:opacity-50"
         >
-          OK
+          {t.header.ok}
         </button>
       </div>
       {state && (
@@ -865,149 +872,152 @@ function SiteFooter(props: ChromeProps) {
         <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/45 to-ink/60" />
       </div>
       <div className="relative overlay-text">
-      <div className="container-luxe flex flex-col items-center gap-2 py-4 text-center md:block md:py-8">
-        <div className="min-w-0">
-          <p className="font-display text-lg tracking-[0.28em] md:text-xl">{props.brandName}</p>
-          <p className="mx-auto mt-1 max-w-xs text-[0.65rem] leading-relaxed overlay-text-soft md:mt-2 md:text-xs">
-            {t.footer.tagline}
-          </p>
+        <div className="container-luxe flex flex-col items-center gap-2 py-4 text-center md:block md:py-8">
+          <div className="min-w-0">
+            <p className="font-display text-lg tracking-[0.28em] md:text-xl">{props.brandName}</p>
+            <p className="mx-auto mt-1 max-w-xs text-[0.65rem] leading-relaxed overlay-text-soft md:mt-2 md:text-xs">
+              {t.footer.tagline}
+            </p>
+          </div>
+          {(socialLinks.length > 0 || whatsappHref) && (
+            <div className="flex max-w-none flex-wrap justify-center gap-x-3 gap-y-1 text-center text-[0.55rem] uppercase tracking-[0.14em] md:mx-auto md:mt-4 md:gap-x-5 md:gap-y-2 md:text-[0.625rem] md:tracking-[0.18em]">
+              {socialLinks.map((social) => (
+                <a
+                  key={social.label}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="overlay-text-soft hover:text-[#fff]"
+                >
+                  {social.label}
+                </a>
+              ))}
+              {whatsappHref && (
+                <a
+                  href={whatsappHref}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="overlay-text-soft hover:text-[#fff]"
+                >
+                  WhatsApp
+                </a>
+              )}
+            </div>
+          )}
         </div>
-        {(socialLinks.length > 0 || whatsappHref) && (
-          <div className="flex max-w-none flex-wrap justify-center gap-x-3 gap-y-1 text-center text-[0.55rem] uppercase tracking-[0.14em] md:mx-auto md:mt-4 md:gap-x-5 md:gap-y-2 md:text-[0.625rem] md:tracking-[0.18em]">
-            {socialLinks.map((social) => (
-              <a
-                key={social.label}
-                href={social.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="overlay-text-soft hover:text-[#fff]"
-              >
-                {social.label}
-              </a>
-            ))}
-            {whatsappHref && (
-              <a
-                href={whatsappHref}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="overlay-text-soft hover:text-[#fff]"
-              >
-                WhatsApp
-              </a>
-            )}
+        {props.faqItems.length > 0 && (
+          <div>
+            <div className="container-luxe py-3 md:py-4">
+              <Accordion
+                compact
+                light
+                items={[
+                  {
+                    title: t.footer.faq,
+                    content: (
+                      <Accordion
+                        compact
+                        light
+                        items={props.faqItems.map((item) => ({
+                          title: item.question,
+                          content: <p className="rich-text">{item.answer}</p>,
+                        }))}
+                      />
+                    ),
+                  },
+                ]}
+              />
+            </div>
           </div>
         )}
-      </div>
-      {props.faqItems.length > 0 && (
         <div>
-          <div className="container-luxe py-3 md:py-4">
-            <Accordion
-              compact
-              light
-              items={[
-                {
-                  title: t.footer.faq,
-                  content: (
-                    <Accordion
-                      compact
-                      light
-                      items={props.faqItems.map((item) => ({
-                        title: item.question,
-                        content: <p className="rich-text">{item.answer}</p>,
-                      }))}
-                    />
-                  ),
-                },
-              ]}
-            />
-          </div>
-        </div>
-      )}
-      <div>
-        <div className="container-luxe grid min-w-0 grid-cols-3 gap-3 py-4 text-start md:gap-6 md:py-6">
-          <nav aria-label={t.footer.shop}>
-            <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] overlay-text-soft md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
-              {t.footer.shop}
-            </p>
-            <ul className="space-y-1.5 text-[0.68rem] leading-tight md:space-y-2 md:text-xs">
-              <li>
-                <Link href="/shop" className="overlay-text-soft hover:text-[#fff]">
-                  {t.footer.shopAll}
-                </Link>
-              </li>
-              <li>
-                <Link href="/collections/new-in" className="overlay-text-soft hover:text-[#fff]">
-                  {t.footer.newIn}
-                </Link>
-              </li>
-              <li>
-                <Link href="/collections/best-sellers" className="overlay-text-soft hover:text-[#fff]">
-                  {t.footer.bestSellers}
-                </Link>
-              </li>
-            </ul>
-          </nav>
-          <nav aria-label={t.footer.help}>
-            <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] overlay-text-soft md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
-              {t.footer.help}
-            </p>
-            <ul className="space-y-1.5 text-[0.68rem] leading-tight md:space-y-2 md:text-xs">
-              <li>
-                <Link href="/pages/shipping" className="overlay-text-soft hover:text-[#fff]">
-                  {t.footer.shipping}
-                </Link>
-              </li>
-              <li>
-                <Link href="/contact" className="overlay-text-soft hover:text-[#fff]">
-                  {t.footer.contactUs}
-                </Link>
-              </li>
-            </ul>
-          </nav>
-          <div className="min-w-0">
-            <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] overlay-text-soft md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
-              {t.footer.newsletter}
-            </p>
-            <NewsletterMini />
-            {(props.supportEmail || props.supportPhone) && (
-              <p className="mt-2 break-words text-[9px] leading-tight overlay-text-soft md:mt-3 md:text-[11px] md:leading-relaxed">
-                {props.supportEmail && (
-                  <a href={`mailto:${props.supportEmail}`} className="hover:text-[#fff]">
-                    {props.supportEmail}
-                  </a>
-                )}
-                {props.supportEmail && props.supportPhone && <span className="px-2">·</span>}
-                {props.supportPhone && (
-                  <a
-                    href={`tel:${props.supportPhone.replace(/\s/g, "")}`}
-                    className="hover:text-[#fff]"
-                  >
-                    {props.supportPhone}
-                  </a>
-                )}
+          <div className="container-luxe grid min-w-0 grid-cols-3 gap-3 py-4 text-start md:gap-6 md:py-6">
+            <nav aria-label={t.footer.shop}>
+              <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] overlay-text-soft md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
+                {t.footer.shop}
               </p>
-            )}
+              <ul className="space-y-1.5 text-[0.68rem] leading-tight md:space-y-2 md:text-xs">
+                <li>
+                  <Link href="/shop" className="overlay-text-soft hover:text-[#fff]">
+                    {t.footer.shopAll}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/collections/new-in" className="overlay-text-soft hover:text-[#fff]">
+                    {t.footer.newIn}
+                  </Link>
+                </li>
+                <li>
+                  <Link
+                    href="/collections/best-sellers"
+                    className="overlay-text-soft hover:text-[#fff]"
+                  >
+                    {t.footer.bestSellers}
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+            <nav aria-label={t.footer.help}>
+              <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] overlay-text-soft md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
+                {t.footer.help}
+              </p>
+              <ul className="space-y-1.5 text-[0.68rem] leading-tight md:space-y-2 md:text-xs">
+                <li>
+                  <Link href="/pages/shipping" className="overlay-text-soft hover:text-[#fff]">
+                    {t.footer.shipping}
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/contact" className="overlay-text-soft hover:text-[#fff]">
+                    {t.footer.contactUs}
+                  </Link>
+                </li>
+              </ul>
+            </nav>
+            <div className="min-w-0">
+              <p className="mb-2 text-[0.55rem] font-medium uppercase tracking-[0.14em] overlay-text-soft md:mb-3 md:text-[0.6rem] md:tracking-[0.2em]">
+                {t.footer.newsletter}
+              </p>
+              <NewsletterMini />
+              {(props.supportEmail || props.supportPhone) && (
+                <p className="mt-2 break-words text-[9px] leading-tight overlay-text-soft md:mt-3 md:text-[11px] md:leading-relaxed">
+                  {props.supportEmail && (
+                    <a href={`mailto:${props.supportEmail}`} className="hover:text-[#fff]">
+                      {props.supportEmail}
+                    </a>
+                  )}
+                  {props.supportEmail && props.supportPhone && <span className="px-2">·</span>}
+                  {props.supportPhone && (
+                    <a
+                      href={`tel:${props.supportPhone.replace(/\s/g, "")}`}
+                      className="hover:text-[#fff]"
+                    >
+                      {props.supportPhone}
+                    </a>
+                  )}
+                </p>
+              )}
+            </div>
           </div>
         </div>
-      </div>
-      <div>
-        <div className="container-luxe flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 text-start text-[0.6rem] overlay-text-soft md:text-[0.68rem]">
-          <p>
-            © {year} {props.brandName} · {t.footer.rights}
-          </p>
-          <div className="flex flex-wrap justify-end gap-x-3 gap-y-1 md:gap-x-5">
-            <Link href="/pages/privacy-policy" className="hover:text-[#fff]">
-              {t.footer.privacy}
-            </Link>
-            <Link href="/pages/terms" className="hover:text-[#fff]">
-              {t.footer.terms}
-            </Link>
-            <button type="button" onClick={openCookieSettings} className="hover:text-[#fff]">
-              {t.footer.cookies}
-            </button>
+        <div>
+          <div className="container-luxe flex flex-row flex-wrap items-center justify-between gap-x-3 gap-y-2 py-3 text-start text-[0.6rem] overlay-text-soft md:text-[0.68rem]">
+            <p>
+              © {year} {props.brandName} · {t.footer.rights}
+            </p>
+            <div className="flex flex-wrap justify-end gap-x-3 gap-y-1 md:gap-x-5">
+              <Link href="/pages/privacy-policy" className="hover:text-[#fff]">
+                {t.footer.privacy}
+              </Link>
+              <Link href="/pages/terms" className="hover:text-[#fff]">
+                {t.footer.terms}
+              </Link>
+              <button type="button" onClick={openCookieSettings} className="hover:text-[#fff]">
+                {t.footer.cookies}
+              </button>
+            </div>
           </div>
         </div>
-      </div>
       </div>
     </footer>
   );

@@ -115,6 +115,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
   const { t } = useLocale();
   const { add } = useCart();
   const [pending, setPending] = useState(false);
+  const [addError, setAddError] = useState<string | null>(null);
   const [index, setIndex] = useState(0);
   const touchStartX = useRef<number | null>(null);
 
@@ -129,17 +130,25 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
   async function quickAdd() {
     if (!product.defaultVariantId) return;
     setPending(true);
-    const result = await add(product.defaultVariantId, 1);
-    setPending(false);
-    if (result.ok) {
+    setAddError(null);
+    try {
+      const result = await add(product.defaultVariantId, 1);
+      if (!result.ok) {
+        setAddError(result.error ?? t.product.addFailed);
+        return;
+      }
       pixelEvent("AddToCart", { content_ids: [product.id], value: product.price, currency: "DZD" });
+    } catch {
+      setAddError(t.product.addFailed);
+    } finally {
+      setPending(false);
     }
   }
 
   return (
     <article className="product-card group flex flex-col">
       <div
-        className="product-card-media relative overflow-hidden bg-cream transition-transform duration-500"
+        className="product-card-media relative overflow-hidden bg-cream"
         role={count > 1 ? "group" : undefined}
         aria-roledescription={count > 1 ? "carousel" : undefined}
         aria-label={count > 1 ? product.name : undefined}
@@ -159,7 +168,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
           aria-label={product.name}
           className="block aspect-[3/4]"
         >
-          <div className="absolute inset-0 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.06]">
+          <div className="absolute inset-0">
             {count > 0 ? (
               <div key={`${images[current]?.url}-${current}`} className="absolute inset-0">
                 <ProductImage
@@ -178,7 +187,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
               type="button"
               aria-label={t.product.prevImage}
               onClick={() => go(-1)}
-              className="absolute start-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-[#fff]/10 text-[#fff] opacity-90 backdrop-blur-[2px] drop-shadow-md transition-all duration-200 hover:bg-[#fff]/30 hover:opacity-100 focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+              className="absolute start-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-[#fff]/10 text-[#fff] opacity-90 backdrop-blur-[2px] drop-shadow-md transition-all duration-200 hover:bg-[#fff]/30 hover:opacity-100 focus-visible:opacity-100 md:pointer-fine:opacity-0 md:pointer-fine:group-hover:opacity-100 md:pointer-fine:group-focus-within:opacity-100"
             >
               <ChevronLeft size={17} className="rtl-flip" />
             </button>
@@ -186,7 +195,7 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
               type="button"
               aria-label={t.product.nextImage}
               onClick={() => go(1)}
-              className="absolute end-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-[#fff]/10 text-[#fff] opacity-90 backdrop-blur-[2px] drop-shadow-md transition-all duration-200 hover:bg-[#fff]/30 hover:opacity-100 focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100"
+              className="absolute end-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-[#fff]/10 text-[#fff] opacity-90 backdrop-blur-[2px] drop-shadow-md transition-all duration-200 hover:bg-[#fff]/30 hover:opacity-100 focus-visible:opacity-100 md:pointer-fine:opacity-0 md:pointer-fine:group-hover:opacity-100 md:pointer-fine:group-focus-within:opacity-100"
             >
               <ChevronRight size={17} className="rtl-flip" />
             </button>
@@ -262,6 +271,11 @@ export function ProductCard({ product }: { product: StoreProductCard }) {
           <div className="mt-1 flex justify-center">
             <Stars value={product.ratingAvg} count={product.ratingCount} />
           </div>
+        )}
+        {addError && (
+          <p className="mt-1 text-xs text-sale" role="status">
+            {addError}
+          </p>
         )}
       </div>
     </article>
@@ -595,19 +609,24 @@ export function AddToBagPanel({ product }: { product: StoreProduct }) {
     }
     setPending(true);
     setError(null);
-    const result = await add(selected.id, quantity);
-    setPending(false);
-    if (!result.ok) {
-      setError(result.error ?? t.product.addFailed);
-      return;
-    }
-    pixelEvent("AddToCart", {
-      content_ids: [product.id],
-      value: selected.price * quantity,
-      currency: "DZD",
-    });
-    if (buyNow) {
-      window.location.href = "/checkout";
+    try {
+      const result = await add(selected.id, quantity);
+      if (!result.ok) {
+        setError(result.error ?? t.product.addFailed);
+        return;
+      }
+      pixelEvent("AddToCart", {
+        content_ids: [product.id],
+        value: selected.price * quantity,
+        currency: "DZD",
+      });
+      if (buyNow) {
+        window.location.href = "/checkout";
+      }
+    } catch {
+      setError(t.product.addFailed);
+    } finally {
+      setPending(false);
     }
   }
 
@@ -738,8 +757,8 @@ function WishlistButton({
         "flex h-9 w-9 items-center justify-center transition-all duration-200 disabled:opacity-50",
         bordered
           ? "h-[2.875rem] w-[2.875rem] border hairline bg-white shadow-none"
-          : "bg-transparent opacity-90 hover:bg-[#fff]/20 hover:opacity-100 focus-visible:opacity-100 md:opacity-0 md:group-hover:opacity-100 md:group-focus-within:opacity-100",
-        saved && !bordered && "md:opacity-100",
+          : "bg-transparent opacity-90 hover:bg-[#fff]/20 hover:opacity-100 focus-visible:opacity-100 md:pointer-fine:opacity-0 md:pointer-fine:group-hover:opacity-100 md:pointer-fine:group-focus-within:opacity-100",
+        saved && !bordered && "md:pointer-fine:opacity-100",
         className,
       )}
     >

@@ -43,17 +43,32 @@ export function ReviewForm({ productId }: { productId: string }) {
   async function submit(event: FormEvent) {
     event.preventDefault();
     setPending(true);
-    const result = await submitReviewAction({ productId, rating, title, body, authorName, website });
-    setState({ ok: result.ok, message: result.ok ? result.message : result.error });
-    if (result.ok) {
-      setTitle("");
-      setBody("");
+    try {
+      const result = await submitReviewAction({
+        productId,
+        rating,
+        title,
+        body,
+        authorName,
+        website,
+      });
+      setState({ ok: result.ok, message: result.ok ? result.message : result.error });
+      if (result.ok) {
+        setTitle("");
+        setBody("");
+      }
+    } catch {
+      setState({ ok: false, message: t.reviews.submitFailed });
+    } finally {
+      setPending(false);
     }
-    setPending(false);
   }
 
   return (
-    <form onSubmit={submit} className="review-form relative mx-auto mt-6 max-w-xl space-y-3 text-start">
+    <form
+      onSubmit={submit}
+      className="review-form relative mx-auto mt-6 max-w-xl space-y-3 text-start"
+    >
       <Honeypot value={website} onChange={setWebsite} />
       <h3 className="text-center font-display text-xl font-medium">{t.product.giveReview}</h3>
       <div>
@@ -79,13 +94,23 @@ export function ReviewForm({ productId }: { productId: string }) {
         </div>
       </div>
       <Field label={t.product.yourName} required>
-        <Input value={authorName} onChange={(event) => setAuthorName(event.target.value)} required maxLength={80} />
+        <Input
+          value={authorName}
+          onChange={(event) => setAuthorName(event.target.value)}
+          required
+          maxLength={80}
+        />
       </Field>
       <Field label={t.product.title}>
         <Input value={title} onChange={(event) => setTitle(event.target.value)} maxLength={120} />
       </Field>
       <Field label={t.product.review} required>
-        <Textarea value={body} onChange={(event) => setBody(event.target.value)} required maxLength={2000} />
+        <Textarea
+          value={body}
+          onChange={(event) => setBody(event.target.value)}
+          required
+          maxLength={2000}
+        />
       </Field>
       {state && (
         <p className={`text-sm ${state.ok ? "text-ink-soft" : "text-sale"}`} role="status">

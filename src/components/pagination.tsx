@@ -34,7 +34,7 @@ export function Pagination({
           href={href(entry)}
           aria-current={entry === page ? "page" : undefined}
           className={cn(
-            "flex min-h-10 min-w-10 items-center justify-center border px-3 text-sm",
+            "flex min-h-10 min-w-10 items-center justify-center rounded-full border px-3 text-sm",
             entry === page ? "border-ink bg-ink text-ivory" : "hairline bg-white",
           )}
         >

@@ -48,6 +48,7 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
   }
 
   async function clear() {
+    if (!window.confirm(t.cart.clearConfirm)) return;
     setPending("clear");
     setError(null);
     try {
@@ -79,7 +80,10 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
   return (
     <div className="grid gap-10 lg:grid-cols-[1fr_380px]">
       {error && (
-        <p className="border border-[#9e342e]/30 bg-[#fff8f7] p-4 text-sm text-[#9e342e] lg:col-span-2" role="alert">
+        <p
+          className="border border-[#9e342e]/30 bg-[#fff8f7] p-4 text-sm text-[#9e342e] lg:col-span-2"
+          role="alert"
+        >
           {error}
         </p>
       )}
@@ -91,7 +95,14 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
               className="relative h-32 w-24 shrink-0 overflow-hidden bg-cream md:h-40 md:w-32"
             >
               {item.imageUrl ? (
-                <Image src={item.imageUrl} alt={item.productName} fill sizes="128px" unoptimized className="object-cover" />
+                <Image
+                  src={item.imageUrl}
+                  alt={item.productName}
+                  fill
+                  sizes="128px"
+                  unoptimized
+                  className="object-cover"
+                />
               ) : (
                 <span className="flex h-full w-full items-center justify-center font-display text-3xl text-ink-muted">
                   {item.productName.charAt(0)}
@@ -101,18 +112,25 @@ export function CartLines({ floor }: { floor: { minHome: number } | null }) {
             <div className="flex flex-1 flex-col">
               <div className="flex items-start justify-between gap-3">
                 <div>
-                  <Link href={`/products/${item.productSlug}`} className="font-medium hover:underline">
+                  <Link
+                    href={`/products/${item.productSlug}`}
+                    className="font-medium hover:underline"
+                  >
                     {item.productName}
                   </Link>
-                  {item.variantLabel && <p className="mt-0.5 text-sm text-ink-muted">{item.variantLabel}</p>}
-                  <p className="mt-1 text-sm text-ink-soft">{formatDA(item.unitPrice, locale)} {t.cart.perPiece}</p>
+                  {item.variantLabel && (
+                    <p className="mt-0.5 text-sm text-ink-muted">{item.variantLabel}</p>
+                  )}
+                  <p className="mt-1 text-sm text-ink-soft">
+                    {formatDA(item.unitPrice, locale)} {t.cart.perPiece}
+                  </p>
                 </div>
                 <button
                   type="button"
                   aria-label={`${t.cart.removeItem} ${item.productName}`}
                   disabled={pending === item.id}
                   onClick={() => void remove(item.id)}
-                  className="p-1 text-ink-muted hover:text-ink disabled:opacity-40"
+                  className="-me-2 flex h-10 w-10 shrink-0 items-center justify-center text-ink-muted hover:text-ink disabled:opacity-40"
                 >
                   <Trash2 size={16} />
                 </button>

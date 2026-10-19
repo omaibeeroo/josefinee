@@ -206,10 +206,10 @@ function slugNotFound(csp: string, localeCookie: string | undefined, kind: SlugK
       ? {
           title:
             lang === "ar"
-              ? "المنتج غير موجود | Hanadi Store"
+              ? `المنتج غير موجود | ${BRAND_CONFIG.name}`
               : lang === "en"
-                ? "Product not found | Hanadi Store"
-                : "Produit introuvable | Hanadi Store",
+                ? `Product not found | ${BRAND_CONFIG.name}`
+                : `Produit introuvable | ${BRAND_CONFIG.name}`,
           heading:
             lang === "ar"
               ? "المنتج غير موجود"
@@ -232,10 +232,10 @@ function slugNotFound(csp: string, localeCookie: string | undefined, kind: SlugK
       : {
           title:
             lang === "ar"
-              ? "الصفحة غير موجودة | Hanadi Store"
+              ? `الصفحة غير موجودة | ${BRAND_CONFIG.name}`
               : lang === "en"
-                ? "Page not found | Hanadi Store"
-                : "Page introuvable | Hanadi Store",
+                ? `Page not found | ${BRAND_CONFIG.name}`
+                : `Page introuvable | ${BRAND_CONFIG.name}`,
           heading:
             lang === "ar"
               ? "الصفحة غير موجودة"

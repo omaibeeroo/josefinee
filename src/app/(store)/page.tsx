@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { Fragment } from "react";
 import { unstable_cache } from "next/cache";
 import { getSettings } from "@/lib/settings";
+import { BRAND_CONFIG } from "@/config/brand";
 import { resolveSiteMetadata } from "@/lib/i18n/metadata";
 import {
   getBestSellers,
@@ -175,7 +176,7 @@ export default async function HomePage() {
     featured: hasCatalog ? (
       <div className="section-space pt-4 md:pt-12">
         <ProductCarousel
-          title={t.home.featuredTitle}
+          title={t.home.featuredTitle.replace("{name}", BRAND_CONFIG.name)}
           products={featured}
           viewAllHref="/shop"
           mobileGrid

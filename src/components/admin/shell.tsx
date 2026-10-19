@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { Bell, ChevronDown, Menu, X } from "lucide-react";
 import { adminLogoutAction } from "@/server/actions/admin-auth";
+import { BRAND_CONFIG } from "@/config/brand";
 import { LocaleToggle } from "@/components/locale-toggle";
 import { useLocale } from "@/lib/i18n/provider";
 import { cn } from "@/lib/utils";
@@ -53,7 +54,8 @@ export function AdminShell({
               <Menu size={19} />
             </button>
             <Link href="/admin" className="font-display text-base tracking-[0.28em]">
-              Hanadi Store <span className="text-[0.625rem] tracking-[0.2em] text-ink-muted">ADMIN</span>
+              {BRAND_CONFIG.name}{" "}
+              <span className="text-[0.625rem] tracking-[0.2em] text-ink-muted">ADMIN</span>
             </Link>
           </div>
           <div className="flex items-center gap-3">
@@ -62,6 +64,11 @@ export function AdminShell({
               className="relative flex items-center gap-1.5 text-sm text-ink-soft hover:text-ink"
               onClick={() => router.refresh()}
               title={t.admin.pendingOrders}
+              aria-label={
+                pendingOrders > 0
+                  ? `${t.admin.pendingOrders} (${pendingOrders})`
+                  : t.admin.pendingOrders
+              }
             >
               <Bell size={16} />
               {pendingOrders > 0 && (
@@ -114,6 +121,8 @@ export function AdminShell({
           >
             <button
               aria-label={t.admin.closeNav}
+              tabIndex={-1}
+              data-dialog-backdrop
               onClick={() => setMenuOpen(false)}
               className="absolute inset-0 bg-ink/50"
             />
@@ -123,7 +132,9 @@ export function AdminShell({
               className="absolute start-0 top-0 h-full w-72 overflow-y-auto border-e hairline bg-white p-3"
             >
               <div className="mb-2 flex items-center justify-between px-1">
-                <span className="font-display text-base tracking-[0.12em]">Hanadi Store</span>
+                <span className="font-display text-base tracking-[0.12em]">
+                  {BRAND_CONFIG.name}
+                </span>
                 <button
                   type="button"
                   onClick={() => setMenuOpen(false)}
@@ -209,7 +220,10 @@ function SidebarNav({
               {section.title}
               <ChevronDown
                 size={13}
-                className={cn("transition-transform duration-200", isCollapsed && "-rotate-90 rtl-flip")}
+                className={cn(
+                  "transition-transform duration-200",
+                  isCollapsed && "-rotate-90 rtl-flip",
+                )}
               />
             </button>
             {!isCollapsed || containsActive ? (
@@ -305,7 +319,7 @@ function NewOrderAlerts({ initialPending }: { initialPending: number }) {
       <p className="text-sm font-medium">{t.admin.newOrder}</p>
       <p className="mt-1 text-sm text-ivory/80">{notice}</p>
       <div className="mt-3 flex gap-2">
-          <Link
+        <Link
           href="/admin/orders?status=PENDING"
           className="btn btn-gold min-h-9 px-4 text-[0.6875rem]"
         >

@@ -219,7 +219,7 @@ export function QuantitySelector({
     <div
       className={cn(
         "inline-flex items-center border hairline bg-white",
-        small ? "h-9" : "h-[2.875rem]",
+        small ? "h-10" : "h-[2.875rem]",
       )}
     >
       <button
@@ -287,7 +287,7 @@ export function useDialogFocus(
       'a[href], button:not([disabled]), textarea, input:not([type="hidden"]), select, [tabindex]:not([tabindex="-1"])';
     const focusables = () =>
       Array.from(container.querySelectorAll<HTMLElement>(selector)).filter(
-        (element) => element.offsetParent !== null,
+        (element) => element.offsetParent !== null && !element.hasAttribute("data-dialog-backdrop"),
       );
     document.body.style.overflow = "hidden";
     for (const element of backgroundSiblings) {
@@ -369,6 +369,8 @@ export function Modal({
     >
       <button
         aria-label={t.common.close}
+        tabIndex={-1}
+        data-dialog-backdrop
         onClick={onClose}
         className="absolute inset-0 bg-ink/50"
       />
@@ -381,7 +383,12 @@ export function Modal({
           <h2 id={headingId} className="font-display text-2xl">
             {title}
           </h2>
-          <button type="button" onClick={onClose} aria-label={t.common.close} className="p-1">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t.common.close}
+            className="-me-2 flex h-10 w-10 items-center justify-center"
+          >
             <X size={20} />
           </button>
         </div>
@@ -423,6 +430,8 @@ export function Drawer({
     >
       <button
         aria-label={t.common.close}
+        tabIndex={-1}
+        data-dialog-backdrop
         onClick={onClose}
         className="absolute inset-0 bg-ink/50 animate-fade-in"
       />
@@ -438,7 +447,12 @@ export function Drawer({
           <h2 id={headingId} className="text-xs font-medium uppercase tracking-[0.2em]">
             {title}
           </h2>
-          <button type="button" onClick={onClose} aria-label={t.common.close} className="p-1">
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label={t.common.close}
+            className="-me-2 flex h-10 w-10 items-center justify-center"
+          >
             <X size={20} />
           </button>
         </div>

@@ -599,41 +599,10 @@ html.theme-switching *::after {
       transform 0.2s ease;
   }
 
-  .icon-button:hover,
-  .icon-button:focus-visible {
-    transform: translateY(-2px);
-  }
-
   .product-card-media {
     transition:
       box-shadow 0.45s ease,
       transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .product-card:hover .product-card-media,
-  .product-card:focus-within .product-card-media {
-    box-shadow: var(--shadow-card);
-    transform: translateY(-4px);
-  }
-
-  .product-card {
-    transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .product-card:hover,
-  .product-card:focus-within {
-    transform: translateY(-2px);
-  }
-
-  .editorial-image {
-    transition:
-      transform 0.9s cubic-bezier(0.22, 1, 0.36, 1),
-      filter 0.5s ease;
-  }
-
-  .editorial-image:hover {
-    filter: saturate(1.06);
-    transform: scale(1.035);
   }
 
   .page-enter {
@@ -961,11 +930,6 @@ html.theme-switching *::after {
   .product-card-media {
     border-radius: 1rem;
     background: #fff;
-  }
-
-  .product-card:hover .product-card-media,
-  .product-card:focus-within .product-card-media {
-    transform: translateY(-6px);
   }
 
   .product-card-media::before {
@@ -1309,7 +1273,6 @@ html.theme-switching *::after {
   .product-gallery-thumb:focus-visible {
     opacity: 0.92;
     box-shadow: 0 10px 20px -18px rgb(29 35 43 / 0.9);
-    transform: translateY(-2px);
   }
 
   .product-gallery-thumb-active {
@@ -1369,7 +1332,6 @@ html.theme-switching *::after {
   .variant-option:focus-visible:not(:disabled) {
     border-color: #c6a7b8;
     box-shadow: 0 9px 18px -16px rgb(29 35 43 / 0.9);
-    transform: translateY(-3px);
   }
 
   .variant-option:hover:not(:disabled)::after,
@@ -1557,18 +1519,11 @@ html.theme-switching *::after {
   }
 
   .product-detail-page .btn {
-    border-radius: 0;
     box-shadow: none;
   }
 
   .product-detail-page .btn::before {
     display: none;
-  }
-
-  .product-detail-page .btn:hover:not(:disabled),
-  .product-detail-page .btn-interactive:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 8px 16px -14px rgb(29 35 43 / 0.6);
   }
 
   .product-detail-page .btn-primary {
@@ -1592,7 +1547,6 @@ html.theme-switching *::after {
   }
 
   .product-detail-page .variant-option {
-    border-radius: 0.6rem;
     background: #fff;
     box-shadow: none;
   }
@@ -1601,21 +1555,10 @@ html.theme-switching *::after {
     display: none;
   }
 
-  .product-detail-page .variant-option:hover:not(:disabled),
-  .product-detail-page .variant-option:focus-visible:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 6px 12px -12px rgb(29 35 43 / 0.7);
-  }
-
   .product-detail-page .variant-option-active {
     background: #1d232b;
     box-shadow: 0 0 0 2px #c6a7b8;
     animation: none;
-  }
-
-  .product-detail-page .quantity-selector,
-  .product-detail-page .icon-button {
-    border-radius: 0.6rem;
   }
 
   .product-purchase-actions {
@@ -1668,7 +1611,6 @@ html.theme-switching *::after {
   .cart-drawer .btn,
   .cart-page .btn,
   .checkout-page .btn {
-    border-radius: 0.55rem;
     box-shadow: none;
   }
 
@@ -1682,7 +1624,6 @@ html.theme-switching *::after {
   .cart-page .btn-primary:hover:not(:disabled),
   .checkout-page .btn-primary:hover:not(:disabled) {
     background: #3b4651;
-    transform: translateY(-1px);
   }
 
   .cart-drawer > div:last-child {
@@ -1817,7 +1758,6 @@ html.theme-switching *::after {
 
   .checkout-page .btn-gold {
     border: 1px solid #cfd6dc;
-    border-radius: 0.65rem;
     background: #1d232b;
     color: #fff;
     box-shadow: none;
@@ -1825,7 +1765,6 @@ html.theme-switching *::after {
 
   .checkout-page .btn-gold:hover:not(:disabled) {
     background: #3b4651;
-    transform: translateY(-1px);
   }
 }
 
@@ -1935,15 +1874,6 @@ html.theme-switching *::after {
     box-shadow: 0 18px 42px -38px rgb(29 35 43 / 0.48);
   }
 
-  .feature-spotlight-image {
-    transition: transform 0.9s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .feature-spotlight:hover .feature-spotlight-image,
-  .feature-spotlight:focus-within .feature-spotlight-image {
-    transform: scale(1.025);
-  }
-
   .product-card-media {
     background: #f6f7f8;
   }
@@ -1999,13 +1929,6 @@ html.theme-switching *::after {
     .feature-spotlight {
       box-shadow: 0 14px 32px -30px rgb(29 35 43 / 0.45);
     }
-  }
-}
-
-@media (hover: none), (pointer: coarse) {
-  .feature-spotlight:hover .feature-spotlight-image,
-  .feature-spotlight:focus-within .feature-spotlight-image {
-    transform: none;
   }
 }
 
@@ -2324,6 +2247,24 @@ html.theme-switching *::after {
   color: #f0a4aa !important;
 }
 
+[data-theme="dark"] [class~="text-indigo-700"],
+[data-theme="dark"] [class~="text-indigo-800"],
+[data-theme="dark"] [class~="text-indigo-900"] {
+  color: #b4c1f5 !important;
+}
+
+[data-theme="dark"] [class~="text-violet-700"],
+[data-theme="dark"] [class~="text-violet-800"],
+[data-theme="dark"] [class~="text-violet-900"] {
+  color: #d0b8f2 !important;
+}
+
+[data-theme="dark"] [class~="text-orange-700"],
+[data-theme="dark"] [class~="text-orange-800"],
+[data-theme="dark"] [class~="text-orange-900"] {
+  color: #f5c08d !important;
+}
+
 [data-theme="dark"] [class~="text-stone-800"],
 [data-theme="dark"] [class~="text-stone-900"] {
   color: #e2e8ed !important;
@@ -2349,6 +2290,21 @@ html.theme-switching *::after {
 [data-theme="dark"] .cart-page [role="alert"],
 [data-theme="dark"] .checkout-page [role="alert"] {
   background-color: rgb(168 61 70 / 0.2) !important;
+}
+
+[data-theme="dark"] [class~="bg-indigo-100"],
+[data-theme="dark"] [class~="bg-indigo-50"] {
+  background-color: rgb(84 108 196 / 0.2) !important;
+}
+
+[data-theme="dark"] [class~="bg-violet-100"],
+[data-theme="dark"] [class~="bg-violet-50"] {
+  background-color: rgb(124 84 196 / 0.2) !important;
+}
+
+[data-theme="dark"] [class~="bg-orange-100"],
+[data-theme="dark"] [class~="bg-orange-50"] {
+  background-color: rgb(178 106 43 / 0.2) !important;
 }
 
 [data-theme="dark"] [class~="bg-stone-200"],
@@ -2644,4 +2600,16 @@ html[lang="ar"] :is(a, button, [role="button"]) :not(.font-display) {
 html[lang="ar"] body,
 html[lang="ar"] body * {
   letter-spacing: normal;
+}
+
+/* iOS auto-zoom guard: below the 1024px desktop scale the app base is 16px,
+   and Safari (iOS and iPadOS) zooms the viewport whenever a focused control's
+   text is smaller. Unlayered on purpose so utility classes (text-sm, …) cannot
+   push a control under 16px. */
+@media (max-width: 1023px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  select,
+  textarea {
+    font-size: 1rem;
+  }
 }

@@ -62,14 +62,18 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const add = useCallback(
     async (variantId: string, quantity = 1) => {
-      const result = await addToCartAction(variantId, quantity);
-      if (!result.ok) return { ok: false as const, error: result.error };
-      setError(null);
-      await refresh();
-      setOpen(true);
-      return { ok: true as const };
+      try {
+        const result = await addToCartAction(variantId, quantity);
+        if (!result.ok) return { ok: false as const, error: result.error };
+        setError(null);
+        await refresh();
+        setOpen(true);
+        return { ok: true as const };
+      } catch {
+        return { ok: false as const, error: t.cart.addFailed };
+      }
     },
-    [refresh],
+    [refresh, t],
   );
 
   const value = useMemo<CartContextValue>(
@@ -101,10 +105,15 @@ function CartDrawer() {
   async function changeQuantity(itemId: string, quantity: number) {
     setPending(itemId);
     setError(null);
-    const result = await updateCartItemAction(itemId, quantity);
-    if (!result.ok) setError(result.error);
-    await refresh();
-    setPending(null);
+    try {
+      const result = await updateCartItemAction(itemId, quantity);
+      if (!result.ok) setError(result.error ?? t.cart.updateFailed);
+      await refresh();
+    } catch {
+      setError(t.cart.updateFailed);
+    } finally {
+      setPending(null);
+    }
   }
 
   async function removeItem(itemId: string) {
@@ -137,9 +146,9 @@ function CartDrawer() {
         {loadError ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
             <p className="font-display text-2xl">{t.cart.cartUnavailable}</p>
-              <Button variant="outline" size="sm" onClick={() => void refresh()}>
-                {t.common.retry}
-              </Button>
+            <Button variant="outline" size="sm" onClick={() => void refresh()}>
+              {t.common.retry}
+            </Button>
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
@@ -194,7 +203,7 @@ function CartDrawer() {
                         aria-label={`${t.cart.removeItem} ${item.productName}`}
                         disabled={pending === item.id}
                         onClick={() => void removeItem(item.id)}
-                        className="p-1 text-ink-muted hover:text-ink disabled:opacity-40"
+                        className="-me-2 flex h-10 w-10 shrink-0 items-center justify-center text-ink-muted hover:text-ink disabled:opacity-40"
                       >
                         <Trash2 size={15} />
                       </button>

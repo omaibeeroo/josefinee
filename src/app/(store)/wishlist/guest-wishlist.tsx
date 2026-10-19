@@ -28,6 +28,7 @@ export function GuestWishlist() {
   const router = useRouter();
   const { add } = useCart();
   const [items, setItems] = useState<GuestWishlistRow[] | null>(null);
+  const [loadFailed, setLoadFailed] = useState(false);
   const [movingProductIds, setMovingProductIds] = useState<string[]>([]);
   const [moveErrors, setMoveErrors] = useState<Record<string, string>>({});
 
@@ -35,9 +36,15 @@ export function GuestWishlist() {
     const ids = readGuestWishlist();
     if (ids.length === 0) {
       setItems([]);
+      setLoadFailed(false);
       return;
     }
-    setItems(await getWishlistProductsAction(ids));
+    setLoadFailed(false);
+    try {
+      setItems(await getWishlistProductsAction(ids));
+    } catch {
+      setLoadFailed(true);
+    }
   }, []);
 
   useEffect(() => {
@@ -65,12 +72,31 @@ export function GuestWishlist() {
     try {
       const result = await add(item.defaultVariantId, 1);
       if (result.ok) remove(item.productId);
-      else setMoveErrors((current) => ({ ...current, [item.productId]: result.error || t.wishlist.addFailed }));
+      else
+        setMoveErrors((current) => ({
+          ...current,
+          [item.productId]: result.error || t.wishlist.addFailed,
+        }));
     } catch {
       setMoveErrors((current) => ({ ...current, [item.productId]: t.wishlist.addFailed }));
     } finally {
       setMovingProductIds((current) => current.filter((productId) => productId !== item.productId));
     }
+  }
+
+  if (loadFailed) {
+    return (
+      <div className="py-10 text-center">
+        <p role="alert" className="text-ink-soft">
+          {t.wishlist.loadFailed}
+        </p>
+        <div className="mt-4 flex justify-center">
+          <Button variant="outline" size="sm" onClick={() => void load()}>
+            {t.common.retry}
+          </Button>
+        </div>
+      </div>
+    );
   }
 
   if (items === null) {
@@ -81,9 +107,7 @@ export function GuestWishlist() {
     return (
       <div className="py-10 text-center">
         <p className="font-display text-2xl">{t.account.savedEmpty}</p>
-        <p className="mt-2 text-ink-soft">
-          {t.account.savedHintSync}
-        </p>
+        <p className="mt-2 text-ink-soft">{t.account.savedHintSync}</p>
         <div className="mt-6 flex justify-center gap-3">
           <Link href="/shop" className="btn btn-primary">
             {t.common.discoverShop}
@@ -100,7 +124,10 @@ export function GuestWishlist() {
     <ul className="grid gap-4 sm:grid-cols-2">
       {items.map((item) => (
         <li key={item.id} className="flex gap-4 border hairline bg-white p-4">
-          <Link href={`/products/${item.slug}`} className="relative h-28 w-24 shrink-0 overflow-hidden bg-cream">
+          <Link
+            href={`/products/${item.slug}`}
+            className="relative h-28 w-24 shrink-0 overflow-hidden bg-cream"
+          >
             <ProductImage url={item.image} alt={item.name} sizes="96px" />
           </Link>
           <div className="flex min-w-0 flex-1 flex-col">
@@ -108,22 +135,40 @@ export function GuestWishlist() {
               <Link href={`/products/${item.slug}`} className="text-sm font-medium hover:underline">
                 {item.name}
               </Link>
-              <button type="button" aria-label={`${t.cart.removeItem} ${item.name}`} onClick={() => remove(item.productId)} className="p-1 text-ink-muted hover:text-ink">
+              <button
+                type="button"
+                aria-label={`${t.cart.removeItem} ${item.name}`}
+                onClick={() => remove(item.productId)}
+                className="p-1 text-ink-muted hover:text-ink"
+              >
                 <X size={16} />
               </button>
             </div>
             <div className="mt-1">
               <Price price={item.price} compareAt={item.compareAtPrice} />
             </div>
-          <div className="mt-auto pt-2">
+            <div className="mt-auto pt-2">
               {item.inStock && item.defaultVariantId ? (
-                <Button size="sm" variant="outline" disabled={movingProductIds.includes(item.productId)} onClick={() => void moveToBag(item)}>
-                  {movingProductIds.includes(item.productId) ? t.product.adding : t.product.addToBag}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={movingProductIds.includes(item.productId)}
+                  onClick={() => void moveToBag(item)}
+                >
+                  {movingProductIds.includes(item.productId)
+                    ? t.product.adding
+                    : t.product.addToBag}
                 </Button>
               ) : (
-                <p className="text-xs uppercase tracking-[0.14em] text-ink-muted">{t.product.soldOut}</p>
+                <p className="text-xs uppercase tracking-[0.14em] text-ink-muted">
+                  {t.product.soldOut}
+                </p>
               )}
-              {moveErrors[item.productId] && <p className="mt-2 text-xs text-sale" role="alert">{moveErrors[item.productId]}</p>}
+              {moveErrors[item.productId] && (
+                <p className="mt-2 text-xs text-sale" role="alert">
+                  {moveErrors[item.productId]}
+                </p>
+              )}
             </div>
           </div>
         </li>
