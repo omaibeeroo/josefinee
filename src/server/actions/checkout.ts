@@ -108,11 +108,15 @@ export async function getCheckoutData() {
 
 export async function getCommunesAction(wilayaId: string) {
   if (!zId.safeParse(wilayaId).success) return [];
+  const ip = await clientIp();
+  await enforceRateLimit({ ...LIMITS.reference, key: `reference:${ip}` });
   return getCommunes(wilayaId);
 }
 
 export async function getDeliveryOptionsAction(wilayaId: string) {
   if (!zId.safeParse(wilayaId).success) return [];
+  const ip = await clientIp();
+  await enforceRateLimit({ ...LIMITS.reference, key: `reference:${ip}` });
   return getDeliveryOptions(wilayaId);
 }
 

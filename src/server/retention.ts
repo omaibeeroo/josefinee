@@ -23,11 +23,21 @@ export async function purgeExpiredData(): Promise<{
   analyticsEvents: number;
   notifications: number;
   outboxEvents: number;
+  searchQueries: number;
 }> {
   const now = new Date();
-  const analyticsCutoff = new Date(now.getTime() - retentionDays("RETENTION_ANALYTICS_DAYS", 90) * DAY_MS);
-  const notificationCutoff = new Date(now.getTime() - retentionDays("RETENTION_NOTIFICATION_DAYS", 180) * DAY_MS);
-  const outboxCutoff = new Date(now.getTime() - retentionDays("RETENTION_OUTBOX_DAYS", 30) * DAY_MS);
+  const analyticsCutoff = new Date(
+    now.getTime() - retentionDays("RETENTION_ANALYTICS_DAYS", 90) * DAY_MS,
+  );
+  const notificationCutoff = new Date(
+    now.getTime() - retentionDays("RETENTION_NOTIFICATION_DAYS", 180) * DAY_MS,
+  );
+  const outboxCutoff = new Date(
+    now.getTime() - retentionDays("RETENTION_OUTBOX_DAYS", 30) * DAY_MS,
+  );
+  const searchCutoff = new Date(
+    now.getTime() - retentionDays("RETENTION_SEARCH_DAYS", 90) * DAY_MS,
+  );
 
   // Small expiry-driven tables purge in one shot. Large operational tables
   // purge in bounded batches so a 90/180-day backlog can never lock, time
@@ -109,6 +119,25 @@ export async function purgeExpiredData(): Promise<{
       }),
     (ids) => prisma.cartItem.deleteMany({ where: { id: { in: ids } } }),
   );
+  // Search analytics go stale by design: the popular-searches widget is
+  // current-trends only. The primary key is the term itself, so batches key
+  // on the string instead of an id column. Recent searches refresh updatedAt
+  // and survive until they go quiet for the retention window.
+  let searchQueries = 0;
+  for (;;) {
+    const rows = await prisma.searchQuery.findMany({
+      where: { updatedAt: { lt: searchCutoff } },
+      select: { term: true },
+      take: BATCH_SIZE,
+    });
+    if (rows.length === 0) break;
+    searchQueries += (
+      await prisma.searchQuery.deleteMany({
+        where: { term: { in: rows.map((row) => row.term) } },
+      })
+    ).count;
+    if (rows.length < BATCH_SIZE) break;
+  }
 
   return {
     adminSessions: adminSessions.count,
@@ -120,5 +149,6 @@ export async function purgeExpiredData(): Promise<{
     analyticsEvents,
     notifications,
     outboxEvents,
+    searchQueries,
   };
 }

@@ -27,16 +27,12 @@ export async function assessOrderRisk(params: {
   const since = new Date(Date.now() - 30 * 24 * 60 * 60_000);
 
   const db = params.db ?? prisma;
-  const [previousOrders, samePhoneCustomers] = await Promise.all([
-    db.order.findMany({
-      where: { phone: params.phone },
-      select: { id: true, status: true, total: true, createdAt: true },
-      orderBy: { createdAt: "desc" },
-      take: 50,
-    }),
-    // Multiple customer profiles sharing the same phone number.
-    db.customer.count({ where: { phone: params.phone } }),
-  ]);
+  const previousOrders = await db.order.findMany({
+    where: { phone: params.phone },
+    select: { id: true, status: true, total: true, createdAt: true },
+    orderBy: { createdAt: "desc" },
+    take: 50,
+  });
 
   const totalOrders = previousOrders.length;
   const badOrders = previousOrders.filter((order) =>
@@ -73,11 +69,6 @@ export async function assessOrderRisk(params: {
   if (params.itemCount >= 10) {
     flags.push("Large number of items");
     score += 8;
-  }
-
-  if (samePhoneCustomers > 1) {
-    flags.push("Multiple customer accounts share this phone number");
-    score += 15;
   }
 
   const level: RiskAssessment["level"] = score >= 45 ? "HIGH" : score >= 20 ? "MEDIUM" : "LOW";

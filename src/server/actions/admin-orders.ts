@@ -283,8 +283,9 @@ export async function changeOrderStatusAction(
                 idempotencyKey: `order-status:${orderId}:${status}`,
               });
         // The customer counts as notified when at least one channel actually
-        // delivered; partial channel failures are audited instead of ignored.
-        notified = dispatchResult.sent.length > 0;
+        // delivered; a channel switched off in settings is merchant intent
+        // (skipped), not a failure. Partial channel failures are audited.
+        notified = dispatchResult.sent.length > 0 || dispatchResult.skipped;
         if (dispatchResult.failed.length > 0) {
           await recordAudit({
             actorUserId: actor.id,

@@ -70,16 +70,46 @@ export async function resolveBestPromotion(
       let remaining = discount;
       for (const [position, index] of eligibleIndexes.entries()) {
         const lineTotal = lineTotalsAfterPromotion[index]!;
-        const lineDiscount = position === eligibleIndexes.length - 1
-          ? remaining
-          : Math.min(remaining, Math.floor((discount * lineTotal) / eligible));
+        const lineDiscount =
+          position === eligibleIndexes.length - 1
+            ? remaining
+            : Math.min(remaining, Math.floor((discount * lineTotal) / eligible));
         lineTotalsAfterPromotion[index] = lineTotal - lineDiscount;
         remaining -= lineDiscount;
       }
-      best = { promotionId: promotion.id, name: promotion.name, discount, lineTotalsAfterPromotion };
+      best = {
+        promotionId: promotion.id,
+        name: promotion.name,
+        discount,
+        lineTotalsAfterPromotion,
+      };
     }
   }
 
+  return best;
+}
+
+export type PromotionBadge = { name: string; type: "PERCENTAGE" | "FIXED"; value: number };
+
+/**
+ * Picks the promotion that gives the deepest discount on one unit. The old
+ * heuristic ranked percentages and fixed amounts on the same scale, so a
+ * 1 500 DA fixed promotion always beat a 50% one. Discounts are compared in
+ * dinar terms instead; ties keep the first promotion (newest first).
+ */
+export function rankPromotionBadge(
+  promotions: PromotionBadge[],
+  unitPrice: number,
+): PromotionBadge | null {
+  let best: PromotionBadge | null = null;
+  let bestDiscount = 0;
+  for (const promotion of promotions) {
+    const discount = promotionDiscountFor(promotion, unitPrice);
+    if (discount > bestDiscount) {
+      best = promotion;
+      bestDiscount = discount;
+    }
+  }
   return best;
 }
 
@@ -87,11 +117,11 @@ export async function resolveBestPromotion(
 export async function getProductPromotion(
   productId: string,
   collectionIds: string[],
-): Promise<{ name: string; type: "PERCENTAGE" | "FIXED"; value: number } | null> {
+  unitPrice: number,
+): Promise<PromotionBadge | null> {
   const now = new Date();
   const promotions = await getActivePromotions(now);
-  let best: { name: string; type: "PERCENTAGE" | "FIXED"; value: number; rank: number } | null =
-    null;
+  const applicable: PromotionBadge[] = [];
 
   for (const promotion of promotions) {
     const productIds = new Set(promotion.products.map((entry) => entry.productId));
@@ -101,11 +131,8 @@ export async function getProductPromotion(
         : productIds.has(productId) ||
           (promotion.collectionId != null && collectionIds.includes(promotion.collectionId));
     if (!matches) continue;
-    const rank = promotion.type === "PERCENTAGE" ? promotion.value : 1000 + promotion.value;
-    if (!best || rank > best.rank) {
-      best = { name: promotion.name, type: promotion.type, value: promotion.value, rank };
-    }
+    applicable.push({ name: promotion.name, type: promotion.type, value: promotion.value });
   }
 
-  return best ? { name: best.name, type: best.type, value: best.value } : null;
+  return rankPromotionBadge(applicable, unitPrice);
 }

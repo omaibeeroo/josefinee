@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { BRAND_CONFIG } from "@/config/brand";
 import { formatDA } from "@/lib/money";
 import { formatPhoneDisplay, normalizeAlgerianPhone } from "@/lib/phone";
+import { getSettings } from "@/lib/settings";
 import type { NotificationChannel } from "@prisma/client";
 import { Prisma } from "@prisma/client";
 
@@ -380,11 +381,45 @@ type DispatchOptions = {
 export type NotificationDispatchResult = {
   sent: NotificationChannel[];
   failed: NotificationChannel[];
+  /** Requested channels the merchant disabled in Admin → Réglages. */
+  disabled: NotificationChannel[];
+  /** Every requested channel was disabled — nothing was attempted by design. */
+  skipped: boolean;
 };
 
+export type NotificationChannelToggles = {
+  orderEmailEnabled: boolean;
+  orderSmsEnabled: boolean;
+  orderWhatsappEnabled: boolean;
+};
+
+/**
+ * Merchant-facing channel switches (settings.notifications) applied to the
+ * channels a template requests. Pure so the mapping stays unit-testable.
+ */
+export function resolveEnabledChannels(
+  requested: NotificationChannel[],
+  toggles: NotificationChannelToggles,
+): NotificationChannel[] {
+  const byChannel: Record<NotificationChannel, boolean> = {
+    EMAIL: toggles.orderEmailEnabled,
+    SMS: toggles.orderSmsEnabled,
+    WHATSAPP: toggles.orderWhatsappEnabled,
+  };
+  return requested.filter((channel) => byChannel[channel]);
+}
+
 async function dispatch(options: DispatchOptions): Promise<NotificationDispatchResult> {
-  const enabled: NotificationChannel[] = options.channels ?? ["EMAIL"];
-  const result: NotificationDispatchResult = { sent: [], failed: [] };
+  const requested: NotificationChannel[] = options.channels ?? ["EMAIL"];
+  const settings = await getSettings();
+  const enabled = resolveEnabledChannels(requested, settings.notifications);
+  const disabled = requested.filter((channel) => !enabled.includes(channel));
+  const result: NotificationDispatchResult = {
+    sent: [],
+    failed: [],
+    disabled,
+    skipped: requested.length > 0 && enabled.length === 0,
+  };
   for (const provider of providers) {
     if (!enabled.includes(provider.channel)) continue;
     const recipient =

@@ -44,11 +44,10 @@ async function getNavigationFresh(): Promise<{
   }
 }
 
-const getNavigationCached = unstable_cache(
-  async () => getNavigationFresh(),
-  ["navigation:main"],
-  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_NAVIGATION] },
-);
+const getNavigationCached = unstable_cache(async () => getNavigationFresh(), ["navigation:main"], {
+  revalidate: CATALOG_REVALIDATE_SECONDS,
+  tags: [CACHE_TAG_NAVIGATION],
+});
 
 /** Cached header nav (see src/lib/cache.ts for scope rules). */
 export async function getNavigation(): Promise<{
@@ -60,12 +59,20 @@ export async function getNavigation(): Promise<{
 
 async function getPopularSearchesFresh(limit = 6): Promise<string[]> {
   try {
+    // Only corroborated terms surface publicly: a single search can be spam.
+    // Long strings read as noise in the search dialog, so they are filtered
+    // out (bounded over-fetch — storage itself is capped by the retention
+    // job, see purgeExpiredData).
     const rows = await prisma.searchQuery.findMany({
+      where: { count: { gte: 2 } },
       orderBy: [{ count: "desc" }, { updatedAt: "desc" }],
       select: { term: true },
-      take: limit,
+      take: limit * 8,
     });
-    return rows.map((row) => row.term);
+    return rows
+      .map((row) => row.term)
+      .filter((term) => term.length <= 40)
+      .slice(0, limit);
   } catch {
     return [];
   }

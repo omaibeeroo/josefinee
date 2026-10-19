@@ -90,7 +90,7 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
   const [related, reviews, promotion] = await Promise.all([
     getRelatedProducts(product.id, product.categoryId),
     getReviews(product.id),
-    getProductPromotion(product.id, product.collectionIds),
+    getProductPromotion(product.id, product.collectionIds, product.price),
   ]);
   after(() =>
     trackEvent({

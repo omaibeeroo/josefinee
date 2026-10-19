@@ -25,37 +25,66 @@ export type DeliveryOption = {
   etaMaxDays: number;
 };
 
+/**
+ * Reference data (wilayas, communes, per-wilaya rates) is display-only here:
+ * checkout recomputes the concrete rate live via resolveDeliveryRate inside
+ * the order transaction, so a stale cache can never misprice an order. All
+ * three getters share the delivery tag; every admin mutation that touches
+ * rates or active flags revalidates it next to its path revalidation.
+ */
+const getActiveWilayasCached = unstable_cache(
+  async () =>
+    prisma.wilaya.findMany({
+      where: { isActive: true },
+      orderBy: { code: "asc" },
+      select: { id: true, code: true, name: true, nameAr: true, stopdeskAvailable: true },
+    }),
+  ["delivery:wilayas"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_DELIVERY] },
+);
+
 export async function getActiveWilayas(): Promise<WilayaOption[]> {
-  return prisma.wilaya.findMany({
-    where: { isActive: true },
-    orderBy: { code: "asc" },
-    select: { id: true, code: true, name: true, nameAr: true, stopdeskAvailable: true },
-  });
+  return getActiveWilayasCached();
 }
+
+const getCommunesCached = unstable_cache(
+  async (wilayaId: string) =>
+    prisma.commune.findMany({
+      where: { wilayaId, isActive: true },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+  ["delivery:communes"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_DELIVERY] },
+);
 
 export async function getCommunes(wilayaId: string): Promise<CommuneOption[]> {
   if (!wilayaId) return [];
-  return prisma.commune.findMany({
-    where: { wilayaId, isActive: true },
-    orderBy: { name: "asc" },
-    select: { id: true, name: true },
-  });
+  return getCommunesCached(wilayaId);
 }
+
+const getDeliveryOptionsCached = unstable_cache(
+  async (wilayaId: string): Promise<DeliveryOption[]> => {
+    const rates = await prisma.deliveryRate.findMany({
+      where: { wilayaId, isActive: true },
+      orderBy: { price: "asc" },
+    });
+    // Labels are localized client-side via t.delivery[method]; the server
+    // never ships display copy (keeps payloads small and unilingual-free).
+    return rates.map((rate) => ({
+      method: rate.method,
+      price: rate.price,
+      etaMinDays: rate.etaMinDays,
+      etaMaxDays: rate.etaMaxDays,
+    }));
+  },
+  ["delivery:options"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_DELIVERY] },
+);
 
 export async function getDeliveryOptions(wilayaId: string): Promise<DeliveryOption[]> {
   if (!wilayaId) return [];
-  const rates = await prisma.deliveryRate.findMany({
-    where: { wilayaId, isActive: true },
-    orderBy: { price: "asc" },
-  });
-  // Labels are localized client-side via t.delivery[method]; the server
-  // never ships display copy (keeps payloads small and unilingual-free).
-  return rates.map((rate) => ({
-    method: rate.method,
-    price: rate.price,
-    etaMinDays: rate.etaMinDays,
-    etaMaxDays: rate.etaMaxDays,
-  }));
+  return getDeliveryOptionsCached(wilayaId);
 }
 
 /**

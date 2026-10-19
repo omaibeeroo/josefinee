@@ -24,10 +24,12 @@ function errorName(error: unknown): string {
   return error instanceof Error ? error.name.slice(0, 80) : "UnknownError";
 }
 
-export async function processPendingOrderOutbox(options: {
-  orderId?: string;
-  limit?: number;
-} = {}): Promise<{ claimed: number; completed: number; failed: number }> {
+export async function processPendingOrderOutbox(
+  options: {
+    orderId?: string;
+    limit?: number;
+  } = {},
+): Promise<{ claimed: number; completed: number; failed: number }> {
   const now = new Date();
   const staleBefore = new Date(now.getTime() - LEASE_MS);
   const limit = Math.max(1, Math.min(MAX_BATCH_SIZE, Math.floor(options.limit ?? 25)));
@@ -136,6 +138,9 @@ export async function processPendingOrderOutbox(options: {
         });
         sentChannels = delivery.sent;
         if (delivery.failed.length > 0) throw new Error("NotificationDeliveryFailed");
+        if (sentChannels.length === 0 && delivery.skipped) {
+          console.info("[outbox] customer notification skipped: all channels disabled");
+        }
       } else {
         const ok = await sendMetaPurchase({
           orderNumber: order.orderNumber,
@@ -153,7 +158,7 @@ export async function processPendingOrderOutbox(options: {
           where: { id: event.id },
           data: { status: "COMPLETED", lockedAt: null, completedAt: new Date(), lastError: null },
         });
-        if (event.kind === "CUSTOMER_NOTIFICATION") {
+        if (event.kind === "CUSTOMER_NOTIFICATION" && sentChannels.length > 0) {
           await tx.auditLog.create({
             data: {
               actorType: "SYSTEM",
@@ -196,7 +201,12 @@ export async function processPendingOrderOutbox(options: {
       } catch (recordError) {
         console.error("[order-outbox] could not record failure", errorName(recordError));
       }
-      console.error("[order-outbox] effect failed", event.kind, name, terminal ? "terminal" : "retrying");
+      console.error(
+        "[order-outbox] effect failed",
+        event.kind,
+        name,
+        terminal ? "terminal" : "retrying",
+      );
       failed += 1;
     }
   }

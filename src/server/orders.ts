@@ -149,6 +149,24 @@ export async function recoverSettledCheckout(
  */
 export type CustomerWriteDecision = "create" | "update-owned" | "touch-only" | "reject-exists";
 
+/**
+ * Email-uniqueness policy for a brand-new customer record. A guest's email
+ * may already belong to an account created under a different phone (shared
+ * family inbox, reused address): the COD sale must not die with a 409. The
+ * order keeps the email for the merchant; only the customer record drops it.
+ * A checkout that claims an account (`createAccount`) is rejected instead,
+ * matching `registerAction`.
+ */
+export type EmailWriteDecision = "keep" | "strip" | "reject";
+
+export function decideEmailWrite(input: {
+  createAccount: boolean;
+  emailTaken: boolean;
+}): EmailWriteDecision {
+  if (!input.emailTaken) return "keep";
+  return input.createAccount ? "reject" : "strip";
+}
+
 export function decideCustomerWrite(input: {
   authenticatedCustomerId: string | null;
   customer: { id: string; passwordHash: string | null } | null;
@@ -517,19 +535,38 @@ export async function createOrder(
           data: { lastOrderAt: new Date() },
         });
       } else {
+        // Deterministic email-collision handling before the insert: the
+        // unique constraint would otherwise abort the whole transaction.
+        let emailToStore = data.email ?? null;
+        if (emailToStore) {
+          const emailOwner = await tx.customer.findUnique({
+            where: { email: emailToStore },
+            select: { id: true },
+          });
+          const emailDecision = decideEmailWrite({
+            createAccount: data.createAccount === true,
+            emailTaken: emailOwner !== null,
+          });
+          if (emailDecision === "reject") {
+            throw new AppError("ACCOUNT_EXISTS", tErr.accountExists, 409);
+          }
+          if (emailDecision === "strip") emailToStore = null;
+        }
         try {
           const created = await tx.customer.create({
             data: {
               firstName: data.firstName,
               lastName: data.lastName,
               phone: data.phone,
-              email: data.email ?? null,
+              email: emailToStore,
               passwordHash,
               riskLevel: risk.level,
             },
           });
           customerId = created.id;
         } catch (error) {
+          // Race guard only (same-email insert between check and write); the
+          // steady-state collision is handled above without aborting the tx.
           if (isUniqueViolation(error)) {
             throw new AppError("ACCOUNT_EXISTS", tErr.accountExists, 409);
           }

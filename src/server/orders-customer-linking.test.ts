@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decideCustomerWrite } from "@/server/orders";
+import { decideCustomerWrite, decideEmailWrite } from "@/server/orders";
 
 describe("decideCustomerWrite (guest-checkout account protection)", () => {
   it("lets a new phone create a customer record", () => {
@@ -85,5 +85,22 @@ describe("decideCustomerWrite (guest-checkout account protection)", () => {
         createAccount: false,
       }),
     ).toBe("touch-only");
+  });
+});
+
+describe("decideEmailWrite (unique-email collision policy)", () => {
+  it("keeps a free email", () => {
+    expect(decideEmailWrite({ createAccount: false, emailTaken: false })).toBe("keep");
+    expect(decideEmailWrite({ createAccount: true, emailTaken: false })).toBe("keep");
+  });
+
+  it("strips a taken email from a guest record instead of failing the sale", () => {
+    // The email may belong to an account created under a different phone;
+    // the order still carries it, only the customer row drops it.
+    expect(decideEmailWrite({ createAccount: false, emailTaken: true })).toBe("strip");
+  });
+
+  it("rejects a taken email when the checkout claims an account", () => {
+    expect(decideEmailWrite({ createAccount: true, emailTaken: true })).toBe("reject");
   });
 });

@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { promotionDiscountFor } from "@/lib/promo-math";
+import { rankPromotionBadge } from "@/server/promotions";
 
 describe("promotionDiscountFor", () => {
   it("computes percentage discounts floored to the dinar", () => {
@@ -20,5 +21,28 @@ describe("promotionDiscountFor", () => {
   it("returns zero for empty subtotals", () => {
     expect(promotionDiscountFor({ type: "PERCENTAGE", value: 10 }, 0)).toBe(0);
     expect(promotionDiscountFor({ type: "FIXED", value: 100 }, 0)).toBe(0);
+  });
+});
+
+describe("rankPromotionBadge", () => {
+  const fixed = { name: "Fixed 500", type: "FIXED" as const, value: 500 };
+  const percent = { name: "20% off", type: "PERCENTAGE" as const, value: 20 };
+
+  it("compares percentage and fixed promotions in dinar terms, not on one scale", () => {
+    // 2 000 DA item: 20% = 400 DA, so the 500 DA fixed promotion wins.
+    expect(rankPromotionBadge([percent, fixed], 2000)).toBe(fixed);
+    // 4 000 DA item: 20% = 800 DA, so the percentage wins.
+    expect(rankPromotionBadge([percent, fixed], 4000)).toBe(percent);
+  });
+
+  it("keeps the first promotion on equal discounts", () => {
+    const first = { name: "10% A", type: "PERCENTAGE" as const, value: 10 };
+    const second = { name: "10% B", type: "PERCENTAGE" as const, value: 10 };
+    expect(rankPromotionBadge([first, second], 1000)).toBe(first);
+  });
+
+  it("never picks a promotion that yields no discount", () => {
+    expect(rankPromotionBadge([{ name: "Zero", type: "FIXED", value: 0 }], 1000)).toBeNull();
+    expect(rankPromotionBadge([], 1000)).toBeNull();
   });
 });

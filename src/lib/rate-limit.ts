@@ -178,6 +178,7 @@ export const LIMITS = {
   passwordReset: { limit: 5, windowMs: 60 * 60_000 },
   checkout: { limit: 10, windowMs: 10 * 60_000 },
   coupon: { limit: 12, windowMs: 10 * 60_000 },
+  reference: { limit: 90, windowMs: 60_000 },
   search: { limit: 60, windowMs: 60_000 },
   newsletter: { limit: 5, windowMs: 60 * 60_000 },
   contact: { limit: 5, windowMs: 60 * 60_000 },
