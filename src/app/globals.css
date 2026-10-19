@@ -100,7 +100,7 @@
    Status pastels (amber/red/emerald-100 chips) keep dark text on purpose —
    they stay readable as contrast islands in both themes.
 --------------------------------------------------------------------------- */
-[data-theme="dark"] .text-\[#9e342e\] {
+[data-theme="dark"] .text-\[\#9e342e\] {
   color: #e89aa2;
 }
 
@@ -108,15 +108,15 @@
   background-color: rgb(208 138 148 / 0.12);
 }
 
-[data-theme="dark"] .bg-\[#fff8f7\] {
+[data-theme="dark"] .bg-\[\#fff8f7\] {
   background-color: rgb(208 138 148 / 0.1);
 }
 
-[data-theme="dark"] .bg-\[#9e342e\]\/5 {
+[data-theme="dark"] .bg-\[\#9e342e\]\/5 {
   background-color: rgb(208 138 148 / 0.1);
 }
 
-[data-theme="dark"] .border-\[#9e342e\]\/30 {
+[data-theme="dark"] .border-\[\#9e342e\]\/30 {
   border-color: rgb(232 154 162 / 0.35);
 }
 
