@@ -563,6 +563,56 @@ const en: FrDictionary = {
     description: "Ordering, delivery, cash on delivery and returns — answers to common questions.",
     eyebrow: "Help",
     empty: "No questions yet — please contact us directly.",
+    items: [
+      {
+        sourceQuestion: "Comment passer commande ?",
+        category: "Orders",
+        question: "How do I place an order?",
+        answer:
+          "Add your items to the bag, enter your name, phone number, wilaya, commune and address at checkout, then confirm. We will call to confirm before dispatch.",
+      },
+      {
+        sourceQuestion: "Faut-il un compte pour commander ?",
+        category: "Orders",
+        question: "Do I need an account to order?",
+        answer:
+          "No. You can place an order without an account. An account simply keeps your order history and wish list.",
+      },
+      {
+        sourceQuestion: "Combien coûte la livraison ?",
+        category: "Delivery",
+        question: "How much does delivery cost?",
+        answer:
+          "Fees depend on your wilaya and delivery method, and are shown before you confirm. There are no hidden fees.",
+      },
+      {
+        sourceQuestion: "Quels sont les délais de livraison ?",
+        category: "Delivery",
+        question: "How long does delivery take?",
+        answer:
+          "Usually 24–72 hours in central and northern areas, and 3–7 days in the south. The estimate for your wilaya appears at checkout.",
+      },
+      {
+        sourceQuestion: "Comment payer ?",
+        category: "Payment",
+        question: "How can I pay?",
+        answer: "Payment is due on delivery. Pay in Algerian dinars when your order arrives.",
+      },
+      {
+        sourceQuestion: "Puis-je retourner ou échanger un article ?",
+        category: "Returns",
+        question: "Can I return or exchange an item?",
+        answer:
+          "Yes, within 7 days of delivery for unworn items in their original packaging. Contact customer service to arrange it.",
+      },
+      {
+        sourceQuestion: "Les bijoux ternissent-ils ?",
+        category: "Products",
+        question: "Will the jewelry tarnish?",
+        answer:
+          "Our pieces resist tarnishing. As with all fashion jewelry, they last longer when kept dry and stored in their pouch.",
+      },
+    ],
   },
   collections: {
     title: "Collections",

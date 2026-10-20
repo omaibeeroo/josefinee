@@ -20,8 +20,17 @@ export default async function FaqPage() {
     })
     .catch(() => []);
 
-  const groups = new Map<string, typeof items>();
-  for (const item of items) {
+  const localizedItems = items.map((item) => {
+    const translated = t.faq.items.find((entry) => entry.sourceQuestion === item.question);
+    return {
+      ...item,
+      category: translated?.category ?? item.category,
+      question: translated?.question ?? item.question,
+      answer: translated?.answer ?? item.answer,
+    };
+  });
+  const groups = new Map<string, typeof localizedItems>();
+  for (const item of localizedItems) {
     const list = groups.get(item.category) ?? [];
     list.push(item);
     groups.set(item.category, list);
@@ -44,9 +53,7 @@ export default async function FaqPage() {
           />
         </section>
       ))}
-      {items.length === 0 && (
-        <p className="text-center text-ink-soft">{t.faq.empty}</p>
-      )}
+      {localizedItems.length === 0 && <p className="text-center text-ink-soft">{t.faq.empty}</p>}
     </div>
   );
 }

@@ -42,7 +42,7 @@ export type ChromeProps = {
   supportEmail: string;
   supportPhone: string;
   popularSearches: string[];
-  faqItems: Array<{ question: string; answer: string }>;
+  faqItems: Array<{ category: string; question: string; answer: string }>;
 };
 
 function BrandMark({
@@ -935,10 +935,17 @@ function SiteFooter(props: ChromeProps) {
                       <Accordion
                         compact
                         light
-                        items={props.faqItems.map((item) => ({
-                          title: item.question,
-                          content: <p className="rich-text">{item.answer}</p>,
-                        }))}
+                        items={props.faqItems.map((item) => {
+                          const translated = t.faq.items.find(
+                            (entry) => entry.sourceQuestion === item.question,
+                          );
+                          return {
+                            title: translated?.question ?? item.question,
+                            content: (
+                              <p className="rich-text">{translated?.answer ?? item.answer}</p>
+                            ),
+                          };
+                        })}
                       />
                     ),
                   },

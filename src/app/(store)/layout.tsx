@@ -11,7 +11,7 @@ export default async function StoreLayout({ children }: { children: React.ReactN
     prisma.faqItem.findMany({
       where: { isPublished: true },
       orderBy: [{ sortOrder: "asc" }],
-      select: { question: true, answer: true },
+      select: { category: true, question: true, answer: true },
       take: 5,
     }),
   ]);

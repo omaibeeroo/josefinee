@@ -5,7 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { ChevronLeft, ChevronRight, Heart, Plus } from "lucide-react";
 import { useCart } from "@/components/storefront/cart-ui";
-import { CheckoutForm, CheckoutHeading } from "@/components/storefront/checkout/checkout-form";
+import { CheckoutForm } from "@/components/storefront/checkout/checkout-form";
 import { useLocale } from "@/lib/i18n/provider";
 import { Badge, Button, Modal, Price, QuantitySelector, Stars } from "@/components/ui";
 import { getCheckoutData } from "@/server/actions/checkout";
@@ -244,11 +244,22 @@ export function ProductCard({
           )}
         </div>
         <WishlistButton productId={product.id} className="absolute end-2 top-2" />
+        {!soldOut && !product.hasVariants && (
+          <button
+            type="button"
+            disabled={pending}
+            aria-label={`${t.product.addFor} ${product.name} ${t.product.toBag}`}
+            onClick={() => void quickAdd()}
+            className="product-card-quick-add absolute bottom-2 end-2 flex h-10 w-10 items-center justify-center rounded-full transition-colors disabled:opacity-60"
+          >
+            <Plus size={18} />
+          </button>
+        )}
       </div>
       <div className="flex flex-1 flex-col items-center pt-3 text-center">
         <Link
           href={`/products/${product.slug}`}
-          className="font-display text-[1.05rem] font-medium leading-snug tracking-wide hover:underline hover:decoration-line hover:underline-offset-4"
+          className="w-full truncate whitespace-nowrap font-display text-[1.05rem] font-medium leading-snug tracking-wide hover:underline hover:decoration-line hover:underline-offset-4"
         >
           {product.name}
         </Link>
@@ -259,24 +270,6 @@ export function ProductCard({
           <div className="mt-1 flex justify-center">
             <Stars value={product.ratingAvg} count={product.ratingCount} />
           </div>
-        )}
-        {!soldOut && !product.hasVariants && (
-          <button
-            type="button"
-            disabled={pending}
-            aria-label={`${t.product.addFor} ${product.name} ${t.product.toBag}`}
-            onClick={() => void quickAdd()}
-            className="product-card-quick-add mt-3 inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border px-3 py-2 text-[0.65rem] font-medium uppercase tracking-[0.12em] transition-colors disabled:opacity-60"
-          >
-            {pending ? (
-              t.product.adding
-            ) : (
-              <>
-                <Plus size={14} aria-hidden="true" />
-                {t.product.addToBag}
-              </>
-            )}
-          </button>
         )}
         {addError && (
           <p className="mt-1 text-xs text-sale" role="status">
@@ -609,7 +602,6 @@ export function AddToBagPanel({
   const [pending, setPending] = useState(false);
   const [inlineCheckoutOpen, setInlineCheckoutOpen] = useState(false);
   const [checkoutData, setCheckoutData] = useState<CheckoutData | null>(null);
-  const inlineCheckoutRef = useRef<HTMLElement | null>(null);
 
   const selected = useMemo(
     () => product.variants.find((variant) => variant.id === variantId),
@@ -620,13 +612,6 @@ export function AddToBagPanel({
   useEffect(() => {
     setQuantity((current) => Math.min(current, Math.max(1, maxQuantity)));
   }, [maxQuantity]);
-
-  useEffect(() => {
-    const section = inlineCheckoutRef.current;
-    if (!inlineCheckoutOpen || !section) return;
-    const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    section.scrollIntoView({ behavior: reducedMotion ? "auto" : "smooth", block: "start" });
-  }, [inlineCheckoutOpen, checkoutData]);
 
   async function submit(buyNow: boolean) {
     if (!selected || selected.available <= 0) {
@@ -670,27 +655,30 @@ export function AddToBagPanel({
 
   return (
     <div className="mt-6">
-      {inlineCheckoutOpen && checkoutData?.cart && checkoutData.cart.lines.length > 0 && (
-        <section
-          ref={inlineCheckoutRef}
-          aria-label={t.checkout.title}
-          className="checkout-page inline-mobile-checkout mb-6 scroll-mt-24 md:hidden"
-        >
-          <CheckoutHeading level="h2" compact showSubtitle={false} />
-          <CheckoutForm
-            wilayas={checkoutData.wilayas}
-            initialCart={{
-              items: checkoutData.cart.lines,
-              subtotal: checkoutData.cart.subtotal,
-              count: checkoutData.cart.lines.reduce((sum, line) => sum + line.quantity, 0),
-            }}
-            freeDeliveryThreshold={freeDeliveryThreshold}
-            defaultDeliveryMethod={defaultDeliveryMethod}
-            promotion={checkoutData.promotion}
-            showPaymentNote={false}
-          />
-        </section>
-      )}
+      <Modal
+        open={inlineCheckoutOpen && Boolean(checkoutData?.cart?.lines.length)}
+        onClose={() => setInlineCheckoutOpen(false)}
+        title={t.checkout.title}
+        labelledBy="product-inline-checkout-title"
+        className="inline-mobile-checkout-panel"
+      >
+        {checkoutData?.cart && checkoutData.cart.lines.length > 0 && (
+          <section className="checkout-page inline-mobile-checkout">
+            <CheckoutForm
+              wilayas={checkoutData.wilayas}
+              initialCart={{
+                items: checkoutData.cart.lines,
+                subtotal: checkoutData.cart.subtotal,
+                count: checkoutData.cart.lines.reduce((sum, line) => sum + line.quantity, 0),
+              }}
+              freeDeliveryThreshold={freeDeliveryThreshold}
+              defaultDeliveryMethod={defaultDeliveryMethod}
+              promotion={checkoutData.promotion}
+              showPaymentNote={false}
+            />
+          </section>
+        )}
+      </Modal>
       <VariantPicker product={product} selectedVariantId={variantId} onChange={setVariantId} />
       <div className="product-purchase-price mt-4 text-center">
         <Price
@@ -707,7 +695,12 @@ export function AddToBagPanel({
         </p>
       )}
       <div className="product-purchase-actions mt-4 grid gap-3 md:mt-5">
-        <QuantitySelector value={quantity} onChange={setQuantity} max={Math.max(1, maxQuantity)} />
+        <QuantitySelector
+          small
+          value={quantity}
+          onChange={setQuantity}
+          max={Math.max(1, maxQuantity)}
+        />
         <Button
           onClick={() => void submit(false)}
           disabled={pending || maxQuantity <= 0}

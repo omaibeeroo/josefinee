@@ -219,7 +219,7 @@ export function QuantitySelector({
     <div
       className={cn(
         "inline-flex items-center border hairline bg-white",
-        small ? "h-10" : "h-[2.875rem]",
+        small ? "h-8" : "h-[2.875rem]",
       )}
     >
       <button
@@ -227,12 +227,15 @@ export function QuantitySelector({
         aria-label={t.common.decreaseQuantity}
         disabled={value <= min}
         onClick={() => onChange(Math.max(min, value - 1))}
-        className="flex h-full w-10 items-center justify-center disabled:opacity-30"
+        className={cn(
+          "flex h-full items-center justify-center disabled:opacity-30",
+          small ? "w-8" : "w-10",
+        )}
       >
         <Minus size={14} />
       </button>
       <span
-        className={cn("w-8 text-center tabular-nums", small ? "text-sm" : "text-base")}
+        className={cn("text-center tabular-nums", small ? "w-6 text-xs" : "w-8 text-base")}
         aria-live="polite"
       >
         {value}
@@ -242,7 +245,10 @@ export function QuantitySelector({
         aria-label={t.common.increaseQuantity}
         disabled={value >= max}
         onClick={() => onChange(Math.min(max, value + 1))}
-        className="flex h-full w-10 items-center justify-center disabled:opacity-30"
+        className={cn(
+          "flex h-full items-center justify-center disabled:opacity-30",
+          small ? "w-8" : "w-10",
+        )}
       >
         <Plus size={14} />
       </button>
@@ -347,12 +353,14 @@ export function Modal({
   title,
   children,
   labelledBy,
+  className,
 }: {
   open: boolean;
   onClose: () => void;
   title: string;
   children: ReactNode;
   labelledBy?: string;
+  className?: string;
 }) {
   const panelRef = useRef<HTMLDivElement>(null);
   useDialogFocus(open, panelRef, onClose);
@@ -362,7 +370,7 @@ export function Modal({
   const headingId = labelledBy ?? `modal-${title.replace(/\s+/g, "-").toLowerCase()}`;
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-end justify-center sm:items-center"
+      className="fixed inset-0 z-[70] flex items-center justify-center p-2"
       role="dialog"
       aria-modal="true"
       aria-labelledby={headingId}
@@ -377,7 +385,10 @@ export function Modal({
       <div
         ref={panelRef}
         tabIndex={-1}
-        className="relative max-h-[90vh] max-h-[90svh] w-full max-w-lg overflow-y-auto overscroll-contain bg-ivory p-6 shadow-card animate-slide-up sm:p-8"
+        className={cn(
+          "relative max-h-[90vh] max-h-[90svh] w-full max-w-lg overflow-y-auto overscroll-contain bg-ivory p-6 shadow-card animate-slide-up sm:p-8",
+          className,
+        )}
       >
         <div className="mb-4 flex items-start justify-between gap-4">
           <h2 id={headingId} className="font-display text-2xl">

@@ -574,6 +574,57 @@ const fr = {
       "Commande, livraison, paiement à la livraison et retours — réponses aux questions fréquentes.",
     eyebrow: "Aide",
     empty: "Aucune question pour l’instant — contactez-nous directement.",
+    items: [
+      {
+        sourceQuestion: "Comment passer commande ?",
+        category: "Commande",
+        question: "Comment passer commande ?",
+        answer:
+          "Ajoutez vos articles au panier, finalisez la commande avec vos nom, téléphone, wilaya, commune et adresse, puis confirmez. Nous vous appellerons pour confirmer avant l’expédition.",
+      },
+      {
+        sourceQuestion: "Faut-il un compte pour commander ?",
+        category: "Commande",
+        question: "Faut-il un compte pour commander ?",
+        answer:
+          "Non. Vous pouvez commander sans compte. Un compte garde simplement votre historique et vos favoris.",
+      },
+      {
+        sourceQuestion: "Combien coûte la livraison ?",
+        category: "Livraison",
+        question: "Combien coûte la livraison ?",
+        answer:
+          "Les frais dépendent de votre wilaya et du mode de livraison, et s’affichent avant confirmation. Aucun frais caché.",
+      },
+      {
+        sourceQuestion: "Quels sont les délais de livraison ?",
+        category: "Livraison",
+        question: "Quels sont les délais de livraison ?",
+        answer:
+          "Généralement 24 à 72 heures pour le centre et le nord, et 3 à 7 jours pour le sud. L’estimation pour votre wilaya s’affiche à la commande.",
+      },
+      {
+        sourceQuestion: "Comment payer ?",
+        category: "Paiement",
+        question: "Comment payer ?",
+        answer:
+          "Paiement à la livraison. Vous payez en dinars algériens à la réception de votre commande.",
+      },
+      {
+        sourceQuestion: "Puis-je retourner ou échanger un article ?",
+        category: "Retours",
+        question: "Puis-je retourner ou échanger un article ?",
+        answer:
+          "Oui, sous 7 jours après livraison pour les articles non portés dans leur emballage d’origine. Contactez le service client pour organiser cela.",
+      },
+      {
+        sourceQuestion: "Les bijoux ternissent-ils ?",
+        category: "Produits",
+        question: "Les bijoux ternissent-ils ?",
+        answer:
+          "Nos pièces résistent au ternissement, mais comme tous les bijoux fantaisie, elles durent plus longtemps gardées au sec et rangées dans leur pochette.",
+      },
+    ],
   },
   collections: {
     title: "Collections",

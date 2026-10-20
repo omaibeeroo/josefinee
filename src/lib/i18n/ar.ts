@@ -557,6 +557,56 @@ const ar: FrDictionary = {
     description: "الطلب والتوصيل والدفع عند الاستلام والإرجاع — إجابات عن الأسئلة الشائعة.",
     eyebrow: "مساعدة",
     empty: "لا توجد أسئلة بعد — تواصلي معنا مباشرة.",
+    items: [
+      {
+        sourceQuestion: "Comment passer commande ?",
+        category: "الطلبات",
+        question: "كيف أقدّم طلبًا؟",
+        answer:
+          "أضيفي المنتجات إلى السلة، وأدخلي اسمك ورقم هاتفك والولاية والبلدية والعنوان عند الدفع، ثم أكّدي الطلب. سنتصل بكِ لتأكيده قبل الشحن.",
+      },
+      {
+        sourceQuestion: "Faut-il un compte pour commander ?",
+        category: "الطلبات",
+        question: "هل أحتاج إلى حساب لإتمام الطلب؟",
+        answer:
+          "لا. يمكنكِ تقديم الطلب دون حساب. يساعدكِ الحساب فقط على الاحتفاظ بسجل طلباتكِ وقائمة المفضلة.",
+      },
+      {
+        sourceQuestion: "Combien coûte la livraison ?",
+        category: "التوصيل",
+        question: "كم تبلغ رسوم التوصيل؟",
+        answer:
+          "تختلف الرسوم حسب ولايتكِ وطريقة التوصيل، وتظهر قبل تأكيد الطلب. لا توجد رسوم خفية.",
+      },
+      {
+        sourceQuestion: "Quels sont les délais de livraison ?",
+        category: "التوصيل",
+        question: "كم يستغرق التوصيل؟",
+        answer:
+          "عادةً من 24 إلى 72 ساعة في الوسط والشمال، ومن 3 إلى 7 أيام في الجنوب. يظهر الوقت التقديري لولايتكِ عند إتمام الطلب.",
+      },
+      {
+        sourceQuestion: "Comment payer ?",
+        category: "الدفع",
+        question: "كيف يمكنني الدفع؟",
+        answer: "الدفع عند الاستلام. ادفعي بالدينار الجزائري عند وصول طلبكِ.",
+      },
+      {
+        sourceQuestion: "Puis-je retourner ou échanger un article ?",
+        category: "الإرجاع",
+        question: "هل يمكنني إرجاع منتج أو استبداله؟",
+        answer:
+          "نعم، خلال 7 أيام من الاستلام، بشرط ألا يكون المنتج قد استُخدم وأن يكون في عبوته الأصلية. تواصلي مع خدمة العملاء لترتيب ذلك.",
+      },
+      {
+        sourceQuestion: "Les bijoux ternissent-ils ?",
+        category: "المنتجات",
+        question: "هل يتغيّر لون المجوهرات؟",
+        answer:
+          "تقاوم قطعنا تغيّر اللون. وكجميع الإكسسوارات، تدوم مدة أطول عند حفظها جافةً وفي جرابها.",
+      },
+    ],
   },
   collections: {
     title: "المجموعات",
