@@ -2950,3 +2950,114 @@ html[lang="ar"] .btn {
     font-size: 0.62rem;
   }
 }
+
+/* Make room for all three heading elements when a review rating is present. */
+.product-detail-heading > div:has(.product-detail-title + span) {
+  gap: 0.3rem;
+}
+
+.product-detail-heading > div:has(.product-detail-title + span) .product-detail-title {
+  font-size: clamp(1.3rem, 3vw, 2.2rem);
+}
+
+.product-detail-heading > div:has(.product-detail-title + span) > span {
+  gap: 0.2rem;
+  padding: 0.1rem 0.35rem;
+  font-size: 0.65rem;
+}
+
+@media (max-width: 640px) {
+  .product-detail-heading > div:has(.product-detail-title + span) .product-detail-title {
+    font-size: clamp(1rem, 4.6vw, 1.45rem);
+  }
+
+  .product-detail-heading .product-detail-status {
+    font-size: 0.58rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .product-purchase-actions {
+    grid-template-columns: minmax(4.75rem, 0.3fr) minmax(0, 1fr);
+    column-gap: 0.5rem;
+  }
+
+  .product-purchase-actions .quantity-selector {
+    width: max-content;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .product-purchase-actions .quantity-selector button {
+    width: 1.6rem;
+    min-width: 1.6rem;
+    padding-inline: 0;
+  }
+}
+
+.inline-mobile-checkout-panel {
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-y pinch-zoom;
+  scroll-behavior: auto;
+}
+
+@media (max-width: 767px) {
+  .inline-mobile-checkout-panel {
+    box-sizing: border-box;
+    min-width: 0;
+    max-width: calc(100vw - 1rem);
+    overflow-x: hidden;
+    touch-action: pan-y pinch-zoom;
+  }
+
+  .inline-mobile-checkout-panel > div:first-child {
+    min-width: 0;
+    gap: 0.5rem;
+  }
+
+  .inline-mobile-checkout-panel > div:first-child h2 {
+    min-width: 0;
+    flex: 1 1 auto;
+    overflow-wrap: anywhere;
+    font-size: clamp(1.1rem, 5vw, 1.5rem);
+    line-height: 1.2;
+  }
+
+  .inline-mobile-checkout-panel > div:first-child button {
+    flex: 0 0 2rem;
+    width: 2rem;
+    height: 2rem;
+    margin-inline-end: 0;
+  }
+
+  .inline-mobile-checkout,
+  .inline-mobile-checkout .checkout-form-layout,
+  .inline-mobile-checkout .checkout-form,
+  .inline-mobile-checkout .checkout-summary {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .inline-mobile-checkout .checkout-form-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .inline-mobile-checkout .checkout-summary .flex.gap-2 {
+    min-width: 0;
+  }
+
+  .inline-mobile-checkout .checkout-summary .flex.gap-2 > input.field {
+    width: 0;
+    min-width: 0;
+    flex: 1 1 0%;
+  }
+
+  .inline-mobile-checkout .checkout-summary .flex.gap-2 > button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+}

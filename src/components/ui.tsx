@@ -229,13 +229,13 @@ export function QuantitySelector({
         onClick={() => onChange(Math.max(min, value - 1))}
         className={cn(
           "flex h-full items-center justify-center disabled:opacity-30",
-          small ? "w-8" : "w-10",
+          small ? "w-6" : "w-10",
         )}
       >
         <Minus size={14} />
       </button>
       <span
-        className={cn("text-center tabular-nums", small ? "w-6 text-xs" : "w-8 text-base")}
+        className={cn("text-center tabular-nums", small ? "w-5 text-xs" : "w-8 text-base")}
         aria-live="polite"
       >
         {value}
@@ -247,7 +247,7 @@ export function QuantitySelector({
         onClick={() => onChange(Math.min(max, value + 1))}
         className={cn(
           "flex h-full items-center justify-center disabled:opacity-30",
-          small ? "w-8" : "w-10",
+          small ? "w-6" : "w-10",
         )}
       >
         <Plus size={14} />
