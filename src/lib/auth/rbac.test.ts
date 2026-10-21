@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { can, permissionCodes } from "@/lib/auth/rbac";
+import { can, canAccessPermission, permissionCodes, userRequiresMfa } from "@/lib/auth/rbac";
 import { PERMISSIONS, ROLE_PERMISSIONS } from "@/lib/auth/permissions";
 import type { AdminSessionUser } from "@/lib/auth/session";
 
@@ -69,5 +69,25 @@ describe("admin RBAC", () => {
     expect(can(productManager, PERMISSIONS.CONTENT_WRITE)).toBe(true);
     expect(can(support, PERMISSIONS.CONTENT_READ)).toBe(false);
     expect(can(support, PERMISSIONS.CONTENT_WRITE)).toBe(false);
+  });
+
+  it("denies every SUPER_ADMIN action until the current session satisfies MFA", () => {
+    const superAdmin = user("SUPER_ADMIN", ROLE_PERMISSIONS.SUPER_ADMIN);
+
+    expect(userRequiresMfa(superAdmin)).toBe(true);
+    expect(canAccessPermission(superAdmin, PERMISSIONS.DASHBOARD_READ, null)).toBe(false);
+    expect(canAccessPermission(superAdmin, PERMISSIONS.DASHBOARD_READ, new Date())).toBe(true);
+  });
+
+  it("gates export permissions but keeps lower-role ordinary reads available", () => {
+    const orderManager = user("ORDER_MANAGER", ROLE_PERMISSIONS.ORDER_MANAGER);
+    const analyst = user("ANALYST", ROLE_PERMISSIONS.ANALYST);
+
+    expect(userRequiresMfa(orderManager)).toBe(true);
+    expect(canAccessPermission(orderManager, PERMISSIONS.ORDERS_EXPORT, null)).toBe(false);
+    expect(canAccessPermission(orderManager, PERMISSIONS.ORDERS_EXPORT, new Date())).toBe(true);
+    expect(canAccessPermission(orderManager, PERMISSIONS.ORDERS_READ, null)).toBe(true);
+    expect(userRequiresMfa(analyst)).toBe(false);
+    expect(canAccessPermission(analyst, PERMISSIONS.ORDERS_READ, null)).toBe(true);
   });
 });

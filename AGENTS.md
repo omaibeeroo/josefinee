@@ -26,9 +26,12 @@ npm run db:migrate   # prisma migrate dev (local)
 npm run db:deploy    # prisma migrate deploy (staging/prod)
 npm run db:seed      # idempotent seed (safe to re-run)
 npm run db:studio    # inspect data
+npm audit --include=dev --audit-level=high # audit runtime + build/test tooling
 ```
 
-A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
+A change is done only when `typecheck`, `lint`, `test`, the production build,
+and the relevant dependency/security checks all pass. For a release candidate,
+start with `npm ci --include=dev` so checks use the committed lockfile.
 
 ## Layout
 
@@ -129,6 +132,34 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
     existing `revalidatePath()`. A stale badge can never oversell or
     misprice because cart/checkout revalidate availability and recompute
     prices server-side.
+19. **Production secrets must be distinct and high-entropy.** Production
+    validates `AUTH_SECRET`, `ORDER_OUTBOX_SECRET`, and `RETENTION_JOB_SECRET`
+    for placeholders, low-diversity/repeating values, minimum length, and
+    duplicate values; diagnostics may name a variable but must never print its
+    value. Use separate randomly generated values per environment. This check
+    is not proof that a secret was generated securely or has not leaked.
+20. **Trust only the overwritten client-IP header.** `TRUSTED_CLIENT_IP_HEADER`
+    must be a dedicated header stripped from inbound client requests and
+    overwritten by the trusted reverse proxy. Never treat `Forwarded` or
+    `X-Forwarded-For` chains as trusted identity. Preserve the Edge-safe
+    `src/lib/trusted-ip-header.ts` boundary; do not import Node-only modules
+    into middleware/shared configuration code.
+21. **Enforce MFA from permissions, not role labels alone.** `SUPER_ADMIN` and
+    every role with a permission in `MFA_REQUIRED_PERMISSIONS` require verified
+    TOTP for the current admin session. Keep the permission list explicit when
+    adding sensitive exports, settings, staff-management, or audit surfaces.
+    Recovery codes are single-use, stored hashed, and displayed once; never log
+    or re-display their values. Preserve password/TOTP re-query behavior and
+    validate enrollment, recovery, role changes, and session revocation.
+22. **Consent defaults to no analytics.** Pixels and third-party tracking stay
+    disabled unless the visitor has granted the applicable consent. Preserve
+    reject, revoke/settings, and localized flows; do not initialize analytics
+    before consent or infer consent from a page view.
+23. **An audit checklist is evidence, not a certification.** Keep
+    `docs/AUDIT_RELEASE_GATE.md` tied to the exact release SHA. Unchecked
+    project-owner, staging, legal, backup/restore, monitoring, and real-device
+    gates remain open; never convert a local build or a green CI run into an
+    unsupported production/accessibility/performance claim.
 
 ## October 2026 audit additions (verified fixes — preserve these)
 
@@ -206,6 +237,38 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
   fallback for older deployments). Localizing the page once silently reddened
   every production smoke run — never reintroduce body-copy matching.
 
+## 2026-10-21 full-site audit rules
+
+- **MFA schema rollout is versioned.** The staff MFA/recovery fields are added
+  by `prisma/migrations/20261021190000_staff_mfa_recovery/`. Never edit an
+  applied migration. Rehearse the change against staging and deploy it through
+  `npm run db:deploy` before enabling the matching application version.
+- **Dependency CI covers development dependencies.** Run
+  `npm audit --include=dev --audit-level=high`; do not replace it with
+  `--omit=dev`. Keep CycloneDX SBOM generation, dependency review, CodeQL,
+  Gitleaks, and Dependabot workflows enabled. Third-party GitHub Actions use
+  immutable full commit SHAs with the release tag in a comment; Dependabot
+  updates must preserve that pinning convention. Repository settings (branch
+  protection, required checks, secret scanning, and organization Gitleaks
+  licensing) still need owner verification.
+- **Do not re-expand the vendored `braces` dependency graph.** `vendor/braces`
+  contains the required runtime package, not its unused upstream Mocha/Gulp
+  development toolchain. If updating it, review the package code and audit the
+  complete regenerated lockfile; never use `npm audit fix --force` as a shortcut.
+- **Responsive assets and SEO are source changes, not external proof.** Keep
+  responsive WebP banner variants, metadata/canonical and sitemap behavior, and
+  `noindex` for authenticated account routes. Verify public HTML, image
+  delivery, Search Console behavior, and real viewport/device performance
+  before claiming deployed SEO or Core Web Vitals outcomes.
+- **Production smoke can mutate data.** `npm run smoke:production` sends an
+  authorized `POST /api/internal/retention`, which executes retention cleanup.
+  Run it only on an isolated disposable CI/staging database with test-only
+  fixtures and secrets. Never run it against valuable local or production data.
+  The deployment smoke workflow's optional authorized retention probe is also
+  destructive when its secret is configured; enable it only after the release
+  owner approves the target and expected purge. An unauthorized `401` probe is
+  safe, but the authorized route is not read-only.
+
 ## Database workflow
 
 - Edit `prisma/schema.prisma` → `npm run db:migrate` (generates SQL migration).
@@ -213,8 +276,8 @@ A change is done only when `typecheck`, `lint`, `test` and `build` all pass.
 - `.env` is local-only; `.env.example` documents every variable.
 - Seed is idempotent; the demo admin forces a password change on first login.
 - Do not edit `package-lock.json` manually. If dependencies change, run
-  `npm install --package-lock-only` and review both the lockfile and
-  `npm audit --omit=dev` output.
+  `npm install --package-lock-only`, review the full lockfile diff, then verify
+  with `npm ci --include=dev` and `npm audit --include=dev --audit-level=high`.
 
 ## Verification pattern
 
@@ -222,7 +285,11 @@ Pure logic gets Vitest tests (`*.test.ts`; `server-only` is stubbed in tests).
 For DB-backed flows, add a temporary dev-only route, exercise it over HTTP,
 assert results, then **delete the route** (never ship test routes).
 For security fixes, add a regression test for the failure mode and run the
-complete typecheck, lint, test, production-build, and dependency-audit suite.
+complete typecheck, lint, test, production-build, and full dependency-audit
+suite. `npm run build` needs a valid public HTTPS `APP_URL`; for local build
+verification use a disposable build-only value and never copy that placeholder
+into deployment configuration. Do not run authorized retention smoke probes
+against a database containing data that must be retained.
 
 ## UX bar
 
@@ -290,4 +357,9 @@ Minimal direction (October 2026 refresh, do not regress):
 20. **Verify Vercel after merges.** `main` is the production branch and other branches receive Preview deployments. A blocked deployment caused by repository/account configuration cannot be redeployed directly; after correcting configuration, push a fresh commit to create a new deployment. Confirm the new deployment reaches `READY` before calling it live.
 21. **Public-repository hygiene is mandatory.** Never commit secrets, `.env`, customer data, database dumps, private URLs, or credentials. Treat all Git history as public. Rotate any credential that appears in a commit, even if the file is later deleted.
 
-For responsive changes, run `npm run typecheck`, `npm run lint`, `npm test`, `npx prettier --check` on changed files, and `npm run build` before opening or merging a pull request.
+For responsive changes, preserve keyboard access, visible focus, and at least
+44px touch targets where practical; check narrow widths (including 320px),
+390px, 768px, 1024px, and desktop. Run `npm run typecheck`, `npm run lint`,
+`npm test`, `npx prettier --check` on changed files, and `npm run build` before
+opening or merging a pull request. Do not claim real-device/browser acceptance
+without testing those devices and recording the evidence in the release gate.

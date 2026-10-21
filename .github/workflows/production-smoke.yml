@@ -21,7 +21,8 @@ jobs:
       RETENTION_JOB_SECRET: ${{ secrets.RETENTION_JOB_SECRET }}
     steps:
       - name: Check out smoke-test scripts
-        uses: actions/checkout@v4
+        # actions/checkout v7.0.1 (verified tag -> immutable commit SHA)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Run production smoke tests
         run: ./scripts/smoke-production-deployment.sh

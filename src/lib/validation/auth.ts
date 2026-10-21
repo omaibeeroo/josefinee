@@ -5,7 +5,8 @@ import { passwordIssues } from "@/lib/auth/password";
 export const adminLoginSchema = z.object({
   email: zEmail,
   password: z.string().min(1, "Password is required.").max(200),
-  totp: zOptionalString(10),
+  // Six-digit TOTP or a one-time formatted recovery code.
+  totp: zOptionalString(32),
 });
 
 export const customerLoginSchema = z.object({

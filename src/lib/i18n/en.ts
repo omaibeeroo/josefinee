@@ -204,7 +204,7 @@ const en: FrDictionary = {
     emailLabel: "Email address",
     privacy: "Privacy",
     terms: "Terms",
-    cookies: "Cookies",
+    cookies: "Cookie settings",
     rights: "All rights reserved — content and design protected.",
   },
   home: {
@@ -678,6 +678,7 @@ const en: FrDictionary = {
     text: "We use strictly essential cookies for your bag and security — the store cannot work without them. With your permission we also use analytics cookies to understand visits and improve the boutique. Read our",
     policy: "cookie policy",
     essential: "Essential only",
+    reject: "Reject analytics",
     accept: "Accept analytics",
   },
   status: {

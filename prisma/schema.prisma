@@ -170,6 +170,7 @@ model User {
 
   role             Role                   @relation(fields: [roleId], references: [id])
   sessions         AdminSession[]
+  recoveryCodes    AdminRecoveryCode[]
   auditLogs        AuditLog[]
   statusChanges    OrderStatusHistory[]
   inventoryChanges InventoryTransaction[]
@@ -218,11 +219,24 @@ model AdminSession {
   expiresAt DateTime
   createdAt DateTime  @default(now())
   revokedAt DateTime?
+  mfaVerifiedAt DateTime?
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([expiresAt])
+}
+
+model AdminRecoveryCode {
+  id        String    @id @default(cuid())
+  userId    String
+  codeHash  String    @unique
+  createdAt DateTime  @default(now())
+  usedAt    DateTime?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, usedAt])
 }
 
 // ===========================================================================

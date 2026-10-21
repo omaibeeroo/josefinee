@@ -219,7 +219,7 @@ export function QuantitySelector({
     <div
       className={cn(
         "quantity-selector inline-flex items-center border hairline bg-white",
-        small ? "h-8" : "h-[2.875rem]",
+        small ? "h-11" : "h-[2.875rem]",
       )}
     >
       <button
@@ -229,7 +229,7 @@ export function QuantitySelector({
         onClick={() => onChange(Math.max(min, value - 1))}
         className={cn(
           "flex h-full items-center justify-center disabled:opacity-30",
-          small ? "w-6" : "w-10",
+          small ? "w-11" : "w-10",
         )}
       >
         <Minus size={14} />
@@ -247,7 +247,7 @@ export function QuantitySelector({
         onClick={() => onChange(Math.min(max, value + 1))}
         className={cn(
           "flex h-full items-center justify-center disabled:opacity-30",
-          small ? "w-6" : "w-10",
+          small ? "w-11" : "w-10",
         )}
       >
         <Plus size={14} />

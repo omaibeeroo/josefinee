@@ -6,7 +6,11 @@ import { ContactForm } from "./contact-form";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getDictionary();
-  return { title: t.contact.title, description: t.contact.description };
+  return {
+    title: t.contact.title,
+    description: t.contact.description,
+    alternates: { canonical: "/contact" },
+  };
 }
 
 export default async function ContactPage() {

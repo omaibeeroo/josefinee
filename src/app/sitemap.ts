@@ -2,17 +2,14 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { appUrl } from "@/config/brand";
 import { storefrontProductWhere } from "@/server/catalog";
+import {
+  parseSitemapId,
+  sitemapPartitionIds,
+  SITEMAP_URLS_PER_PARTITION,
+  type SitemapId,
+} from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
-
-const URLS_PER_SITEMAP = 45_000;
-type SitemapId = "fixed" | `products-${number}` | `collections-${number}` | `categories-${number}` | `pages-${number}`;
-
-function pageIds(prefix: Exclude<SitemapId, "fixed"> extends `${infer P}-${number}` ? P : never, count: number): { id: SitemapId }[] {
-  return Array.from({ length: Math.ceil(count / URLS_PER_SITEMAP) }, (_, index) => ({
-    id: `${prefix}-${index}` as SitemapId,
-  }));
-}
 
 const fixedSitemap = [{ id: "fixed" as SitemapId }];
 
@@ -26,18 +23,25 @@ export async function generateSitemaps(): Promise<Array<{ id: SitemapId }>> {
     ]);
     return [
       ...fixedSitemap,
-      ...pageIds("products", products),
-      ...pageIds("collections", collections),
-      ...pageIds("categories", categories),
-      ...pageIds("pages", pages),
+      ...sitemapPartitionIds("products", products).map((id) => ({ id })),
+      ...sitemapPartitionIds("collections", collections).map((id) => ({ id })),
+      ...sitemapPartitionIds("categories", categories).map((id) => ({ id })),
+      ...sitemapPartitionIds("pages", pages).map((id) => ({ id })),
     ];
   } catch (error) {
-    console.warn("[sitemap] dynamic partition discovery unavailable; serving fixed sitemap only", error instanceof Error ? error.name : "unknown");
+    console.warn(
+      "[sitemap] dynamic partition discovery unavailable; serving fixed sitemap only",
+      error instanceof Error ? error.name : "unknown",
+    );
     return fixedSitemap;
   }
 }
 
-export default async function sitemap({ id }: { id: string | Promise<string> }): Promise<MetadataRoute.Sitemap> {
+export default async function sitemap({
+  id,
+}: {
+  id: string | Promise<string>;
+}): Promise<MetadataRoute.Sitemap> {
   const sitemapId = await id;
   const base = appUrl();
   const now = new Date();
@@ -52,11 +56,9 @@ export default async function sitemap({ id }: { id: string | Promise<string> }):
     ];
   }
 
-  const match = /^(products|collections|categories|pages)-(\d+)$/.exec(sitemapId);
-  if (!match) return [];
-  const [, resource, pageString] = match;
-  const page = Number(pageString);
-  if (!Number.isSafeInteger(page) || page < 0) return [];
+  const parsed = parseSitemapId(sitemapId);
+  if (!parsed) return [];
+  const { resource, page } = parsed;
   let count: number;
   if (resource === "products") {
     count = await prisma.product.count({ where: storefrontProductWhere() });
@@ -67,9 +69,9 @@ export default async function sitemap({ id }: { id: string | Promise<string> }):
   } else {
     count = await prisma.page.count({ where: { isPublished: true } });
   }
-  if (page >= Math.ceil(count / URLS_PER_SITEMAP)) return [];
-  const skip = page * URLS_PER_SITEMAP;
-  const take = URLS_PER_SITEMAP;
+  if (page >= Math.ceil(count / SITEMAP_URLS_PER_PARTITION)) return [];
+  const skip = page * SITEMAP_URLS_PER_PARTITION;
+  const take = SITEMAP_URLS_PER_PARTITION;
 
   if (resource === "products") {
     const rows = await prisma.product.findMany({

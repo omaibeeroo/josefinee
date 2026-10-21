@@ -11,7 +11,13 @@ import {
 import { Button, Field, Input } from "@/components/ui";
 import { useLocale } from "@/lib/i18n/provider";
 
-export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolean }) {
+export function SecurityManager({
+  twoFactorEnabled,
+  mfaRequired,
+}: {
+  twoFactorEnabled: boolean;
+  mfaRequired: boolean;
+}) {
   const { t } = useLocale();
   const [qr, setQr] = useState<string | null>(null);
   const [manualKey, setManualKey] = useState<string | null>(null);
@@ -20,6 +26,8 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
   const [pending, setPending] = useState(false);
   const [mfaPassword, setMfaPassword] = useState("");
   const [disableToken, setDisableToken] = useState("");
+  const [mfaEnabled, setMfaEnabled] = useState(twoFactorEnabled);
+  const [recoveryCodes, setRecoveryCodes] = useState<string[] | null>(null);
 
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -45,8 +53,9 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
       message: result.ok ? t.adminSecurity.enabledNow : result.error,
     });
     if (result.ok) {
+      setMfaEnabled(true);
+      setRecoveryCodes(result.recoveryCodes);
       setQr(null);
-      window.location.reload();
     }
   }
 
@@ -76,11 +85,27 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
         <h2 className="font-display text-2xl">{t.adminSecurity.mfaTitle}</h2>
         <p className="mt-2 text-sm text-ink-soft">
           {t.adminSecurity.status}:{" "}
-          <span className="font-medium">
-            {twoFactorEnabled ? t.adminStaff.on : t.adminStaff.off}
-          </span>
+          <span className="font-medium">{mfaEnabled ? t.adminStaff.on : t.adminStaff.off}</span>
         </p>
-        {twoFactorEnabled ? (
+        {mfaRequired && !mfaEnabled && (
+          <p className="mt-3 text-sm text-sale" role="alert">
+            Multi-factor authentication is required before sensitive staff actions can be used.
+          </p>
+        )}
+        {recoveryCodes && (
+          <div className="mt-4 border border-dashed p-3">
+            <p className="font-medium">Save your one-time recovery codes</p>
+            <p className="mt-1 text-sm text-ink-soft">
+              Each code can be used once if your authenticator is unavailable.
+            </p>
+            <ul className="mt-2 grid grid-cols-2 gap-1 font-mono text-sm">
+              {recoveryCodes.map((code) => (
+                <li key={code}>{code}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {mfaEnabled ? (
           <div className="mt-4 space-y-3">
             <Field label={t.adminSecurity.currentPassword}>
               <Input
@@ -97,9 +122,11 @@ export function SecurityManager({ twoFactorEnabled }: { twoFactorEnabled: boolea
                 onChange={(event) => setDisableToken(event.target.value)}
               />
             </Field>
-            <Button variant="outline" size="sm" onClick={() => void disable()}>
-              {t.adminSecurity.disable2fa}
-            </Button>
+            {!mfaRequired && (
+              <Button variant="outline" size="sm" onClick={() => void disable()}>
+                {t.adminSecurity.disable2fa}
+              </Button>
+            )}
           </div>
         ) : qr ? (
           <form onSubmit={confirm} className="mt-4 space-y-3">

@@ -50,15 +50,28 @@ export const PERMISSIONS = {
 
 export type PermissionCode = (typeof PERMISSIONS)[keyof typeof PERMISSIONS];
 
+/**
+ * Permissions that expose or change especially sensitive staff/security data.
+ * These are intentionally explicit: adding a new export or security surface
+ * must also add it here rather than relying on a role-name shortcut.
+ */
+export const MFA_REQUIRED_PERMISSIONS: readonly PermissionCode[] = [
+  PERMISSIONS.ORDERS_EXPORT,
+  PERMISSIONS.NEWSLETTER_EXPORT,
+  PERMISSIONS.SETTINGS_READ,
+  PERMISSIONS.SETTINGS_WRITE,
+  PERMISSIONS.USERS_MANAGE,
+  PERMISSIONS.AUDIT_READ,
+];
+
+export function permissionRequiresMfa(code: PermissionCode): boolean {
+  return MFA_REQUIRED_PERMISSIONS.includes(code);
+}
+
 const ALL_PERMISSIONS: PermissionCode[] = Object.values(PERMISSIONS);
 
 export type RoleNameValue =
-  | "SUPER_ADMIN"
-  | "ADMIN"
-  | "ORDER_MANAGER"
-  | "PRODUCT_MANAGER"
-  | "CUSTOMER_SUPPORT"
-  | "ANALYST";
+  "SUPER_ADMIN" | "ADMIN" | "ORDER_MANAGER" | "PRODUCT_MANAGER" | "CUSTOMER_SUPPORT" | "ANALYST";
 
 export const ROLES: Array<{ name: RoleNameValue; label: string; description: string }> = [
   {
@@ -133,3 +146,7 @@ export const ROLE_PERMISSIONS: Record<RoleNameValue, PermissionCode[]> = {
     P.CUSTOMERS_READ,
   ],
 };
+
+export function roleRequiresMfa(roleName: RoleNameValue): boolean {
+  return roleName === "SUPER_ADMIN" || ROLE_PERMISSIONS[roleName].some(permissionRequiresMfa);
+}

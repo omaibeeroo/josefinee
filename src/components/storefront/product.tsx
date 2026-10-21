@@ -105,6 +105,7 @@ export function ProductImage({
       fill
       sizes={sizes ?? "(max-width: 768px) 50vw, 25vw"}
       priority={priority}
+      loading={priority ? undefined : "lazy"}
       unoptimized
       className={cn("object-cover", className)}
     />

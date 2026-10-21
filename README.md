@@ -44,7 +44,7 @@ docker compose up -d postgres
 
 # 4. Migrate + seed (58 wilayas, 1541 communes, RBAC, demo admin, catalog, CMS)
 npm run db:deploy
-npx prisma db seed
+npm run db:seed
 
 # 5. Run
 npm run dev
@@ -77,14 +77,15 @@ See `.env.example` for the full list. Highlights:
 | ----------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `DATABASE_URL`                                              | PostgreSQL connection string                                                                                                                                                |
 | `DIRECT_URL`                                                | Optional direct PostgreSQL connection for online index creation when `DATABASE_URL` uses a pooler                                                                           |
-| `AUTH_SECRET`                                               | 32+ random bytes — sessions, order tokens, 2FA encryption                                                                                                                   |
+| `AUTH_SECRET`                                               | Unique, high-entropy secret of at least 32 characters — sessions, order tokens, 2FA encryption                                                                              |
 | `STORAGE_DRIVER`                                            | `local` (dev) or `s3` (**required in production**)                                                                                                                          |
 | `STORAGE_BUCKET/ENDPOINT/ACCESS_KEY/SECRET_KEY/PUBLIC_HOST` | S3-compatible storage                                                                                                                                                       |
 | `EMAIL_PROVIDER/SMS_PROVIDER/WHATSAPP_PROVIDER`             | `resend` / `twilio` / `meta`, or `console` (log only)                                                                                                                       |
 | `META_PIXEL_ID`                                             | Optional server-side Meta Conversions API identifier                                                                                                                        |
 | `UPSTASH_REDIS_REST_URL/TOKEN`                              | Optional distributed rate limiting; production falls back to shared PostgreSQL buckets, while memory fallback is development/test only                                      |
-| `TRUSTED_CLIENT_IP_HEADER`                                  | Header overwritten by the trusted reverse proxy (default `x-real-ip`); required for production public mutation rate limits                                                  |
-| `ORDER_OUTBOX_SECRET`                                       | 32+ random bytes used only by the scheduled order-effect retry endpoint; required in production                                                                             |
+| `TRUSTED_CLIENT_IP_HEADER`                                  | Dedicated single-hop header overwritten by the trusted reverse proxy (default `x-real-ip`); forwarding-chain headers are rejected                                           |
+| `ORDER_OUTBOX_SECRET`                                       | Unique high-entropy secret (32+ characters) for the scheduled order-effect retry endpoint; required in production                                                           |
+| `RETENTION_JOB_SECRET`                                      | Unique high-entropy secret (32+ characters) for the scheduled data-retention endpoint; required in production                                                               |
 | `CHECKOUT_TX_TIMEOUT_MS`                                    | Optional checkout transaction budget in ms (default 5000, clamped 5000–60000). Raise only when the database is far from the app server (e.g. local dev against a remote DB) |
 
 Never commit `.env`.
@@ -93,7 +94,7 @@ In production, configure a scheduler to `POST /api/internal/order-outbox` at lea
 
 Also schedule `POST /api/internal/retention` daily with `Authorization: Bearer $RETENTION_JOB_SECRET`. It expires technical sessions, abandons stale carts, removes expired idempotency/rate-limit records, and applies the configured analytics/notification/outbox retention windows. Orders and audit logs are never deleted by this job.
 
-After a staging or production deployment, run `BASE_URL=https://your-store.example RETENTION_JOB_SECRET=... npm run smoke:production` to verify storefront readiness, a known product route, missing-product `404` behavior, and retention endpoint authorization.
+`npm run smoke:production` checks storefront readiness, a known product route, missing-product `404` behavior, and retention authorization. **The authorized retention probe runs the purge.** Run this script only against a disposable/isolated test database with test-only secrets. Do not point it at a production database or a local database containing data you need. The deployment smoke workflow always checks the unauthorized response; if the GitHub Production environment provides `RETENTION_JOB_SECRET`, the workflow also invokes the authorized retention route after deployment and purges eligible records. Configure that secret only when deployment-triggered purges are explicitly approved; otherwise leave that optional production probe disabled and test the authorized route in isolated staging.
 
 ## Architecture
 
@@ -235,6 +236,45 @@ warning-free `build`:
   escape fixed, error alerts, stock-zero figures, and destructive buttons
   keep their intended dark-theme contrast and the build is warning-free.
 
+## 2026-10-21 full-site audit remediation
+
+This source-level remediation pass addressed the supplied full-site audit in
+bounded areas. It does not by itself certify production security, accessibility,
+performance, legal compliance, or operational readiness.
+
+- **Production configuration and rate-limit trust:** production startup rejects
+  missing, placeholder-like, low-diversity/repeating, or reused
+  `AUTH_SECRET`, `ORDER_OUTBOX_SECRET`, and `RETENTION_JOB_SECRET` values.
+  Diagnostics report variable names only. Configure separate random secrets
+  for Preview/Staging/Production. `TRUSTED_CLIENT_IP_HEADER` must be a dedicated
+  header that the trusted edge strips from inbound requests and overwrites;
+  `Forwarded` and `X-Forwarded-For` chains are not accepted as trusted values.
+- **Staff MFA:** privileged roles (`SUPER_ADMIN` and any role with a designated
+  sensitive permission, including exports, settings, user management, or audit
+  access) must enroll in TOTP. MFA satisfaction is stored per admin session;
+  one-time recovery codes are stored hashed and shown once at enrollment.
+  Apply the versioned Prisma migration before deploying this code. Confirm
+  recovery codes are saved and retain a tested account-recovery procedure.
+- **Commerce and delivery integrity:** deterministic tests cover final-unit
+  inventory races, pricing/delivery validation, coupon usage races,
+  idempotent checkout recovery, and outbox retry/deduplication contracts.
+- **CI and dependencies:** CI audits runtime plus development/build/test
+  dependencies, produces a CycloneDX SBOM, and pins third-party Actions to
+  full commit SHAs. Separate workflows add dependency review, CodeQL, Gitleaks,
+  and Dependabot. `npm audit --include=dev --audit-level=high` is the local
+  dependency gate; branch protection and repository security settings still
+  require owner verification.
+- **Consent, performance, and SEO:** analytics pixels are default-off until
+  consent; accept/reject and a persistent cookie-settings entry are available
+  in all three locales. Storefront banner assets have responsive WebP variants,
+  public metadata/canonicals are explicit, and authenticated account routes are
+  marked noindex. These source changes still need browser, network, Lighthouse,
+  and Search Console verification in the target deployment.
+- **Evidence and remaining gates:** see
+  [`docs/AUDIT_RELEASE_GATE.md`](./docs/AUDIT_RELEASE_GATE.md). All unchecked
+  production-owner, staging, legal, backup/restore, monitoring, and real-device
+  items remain open until evidence is recorded there.
+
 ## Admin guide
 
 | Area                                                    | Path                                                     |
@@ -250,6 +290,11 @@ warning-free `build`:
 Staff roles: `SUPER_ADMIN, ADMIN, ORDER_MANAGER, PRODUCT_MANAGER,
 CUSTOMER_SUPPORT, ANALYST` — each with a least-privilege permission set
 (`src/lib/auth/permissions.ts`).
+
+MFA enrollment is available under **Admin → Security**. It is mandatory for
+`SUPER_ADMIN` and roles that hold a permission classified as sensitive in
+`MFA_REQUIRED_PERMISSIONS`. Recovery codes are displayed only once when
+enrollment completes; save them securely before leaving that screen.
 
 ## Storefront composer (Vitrine)
 
@@ -314,8 +359,9 @@ Test restores on a staging database before you need them.
 ## Security posture
 
 - Argon2id hashing, password policy, atomic five-failure admin login lockout
-  (15-minute lockout) + rate limits, TOTP 2FA
-  (encrypted secrets), forced password rotation for seeded accounts
+  (15-minute lockout) + rate limits, TOTP 2FA with per-session verification
+  (encrypted secrets and hashed one-time recovery codes), forced password
+  rotation for seeded accounts
 - CSRF: SameSite cookies + server-action origin checks + explicit origin check
   on mutating routes · strict CSP/HSTS/security headers (`next.config.ts`)
 - Uploads: MIME + signature validation via sharp, 8 MB cap, WebP re-encode,
@@ -348,7 +394,9 @@ The five tracked findings were addressed as follows:
    the stable key for adapter-level deduplication and tracing.
 5. **Development dependency advisory:** the depth-guarded `braces` package is
    vendored and pinned through npm overrides, avoiding the vulnerable parser
-   without downgrading Next.js. Production dependencies remain audit-clean.
+   without downgrading Next.js. Unused vendor development tooling is excluded
+   from the application install graph; audit the complete dependency tree with
+   `npm audit --include=dev --audit-level=high`.
 
 ### Admin action schemas
 
@@ -367,8 +415,11 @@ for read lookups), never a raw Prisma validation exception. When adding a new
 admin action, extend the shared schema module or add a local Zod schema and add
 malformed-input coverage to the test suite.
 
-Before deployment, run `npm ci`, `npm run typecheck`, `npm run lint`,
-`npm test`, `npm audit --omit=dev`, and `npm run build`.
+Before deployment, run `npm ci --include=dev`, `npm run typecheck`,
+`npm run lint`, `npm test`, `npm audit --include=dev --audit-level=high`, and
+`npm run build`. The production build requires a valid public HTTPS `APP_URL`;
+use the intended environment value (or a build-only placeholder for local
+verification, never as a deployment setting).
 
 ### Vercel staging and production
 
@@ -436,9 +487,9 @@ For existing databases, use `npm run db:deploy` rather than invoking `prisma mig
 
 ## Cross-browser and mobile support
 
-The storefront is designed mobile-first for narrow 360px screens through desktop layouts and is validated for current Chromium, Safari/WebKit, and Firefox browsers on Android, iPhone/iPad, tablets, and desktop. Compatibility safeguards include Android/iOS web-app metadata and `/manifest.webmanifest`, safe viewport handling for browser URL bars and iOS standalone mode, touch and coarse-pointer fallbacks, narrow-screen overflow protection, mobile-safe modal and cart-drawer scrolling, readable fallbacks when `backdrop-filter` is unavailable, a checkout selected-state fallback for browsers without CSS `:has()`, and global `prefers-reduced-motion` support.
+The storefront is designed mobile-first from narrow 320px screens through desktop layouts. Compatibility safeguards include Android/iOS web-app metadata and `/manifest.webmanifest`, safe viewport handling for browser URL bars and iOS standalone mode, touch and coarse-pointer fallbacks, narrow-screen overflow protection, mobile-safe modal and cart-drawer scrolling, readable fallbacks when `backdrop-filter` is unavailable, a checkout selected-state fallback for browsers without CSS `:has()`, and global `prefers-reduced-motion` support. Source-level support is not a substitute for current-device/browser verification; consult the release gate before claiming cross-browser, accessibility, or performance conformance.
 
-When changing mobile UI, preserve keyboard access, visible focus, minimum touch targets, readable form text (at least 16px on small screens to prevent iOS auto-zoom), and French copy. Validate at minimum at 360px, 390px, 768px, 1024px, and desktop widths. Every user-facing string must exist in all of `src/lib/i18n/fr.ts`, `en.ts`, and `ar.ts`.
+When changing mobile UI, preserve keyboard access, visible focus, 44px minimum touch targets where practical, readable form text (at least 16px on small screens to prevent iOS auto-zoom), and French copy. Validate at minimum at 320px, 360px, 390px, 768px, 1024px, and desktop widths. Every user-facing string must exist in all of `src/lib/i18n/fr.ts`, `en.ts`, and `ar.ts`.
 
 ## GitHub and Vercel deployment constraint
 

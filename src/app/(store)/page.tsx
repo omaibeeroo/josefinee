@@ -32,7 +32,14 @@ export async function generateMetadata(): Promise<Metadata> {
   const [settings, dictionary] = await Promise.all([getSettings(), getDictionary()]);
   const siteMetadata = resolveSiteMetadata(settings.seo, dictionary.siteMetadata);
   return {
+    title: siteMetadata.titleSuffix,
     description: siteMetadata.description,
+    alternates: { canonical: "/" },
+    openGraph: {
+      title: siteMetadata.titleSuffix,
+      description: siteMetadata.description,
+      type: "website",
+    },
   };
 }
 

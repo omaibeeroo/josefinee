@@ -34,14 +34,32 @@ export function AdminLoginForm() {
   return (
     <form onSubmit={submit} className="mt-8 space-y-4 border hairline bg-white p-6 md:p-8">
       <Field label={t.adminLogin.email} required>
-        <Input type="email" value={email} onChange={(event) => setEmail(event.target.value)} autoComplete="username" required />
+        <Input
+          type="email"
+          value={email}
+          onChange={(event) => setEmail(event.target.value)}
+          autoComplete="username"
+          required
+        />
       </Field>
       <Field label={t.adminLogin.password} required>
-        <Input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required />
+        <Input
+          type="password"
+          value={password}
+          onChange={(event) => setPassword(event.target.value)}
+          autoComplete="current-password"
+          required
+        />
       </Field>
       {(needsTotp || totp) && (
         <Field label={t.adminLogin.totp} required hint={t.adminLogin.totpHint}>
-          <Input value={totp} onChange={(event) => setTotp(event.target.value)} inputMode="numeric" autoComplete="one-time-code" maxLength={6} />
+          <Input
+            value={totp}
+            onChange={(event) => setTotp(event.target.value)}
+            inputMode="text"
+            autoComplete="one-time-code"
+            maxLength={32}
+          />
         </Field>
       )}
       {error && (

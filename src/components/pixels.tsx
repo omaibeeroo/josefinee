@@ -3,14 +3,16 @@
 import { useEffect } from "react";
 import Script from "next/script";
 import { usePathname } from "next/navigation";
+import { COOKIE_CONSENT_STORAGE_KEY, hasAnalyticsConsent } from "@/components/pixel-consent";
 import { serializeForInlineJsonScript, validatedPixelId } from "@/lib/script-data";
 
 function consentGiven(): boolean {
-  // Default-off: marketing pixels load only after an explicit opt-in
-  // through cookie preferences. No banner ever interrupts shopping.
+  // Default-off: marketing pixels load only after an explicit opt-in through
+  // cookie preferences. Rejection/revocation reloads the page so already
+  // initialized vendors are torn down before any subsequent page request.
   if (typeof window === "undefined") return false;
   try {
-    return window.localStorage.getItem("hanadi-cookie-consent") === "accepted";
+    return hasAnalyticsConsent(window.localStorage.getItem(COOKIE_CONSENT_STORAGE_KEY));
   } catch {
     return false;
   }
@@ -48,7 +50,8 @@ export function Pixels({
   nonce?: string;
 }) {
   const pathname = usePathname();
-  const tokenizedRoute = pathname.startsWith("/order/") || pathname.startsWith("/newsletter/unsubscribe/");
+  const tokenizedRoute =
+    pathname.startsWith("/order/") || pathname.startsWith("/newsletter/unsubscribe/");
   const safeGaId = validatedPixelId("ga", gaId);
   const safeMetaPixelId = validatedPixelId("meta", metaPixelId);
   const safeTiktokPixelId = validatedPixelId("tiktok", tiktokPixelId);

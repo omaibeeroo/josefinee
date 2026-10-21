@@ -207,7 +207,7 @@ const fr = {
     emailLabel: "Adresse e-mail",
     privacy: "Confidentialité",
     terms: "Conditions",
-    cookies: "Cookies",
+    cookies: "Paramètres cookies",
     rights: "Tous droits réservés — contenu et design protégés.",
   },
   home: {
@@ -691,6 +691,7 @@ const fr = {
     text: "Nous utilisons des cookies strictement essentiels pour votre panier et la sécurité — la boutique ne peut pas fonctionner sans eux. Avec votre accord, nous utilisons aussi des cookies d’analyse pour comprendre les visites et améliorer la boutique. Lisez notre",
     policy: "politique cookies",
     essential: "Essentiels uniquement",
+    reject: "Refuser l’analyse",
     accept: "Accepter l’analyse",
   },
   status: {

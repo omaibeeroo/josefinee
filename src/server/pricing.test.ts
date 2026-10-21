@@ -145,6 +145,15 @@ describe("server-side checkout pricing", () => {
     });
   });
 
+  it("revalidates the selected delivery rate from the database at checkout", async () => {
+    deliveryFindFirst.mockResolvedValueOnce({ price: 650 });
+
+    await expect(resolveDeliveryRate("w1", "HOME" as never)).resolves.toEqual({ price: 650 });
+    expect(deliveryFindFirst).toHaveBeenCalledWith({
+      where: { wilayaId: "w1", method: "HOME", isActive: true },
+    });
+  });
+
   it("uses the atomic database consumption result and rejects exhausted limits", async () => {
     queryRaw.mockResolvedValueOnce([{ id: "coupon-1" }]);
     await expect(
@@ -161,5 +170,37 @@ describe("server-side checkout pricing", () => {
         phone: "0550123456",
       }),
     ).rejects.toMatchObject({ code: "COUPON_USED_UP" });
+  });
+
+  it("allows only one concurrent redemption when the coupon has one remaining use", async () => {
+    let calls = 0;
+    let releaseBoth: (() => void) | undefined;
+    const bothArrived = new Promise<void>((resolve) => {
+      releaseBoth = resolve;
+    });
+    queryRaw.mockImplementation(async () => {
+      calls += 1;
+      const callNumber = calls;
+      if (calls === 2) releaseBoth?.();
+      await bothArrived;
+      return callNumber === 1 ? [{ id: "coupon-1" }] : [];
+    });
+
+    const results = await Promise.allSettled([
+      consumeCoupon({ $queryRaw: queryRaw } as never, {
+        couponId: "coupon-1",
+        phone: "0550123456",
+      }),
+      consumeCoupon({ $queryRaw: queryRaw } as never, {
+        couponId: "coupon-1",
+        phone: "0550123456",
+      }),
+    ]);
+
+    expect(results.filter((result) => result.status === "fulfilled")).toHaveLength(1);
+    expect(results.find((result) => result.status === "rejected")).toMatchObject({
+      status: "rejected",
+      reason: { code: "COUPON_USED_UP" },
+    });
   });
 });

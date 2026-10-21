@@ -34,13 +34,16 @@ async function requestContext(): Promise<{ ip: string | null; userAgent: string 
 // Staff / admin sessions
 // ---------------------------------------------------------------------------
 
-export async function createAdminSession(userId: string): Promise<void> {
+export async function createAdminSession(
+  userId: string,
+  mfaVerifiedAt: Date | null = null,
+): Promise<void> {
   const token = generateToken();
   const { ip, userAgent } = await requestContext();
   const expiresAt = new Date(Date.now() + ADMIN_SESSION_DAYS * 86_400_000);
 
   await prisma.adminSession.create({
-    data: { userId, tokenHash: hashToken(token), ip, userAgent, expiresAt },
+    data: { userId, tokenHash: hashToken(token), ip, userAgent, expiresAt, mfaVerifiedAt },
   });
 
   const store = await cookies();
@@ -58,6 +61,7 @@ export const getAdminSession = cache(async () => {
       select: {
         revokedAt: true,
         expiresAt: true,
+        mfaVerifiedAt: true,
         user: {
           select: {
             id: true,
@@ -78,7 +82,10 @@ export const getAdminSession = cache(async () => {
       },
     })
     .catch((error) => {
-      console.error("[session] admin lookup failed", error instanceof Error ? error.name : "unknown");
+      console.error(
+        "[session] admin lookup failed",
+        error instanceof Error ? error.name : "unknown",
+      );
       return null;
     });
 
@@ -114,6 +121,17 @@ export async function revokeOtherAdminSessions(userId: string): Promise<void> {
   await prisma.adminSession.updateMany({
     where: { userId, ...(token ? { tokenHash: { not: hashToken(token) } } : {}) },
     data: { revokedAt: new Date() },
+  });
+}
+
+/** Mark only the browser's current session as MFA-satisfied after enrollment. */
+export async function markCurrentAdminSessionMfaVerified(): Promise<void> {
+  const store = await cookies();
+  const token = store.get(ADMIN_COOKIE)?.value;
+  if (!token) return;
+  await prisma.adminSession.updateMany({
+    where: { tokenHash: hashToken(token), revokedAt: null },
+    data: { mfaVerifiedAt: new Date() },
   });
 }
 
@@ -158,7 +176,10 @@ export const getCustomerSession = cache(async () => {
       },
     })
     .catch((error) => {
-      console.error("[session] customer lookup failed", error instanceof Error ? error.name : "unknown");
+      console.error(
+        "[session] customer lookup failed",
+        error instanceof Error ? error.name : "unknown",
+      );
       return null;
     });
 

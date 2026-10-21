@@ -1,3 +1,5 @@
+import { isTrustedClientIpHeaderName } from "@/lib/trusted-ip-header";
+
 type Environment = Record<string, string | undefined>;
 
 function isValidDatabaseUrl(value: string | undefined): boolean {
@@ -16,7 +18,10 @@ function isValidDatabaseUrl(value: string | undefined): boolean {
 
 function hasValidStoragePublicHosts(value: string | undefined): boolean {
   if (!value?.trim()) return false;
-  const entries = value.split(",").map((entry) => entry.trim()).filter(Boolean);
+  const entries = value
+    .split(",")
+    .map((entry) => entry.trim())
+    .filter(Boolean);
   if (entries.length === 0) return false;
   return entries.every((entry) => {
     try {
@@ -40,28 +45,27 @@ export function productionEnvironmentIssues(env: Environment = process.env): str
   const issues: string[] = [];
 
   if (!isValidDatabaseUrl(env.DATABASE_URL)) {
-    issues.push("DATABASE_URL must be a valid PostgreSQL connection URL with a host and database name");
+    issues.push(
+      "DATABASE_URL must be a valid PostgreSQL connection URL with a host and database name",
+    );
   }
-  if (
-    !env.AUTH_SECRET ||
-    env.AUTH_SECRET.length < 32 ||
-    /replace-with|changeme|example/i.test(env.AUTH_SECRET)
-  ) {
-    issues.push("AUTH_SECRET must be a unique secret of at least 32 characters");
-  }
-  if (
-    !env.ORDER_OUTBOX_SECRET ||
-    env.ORDER_OUTBOX_SECRET.length < 32 ||
-    /replace-with|changeme|example/i.test(env.ORDER_OUTBOX_SECRET)
-  ) {
-    issues.push("ORDER_OUTBOX_SECRET must be a unique secret of at least 32 characters");
-  }
-  if (
-    !env.RETENTION_JOB_SECRET ||
-    env.RETENTION_JOB_SECRET.length < 32 ||
-    /replace-with|changeme|example/i.test(env.RETENTION_JOB_SECRET)
-  ) {
-    issues.push("RETENTION_JOB_SECRET must be a unique secret of at least 32 characters");
+  const secretNames = ["AUTH_SECRET", "ORDER_OUTBOX_SECRET", "RETENTION_JOB_SECRET"] as const;
+  const seenSecrets = new Set<string>();
+  for (const name of secretNames) {
+    const value = env[name];
+    if (
+      !value ||
+      value.length < 32 ||
+      /replace-with|changeme|example/i.test(value) ||
+      isLowEntropySecret(value)
+    ) {
+      // Deliberately report only the variable name and never its value.
+      issues.push(`${name} must be a unique secret of at least 32 characters`);
+    }
+    if (value && seenSecrets.has(value)) {
+      issues.push(`${name} must be different from the other production secrets`);
+    }
+    if (value) seenSecrets.add(value);
   }
   if (!env.APP_URL) {
     issues.push("APP_URL must be set to the canonical HTTPS storefront origin");
@@ -86,25 +90,36 @@ export function productionEnvironmentIssues(env: Environment = process.env): str
   }
 
   const trustedHeader = env.TRUSTED_CLIENT_IP_HEADER;
-  if (!trustedHeader || !/^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/.test(trustedHeader)) {
-    issues.push("TRUSTED_CLIENT_IP_HEADER must name a header overwritten by the trusted reverse proxy");
+  if (!isTrustedClientIpHeaderName(trustedHeader)) {
+    issues.push(
+      "TRUSTED_CLIENT_IP_HEADER must name a dedicated header overwritten by the trusted reverse proxy (not a forwarding-chain header)",
+    );
   }
   if (env.STORAGE_DRIVER !== "s3") {
     issues.push("STORAGE_DRIVER must be s3 in production");
   }
-  for (const name of ["STORAGE_BUCKET", "STORAGE_ACCESS_KEY", "STORAGE_SECRET_KEY", "STORAGE_PUBLIC_HOST"]) {
+  for (const name of [
+    "STORAGE_BUCKET",
+    "STORAGE_ACCESS_KEY",
+    "STORAGE_SECRET_KEY",
+    "STORAGE_PUBLIC_HOST",
+  ]) {
     if (!env[name]?.trim()) issues.push(`${name} must be configured for production object storage`);
   }
   if (env.STORAGE_PUBLIC_HOST?.trim() && !hasValidStoragePublicHosts(env.STORAGE_PUBLIC_HOST)) {
-    issues.push("STORAGE_PUBLIC_HOST must contain valid HTTPS hosts without credentials, query strings, or fragments");
+    issues.push(
+      "STORAGE_PUBLIC_HOST must contain valid HTTPS hosts without credentials, query strings, or fragments",
+    );
   }
 
   const emailProvider = env.EMAIL_PROVIDER ?? "console";
   if (!["console", "resend"].includes(emailProvider)) {
     issues.push("EMAIL_PROVIDER must be resend or console");
   } else if (emailProvider === "resend") {
-    if (!env.EMAIL_API_KEY?.trim()) issues.push("EMAIL_API_KEY must be configured when EMAIL_PROVIDER is resend");
-    if (!env.EMAIL_FROM?.trim()) issues.push("EMAIL_FROM must be configured when EMAIL_PROVIDER is resend");
+    if (!env.EMAIL_API_KEY?.trim())
+      issues.push("EMAIL_API_KEY must be configured when EMAIL_PROVIDER is resend");
+    if (!env.EMAIL_FROM?.trim())
+      issues.push("EMAIL_FROM must be configured when EMAIL_PROVIDER is resend");
   }
 
   const smsProvider = env.SMS_PROVIDER ?? "console";
@@ -121,7 +136,8 @@ export function productionEnvironmentIssues(env: Environment = process.env): str
     issues.push("WHATSAPP_PROVIDER must be meta or console");
   } else if (whatsappProvider === "meta") {
     for (const name of ["WHATSAPP_API_KEY", "WHATSAPP_PHONE_NUMBER_ID"]) {
-      if (!env[name]?.trim()) issues.push(`${name} must be configured when WHATSAPP_PROVIDER is meta`);
+      if (!env[name]?.trim())
+        issues.push(`${name} must be configured when WHATSAPP_PROVIDER is meta`);
     }
   }
 
@@ -129,24 +145,31 @@ export function productionEnvironmentIssues(env: Environment = process.env): str
 }
 
 /** A long secret with almost no distinct characters (e.g. 32× "a") has no
- *  real entropy despite passing length checks. */
+ * real entropy despite passing length checks. This is intentionally a
+ * conservative release gate, not a substitute for rotating secrets. */
 export function isLowEntropySecret(value: string | undefined): boolean {
   if (!value || value.length < 32) return false;
-  return new Set(value).size < 10;
+  if (new Set(value).size < 10) return true;
+
+  // Also reject deterministic cycles such as "0123456789" repeated four
+  // times, which have enough distinct characters to evade the first check.
+  for (let period = 1; period <= Math.floor(value.length / 2); period += 1) {
+    if (value.length % period !== 0) continue;
+    let repeats = true;
+    for (let index = period; index < value.length; index += 1) {
+      if (value[index] !== value[index % period]) {
+        repeats = false;
+        break;
+      }
+    }
+    if (repeats) return true;
+  }
+  return false;
 }
 
 export function assertProductionEnvironment(env: Environment = process.env): void {
   const issues = productionEnvironmentIssues(env);
   if (issues.length > 0) {
     throw new Error(`Production environment is not ready:\n- ${issues.join("\n- ")}`);
-  }
-  // Warning only (never a boot blocker): rotating a live secret on short
-  // notice would be worse than flagging it for the next maintenance window.
-  for (const name of ["AUTH_SECRET", "ORDER_OUTBOX_SECRET", "RETENTION_JOB_SECRET"] as const) {
-    if (isLowEntropySecret(env[name])) {
-      console.error(
-        `[security] ${name} looks low-entropy; rotate it to 32+ random bytes when convenient.`,
-      );
-    }
   }
 }

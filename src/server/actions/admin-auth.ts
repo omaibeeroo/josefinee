@@ -8,6 +8,7 @@ import {
   createAdminSession,
   destroyAdminSession,
   getAdminSession,
+  markCurrentAdminSessionMfaVerified,
   revokeOtherAdminSessions,
 } from "@/lib/auth/session";
 import { requirePermission } from "@/lib/auth/rbac";
@@ -21,6 +22,12 @@ import {
   totpUri,
   verifyTotp,
 } from "@/lib/auth/totp";
+import {
+  consumeAdminRecoveryCode,
+  deleteAdminRecoveryCodes,
+  replaceAdminRecoveryCodes,
+} from "@/lib/auth/recovery";
+import { roleRequiresMfa } from "@/lib/auth/permissions";
 import { getSettings } from "@/lib/settings";
 import { getActionT, getAdminActionT } from "@/lib/i18n/server";
 import { z } from "zod";
@@ -134,7 +141,12 @@ export async function adminLoginAction(input: { email: string; password: string;
     return { ok: false as const, error: t.badCredentials };
   }
 
-  if (user.twoFactorEnabled && user.twoFactorSecret) {
+  const mfaRequired = roleRequiresMfa(user.role.name);
+  let mfaVerifiedAt: Date | null = null;
+  if (user.twoFactorEnabled) {
+    if (!user.twoFactorSecret) {
+      return { ok: false as const, error: t.totpInvalidConfig };
+    }
     if (!parsed.data.totp) {
       return {
         ok: false as const,
@@ -151,7 +163,9 @@ export async function adminLoginAction(input: { email: string; password: string;
         error: t.totpInvalidConfig,
       };
     }
-    if (!verifyTotp(secret, parsed.data.totp)) {
+    const totpValid = verifyTotp(secret, parsed.data.totp);
+    const recoveryValid = !totpValid && (await consumeAdminRecoveryCode(user.id, parsed.data.totp));
+    if (!totpValid && !recoveryValid) {
       // TOTP guessing counts toward the same lockout as password guessing.
       await registerFailedAdminLogin(user.id);
       await recordAudit({
@@ -164,6 +178,7 @@ export async function adminLoginAction(input: { email: string; password: string;
       });
       return { ok: false as const, error: t.totpInvalid, needsTotp: true as const };
     }
+    mfaVerifiedAt = new Date();
   }
 
   await prisma.user.update({
@@ -177,9 +192,10 @@ export async function adminLoginAction(input: { email: string; password: string;
     resourceId: user.id,
     ip,
   });
-  await createAdminSession(user.id);
+  await createAdminSession(user.id, mfaVerifiedAt);
 
   if (user.mustChangePassword) redirect("/admin/first-login");
+  if (mfaRequired && !mfaVerifiedAt) redirect("/admin/security?mfa=required");
   redirect("/admin");
 }
 
@@ -227,6 +243,9 @@ export async function adminFirstLoginAction(input: { current: string; next: stri
     resource: "User",
     resourceId: session.user.id,
   });
+  if (roleRequiresMfa(session.user.role.name) && !session.user.twoFactorEnabled) {
+    redirect("/admin/security?mfa=required");
+  }
   redirect("/admin");
 }
 
@@ -345,19 +364,27 @@ export async function confirm2faSetupAction(token: string) {
     where: { id: session.user.id },
     data: { twoFactorEnabled: true },
   });
+  const recoveryCodes = await replaceAdminRecoveryCodes(session.user.id);
+  await markCurrentAdminSessionMfaVerified();
   await recordAudit({
     actorUserId: session.user.id,
     action: "ADMIN_2FA_ENABLED",
     resource: "User",
     resourceId: session.user.id,
   });
-  return { ok: true as const };
+  return { ok: true as const, recoveryCodes };
 }
 
 export async function disable2faAction(input: { currentPassword: string; token: string }) {
   const session = await getAdminSession();
   if (!session) redirect("/admin/login");
   redirectIfPasswordChangeRequired(session.user.mustChangePassword);
+  if (roleRequiresMfa(session.user.role.name)) {
+    return {
+      ok: false as const,
+      error: "MFA is required for this account and cannot be disabled.",
+    };
+  }
   const t = await getActionT();
   try {
     await enforceRateLimit({ ...LIMITS.login, key: `2fa-disable:${session.user.id}` });
@@ -386,12 +413,18 @@ export async function disable2faAction(input: { currentPassword: string; token: 
     where: { id: session.user.id },
     data: { twoFactorEnabled: false, twoFactorSecret: null },
   });
+  await deleteAdminRecoveryCodes(session.user.id);
+  await prisma.adminSession.updateMany({
+    where: { userId: session.user.id },
+    data: { revokedAt: new Date() },
+  });
   await recordAudit({
     actorUserId: session.user.id,
     action: "ADMIN_2FA_DISABLED",
     resource: "User",
     resourceId: session.user.id,
   });
+  await destroyAdminSession();
   return { ok: true as const };
 }
 

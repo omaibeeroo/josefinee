@@ -9,7 +9,16 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const t = await getDictionary();
-  return { title: t.collections.title, description: t.collections.description };
+  return {
+    title: t.collections.title,
+    description: t.collections.description,
+    alternates: { canonical: "/collections" },
+    openGraph: {
+      title: t.collections.title,
+      description: t.collections.description,
+      type: "website",
+    },
+  };
 }
 
 export default async function CollectionsPage() {
@@ -51,6 +60,7 @@ export default async function CollectionsPage() {
                     alt={collection.name}
                     fill
                     sizes="(max-width: 768px) 100vw, 50vw"
+                    loading="lazy"
                     unoptimized
                     className="object-cover"
                   />

@@ -10,6 +10,10 @@ import { formatNumber } from "@/lib/money";
 import type { HomepageSettings } from "@/lib/settings";
 import type { StoreProductCard } from "@/server/catalog";
 import { ProductImage } from "@/components/storefront/product";
+import {
+  ResponsiveBannerImage,
+  type ResponsiveBannerAsset,
+} from "@/components/storefront/responsive-banner";
 
 /* ------------------------------------------------------------------ Hero */
 
@@ -21,16 +25,19 @@ export function Hero({ hero }: { hero: HomepageSettings["hero"] }) {
       {hasImage ? (
         <>
           <div className="relative aspect-[4/5] w-full sm:aspect-[16/10] md:aspect-[21/9]">
-            <Image
-              src={hero.imageMobile || hero.imageDesktop}
-              alt={hero.headline}
-              fill
-              priority
-              fetchPriority="high"
-              unoptimized
-              sizes="100vw"
-              className="object-cover motion-safe:animate-hero-image"
-            />
+            <picture>
+              {hero.imageMobile && <source media="(max-width: 767px)" srcSet={hero.imageMobile} />}
+              <Image
+                src={hero.imageDesktop}
+                alt={hero.headline}
+                fill
+                priority
+                fetchPriority="high"
+                unoptimized
+                sizes="100vw"
+                className="object-cover motion-safe:animate-hero-image"
+              />
+            </picture>
           </div>
           <div className="absolute inset-0 bg-gradient-to-t from-ink/70 via-ink/15 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 pb-10 md:pb-16">
@@ -215,11 +222,11 @@ export function ProductSpotlight({ product }: { product: StoreProductCard }) {
 export type CategoryTile = { name: string; slug: string; image: string | null; count: number };
 
 /** Editorial placeholders so a category tile never renders empty. */
-const CATEGORY_PLACEHOLDERS = [
-  "/banners/cat-bags.webp",
-  "/banners/cat-jewelry.webp",
-  "/banners/cat-bags-wallets.webp",
-  "/banners/cat-clothing.webp",
+const CATEGORY_PLACEHOLDERS: ResponsiveBannerAsset[] = [
+  "cat-bags",
+  "cat-jewelry",
+  "cat-bags-wallets",
+  "cat-clothing",
 ];
 
 export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
@@ -242,8 +249,8 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
       </Reveal>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-5">
         {categories.map((category, index) => {
-          const image =
-            category.image ?? CATEGORY_PLACEHOLDERS[index % CATEGORY_PLACEHOLDERS.length]!;
+          const image = category.image;
+          const placeholder = CATEGORY_PLACEHOLDERS[index % CATEGORY_PLACEHOLDERS.length]!;
           return (
             <Reveal key={category.slug} delay={Math.min(index, 5) * 70}>
               <Link
@@ -251,14 +258,24 @@ export function CategoryGrid({ categories }: { categories: CategoryTile[] }) {
                 className="relative block overflow-hidden bg-cream"
               >
                 <div className="relative aspect-[3/4] w-full">
-                  <Image
-                    src={image}
-                    alt={category.name}
-                    fill
-                    sizes="(max-width: 768px) 50vw, 16vw"
-                    unoptimized
-                    className="object-cover"
-                  />
+                  {image ? (
+                    <Image
+                      src={image}
+                      alt={category.name}
+                      fill
+                      sizes="(max-width: 768px) 50vw, 16vw"
+                      loading="lazy"
+                      unoptimized
+                      className="object-cover"
+                    />
+                  ) : (
+                    <ResponsiveBannerImage
+                      asset={placeholder}
+                      alt={category.name}
+                      sizes="(max-width: 768px) 50vw, 16vw"
+                      className="object-cover"
+                    />
+                  )}
                   <div className="absolute inset-0 bg-gradient-to-t from-ink/50 to-transparent" />
                   <div className="absolute inset-x-0 bottom-0 p-3 overlay-text md:p-4">
                     <p className="text-sm font-medium md:text-base">{category.name}</p>

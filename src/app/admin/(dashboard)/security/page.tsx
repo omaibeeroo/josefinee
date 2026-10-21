@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth/session";
+import { userRequiresMfa } from "@/lib/auth/rbac";
 import { getDictionary } from "@/lib/i18n/server";
 import { PageHeader } from "@/components/admin/ui";
 import { SecurityManager } from "./security-manager";
@@ -12,7 +13,10 @@ export default async function AdminSecurityPage() {
   return (
     <div>
       <PageHeader title={t.adminPages.securityTitle} description={t.adminPages.securityDesc} />
-      <SecurityManager twoFactorEnabled={session.user.twoFactorEnabled} />
+      <SecurityManager
+        twoFactorEnabled={session.user.twoFactorEnabled}
+        mfaRequired={userRequiresMfa(session.user)}
+      />
     </div>
   );
 }

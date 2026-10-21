@@ -46,10 +46,12 @@ jobs:
 
     steps:
       - name: Check out source
-        uses: actions/checkout@v4
+        # actions/checkout v7.0.1 (verified tag -> immutable commit SHA)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
 
       - name: Set up Node.js
-        uses: actions/setup-node@v4
+        # actions/setup-node v7.1.0 (verified tag -> immutable commit SHA)
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
         with:
           node-version: 20
           cache: npm
@@ -77,8 +79,22 @@ jobs:
       - name: Test
         run: npm test
 
-      - name: Audit production dependencies
-        run: npm audit --omit=dev
+      - name: Audit all installed dependencies
+        # Include runtime, dev, build, and test dependency trees. The policy documents
+        # the high/critical failure threshold and time-bound exception process.
+        run: npm audit --include=dev --audit-level=high
+
+      - name: Generate CycloneDX SBOM
+        # anchore/sbom-action v0.24.3 (verified tag -> immutable commit SHA)
+        uses: anchore/sbom-action@fffec3d851af758d56fee099cf3fbf8aa8779843
+        with:
+          path: .
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+          artifact-name: hanadi-sbom-${{ github.sha }}
+          upload-artifact: true
+          upload-artifact-retention: 14
+          upload-release-assets: false
 
       - name: Build standalone application
         run: npm run build
@@ -141,7 +157,8 @@ jobs:
             -C .next/standalone .
 
       - name: Upload standalone deployment artifact
-        uses: actions/upload-artifact@v4
+        # actions/upload-artifact v7.0.2 (verified tag -> immutable commit SHA)
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: hanadi-standalone-${{ github.sha }}
           path: hanadi-standalone-${{ github.sha }}.tar.gz

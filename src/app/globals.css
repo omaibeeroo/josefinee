@@ -344,6 +344,24 @@ html.theme-switching *::after {
   animation-duration: 0s !important;
 }
 
+/* Respect the operating system's reduced-motion preference. Keep the layout
+ * and state changes, but remove movement and smooth scrolling that can make
+ * navigation, dialogs, and focus changes difficult to follow. */
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
 [data-theme="dark"] {
   --shadow-card: 0 1px 2px rgb(0 0 0 / 0.28), 0 24px 54px -30px rgb(0 0 0 / 0.72);
   --shadow-drawer: -24px 0 64px -30px rgb(0 0 0 / 0.7);
@@ -2978,7 +2996,7 @@ html[lang="ar"] .btn {
 
 @media (max-width: 767px) {
   .product-purchase-actions {
-    grid-template-columns: minmax(5.5rem, 0.34fr) minmax(0, 1fr);
+    grid-template-columns: minmax(7rem, 0.4fr) minmax(0, 1fr);
     column-gap: 0.5rem;
   }
 
@@ -2989,8 +3007,8 @@ html[lang="ar"] .btn {
   }
 
   .product-purchase-actions .quantity-selector button {
-    width: 2rem;
-    min-width: 2rem;
+    width: 2.75rem;
+    min-width: 2.75rem;
     padding-inline: 0;
   }
 }

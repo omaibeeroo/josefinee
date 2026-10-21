@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { getCustomerSession } from "@/lib/auth/session";
 import { logoutAction } from "@/server/actions/engagement";
@@ -5,6 +6,9 @@ import { getDictionary } from "@/lib/i18n/server";
 import { AccountTabs } from "./account-tabs";
 
 export const dynamic = "force-dynamic";
+export const metadata: Metadata = {
+  robots: { index: false, follow: false },
+};
 
 export default async function AccountLayout({ children }: { children: React.ReactNode }) {
   const session = await getCustomerSession();
@@ -21,7 +25,10 @@ export default async function AccountLayout({ children }: { children: React.Reac
           </h1>
         </div>
         <form action={logoutAction}>
-          <button type="submit" className="text-xs uppercase tracking-[0.16em] underline underline-offset-4">
+          <button
+            type="submit"
+            className="text-xs uppercase tracking-[0.16em] underline underline-offset-4"
+          >
             {t.account.signOut}
           </button>
         </form>

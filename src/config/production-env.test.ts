@@ -1,9 +1,14 @@
 import { describe, expect, it } from "vitest";
-import { isLowEntropySecret, productionEnvironmentIssues } from "./production-env";
+import {
+  assertProductionEnvironment,
+  isLowEntropySecret,
+  productionEnvironmentIssues,
+} from "./production-env";
 
 const validProductionEnv = {
   NODE_ENV: "production",
-  DATABASE_URL: "postgresql://app-user:test-only-password@db.example.test:5432/hanadi_store?schema=public",
+  DATABASE_URL:
+    "postgresql://app-user:test-only-password@db.example.test:5432/hanadi_store?schema=public",
   AUTH_SECRET: "unit-test-secret-value-that-is-not-used-outside-tests",
   ORDER_OUTBOX_SECRET: "separate-unit-test-outbox-secret-value",
   RETENTION_JOB_SECRET: "separate-unit-test-retention-secret-value",
@@ -27,12 +32,20 @@ describe("productionEnvironmentIssues", () => {
 
   it("reports missing production settings by name only", () => {
     const issues = productionEnvironmentIssues({ NODE_ENV: "production" });
-    expect(issues).toContain("DATABASE_URL must be a valid PostgreSQL connection URL with a host and database name");
+    expect(issues).toContain(
+      "DATABASE_URL must be a valid PostgreSQL connection URL with a host and database name",
+    );
     expect(issues).toContain("AUTH_SECRET must be a unique secret of at least 32 characters");
-    expect(issues).toContain("ORDER_OUTBOX_SECRET must be a unique secret of at least 32 characters");
-    expect(issues).toContain("RETENTION_JOB_SECRET must be a unique secret of at least 32 characters");
+    expect(issues).toContain(
+      "ORDER_OUTBOX_SECRET must be a unique secret of at least 32 characters",
+    );
+    expect(issues).toContain(
+      "RETENTION_JOB_SECRET must be a unique secret of at least 32 characters",
+    );
     expect(issues).toContain("APP_URL must be set to the canonical HTTPS storefront origin");
-    expect(issues).toContain("TRUSTED_CLIENT_IP_HEADER must name a header overwritten by the trusted reverse proxy");
+    expect(issues).toContain(
+      "TRUSTED_CLIENT_IP_HEADER must name a dedicated header overwritten by the trusted reverse proxy (not a forwarding-chain header)",
+    );
     expect(issues).toContain("STORAGE_DRIVER must be s3 in production");
   });
 
@@ -41,13 +54,17 @@ describe("productionEnvironmentIssues", () => {
       ...validProductionEnv,
       DATABASE_URL: "postgres://",
     });
-    expect(databaseIssues).toContain("DATABASE_URL must be a valid PostgreSQL connection URL with a host and database name");
+    expect(databaseIssues).toContain(
+      "DATABASE_URL must be a valid PostgreSQL connection URL with a host and database name",
+    );
 
     const storageIssues = productionEnvironmentIssues({
       ...validProductionEnv,
       STORAGE_PUBLIC_HOST: "http://cdn.example.test,https://user:password@other.example.test",
     });
-    expect(storageIssues).toContain("STORAGE_PUBLIC_HOST must contain valid HTTPS hosts without credentials, query strings, or fragments");
+    expect(storageIssues).toContain(
+      "STORAGE_PUBLIC_HOST must contain valid HTTPS hosts without credentials, query strings, or fragments",
+    );
   });
 
   it("rejects local HTTP origins and unsanitized proxy headers", () => {
@@ -57,7 +74,9 @@ describe("productionEnvironmentIssues", () => {
       TRUSTED_CLIENT_IP_HEADER: "x-forwarded-for, x-real-ip",
     });
     expect(issues).toContain("APP_URL must be a canonical HTTPS origin, not localhost");
-    expect(issues).toContain("TRUSTED_CLIENT_IP_HEADER must name a header overwritten by the trusted reverse proxy");
+    expect(issues).toContain(
+      "TRUSTED_CLIENT_IP_HEADER must name a dedicated header overwritten by the trusted reverse proxy (not a forwarding-chain header)",
+    );
   });
 
   it("requires credentials when a real notification provider is enabled", () => {
@@ -75,9 +94,43 @@ describe("productionEnvironmentIssues", () => {
 
   it("flags low-entropy secrets without failing length checks", () => {
     expect(isLowEntropySecret("a".repeat(32))).toBe(true);
+    expect(isLowEntropySecret("0123456789".repeat(4))).toBe(true);
     expect(isLowEntropySecret("unit-test-secret-value-that-is-not-used-outside-tests")).toBe(false);
     expect(isLowEntropySecret(undefined)).toBe(false);
     expect(isLowEntropySecret("short")).toBe(false);
+  });
+
+  it("treats low-entropy secrets as production release blockers", () => {
+    const issues = productionEnvironmentIssues({
+      ...validProductionEnv,
+      AUTH_SECRET: "a".repeat(32),
+    });
+    expect(issues).toContain("AUTH_SECRET must be a unique secret of at least 32 characters");
+    expect(() =>
+      assertProductionEnvironment({ ...validProductionEnv, AUTH_SECRET: "a".repeat(32) }),
+    ).toThrow(/AUTH_SECRET must be a unique secret/);
+  });
+
+  it("rejects reused production secrets without exposing their values", () => {
+    const reusedSecret = "same-production-secret-value-with-enough-length";
+    const env = {
+      ...validProductionEnv,
+      AUTH_SECRET: reusedSecret,
+      ORDER_OUTBOX_SECRET: reusedSecret,
+    };
+    const issues = productionEnvironmentIssues(env);
+    expect(issues).toContain(
+      "ORDER_OUTBOX_SECRET must be different from the other production secrets",
+    );
+    expect(() => assertProductionEnvironment(env)).toThrow(/ORDER_OUTBOX_SECRET must be different/);
+    let thrown: unknown;
+    try {
+      assertProductionEnvironment(env);
+    } catch (error) {
+      thrown = error;
+    }
+    expect(thrown).toBeInstanceOf(Error);
+    expect((thrown as Error).message).not.toContain(reusedSecret);
   });
 
   it("rejects unknown notification providers", () => {

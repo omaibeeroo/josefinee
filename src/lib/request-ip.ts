@@ -1,4 +1,5 @@
 import { isIP } from "node:net";
+import { isTrustedClientIpHeaderName } from "./trusted-ip-header";
 
 type HeaderReader = Pick<Headers, "get">;
 
@@ -12,8 +13,14 @@ export function extractClientIp(
   options: { production?: boolean; trustedHeader?: string } = {},
 ): string | null {
   const production = options.production ?? process.env.NODE_ENV === "production";
-  const trustedHeader = options.trustedHeader ?? process.env.TRUSTED_CLIENT_IP_HEADER ?? "x-real-ip";
-  if (!/^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/.test(trustedHeader)) return null;
+  const trustedHeader = (
+    options.trustedHeader ??
+    process.env.TRUSTED_CLIENT_IP_HEADER ??
+    "x-real-ip"
+  )
+    .trim()
+    .toLowerCase();
+  if (!isTrustedClientIpHeaderName(trustedHeader)) return null;
 
   const trustedValue = headers.get(trustedHeader)?.trim();
   if (trustedValue && !trustedValue.includes(",") && isIP(trustedValue) !== 0) return trustedValue;

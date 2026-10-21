@@ -25,6 +25,7 @@ import { subscribeNewsletterAction } from "@/server/actions/engagement";
 import { Accordion, Honeypot, useDialogFocus } from "@/components/ui";
 import { openCookieSettings } from "@/components/cookie-consent";
 import { cn } from "@/lib/utils";
+import { ResponsiveBannerImage } from "@/components/storefront/responsive-banner";
 
 type NavCategory = {
   name: string;
@@ -878,14 +879,7 @@ function SiteFooter(props: ChromeProps) {
     <footer className="site-footer relative mt-3 overflow-hidden">
       {/* Full-bleed photo banner behind the whole footer, like the top hero. */}
       <div className="absolute inset-0" aria-hidden="true">
-        <Image
-          src="/banners/footer-brand.webp"
-          alt=""
-          fill
-          sizes="100vw"
-          unoptimized
-          className="object-cover"
-        />
+        <ResponsiveBannerImage asset="footer" alt="" sizes="100vw" className="object-cover" />
         <div className="absolute inset-0 bg-gradient-to-t from-ink/75 via-ink/45 to-ink/60" />
       </div>
       <div className="relative overlay-text">
@@ -1030,13 +1024,23 @@ function SiteFooter(props: ChromeProps) {
               © {year} {props.brandName} · {t.footer.rights}
             </p>
             <div className="flex flex-wrap justify-end gap-x-3 gap-y-1 md:gap-x-5">
-              <Link href="/pages/privacy-policy" className="hover:text-[#fff]">
+              <Link
+                href="/pages/privacy-policy"
+                className="inline-flex min-h-11 items-center hover:text-[#fff]"
+              >
                 {t.footer.privacy}
               </Link>
-              <Link href="/pages/terms" className="hover:text-[#fff]">
+              <Link
+                href="/pages/terms"
+                className="inline-flex min-h-11 items-center hover:text-[#fff]"
+              >
                 {t.footer.terms}
               </Link>
-              <button type="button" onClick={openCookieSettings} className="hover:text-[#fff]">
+              <button
+                type="button"
+                onClick={openCookieSettings}
+                className="inline-flex min-h-11 items-center underline underline-offset-4 hover:text-[#fff]"
+              >
                 {t.footer.cookies}
               </button>
             </div>
