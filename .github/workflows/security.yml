@@ -42,7 +42,7 @@ jobs:
 
       - name: Initialize CodeQL
         # github/codeql-action v3 (verified tag -> immutable commit SHA)
-        uses: github/codeql-action/init@5c8ea125689a2c5ae2672d1d914ac4bcd95d1b4b
+        uses: github/codeql-action/init@4bfa242aa49c5f7c6770b98670d354a7dfac05f8
         with:
           languages: javascript-typescript
           queries: security-and-quality
