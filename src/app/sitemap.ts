@@ -13,6 +13,13 @@ export const dynamic = "force-dynamic";
 
 const fixedSitemap = [{ id: "fixed" as SitemapId }];
 
+export class SitemapDiscoveryError extends Error {
+  constructor() {
+    super("Sitemap partition discovery failed");
+    this.name = "SitemapDiscoveryError";
+  }
+}
+
 export async function generateSitemaps(): Promise<Array<{ id: SitemapId }>> {
   try {
     const [products, collections, categories, pages] = await Promise.all([
@@ -33,7 +40,7 @@ export async function generateSitemaps(): Promise<Array<{ id: SitemapId }>> {
       "[sitemap] dynamic partition discovery unavailable; serving fixed sitemap only",
       error instanceof Error ? error.name : "unknown",
     );
-    return fixedSitemap;
+    throw new SitemapDiscoveryError();
   }
 }
 

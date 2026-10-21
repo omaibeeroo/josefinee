@@ -285,7 +285,8 @@ export async function changeOrderStatusAction(
               });
         // The customer counts as notified when at least one channel actually
         // delivered; a channel switched off in settings is merchant intent
-        // (skipped), not a failure. Partial channel failures are audited.
+        // (skipped), not a failure. Partial failures and uncertain provider
+        // outcomes are audited and never reported as fully notified.
         notified = dispatchResult.sent.length > 0 || dispatchResult.skipped;
         if (dispatchResult.failed.length > 0) {
           await recordAudit({
@@ -294,6 +295,15 @@ export async function changeOrderStatusAction(
             resource: "Order",
             resourceId: orderId,
             metadata: { to: status, channels: dispatchResult.failed },
+          });
+        }
+        if (dispatchResult.uncertain.length > 0) {
+          await recordAudit({
+            actorUserId: actor.id,
+            action: "ORDER_NOTIFICATION_UNCERTAIN",
+            resource: "Order",
+            resourceId: orderId,
+            metadata: { to: status, channels: dispatchResult.uncertain },
           });
         }
       } catch {

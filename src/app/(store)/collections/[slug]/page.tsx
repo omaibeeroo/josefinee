@@ -1,35 +1,18 @@
 import type { Metadata } from "next";
-import { cache } from "react";
 import { after } from "next/server";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import { getStorefrontProducts } from "@/server/catalog";
+import { getStorefrontCollection, getStorefrontProducts } from "@/server/catalog";
 import { trackEvent, ANALYTICS_EVENTS } from "@/server/analytics";
 import { CatalogToolbar, ProductGrid } from "@/components/storefront/catalog-ui";
 import { EmptyState } from "@/components/ui";
 import { Pagination } from "@/components/pagination";
 import { parseCatalogParams, withPage } from "../../catalog-helpers";
 import { getDictionary } from "@/lib/i18n/server";
+import { canOptimizeImageUrl } from "@/lib/image-url";
 
 export const dynamic = "force-dynamic";
-
-const getCollection = cache((slug: string) =>
-  prisma.collection.findFirst({
-    where: { slug, isActive: true },
-    select: {
-      id: true,
-      name: true,
-      slug: true,
-      description: true,
-      image: true,
-      type: true,
-      seoTitle: true,
-      seoDescription: true,
-    },
-  }),
-);
 
 export async function generateMetadata({
   params,
@@ -37,7 +20,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const collection = await getCollection(slug);
+  const collection = await getStorefrontCollection(slug);
   if (!collection) notFound();
   const title = collection.seoTitle || collection.name;
   const description = collection.seoDescription || collection.description || undefined;
@@ -70,7 +53,7 @@ export default async function CollectionPage({
 }) {
   const { slug } = await params;
   const queryParams = await searchParams;
-  const collection = await getCollection(slug);
+  const collection = await getStorefrontCollection(slug);
   if (!collection) notFound();
 
   const query = parseCatalogParams(queryParams);
@@ -105,7 +88,7 @@ export default async function CollectionPage({
               fill
               sizes="(max-width: 768px) 100vw, 1200px"
               priority
-              unoptimized
+              unoptimized={!canOptimizeImageUrl(collection.image)}
               className="object-cover"
             />
           </div>

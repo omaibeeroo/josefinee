@@ -1,7 +1,10 @@
 import "server-only";
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { CACHE_TAG_NAVIGATION, CATALOG_REVALIDATE_SECONDS } from "@/lib/cache";
+import {
+  CACHE_TAG_NAVIGATION,
+  CATALOG_REVALIDATE_SECONDS,
+} from "@/lib/cache";
 
 export type NavCategory = {
   name: string;
@@ -57,6 +60,35 @@ export async function getNavigation(): Promise<{
   return getNavigationCached();
 }
 
+export type PublicFaqItem = { category: string; question: string; answer: string };
+
+const getFaqItemsCached = unstable_cache(
+  async (): Promise<PublicFaqItem[]> =>
+    prisma.faqItem.findMany({
+      where: { isPublished: true },
+      orderBy: [{ sortOrder: "asc" }],
+      select: { category: true, question: true, answer: true },
+      take: 5,
+    }),
+  ["navigation:faq"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_NAVIGATION] },
+);
+
+/** Small, tagged FAQ payload used by the shared storefront shell. */
+export function getFaqItems(): Promise<PublicFaqItem[]> {
+  return getFaqItemsCached();
+}
+
+/** Only simple human-readable terms are eligible for public popularity display. */
+export function publicSearchTerm(term: string): string | null {
+  const cleaned = term.trim().replace(/\s+/g, " ").toLowerCase();
+  if (cleaned.length < 2 || cleaned.length > 40) return null;
+  // This deliberately excludes digits and punctuation used by phone numbers,
+  // order references, emails, URLs, and arbitrary identifiers.
+  if (!/^[\p{L}\p{M}\s&'’-]+$/u.test(cleaned)) return null;
+  return cleaned;
+}
+
 async function getPopularSearchesFresh(limit = 6): Promise<string[]> {
   try {
     // Only corroborated terms surface publicly: a single search can be spam.
@@ -70,8 +102,8 @@ async function getPopularSearchesFresh(limit = 6): Promise<string[]> {
       take: limit * 8,
     });
     return rows
-      .map((row) => row.term)
-      .filter((term) => term.length <= 40)
+      .map((row) => publicSearchTerm(row.term))
+      .filter((term): term is string => term !== null)
       .slice(0, limit);
   } catch {
     return [];
@@ -86,12 +118,13 @@ const getPopularSearchesCached = unstable_cache(
 
 /** Cached popular search terms (see src/lib/cache.ts for scope rules). */
 export async function getPopularSearches(limit = 6): Promise<string[]> {
-  return getPopularSearchesCached(limit);
+  const safeLimit = Math.min(12, Math.max(1, Math.floor(limit) || 6));
+  return getPopularSearchesCached(safeLimit);
 }
 
 export async function recordSearch(term: string): Promise<void> {
-  const cleaned = term.trim().slice(0, 80).toLowerCase();
-  if (cleaned.length < 2) return;
+  const cleaned = publicSearchTerm(term);
+  if (!cleaned) return;
   try {
     await prisma.searchQuery.upsert({
       where: { term: cleaned },

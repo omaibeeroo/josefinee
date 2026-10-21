@@ -61,6 +61,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --include=dev
 
+      - name: Validate migration release safety
+        run: npm run validate:migrations
+
       - name: Apply database migrations
         run: npx prisma migrate deploy
 

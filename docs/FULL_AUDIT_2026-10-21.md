@@ -1,0 +1,222 @@
+# Hanadi Store — Full Code Audit Report
+
+**Audit date:** 2026-10-21
+
+**Repository:** `/home/ubuntu/josefinee-reclone-20261019-1545`
+
+**Status:** Code-level remediation is implemented in the current working tree; **NOT READY FOR BROAD PRODUCTION TRAFFIC** until the open release blockers below are evidenced.
+**Basis:** The ranked findings preserve the original source-audit record; this report adds the current remediation disposition, local verification, and unresolved release evidence. It makes **no security, compliance, performance, accessibility, or operational certification claim**.
+
+## Executive status
+
+- The baseline contained **31 findings** (**7 High, 19 Medium, 5 Low**; no Critical finding). Code fixes or explicit release-gate corrections are present for the 27 H2/H3/H5, M0–M18, and L1–L5 items. H6 is only partially discharged: the promotion workflow fails closed on exact-SHA staging/readiness requirements, but the current repository does not produce the required `Staging readiness` check. H7 remains open; H8–H9 still require owner-operated evidence and rehearsals.
+- **28 release-gate rows remain unchecked** in `docs/AUDIT_RELEASE_GATE.md`: 15 engineering/project-verifiable rows and 13 production-owner rows. An unchecked item is not passed.
+- **Release remains blocked** on a working exact-SHA staging readiness signal, provider-wired pre-deploy production migrations, and the required staging, backup/restore, rollback, monitoring, and owner-evidence records. Production maintenance mode remains intentionally enabled; this report does not authorize disabling it.
+- The original and current verification evidence is separated below. Local tests and builds do not certify owner-controlled, provider, real-device, or legal/privacy gates.
+
+## Scope and method
+
+Reviewed the supplied audit findings covering authentication/session/MFA/RBAC, admin routes, checkout/orders/inventory, storefront UX/localization/accessibility, caching/SEO/performance, CI/deployment/operations, Prisma schema, tests, migrations, and documentation. The release-gate source was also read directly.
+
+Evidence classes used in this report:
+
+- **Source review:** code/schema/workflow/documentation observations, with exact file and line locations.
+- **Test evidence:** clean lockfile install, typecheck, lint, all automated tests, Prisma validation, and production build were rerun against the audit target SHA; exact outcomes follow.
+- **Live read-only probes:** production Vercel status/logs and unauthenticated HTTP GETs were checked. No browser, authenticated user session, order submission, authorized retention call, database inspection, provider, screen-reader, or real-device test was performed.
+- **Owner evidence:** **not performed**; external release gates remain unverified unless separately documented by the parent agent.
+
+## Baseline verification before remediation
+
+**Target commit:** `ae96581654912267ec0cb53c877a524fd7a835a7` (`main`).
+
+- `npm ci --include=dev`: passed from the committed lockfile.
+- `npm run typecheck` and `npm run lint`: passed.
+- `npm test -- --run`: **29 test files, 164 tests passed**.
+- `npx prisma validate`: passed.
+- `APP_URL=https://store.example.test npm run build`: passed; the HTTPS placeholder was scoped to this build command only.
+- `npm audit --include=dev --audit-level=high`: no High/Critical finding, but **one Moderate advisory remains**: direct dependency `sanitize-html@2.18.0`, GHSA-c9rx-x947-fp3h (fixed version available; audit did not modify dependencies). Because the configured threshold is High, this command exits successfully despite the Moderate advisory.
+- GitHub exact-SHA workflows passed: CI/CD run `39662600045`, Security and supply chain run `39662600033`, Production smoke run `39662810540`. The production-smoke log confirmed maintenance mode and explicitly said `RETENTION_JOB_SECRET is not configured; authorized internal-route check skipped`; therefore the authorized retention route was not exercised by that run.
+- Read-only live checks: `/admin/login` returned 200; unauthenticated `/admin` and `/admin/security` redirected to `/admin/login`. Public `/`, `/shop`, `/faq`, a product route, `/robots.txt`, and `/sitemap-index.xml` returned 503 with the stable `X-Hanadi-Maintenance: coming-soon` marker and `Retry-After: 300`; the maintenance HTML is `noindex,nofollow`. This is the deployment's intentional maintenance response, not evidence of storefront availability.
+- Correction to the initial source-review draft: it alleged that CI omitted `RETENTION_JOB_SECRET`. Direct review of `.github/workflows/ci.yml:33-45` shows a CI-only test value was configured, so that allegation was removed. At this baseline, production smoke could still send an optional destructive authorized request; the remediation described below removes that path from deployment smoke.
+
+## Verification of the remediation working tree
+
+- `npm ci --include=dev`: passed. The lockfile install reported 0 vulnerabilities.
+- `npm run typecheck`, `npm run lint`, and `npm test -- --run`: passed; **37 test files, 189 tests**.
+- `npx prisma validate` and `npm run validate:migrations`: passed; 10 migration directories validated, with no destructive SQL detected.
+- `APP_URL=https://ci.example.invalid npm run build`: passed for Next.js 15.5.27.
+- `npm audit --include=dev --audit-level=high`: passed with 0 vulnerabilities; this supersedes the baseline's moderate `sanitize-html` advisory after the lockfile/dependency remediation.
+- `git diff --check`: passed. The authorized retention smoke was not run outside CI; it is destructive and now rejects non-CI execution.
+- Final read-only GETs against Production deployment `ae96581654912267ec0cb53c877a524fd7a835a7`: `/`, `/shop`, `/faq`, and the known product route returned `503`, `X-Hanadi-Maintenance: coming-soon`, `Retry-After: 300`, and `Cache-Control: no-store, max-age=0`. `/admin/login` returned `200`; unauthenticated `/admin` returned `307` to `/admin/login`. Maintenance remains enabled; no production data was changed.
+
+## Current remediation disposition
+
+The ranked tables below preserve the original finding text and source locations; they are **not a statement that those defects remain in the current tree**. The following disposition reflects the current local working tree. Automated checks validate code paths, while staging and owner gates remain separate.
+
+| Finding(s) | Current disposition |
+| --- | --- |
+| H2, H3, H5 | Implemented in the current tree: stock mutations are serialized; checkout/confirmation inherit Arabic RTL; deployed smoke is read-only and the authorized retention path is confined to disposable CI fixtures. |
+| H6 | Partially implemented and fail-closed. Promotion checks the exact SHA, deployment, readiness check, and protected review. However, the repository does not create the required `Staging readiness` check, and GitHub currently labels the staging-branch deployment `Preview`, not `staging`; promotion therefore remains blocked until the producer/query contract is made operational and an exact-SHA run passes. |
+| H7 | Open release blocker. `npm run db:deploy` and migration validation exist, but no verified Vercel pre-deploy migration hook is wired. The operations runbook requires provider-owner configuration and rehearsal. |
+| H8 | Open owner gate. The 13 production-owner rows in `docs/AUDIT_RELEASE_GATE.md` remain unchecked; no owner evidence is inferred from source changes. |
+| H9 | Partially addressed. `docs/OPERATIONS_RELEASE_RUNBOOK.md` now defines the required operational procedures and evidence, but no backup-restore, rollback, alert-firing, or incident-recovery rehearsal evidence was supplied. |
+| M0–M18 | Code/guardrail remediations are present, including auth boundaries, cart expiry, promotion selection, outbox handling, RTL/accessibility, caching/images/search/sitemaps, production provider validation, and the separation of HTTP smoke from required flow evidence. Staging and provider-specific delivery evidence remains subject to the release gate. |
+| L1–L5 | Code-level remediations are present for login response/timing, guest coupon preview identity, reservation lifecycle, reduced-motion carousel behavior, and locale-aware metadata/sitemap behavior. Real-device and crawler validation remains outstanding. |
+
+At inspection time, the GitHub `staging` ref was `a11eb1a1dc6509c537ffeadcdc9cfdca42d1b324`; its successful deployment `7176678537` was labeled `Preview`, and no `Staging readiness` check run existed for that SHA. This is why H6 is marked partial rather than passed. No production setting was changed by this read-only inspection.
+
+## Ranked findings
+
+### High severity
+
+| H2 | Source review; no runtime validation | Yes | **Admin absolute stock edits can lose a concurrent sale/return.** Checkout decrement at `src/server/inventory.ts:27-33` does not take the advisory lock; `setStock` at `src/server/inventory.ts:93-107` reads, computes, then writes an absolute value. `src/server/actions/admin-inventory.ts:110-118` calls it. Existing `src/server/inventory.test.ts:5-35` covers only simultaneous decrements. | Serialize decrement/increment/set with the same advisory transaction lock, or use a version/conditional update that detects intervening writes. Keep the ledger row in the same transaction and add a PostgreSQL interleaving test asserting final stock and `stockAfter` reconciliation. |
+| H3 | Source review; no runtime validation | Yes | **Arabic checkout and confirmation force the transaction UI LTR.** `src/components/storefront/checkout/checkout-form.tsx:250-258` wraps checkout in `dir="ltr"`; `src/app/(store)/order/[orderNumber]/page.tsx:49-50` does the same for confirmation. | Remove transaction-level `dir="ltr"`; inherit localized root direction. Use `dir="ltr"`/`bdi` only for phone, email, codes, and numeric/currency runs. Verify Arabic layout, focus order, keyboard traversal, and screen-reader output on narrow and desktop viewports. |
+| H5 | Source review; no runtime validation | Yes | **Production smoke can delete production data.** `.github/workflows/production-smoke.yml:19-28` supplies the secret after deployment; `scripts/smoke-production-deployment.sh:77-81` POSTs `/api/internal/retention`; `src/server/retention.ts:61-139` deletes/updates sessions, carts, idempotency keys, rate limits, analytics, notifications, outbox events, abandoned-cart items, and stale searches. This conflicts with `docs/AUDIT_RELEASE_GATE.md:21`. | Remove purge calls from production smoke. Use a non-mutating authorization probe or tightly controlled dry-run; test real retention only in isolated staging fixtures. |
+| H6 | Source review; no runtime validation | Yes | **Staging promotion auto-merges without deployment/readiness evidence.** `.github/workflows/promote-staging.yml:16-31` gates on CI and unchanged SHA only; `:43-65` opens/reuses a PR and runs `gh pr merge --auto` without staging deployment status, smoke, migration rehearsal, or explicit approval. | Require the exact SHA to deploy and reach READY in staging, pass required staging rehearsals, and receive configured approval before auto-merge. Record deployment and run IDs on the promotion PR. |
+| H7 | Source review; no runtime validation | Yes | **Production deployment has no repository-wired database migration step.** `package.json:17-20` defines `db:migrate`/`db:deploy`; only CI runs migrations at `.github/workflows/ci.yml:64-65`. Promotion only merges at `.github/workflows/promote-staging.yml:43-65`; `README.md:435-436` describes provider deployment but no migration hook. | Add an authenticated pre-deploy migration job/hook using `npm run db:deploy`, or document/evidence the provider equivalent. Rehearse backward-compatible migration with the old app serving and retain logs for the exact SHA. |
+| H8 | Source review of checklist/docs; no owner evidence | Yes | **Production-owner evidence and operational recovery gates are all unchecked.** `docs/AUDIT_RELEASE_GATE.md:41-59` marks secret hygiene, environment contract, storage, notifications, distributed rate limits, backups/restore, rollback, maintenance, monitoring, jobs, on-call, production smoke/real devices, and legal review `[ ]`; `:63-71` lists missing evidence records. | Assign named owners and dates and attach sanitized exact-environment evidence. Do not mark these gates from source presence alone; verify backup RPO/RTO, rollback window, alert firing, job backlog/ownership, reachable contacts, real-device results, and legal signoff. |
+| H9 | Source review; no runtime validation | Yes | **No executable backup/restore, rollback, monitoring, or incident runbook is evidenced.** `README.md:474-486` has checklist/migration instructions but no restore command/result, RPO/RTO, rollback procedure, owner, or evidence link; `docs/AUDIT_RELEASE_GATE.md:52-57,63-70` requires them and they remain unchecked. | Link provider procedures and records or add versioned operator runbooks/rehearsal scripts. Perform isolated restore and rollback rehearsals, test alerts, and document escalation, missed-job/backlog handling, and recovery targets. |
+
+> **High-count note:** The baseline contained **7 High-severity findings**. H2, H3, and H5 have code remediations; H6 is partially addressed but not operationally verified; H7–H9 remain release/owner evidence blockers. The admin-upload authorization defect remains classified Medium in the baseline data despite being a release gate.
+
+### Medium severity
+
+| ID  | Classification                       | Gate | Finding and exact source locations                                                                                                                                                                                                                                                                                                                                                                           | Actionable remediation                                                                                                                                                                                                                                               |
+| --- | ------------------------------------ | ---: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| M0  | Source review; no runtime validation |  Yes | **Admin image upload bypasses password-change and MFA gates.** `src/app/api/admin/upload/route.ts:19-28` uses `getAdminSession` plus `can(session.user, "products:write")`, but not `requirePermission`/`canAccessPermission`; `src/lib/auth/rbac.ts:20-63` applies `mustChangePassword` and the SUPER_ADMIN MFA rule. The route performs storage side effects at `src/app/api/admin/upload/route.ts:31-72`. | Replace the direct check with `requirePermission("products:write")`, or explicitly enforce `mustChangePassword` rejection and `canAccessPermission`; retain same-origin and rate limiting. Add regressions for `mustChangePassword=true` and unverified SUPER_ADMIN. |
+| M1  | Source review; no runtime validation |  Yes | **MFA-pending SUPER_ADMIN receives dashboard order telemetry before redirect.** `src/app/admin/(dashboard)/layout.tsx:12-25` checks existence/password-change and queries pending orders without MFA; child redirect is later at `src/app/admin/(dashboard)/page.tsx:20-27`; badge/alert use `src/components/admin/shell.tsx:62-77,167`; policy is `src/lib/auth/rbac.ts:24-29,47-60`.                       | Perform the MFA-pending redirect/guard in the shared layout before Prisma reads, or do not render shell/pending-order data until the shared permission check passes. Add a no-query/no-alert regression.                                                             |
+| M2  | Source review; no runtime validation |   No | **Expired carts remain usable until asynchronous cleanup.** `src/server/cart.ts:90-95,115-119,293-295` checks status/token but not `expiresAt`; expiry is set at `:122-127` and only later abandoned by `src/server/retention.ts:61-70`.                                                                                                                                                                     | Treat `expiresAt <= now` as unavailable in summary, reuse, mutations, and checkout; atomically abandon/recreate. Keep retention as cleanup, not enforcement.                                                                                                         |
+| M3  | Source review; no runtime validation |  Yes | **Pricing considers only the newest 50 active promotions.** `src/server/promotions.ts:27-37` uses `take: 50`; `:48-68` chooses only among returned rows. Tests at `src/server/promotions.test.ts:5-47` lack >50 coverage.                                                                                                                                                                                    | Remove the cap or enforce a documented activation maximum before activation. Add a 51-promotion test ensuring the best eligible discount cannot be omitted.                                                                                                          |
+| M4  | Source review; no runtime validation |   No | **Outbox notification deduplication occurs after the provider side effect.** Lease/side-effect ordering is at `src/server/order-outbox.ts:36-62,104-160`; SENT check/provider/unique insert is `src/lib/notifications.ts:431-469`; failed rows are `:471-493`; tests `src/server/order-outbox.test.ts:100-167` omit uncertain provider outcomes and lease expiry.                                            | Persist a unique dispatch record before sending, use provider idempotency contracts, represent uncertain outcomes explicitly, and bound/renew leases around provider calls. Test Twilio/WhatsApp and other enabled providers separately.                             |
+| M5  | Source review; no runtime validation |   No | **Arabic mobile navigation is forced LTR.** `src/components/storefront/chrome.tsx:527-547` sets `dir="ltr"` and `start-0` despite locale direction at `src/app/layout.tsx:123-127`.                                                                                                                                                                                                                          | Remove/set direction from active locale and use logical drawer anchoring; isolate only numeric/phone snippets. Test Arabic device behavior and focus order.                                                                                                          |
+| M6  | Source review; no runtime validation |  Yes | **Admin product variant labels are not programmatically associated.** SKU/price/stock/threshold controls at `src/components/admin/product-editor.tsx:646-707` lack `htmlFor`/`id` or Field context; option label/select at `:748-751` has the same issue.                                                                                                                                                    | Use the shared Field primitive or unique IDs with matching `htmlFor`, preserving hint/error associations. Test repeated variants with NVDA/VoiceOver.                                                                                                                |
+| M7  | Source review; no runtime validation |   No | **Reduced-motion coverage omits common animations.** CSS only covers selected elements at `src/app/globals.css:2723-2735`; Modal/Drawer/Accordion animate at `src/components/ui.tsx:385-390,449-455,528-530`; carousel smooth-scroll is `src/components/storefront/product.tsx:303-306`.                                                                                                                     | Add global reduced-motion overrides or consistent `motion-safe` handling and use instant carousel scrolling when `matchMedia('(prefers-reduced-motion: reduce)'` matches.                                                                                            |
+| M8  | Source review; no runtime validation |   No | **Checkout errors scroll but do not move focus.** Errors are set at `src/components/storefront/checkout/checkout-form.tsx:236-247`; alert is at `:261-268` but is not focusable and no invalid control receives focus.                                                                                                                                                                                       | Focus a focusable summary or first invalid control after errors are set; retain reduced-motion-aware scrolling and shared Field `aria-describedby`/`aria-invalid`.                                                                                                   |
+| M9  | Source review; no runtime validation |   No | **Admin mobile-menu trigger lacks state/control semantics.** Trigger at `src/components/admin/shell.tsx:48-55` has only `aria-label`; dialog is at `:115-121` with no `aria-expanded`/`aria-controls` relationship.                                                                                                                                                                                          | Give dialog a stable ID, bind `aria-controls` and `aria-expanded`, and restore focus to the trigger on close.                                                                                                                                                        |
+| M10 | Source review; no runtime validation |   No | **Public storefront rendering repeats uncached layout work.** Cookie/request-dependent root work is `src/app/layout.tsx:104-113`; homepage is live at `src/app/(store)/page.tsx:27-29`; layout directly queries FAQ at `src/app/(store)/layout.tsx:6-17`; collections is force-dynamic/direct DB at `src/app/(store)/collections/page.tsx:8-30`.                                                             | Isolate cookie-dependent shell from cacheable content; put FAQ/collection reads behind bounded tagged caches or justified ISR and invalidate tags from mutations. Measure TTFB/query counts before tuning.                                                           |
+| M11 | Source review; no runtime validation |   No | **Images bypass Next responsive optimization.** `src/components/storefront/product.tsx:99-110` and `src/components/storefront/responsive-banner.tsx:51-59` use `unoptimized`; `next.config.ts:50-55` enables AVIF/WebP but is bypassed.                                                                                                                                                                      | Remove `unoptimized` or provide equivalent width/quality derivatives; bound upload dimensions and prioritize only the true LCP image. Verify network bytes and LCP in a production-like trace.                                                                       |
+| M12 | Source review; no runtime validation |  Yes | **Order-driven stock/catalog data can remain stale for the 300-second catalog TTL.** Cache contract is `src/lib/cache.ts:13-19`; product payload includes stock/availability at `src/server/catalog.ts:341-434`; checkout changes stock at `src/app/(store)/products/[slug]/page.tsx:93-100` / `src/server/actions/checkout.ts:639-649` without catalog `revalidateTag`.                                     | Revalidate catalog tags after commit or use scoped stock/version invalidation. Keep live checkout guards and align JSON-LD availability semantics with UI.                                                                                                           |
+| M13 | Source review; no runtime validation |  Yes | **Raw popular searches can become public.** `src/app/(store)/search/page.tsx:33-40` records terms; `src/server/navigation.ts:92-100` truncates but does not scrub PII; `:60-85` publishes terms with count ≥2 through shared navigation cache; `src/app/(store)/layout.tsx:7-16` exposes them to visitors.                                                                                                   | Scrub/reject email, phone, order-reference, and sensitive patterns or use an allowlist before persistence/publication; retain raw analytics separately only under approved privacy controls.                                                                         |
+| M14 | Source review; no runtime validation |   No | **Sitemap failure returns successful fixed-only XML.** Discovery/fallback is `src/app/sitemap.ts:16-36`; sitemap-index fallback/status/cache is `src/app/sitemap-index.xml/route.ts:13-32`.                                                                                                                                                                                                                  | Return non-success/no-store on discovery failure or serve a durable last-known-good manifest. Monitor partition counts and URL-count drops.                                                                                                                          |
+| M15 | Source review; no runtime validation |  Yes | **Production smoke can silently skip authorized retention validation.** `.github/workflows/production-smoke.yml:19-21` does not require the secret; `scripts/smoke-production-deployment.sh:77-84` skips with success; `README.md:438-444` documents optional behavior.                                                                                                                                      | Make credential presence a required gate while moving destructive retention out of smoke. Use a non-mutating authorization check and an explicit owner-approved waiver only if intentionally deferred.                                                               |
+| M16 | Source review; no runtime validation |  Yes | **Smoke coverage is materially narrower than release claims.** `scripts/smoke-production.sh:53-67` and `scripts/smoke-production-deployment.sh:61-81` check only a small route/header set; `docs/AUDIT_RELEASE_GATE.md:33-39` separately requires commerce, outbox, customer boundaries, rate limits, admin lifecycle, outage, and migration evidence.                                                       | Keep HTTP smoke as liveness/safety coverage, but make isolated staging evidence for each required flow independently release-blocking.                                                                                                                               |
+| M17 | Source review; no runtime validation |  Yes | **Console notification providers are permitted in production.** `src/config/production-env.ts:115-142` defaults email/SMS/WhatsApp to `console`; `.env.example:44-60` documents optional providers.                                                                                                                                                                                                          | Require explicit non-console providers/credentials in production or an visible owner-approved exception; run a controlled test order and verify delivery, failure, latency, and alerts.                                                                              |
+| M18 | Source review; no runtime validation |  Yes | **Production smoke runner is not pinned to the deployed SHA.** `.github/workflows/production-smoke.yml:3-5` triggers on `deployment_status`; `:23-25` checks out source without deployment-SHA ref before `:27-28` runs smoke.                                                                                                                                                                               | Pin checkout to deployment commit or immutable smoke artifact; fail if SHA cannot be resolved and retain deployed-SHA/runner-SHA comparison.                                                                                                                         |
+
+### Low severity
+
+| ID  | Classification                       | Gate | Finding and exact source locations                                                                                                                                                                                                                                                                            | Actionable remediation                                                                                                                                                                                                                                       |
+| --- | ------------------------------------ | ---: | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| L1  | Source review; no runtime validation |   No | **Admin login reveals locked-account state and skips timing equalization.** `src/server/actions/admin-auth.ts:41-47` promises generic handling, but `:117-124` returns `t.lockedOut` before verification; unknown/disabled paths use placeholder verification at `:108-115`, ordinary failures at `:126-141`. | Perform equivalent placeholder/password-cost work before returning a generic external result; preserve internal lockout and audit behavior. Unit-test unknown, disabled, bad-password, and locked cases for same external class/message and comparable path. |
+| L2  | Source review; no runtime validation |   No | **Coupon preview uses an empty phone for identity-dependent rules.** `src/server/actions/cart.ts:153-163` passes `phone: ""`; `src/server/coupons.ts:64-79` applies first-order/per-customer rules; final transaction revalidates real phone at `src/server/orders.ts:441-460`.                               | Pass normalized phone into preview or label identity-dependent preview as provisional. Add a previously-used guest-phone regression.                                                                                                                         |
+| L3  | Source review; no runtime validation |   No | **Reserved stock has no lifecycle.** Schema field is `prisma/schema.prisma:593-603`; inventory code never writes it (`src/server/inventory.ts:16-120`), while availability subtracts it at `src/server/orders.ts:376-385` and `src/server/cart.ts:162-185,239-249`.                                           | Remove the unused concept or implement ownership/expiry, atomic capture/release, reconciliation, and invariants such as `reserved >= 0` and intended upper bounds. Check nonzero staging/production data.                                                    |
+| L4  | Source review; no runtime validation |   No | **Product carousel smooth-scroll ignores reduced motion.** `src/components/storefront/product.tsx:303-306` always uses `behavior: "smooth"`; CSS at `src/app/globals.css:2723-2735` does not alter native smooth scrolling.                                                                                   | Use `behavior: "auto"` when reduced motion is requested and test both arrow directions.                                                                                                                                                                      |
+| L5  | Source review; no runtime validation |   No | **Cookie-localized metadata has one locale-neutral canonical and no hreflang set.** Cookie-derived metadata is `src/app/layout.tsx:51-76,104-126`; storefront canonical is `src/app/(store)/page.tsx:31-43`; product canonical lacks alternates at `src/app/(store)/products/[slug]/page.tsx:26-50`.          | Choose a single canonical-language model or stable locale URLs with reciprocal hreflang and locale-aware canonicals; do not rely on crawler cookies for multilingual SEO.                                                                                    |
+
+## Strengths and existing controls
+
+These are positive source-review observations, not release certification:
+
+### Security and admin
+
+- Session tokens use cryptographically secure random bytes, SHA-256 storage, revocation/expiry checks, and ACTIVE-user checks (`src/lib/auth/tokens.ts:4-10`; `src/lib/auth/session.ts:37-50,53-96`).
+- Shared RBAC enforces `mustChangePassword`, permission-specific MFA, and the SUPER_ADMIN all-actions MFA rule (`src/lib/auth/rbac.ts:20-63`), with policy tests (`src/lib/auth/rbac.test.ts:74-92`).
+- Admin login has schema validation, per-IP/account rate limits, Argon2 verification, atomic lockout increments, MFA/recovery-code handling, and audit events (`src/server/actions/admin-auth.ts:85-199`); production rate-limit failure is fail-closed (`src/lib/rate-limit.ts:139-169`).
+- TOTP secrets use AES-256-GCM with an `AUTH_SECRET`-derived key; recovery codes are random, hashed, and atomically consumed (`src/lib/auth/totp.ts:11-40`; `src/lib/auth/recovery.ts:17-36`).
+- Reviewed admin actions consistently use `requirePermission` and Zod; upload handling includes same-origin, bounded multipart/file checks (`src/app/api/admin/upload/route.ts:31-64`).
+- Production configuration validates PostgreSQL, high-entropy secrets, canonical HTTPS `APP_URL`, trusted client-IP headers, storage, and provider requirements (`src/config/production-env.ts:43-144`); security headers/CSP are present (`next.config.ts:33-79`; `src/middleware.ts:13-32,89-93`).
+
+### Orders, checkout, inventory
+
+- Checkout reloads variants, product state, prices, inventory, delivery, and promotions inside the order transaction; wilaya/commune pairing is checked before pricing (`src/server/orders.ts:332-415`).
+- Sale stock decrement is conditional on `stock - reserved >= quantity`, with the sale ledger row in the same transaction (`src/server/inventory.ts:16-51`).
+- Idempotency is scoped to cart plus client key, backed by unique `Order.idempotencyKey`, with fresh-connection loser recovery (`src/server/orders.ts:248-329,704-707`; `prisma/schema.prisma:673-715`).
+- Order status transitions use allow-lists and optimistic guards; cancellation/return stock restoration and coupon release are transactionally coupled (`src/server/actions/admin-orders.ts:166-255`).
+- The implementation is explicitly COD-only: checkout requires `commerce.codEnabled`, does not accept a client payment method, and defaults orders to COD (`src/server/orders.ts:202-205`; `prisma/schema.prisma:693-699`; `README.md:196-220`).
+
+### Storefront UX, localization, accessibility
+
+- Dictionary parity/non-empty-leaf tests protect FR/EN/AR structure (`src/lib/i18n/dictionaries.test.ts:19-44`).
+- The shared Field primitive creates stable IDs, label associations, hints/errors, `aria-describedby`, and `aria-invalid` (`src/components/ui.tsx:71-110`); most forms use it.
+- Modal/drawer focus behavior includes Escape close, Tab wrapping, inert/hidden background, scroll lock, and focus restoration (`src/components/ui.tsx:261-345`).
+- Consent defaults off and revocation reloads; pixel gating is tested (`src/components/cookie-consent.tsx:20-43`; `src/components/pixels.test.tsx:4-10`).
+- Checkout validation tests cover required fields, terms, commune, delivery method, and invalid inputs (`src/lib/validation/checkout.test.ts:16-70`).
+
+### Performance, caching, SEO
+
+- Shared cache contracts exclude carts, checkout pricing, inventory mutation, coupons/promotions, orders, sessions, and customer data (`src/lib/cache.ts:6-21`).
+- Catalog caches have a bounded 300-second window and tags; search-result queries bypass data cache to avoid unbounded key cardinality (`src/lib/cache.ts:13-21`; `src/server/catalog.ts:324-338`).
+- Checkout re-reads authoritative price/availability and atomically decrements stock, so stale public badges alone do not permit oversell/mispricing (`src/server/actions/checkout.ts:345-399`; `src/server/inventory.ts:16-51`).
+- Private surfaces are dynamically rendered/noindex and robots disallows key private paths (`src/app/(store)/account/layout.tsx:8-11`; `src/app/(store)/cart/page.tsx:6-9`; `src/app/robots.ts:4-15`).
+- Product pages emit Product JSON-LD with image, price, currency, availability, and ratings (`src/app/(store)/products/[slug]/page.tsx:78-110`).
+- Analytics load after consent and `afterInteractive`, not during initial server rendering (`src/components/pixels.tsx:9-18,65-91`).
+
+### CI, deployment, operations
+
+- CI uses immutable full-commit-SHA references and runs typecheck, lint, tests, dependency audit, SBOM, build, packaging, and HTTP smoke (`.github/workflows/ci.yml:47-166`); security workflow includes Gitleaks, CodeQL, and dependency review (`.github/workflows/security.yml:13-80`).
+- Production environment checks cover PostgreSQL, distinct secrets, HTTPS `APP_URL`, trusted proxy header, mandatory S3, and storage-host safety (`src/config/production-env.ts:47-113`); production Node startup enforces them (`src/instrumentation.ts:3-7`).
+- Concurrent-index tooling validates schema/definitions/readiness and refuses unexpected indexes (`scripts/create-fk-indexes-concurrently.mjs:54-124`).
+- The release gate explicitly distinguishes repository controls from production proof and says unchecked items are not passed (`docs/AUDIT_RELEASE_GATE.md:5-7,41-75`).
+- Dependency controls include lockfile use, high-severity audit, CycloneDX SBOM retention, immutable Actions pins, CodeQL, Gitleaks, and Dependabot (`.github/CI_POLICY.md:5-20`).
+
+## Release gates explicitly unverified
+
+`docs/AUDIT_RELEASE_GATE.md` states at lines 5–7 that an unchecked item is **not passed** and that green builds/smoke do not prove external properties. The checklist has **28 unchecked rows**: 15 engineering/project-verifiable gates and 13 production-owner gates. No external, staging, real-device, or owner gate has been marked complete from source review alone.
+
+### P1 engineering/project-verifiable gates — 15 unchecked
+
+From `docs/AUDIT_RELEASE_GATE.md:25-43`:
+
+1. Fresh clean install (`npm ci --include=dev`).
+2. Static checks (`npm run typecheck`, `npm run lint`).
+3. Automated tests, including checkout/inventory/outbox/auth/RBAC, with retained CI log.
+4. Production build and standalone-server start.
+5. CI-only authorized-retention smoke against the disposable PostgreSQL service and loopback server.
+6. Deployment smoke and retained run URL.
+7. Commerce concurrency: final-unit checkout, duplicate retry, coupon race, stale data, and DB-failure recovery.
+8. Outbox/notification failure handling and observable eventual delivery.
+9. Customer-data boundaries and export-route controls.
+10. Rate-limit behavior across instances, IP families, spoofing, and backend outage.
+11. Admin access lifecycle: MFA, password change/reset, disable/revoke, roles, offboarding, recovery.
+12. Maintenance, provider/database outage, recovery, `503/no-store/Retry-After`, preview, and indexing behavior.
+13. Provider migration ordering before application activation.
+14. Migration compatibility with the old app serving during `npm run db:deploy` and traffic switch.
+15. Authorized retention validation in disposable CI fixtures; never in production smoke.
+
+### Production-owner/external gates — 13 unchecked
+
+From `docs/AUDIT_RELEASE_GATE.md:45-63`, these cannot be proven from the checkout alone:
+
+1. Production secret hygiene and rotation/revocation.
+2. Sanitized production environment contract and no local/in-memory fallbacks.
+3. S3/object-storage driver, least privilege, public/private boundary, upload/deletion behavior.
+4. Notification provider configuration, sender identity, templates, failure/retry/latency/alerting, controlled test order.
+5. Distributed rate limiting, proxy trust, outage alerting, and spoofing results.
+6. Encrypted backups, retention/access controls, isolated restore, RPO/RTO.
+7. Rollback artifact/owner, failed-deployment rollback, migration recovery, traffic restoration, rollback window.
+8. Maintenance runbook, preview path, `503/no-store/Retry-After`, and customer communication.
+9. Monitoring/alerts for 5xx, checkout, stock, outbox/notifications, jobs, DB saturation, latency, and admin login/MFA failures, including test firings.
+10. Retention/outbox scheduling, authentication, idempotence, bounds, observability, named owners, missed-run alerts, and backlog age.
+11. On-call, release, security, database/storage, notification ownership, escalation channel, and response targets.
+12. Production smoke against the actual target plus real-device browse-to-order/COD evidence on representative iOS/Android/narrow viewports.
+13. Privacy, policy, and legal review for consent, cookies, returns, delivery/COD, support, retention, tax/invoices, and third-party disclosures.
+
+### Required observability record
+
+The checklist additionally asks for evidence IDs/links for the exact-SHA CI run, staging concurrency/failure/rate-limit/admin/migration results, production smoke and sanitized environment review, restore/rollback records with RPO/RTO, dashboard/test-alert and backlog evidence, named contacts/runbook, and privacy/legal plus real-device notes (`docs/AUDIT_RELEASE_GATE.md:65-75`). These are evidence artifacts rather than additional gate rows and were not supplied here.
+
+## Recommended release sequence
+
+1. Make the exact-SHA staging readiness workflow/query operational for the actual Vercel `Preview` deployment label, then retain a successful readiness check for the candidate SHA.
+2. Wire and rehearse the provider's `npm run db:deploy` pre-deploy step with backward-compatible migrations before any broad production release.
+3. Run the 15 P1 gates only in isolated CI/staging with fixtures; retain exact SHA/run IDs and sanitized logs.
+4. Complete all 13 owner gates with named owners and dated evidence. Do not infer cloud/provider/backup/legal/readiness status from source code.
+5. Perform browser/device/assistive-technology, network/CWV, provider, and production-like read-only validations separately; record their outcomes rather than presenting source review as runtime proof.
+
+## Non-claims and caveats
+
+- This remediation pass modified application code and operational documentation. Production maintenance mode was not disabled, and no production data was mutated during the read-only live check.
+- No browser, authenticated user session, screen-reader, real-device, provider-delivery, production database, backup restore, rollback, or Core Web Vitals validation was performed.
+- The baseline commit's tests and build are listed above. Current working-tree checks and their exact results are recorded in the remediation verification section; they do not substitute for exact-SHA CI or external owner evidence.
+- Environment-dependent risks—provider configuration, storage permissions, provider idempotency, backup/recovery, and rate-limit backend behavior—require the owner evidence specified above.
+- This document is a synthesis of the supplied full audit and the repository release-gate checklist, not an independent security or compliance certification.

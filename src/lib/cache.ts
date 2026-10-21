@@ -24,6 +24,9 @@ export const CACHE_TAG_CATALOG = "catalog";
 export const CACHE_TAG_NAVIGATION = "navigation";
 export const CACHE_TAG_DELIVERY = "delivery";
 
+/** Public FAQ and navigation display reads share one bounded invalidation scope. */
+export const MAX_PUBLIC_NAVIGATION_ITEMS = 100;
+
 /** Backstop freshness for catalog reads when no mutation revalidates first. */
 export const CATALOG_REVALIDATE_SECONDS = 300;
 

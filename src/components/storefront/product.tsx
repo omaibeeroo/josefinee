@@ -72,7 +72,9 @@ import {
   resolveVariantSelection,
 } from "@/lib/variant-selection";
 import { cn } from "@/lib/utils";
+import { scrollBehaviorForMotion } from "@/components/reduced-motion";
 import type { StoreProduct, StoreProductCard } from "@/server/catalog";
+import { canOptimizeImageUrl } from "@/lib/image-url";
 
 /* --------------------------------------------------------- Image fallback */
 
@@ -96,8 +98,6 @@ export function ProductImage({
       </span>
     );
   }
-  // Uploads are re-encoded to compact quality-88 WebP at upload time, so the
-  // stored file is already the optimized payload; serve it byte-identical.
   return (
     <Image
       src={url}
@@ -106,7 +106,7 @@ export function ProductImage({
       sizes={sizes ?? "(max-width: 768px) 50vw, 25vw"}
       priority={priority}
       loading={priority ? undefined : "lazy"}
-      unoptimized
+      unoptimized={!canOptimizeImageUrl(url)}
       className={cn("object-cover", className)}
     />
   );
@@ -303,7 +303,10 @@ export function ProductCarousel({
   function scrollBy(direction: 1 | -1) {
     const track = trackRef.current;
     if (!track) return;
-    track.scrollBy({ left: direction * track.clientWidth * 0.8, behavior: "smooth" });
+    track.scrollBy({
+      left: direction * track.clientWidth * 0.8,
+      behavior: scrollBehaviorForMotion(),
+    });
   }
 
   if (products.length === 0) return null;

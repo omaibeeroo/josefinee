@@ -3,6 +3,7 @@ import {
   CACHE_TAG_CATALOG,
   CACHE_TAG_NAVIGATION,
   CATALOG_REVALIDATE_SECONDS,
+  MAX_PUBLIC_NAVIGATION_ITEMS,
   stableCatalogQueryKey,
 } from "@/lib/cache";
 
@@ -30,5 +31,6 @@ describe("catalog cache keys", () => {
     expect(CACHE_TAG_CATALOG).toBe("catalog");
     expect(CACHE_TAG_NAVIGATION).toBe("navigation");
     expect(CATALOG_REVALIDATE_SECONDS).toBe(300);
+    expect(MAX_PUBLIC_NAVIGATION_ITEMS).toBe(100);
   });
 });

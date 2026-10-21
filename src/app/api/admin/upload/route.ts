@@ -1,5 +1,4 @@
-import { getAdminSession } from "@/lib/auth/session";
-import { can } from "@/lib/auth/rbac";
+import { requirePermission } from "@/lib/auth/rbac";
 import { assertSameOrigin } from "@/lib/csrf";
 import { enforceRateLimit, LIMITS } from "@/lib/rate-limit";
 import { storeImage } from "@/lib/storage";
@@ -16,21 +15,23 @@ const NO_STORE = { "Cache-Control": "no-store" };
  * disk in development). Requires the products:write permission.
  */
 export async function POST(request: Request) {
-  const session = await getAdminSession();
   const t = await getAdminActionT();
-  if (!session) {
-    return Response.json(
-      { ok: false, error: t.signInRequired },
-      { status: 401, headers: NO_STORE },
-    );
-  }
-  if (!can(session.user, "products:write")) {
-    return Response.json({ ok: false, error: t.forbidden }, { status: 403, headers: NO_STORE });
+  let actorId: string;
+  try {
+    actorId = (await requirePermission("products:write")).id;
+  } catch (error) {
+    if (isAppError(error)) {
+      return Response.json(
+        { ok: false, error: error.status === 401 ? t.signInRequired : t.forbidden },
+        { status: error.status, headers: NO_STORE },
+      );
+    }
+    return Response.json({ ok: false, error: t.wentWrong }, { status: 500, headers: NO_STORE });
   }
 
   try {
     await assertSameOrigin();
-    await enforceRateLimit({ ...LIMITS.upload, key: `upload:${session.user.id}` });
+    await enforceRateLimit({ ...LIMITS.upload, key: `upload:${actorId}` });
 
     // Reject oversized bodies before buffering them into memory; the parse
     // below is the authoritative check for chunked requests without a length.
@@ -63,7 +64,7 @@ export async function POST(request: Request) {
       declaredMime: file.type,
     });
     await recordAudit({
-      actorUserId: session.user.id,
+      actorUserId: actorId,
       action: "PRODUCT_IMAGE_UPLOADED",
       resource: "ProductImage",
       metadata: { size: file.size, mimeType: stored.mimeType, watermarked: stored.watermarked },

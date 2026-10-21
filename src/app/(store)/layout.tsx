@@ -1,19 +1,14 @@
 import { getSettings, isAnnouncementVisible } from "@/lib/settings";
-import { getNavigation, getPopularSearches } from "@/server/navigation";
+import { getFaqItems, getNavigation, getPopularSearches } from "@/server/navigation";
+
 import { SiteChrome } from "@/components/storefront/chrome";
-import { prisma } from "@/lib/prisma";
 
 export default async function StoreLayout({ children }: { children: React.ReactNode }) {
   const [settings, navigation, popularSearches, faqItems] = await Promise.all([
     getSettings(),
     getNavigation(),
     getPopularSearches(),
-    prisma.faqItem.findMany({
-      where: { isPublished: true },
-      orderBy: [{ sortOrder: "asc" }],
-      select: { category: true, question: true, answer: true },
-      take: 5,
-    }),
+    getFaqItems(),
   ]);
 
   const announcement = isAnnouncementVisible(settings.homepage.announcement)

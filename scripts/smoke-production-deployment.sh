@@ -2,13 +2,52 @@
 set -euo pipefail
 
 BASE_URL="${BASE_URL:-}"
-RETENTION_JOB_SECRET="${RETENTION_JOB_SECRET:-}"
+EXPECTED_DEPLOYMENT_SHA="${EXPECTED_DEPLOYMENT_SHA:-}"
 
 if [[ -z "$BASE_URL" ]]; then
   echo "BASE_URL is required" >&2
   exit 2
 fi
+if [[ ! "$EXPECTED_DEPLOYMENT_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+  echo "EXPECTED_DEPLOYMENT_SHA must be the 40-character deployment commit SHA" >&2
+  exit 2
+fi
+checked_out_sha="$(git rev-parse HEAD 2>/dev/null || true)"
+if [[ "$checked_out_sha" != "$EXPECTED_DEPLOYMENT_SHA" ]]; then
+  echo "Smoke scripts are not running from the deployed SHA (expected $EXPECTED_DEPLOYMENT_SHA, got ${checked_out_sha:-unknown})." >&2
+  exit 1
+fi
 BASE_URL="${BASE_URL%/}"
+
+# deployment_status.target_url is event data. Never let a workflow event turn
+# this read-only smoke job into a request to an arbitrary host or internal IP.
+if ! node - "$BASE_URL" <<'NODE'
+const raw = process.argv[2];
+try {
+  const url = new URL(raw);
+  const allowedHost =
+    url.hostname === "hanadistore.vercel.app" ||
+    /^josefinee-store-[a-z0-9-]+-prettyjosefinee-4817\.vercel\.app$/.test(url.hostname);
+  if (
+    url.protocol !== "https:" ||
+    !allowedHost ||
+    url.username ||
+    url.password ||
+    url.port ||
+    (url.pathname !== "" && url.pathname !== "/") ||
+    url.search ||
+    url.hash
+  ) {
+    throw new Error("target is outside the approved Hanadi Vercel hosts");
+  }
+} catch {
+  console.error("Refusing production smoke: BASE_URL must use an approved Hanadi HTTPS Vercel host.");
+  process.exit(1);
+}
+NODE
+then
+  exit 2
+fi
 
 http_status() {
   curl --silent --show-error --output /dev/null --write-out '%{http_code}' "$@"
@@ -73,14 +112,5 @@ expect_status 401 "unauthorized retention request" --request POST "$BASE_URL/api
 headers="$(curl --silent --show-error --dump-header - --output /dev/null "$BASE_URL/")"
 grep -Eiq '^x-content-type-options:[[:space:]]*nosniff' <<<"$headers"
 grep -Eiq '^x-frame-options:[[:space:]]*DENY' <<<"$headers"
-
-if [[ -n "$RETENTION_JOB_SECRET" ]]; then
-  expect_status 200 "authorized retention request" \
-    --request POST \
-    --header "Authorization: Bearer $RETENTION_JOB_SECRET" \
-    "$BASE_URL/api/internal/retention"
-else
-  echo "RETENTION_JOB_SECRET is not configured; authorized internal-route check skipped."
-fi
 
 echo "Production deployment smoke checks passed for $BASE_URL ($mode mode)"

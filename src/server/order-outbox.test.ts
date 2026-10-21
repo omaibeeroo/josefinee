@@ -165,4 +165,26 @@ describe("order outbox integrity", () => {
       }),
     );
   });
+
+  it("does not complete an outbox event when notification provider acceptance is uncertain", async () => {
+    findMany.mockResolvedValue([{ ...candidate, kind: "CUSTOMER_NOTIFICATION" }]);
+    claim.mockResolvedValue({ count: 1 });
+    sendOrderReceived.mockResolvedValue({
+      sent: [],
+      failed: [],
+      uncertain: ["EMAIL"],
+      disabled: [],
+      skipped: false,
+    });
+
+    const result = await processPendingOrderOutbox({ limit: 1 });
+
+    expect(result).toEqual({ claimed: 1, completed: 0, failed: 1 });
+    expect(eventUpdate).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: "event-1" },
+        data: expect.objectContaining({ status: "PENDING", lastError: "Error" }),
+      }),
+    );
+  });
 });

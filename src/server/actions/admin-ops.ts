@@ -6,7 +6,7 @@ import { AppError, toUserMessage } from "@/lib/errors";
 import { requirePermission } from "@/lib/auth/rbac";
 import { recordAudit } from "@/lib/audit";
 import { getAdminActionT } from "@/lib/i18n/server";
-import { CACHE_TAG_DELIVERY } from "@/lib/cache";
+import { CACHE_TAG_DELIVERY, CACHE_TAG_NAVIGATION } from "@/lib/cache";
 import { flattenZodErrors } from "@/lib/validation/common";
 import {
   adminId,
@@ -732,6 +732,7 @@ export async function saveFaqAction(input: z.infer<typeof faqSchema>) {
   });
   revalidatePath("/admin/content");
   revalidatePath("/faq");
+  revalidateTag(CACHE_TAG_NAVIGATION);
   return { ok: true as const };
 }
 
@@ -752,6 +753,8 @@ export async function deleteFaqAction(id: string) {
     resourceId: parsedId.data,
   });
   revalidatePath("/admin/content");
+  revalidatePath("/faq");
+  revalidateTag(CACHE_TAG_NAVIGATION);
   return { ok: true as const };
 }
 

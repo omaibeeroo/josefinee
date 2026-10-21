@@ -18,11 +18,21 @@ jobs:
     environment: production
     env:
       BASE_URL: ${{ github.event.deployment_status.target_url }}
-      RETENTION_JOB_SECRET: ${{ secrets.RETENTION_JOB_SECRET }}
+      EXPECTED_DEPLOYMENT_SHA: ${{ github.event.deployment.sha }}
     steps:
+      - name: Require an immutable deployment commit
+        run: |
+          if [[ ! "$EXPECTED_DEPLOYMENT_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Production smoke requires a 40-character deployment SHA; refusing to run." >&2
+            exit 1
+          fi
+
       - name: Check out smoke-test scripts
         # actions/checkout v7.0.1 (verified tag -> immutable commit SHA)
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ github.event.deployment.sha }}
+          fetch-depth: 1
 
       - name: Run production smoke tests
         run: ./scripts/smoke-production-deployment.sh

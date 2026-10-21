@@ -151,15 +151,21 @@ export async function previewCouponAction(code: string) {
       : lines;
 
     const customer = await getCustomerSession().catch(() => null);
-    const first = await isFirstOrder({ phone: "", customerId: customer?.customer.id ?? null });
+    const previewPhone = customer?.customer.phone ?? "";
+    const identityKnown = previewPhone.length > 0;
+    const first = await isFirstOrder({
+      phone: previewPhone,
+      customerId: customer?.customer.id ?? null,
+    });
     const result = await validateCoupon({
       code: normalized,
       lines: effectiveLines,
       subtotal: effectiveSubtotal,
       wilayaId: "",
-      phone: "",
+      phone: previewPhone,
       customerId: customer?.customer.id ?? null,
       isFirstOrder: first,
+      identityKnown,
       skipWilayaCheck: true,
     });
     return { ok: true as const, discount: result.discount, code: result.code };

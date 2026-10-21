@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { getAdminSession } from "@/lib/auth/session";
 import { permissionCodes } from "@/lib/auth/rbac";
+import { getAdminDashboardRedirect } from "@/lib/auth/admin-login-routing";
 import { prisma } from "@/lib/prisma";
 import { AdminShell } from "@/components/admin/shell";
 import { getDictionary } from "@/lib/i18n/server";
@@ -14,7 +15,8 @@ export default async function DashboardLayout({ children }: { children: React.Re
   if (!session) redirect("/admin/login");
   const { user } = session;
 
-  if (user.mustChangePassword) redirect("/admin/first-login");
+  const dashboardRedirect = getAdminDashboardRedirect(session);
+  if (dashboardRedirect) redirect(dashboardRedirect);
 
   const codes = new Set(permissionCodes(user));
   const has = (code: string) => user.role.name === "SUPER_ADMIN" || codes.has(code);

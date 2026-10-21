@@ -69,6 +69,7 @@ export function CheckoutForm({
   const router = useRouter();
   const { t } = useLocale();
   const idempotencyKey = useRef<string | null>(null);
+  const formErrorRef = useRef<HTMLParagraphElement>(null);
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -95,6 +96,16 @@ export function CheckoutForm({
   const [loadingRegion, setLoadingRegion] = useState(false);
   const [regionError, setRegionError] = useState<string | null>(null);
   const [regionRetryToken, setRegionRetryToken] = useState(0);
+
+  useEffect(() => {
+    if (!formError) return;
+    formErrorRef.current?.focus({ preventScroll: true });
+    const reduceMotion =
+      typeof window !== "undefined" &&
+      typeof window.matchMedia === "function" &&
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
+  }, [formError]);
 
   useEffect(() => {
     // Idempotency key only: a refresh/back-navigation must replay the same
@@ -240,15 +251,10 @@ export function CheckoutForm({
     }
     setFormError(result.error);
     if (result.fields) setFields(result.fields);
-    const reduceMotion =
-      typeof window !== "undefined" &&
-      typeof window.matchMedia === "function" &&
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    window.scrollTo({ top: 0, behavior: reduceMotion ? "auto" : "smooth" });
   }
 
   return (
-    <div dir="ltr" className="checkout-form-layout grid gap-10 lg:grid-cols-[1fr_400px]">
+    <div className="checkout-form-layout grid gap-10 lg:grid-cols-[1fr_400px]">
       <form
         onSubmit={(event) => {
           event.preventDefault();
@@ -260,6 +266,8 @@ export function CheckoutForm({
         <Honeypot value={website} onChange={setWebsite} />
         {formError && (
           <p
+            ref={formErrorRef}
+            tabIndex={-1}
             dir="auto"
             className="border border-[#9e342e]/30 bg-[#9e342e]/5 px-4 py-3 text-sm text-[#9e342e]"
             role="alert"

@@ -1,7 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
-import { prisma } from "@/lib/prisma";
+import { getStorefrontCollections } from "@/server/catalog";
+import { canOptimizeImageUrl } from "@/lib/image-url";
 import { getDictionary } from "@/lib/i18n/server";
 import { EmptyState } from "@/components/ui";
 
@@ -23,11 +24,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function CollectionsPage() {
   const t = await getDictionary();
-  const collections = await prisma.collection.findMany({
-    where: { isActive: true },
-    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    select: { name: true, slug: true, description: true, image: true },
-  });
+  const collections = await getStorefrontCollections();
 
   return (
     <div className="container-luxe py-10 md:py-14">
@@ -61,7 +58,7 @@ export default async function CollectionsPage() {
                     fill
                     sizes="(max-width: 768px) 100vw, 50vw"
                     loading="lazy"
-                    unoptimized
+                    unoptimized={!canOptimizeImageUrl(collection.image)}
                     className="object-cover"
                   />
                 ) : (

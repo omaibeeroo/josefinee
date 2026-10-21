@@ -88,10 +88,12 @@ start with `npm ci --include=dev` so checks use the committed lockfile.
 11. **Concurrent writes must be serialized or conditional.** Absolute
     inventory edits use a PostgreSQL transaction advisory lock per variant;
     preserve that invariant for any new stock or reservation operation.
-12. **External effects must be retry-safe.** Outbox effects are at-least-once.
-    Pass a stable event-derived idempotency key to every provider and persist
-    provider delivery records; never assume a process crash means the provider
-    did not accept a request.
+12. **External effects need provider-aware idempotency.** Persist a unique
+    `PENDING` delivery record before calling a provider and pass a stable,
+    event-derived idempotency key only where that provider supports it. A
+    timeout or crash after dispatch is ambiguous: do not blindly retry or mark
+    it delivered; surface it for reconciliation. Do not claim exactly-once
+    delivery without provider evidence.
 13. **Keep dependency security fixes reproducible.** Do not downgrade the
     Next.js toolchain to satisfy an audit blindly. The depth-guarded `braces`
     package is vendored under `vendor/braces` and pinned by the npm override;
@@ -260,14 +262,19 @@ start with `npm ci --include=dev` so checks use the committed lockfile.
   `noindex` for authenticated account routes. Verify public HTML, image
   delivery, Search Console behavior, and real viewport/device performance
   before claiming deployed SEO or Core Web Vitals outcomes.
-- **Production smoke can mutate data.** `npm run smoke:production` sends an
-  authorized `POST /api/internal/retention`, which executes retention cleanup.
-  Run it only on an isolated disposable CI/staging database with test-only
-  fixtures and secrets. Never run it against valuable local or production data.
-  The deployment smoke workflow's optional authorized retention probe is also
-  destructive when its secret is configured; enable it only after the release
-  owner approves the target and expected purge. An unauthorized `401` probe is
-  safe, but the authorized route is not read-only.
+- **Retention smoke is fenced by environment.** `npm run smoke:production`
+  sends an authorized `POST /api/internal/retention`, so it requires a test-only
+  secret and refuses runs unless `CI=true` and the target is HTTP loopback. The
+  GitHub CI job binds the standalone app to its disposable PostgreSQL service;
+  run the purge only there, never against valuable local, shared staging, or
+  production data. Deployment-event smoke has no retention
+  secret, accepts only allowlisted Hanadi Vercel hosts, and performs only an
+  unauthorized `401` probe. Never create a remote purge workflow that forwards
+  a privileged secret to a caller-supplied URL.
+- **Production migration ordering is an open provider gate.** The repository
+  validates migration structure in CI and documents `npm run db:deploy`, but
+  does not enforce that Vercel runs it before production activation. Keep the
+  release blocked until the provider owner wires and rehearses that exact step.
 
 ## Database workflow
 

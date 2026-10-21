@@ -3,8 +3,13 @@ import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { PAGE_SIZE, type ProductSort } from "@/lib/constants";
 import { getSettings } from "@/lib/settings";
-import { CACHE_TAG_CATALOG, CATALOG_REVALIDATE_SECONDS, stableCatalogQueryKey } from "@/lib/cache";
-import { Prisma } from "@prisma/client";
+import {
+  CACHE_TAG_CATALOG,
+  CATALOG_REVALIDATE_SECONDS,
+  MAX_PUBLIC_NAVIGATION_ITEMS,
+  stableCatalogQueryKey,
+} from "@/lib/cache";
+import { Prisma, type CollectionType } from "@prisma/client";
 
 export type StoreProductCard = {
   id: string;
@@ -55,6 +60,55 @@ export type StoreProduct = StoreProductCard & {
     optionValueIds: string[];
   }>;
 };
+
+export type StoreCollection = {
+  id: string;
+  name: string;
+  slug: string;
+  description: string | null;
+  image: string | null;
+  type: CollectionType;
+  seoTitle: string | null;
+  seoDescription: string | null;
+};
+
+const collectionSelect = {
+  id: true,
+  name: true,
+  slug: true,
+  description: true,
+  image: true,
+  type: true,
+  seoTitle: true,
+  seoDescription: true,
+} as const;
+
+const getStorefrontCollectionsCached = unstable_cache(
+  async (): Promise<StoreCollection[]> =>
+    prisma.collection.findMany({
+      where: { isActive: true },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      select: collectionSelect,
+      take: MAX_PUBLIC_NAVIGATION_ITEMS,
+    }),
+  ["catalog:collections"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_CATALOG] },
+);
+
+export function getStorefrontCollections(): Promise<StoreCollection[]> {
+  return getStorefrontCollectionsCached();
+}
+
+const getStorefrontCollectionCached = unstable_cache(
+  async (slug: string): Promise<StoreCollection | null> =>
+    prisma.collection.findFirst({ where: { slug, isActive: true }, select: collectionSelect }),
+  ["catalog:collection-by-slug"],
+  { revalidate: CATALOG_REVALIDATE_SECONDS, tags: [CACHE_TAG_CATALOG] },
+);
+
+export function getStorefrontCollection(slug: string): Promise<StoreCollection | null> {
+  return getStorefrontCollectionCached(slug);
+}
 
 const cardInclude = Prisma.validator<Prisma.ProductInclude>()({
   // Up to 6 photos feed the card image carousel (arrows/dots/swipe).

@@ -5,6 +5,14 @@ on:
     workflows: ["CI/CD"]
     types: [completed]
     branches: [staging]
+  pull_request_review:
+    types: [submitted]
+  workflow_dispatch:
+    inputs:
+      promotion_sha:
+        description: Exact staging commit SHA to re-check after protected approval
+        required: true
+        type: string
 
 permissions:
   contents: write
@@ -12,54 +20,95 @@ permissions:
 
 jobs:
   promote:
-    name: Promote tested staging commit
+    name: Promote only a ready and approved staging commit
     if: >-
+      (github.event_name == 'workflow_run' &&
       github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'staging'
+      github.event.workflow_run.head_branch == 'staging') ||
+      (github.event_name == 'pull_request_review' &&
+      github.event.pull_request.base.ref == 'main') ||
+      github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
       REPOSITORY: ${{ github.repository }}
-      TESTED_SHA: ${{ github.event.workflow_run.head_sha }}
+      TESTED_SHA: ${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha || inputs.promotion_sha }}
     steps:
-      - name: Confirm staging has not advanced since CI
+      - name: Require an exact tested SHA
         run: |
-          staging_sha="$(gh api "repos/${REPOSITORY}/git/ref/heads/staging" --jq '.object.sha')"
-          if [[ "$staging_sha" != "$TESTED_SHA" ]]; then
-            echo "Staging advanced from $TESTED_SHA to $staging_sha; refusing to promote an untested commit."
+          if [[ ! "$TESTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "Promotion requires a 40-character tested staging SHA; refusing to continue." >&2
             exit 1
           fi
 
-      - name: Skip when staging already matches main
-        id: sync_check
+      - name: Confirm staging still points to the tested SHA
         run: |
-          ahead_by="$(gh api "repos/${REPOSITORY}/compare/main...staging" --jq '.ahead_by')"
-          if [[ "$ahead_by" == "0" ]]; then
-            echo "Staging matches main; nothing to promote."
-            echo "skip=true" >> "$GITHUB_OUTPUT"
+          staging_sha="$(gh api "repos/${REPOSITORY}/git/ref/heads/staging" --jq '.object.sha')"
+          if [[ "$staging_sha" != "$TESTED_SHA" ]]; then
+            echo "Staging is $staging_sha, not the tested $TESTED_SHA; refusing to promote." >&2
+            exit 1
           fi
 
-      - name: Open or reuse staging promotion pull request
-        if: steps.sync_check.outputs.skip != 'true'
+      - name: Require successful exact-SHA staging deployment
+        id: staging_deployment
+        run: |
+          deployments="$(gh api --paginate "repos/${REPOSITORY}/deployments?sha=${TESTED_SHA}&environment=staging&per_page=100")"
+          deployment_id="$(jq -r --arg sha "$TESTED_SHA" '[.[] | select(.sha == $sha and ((.environment // "") | ascii_downcase) == "staging")][0].id // empty' <<<"$deployments")"
+          if [[ -z "$deployment_id" ]]; then
+            echo "No staging deployment exists for exact SHA $TESTED_SHA; refusing to promote." >&2
+            exit 1
+          fi
+          deployment_state="$(gh api "repos/${REPOSITORY}/deployments/${deployment_id}/statuses" --jq '.[0].state // empty')"
+          if [[ "$deployment_state" != "success" ]]; then
+            echo "Latest status for staging deployment $deployment_id is ${deployment_state:-missing}; refusing to promote." >&2
+            exit 1
+          fi
+          echo "id=$deployment_id" >> "$GITHUB_OUTPUT"
+
+      - name: Require the exact-SHA staging readiness check
+        run: |
+          readiness="$(gh api "repos/${REPOSITORY}/commits/${TESTED_SHA}/check-runs?per_page=100" --jq '[.check_runs[] | select(.name == "Staging readiness" and .head_sha == "'"$TESTED_SHA"'" and .conclusion == "success")] | length')"
+          if [[ "$readiness" != "1" ]]; then
+            echo "The exact SHA lacks one successful 'Staging readiness' check; refusing to promote." >&2
+            exit 1
+          fi
+
+      - name: Require configured protected-review rules
+        run: |
+          protection="$(gh api "repos/${REPOSITORY}/branches/main/protection/required_pull_request_reviews" 2>/dev/null)" || {
+            echo "Could not read main branch pull-request protection; refusing to assume approval rules." >&2
+            exit 1
+          }
+          required_reviews="$(jq -r '.required_approving_review_count // 0' <<<"$protection")"
+          if [[ "$required_reviews" -lt 1 ]]; then
+            echo "main has no configured required pull-request review count; refusing to promote." >&2
+            exit 1
+          fi
+
+      - name: Open or reuse the promotion pull request
         id: promotion_pr
         run: |
-          pr_number="$(gh pr list --repo "$REPOSITORY" --head staging --base main --state open --json number --jq '.[0].number')"
+          pr_number="${{ github.event.pull_request.number }}"
+          if [[ -z "$pr_number" ]]; then
+            pr_number="$(gh pr list --repo "$REPOSITORY" --head staging --base main --state open --json number --jq '.[0].number')"
+          fi
           if [[ -z "$pr_number" ]]; then
             pr_number="$(gh pr create \
               --repo "$REPOSITORY" \
               --head staging \
               --base main \
               --title "Promote staging ${TESTED_SHA:0:12} to production" \
-              --body "Automated promotion after the CI/CD workflow passed for commit ${TESTED_SHA}. Vercel deploys main to production through the linked Git integration.")"
+              --body "Promotion candidate for exact staging SHA ${TESTED_SHA}. Staging deployment ID: ${{ steps.staging_deployment.outputs.id }}. The protected main branch requires an explicit approved review before merge. Migration, rollback, backup, monitoring, and owner evidence remain separate release gates.")"
             pr_number="${pr_number##*/}"
           fi
           echo "number=$pr_number" >> "$GITHUB_OUTPUT"
 
-      - name: Merge promotion pull request
-        if: steps.sync_check.outputs.skip != 'true'
+      - name: Merge only after an explicit protected approval
         run: |
-          gh pr merge "${{ steps.promotion_pr.outputs.number }}" \
-            --repo "$REPOSITORY" \
-            --squash \
-            --auto
+          decision="$(gh pr view "${{ steps.promotion_pr.outputs.number }}" --repo "$REPOSITORY" --json reviewDecision --jq '.reviewDecision')"
+          if [[ "$decision" != "APPROVED" ]]; then
+            echo "Promotion PR is not explicitly approved (decision: ${decision:-missing}); leaving it open and not merging."
+            exit 0
+          fi
+          gh pr merge "${{ steps.promotion_pr.outputs.number }}" --repo "$REPOSITORY" --squash

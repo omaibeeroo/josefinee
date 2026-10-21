@@ -18,7 +18,14 @@ export async function GET(): Promise<NextResponse> {
       "[sitemap-index] dynamic sitemap discovery failed",
       error instanceof Error ? error.name : "unknown",
     );
-    partitions = [{ id: "fixed" }];
+    return new NextResponse("Sitemap discovery unavailable", {
+      status: 503,
+      headers: {
+        "Content-Type": "text/plain; charset=utf-8",
+        "Cache-Control": "no-store",
+        "Retry-After": "60",
+      },
+    });
   }
   const entries = partitions
     .map(({ id }) => `<sitemap><loc>${escapeXml(`${base}/sitemap/${encodeURIComponent(String(id))}.xml`)}</loc></sitemap>`)

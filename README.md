@@ -94,7 +94,7 @@ In production, configure a scheduler to `POST /api/internal/order-outbox` at lea
 
 Also schedule `POST /api/internal/retention` daily with `Authorization: Bearer $RETENTION_JOB_SECRET`. It expires technical sessions, abandons stale carts, removes expired idempotency/rate-limit records, and applies the configured analytics/notification/outbox retention windows. Orders and audit logs are never deleted by this job.
 
-`npm run smoke:production` checks storefront readiness, a known product route, missing-product `404` behavior, and retention authorization. **The authorized retention probe runs the purge.** Run this script only against a disposable/isolated test database with test-only secrets. Do not point it at a production database or a local database containing data you need. The deployment smoke workflow always checks the unauthorized response; if the GitHub Production environment provides `RETENTION_JOB_SECRET`, the workflow also invokes the authorized retention route after deployment and purges eligible records. Configure that secret only when deployment-triggered purges are explicitly approved; otherwise leave that optional production probe disabled and test the authorized route in isolated staging.
+`npm run smoke:production` is an intentionally destructive authorized-retention test, so it runs only in CI against the CI job's disposable PostgreSQL service. It checks product `200/404`, unauthorized retention `401`, and authorized retention `200`; the script refuses non-CI and non-loopback runs and requires a test-only secret. Never point it at local, shared staging, or production data. Production deployment smoke is read-only, carries no retention secret, and never calls the authorized retention route.
 
 ## Architecture
 
@@ -429,19 +429,24 @@ checkout queries stay fast and function runs stay short. The `staging`
 branch is the Preview/staging source, and `main` is the production source. Vercel Preview
 deployments are enabled for staging. The `Promote staging to production`
 workflow runs only after the all-push `CI/CD` workflow succeeds for staging;
-it verifies that the branch has not advanced since the tested commit, opens or
-reuses a staging-to-main pull request, and enables automatic squash merge.
-When staging already matches `main` (nothing to promote), it exits cleanly.
-Merging `main` then triggers Vercel's linked Git integration to deploy the
-tested commit to the production domains.
+it requires the exact SHA to remain on `staging`, a successful deployment and
+`Staging readiness` check for that SHA, readable required-review protection on
+`main`, and an explicitly approved promotion pull request. It fails closed if
+any evidence is missing; it does not enable auto-merge. Merging `main` then
+triggers Vercel's linked Git integration to deploy the tested commit.
 
-After Vercel reports a successful production deployment, the
+After a successful production deployment, the
 [`Production smoke tests`](./.github/workflows/production-smoke.yml) workflow
-checks the live deployment URL, storefront/product routes, expected 404
-behavior, internal-route authorization, and security headers. If the
-`production` GitHub environment contains `RETENTION_JOB_SECRET`, the workflow
-also verifies the authorized retention endpoint; otherwise it reports that
-optional check as skipped while still running the public safety checks.
+checks out the deployment's exact commit and checks the live deployment URL,
+storefront/product routes, expected 404 behavior, unauthorized internal-route
+rejection, maintenance signaling, and security headers. It never sends an
+authorized retention request and never mutates production data. The deployment
+URL is restricted to the Hanadi Vercel hosts. The destructive authorized
+retention assertion is reserved for `npm run smoke:production` against a
+loopback standalone server and a disposable CI database, using only a test-only
+secret; that script refuses remote URLs. The repository does not yet enforce
+the Production provider's pre-deploy `npm run db:deploy` step, so the database
+migration gate must be resolved before the next Production release.
 
 ## Scripts
 
@@ -480,6 +485,12 @@ Rules:
 - [ ] Notification providers + analytics IDs
 - [ ] Staff accounts created, demo admin disabled, 2FA enabled
 - [ ] Backups scheduled and restore tested
+
+See [`docs/OPERATIONS_RELEASE_RUNBOOK.md`](./docs/OPERATIONS_RELEASE_RUNBOOK.md)
+for the provider-neutral migration, promotion, backup/restore, rollback,
+monitoring, job ownership, and incident evidence procedure. Production
+notification providers must be explicitly configured; console providers are
+development-only and cause the production environment check to fail.
 
 ## Safe database deployment
 

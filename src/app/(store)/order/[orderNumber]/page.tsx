@@ -47,7 +47,7 @@ export default async function ConfirmationPage({
   const activeIndex = reachedIndex === -1 ? 0 : reachedIndex;
 
   return (
-    <div dir="ltr" className="order-confirmation-page container-luxe max-w-3xl py-12 md:py-16">
+    <div className="order-confirmation-page container-luxe max-w-3xl py-12 md:py-16">
       <PixelEvent
         name="Purchase"
         params={{

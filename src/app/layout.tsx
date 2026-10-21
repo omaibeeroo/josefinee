@@ -59,6 +59,9 @@ export async function generateMetadata(): Promise<Metadata> {
   const ogImage = settings.seo.defaultOgImage || "/og-default.svg";
   const siteMetadata = resolveSiteMetadata(settings.seo, dictionary.siteMetadata);
   const title = `${name} — ${siteMetadata.titleSuffix}`;
+  // FR/EN/AR are selected by a cookie, not distinct crawlable URL paths.
+  // Keep one canonical URL and intentionally emit no hreflang claims for
+  // routes that do not exist; localized UI remains truthful for visitors.
   return {
     metadataBase: new URL(base),
     applicationName: name,
@@ -67,6 +70,7 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s · ${name}`,
     },
     description: siteMetadata.description,
+    alternates: { canonical: base },
     openGraph: {
       siteName: name,
       type: "website",

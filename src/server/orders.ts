@@ -16,6 +16,8 @@ import { signOrderToken } from "@/lib/order-token";
 import { getActionT } from "@/lib/i18n/server";
 import { processPendingOrderOutbox } from "@/server/order-outbox";
 import { after } from "next/server";
+import { revalidateTag } from "next/cache";
+import { CACHE_TAG_CATALOG } from "@/lib/cache";
 import { Prisma, type DeliveryMethod } from "@prisma/client";
 export type CreateOrderResult = {
   orderId: string;
@@ -737,6 +739,9 @@ export async function createOrder(
     return placed.result;
   }
   const result = placed.result;
+  // The transaction has committed, so cached cards/details may now refresh
+  // stock and sold-count display data without affecting checkout truth.
+  revalidateTag(CACHE_TAG_CATALOG);
 
   after(async () => {
     await processPendingOrderOutbox({ orderId: result.orderId });

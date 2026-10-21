@@ -381,6 +381,8 @@ type DispatchOptions = {
 export type NotificationDispatchResult = {
   sent: NotificationChannel[];
   failed: NotificationChannel[];
+  /** Provider outcome is unknown; the pre-dispatch row remains PENDING. */
+  uncertain: NotificationChannel[];
   /** Requested channels the merchant disabled in Admin → Réglages. */
   disabled: NotificationChannel[];
   /** Every requested channel was disabled — nothing was attempted by design. */
@@ -417,6 +419,7 @@ async function dispatch(options: DispatchOptions): Promise<NotificationDispatchR
   const result: NotificationDispatchResult = {
     sent: [],
     failed: [],
+    uncertain: [],
     disabled,
     skipped: requested.length > 0 && enabled.length === 0,
   };
@@ -428,24 +431,58 @@ async function dispatch(options: DispatchOptions): Promise<NotificationDispatchR
         : toInternationalPhone(options.phone, true);
     if (!recipient) continue;
 
-    const alreadySent = await prisma.notification.findFirst({
-      where: {
-        orderId: options.orderId,
-        channel: provider.channel,
-        template: options.template,
-        status: "SENT",
-      },
-      select: { id: true },
+    const dedupeKey = `${options.orderId ?? "guest"}:${provider.channel}:${options.template}`;
+    let dispatchRecord = await prisma.notification.findUnique({
+      where: { dedupeKey },
+      select: { id: true, status: true },
     });
-    if (alreadySent) {
+    if (dispatchRecord?.status === "SENT") {
       result.sent.push(provider.channel);
       continue;
     }
-
-    // Stable key so a concurrent worker racing this send loses on the
-    // unique constraint instead of double-sending (at-least-once safe).
-    const dedupeKey = `${options.orderId ?? "guest"}:${provider.channel}:${options.template}`;
+    if (dispatchRecord?.status === "PENDING") {
+      // A prior worker may have reached the provider and crashed before it
+      // could mark the row SENT. Do not send again without provider evidence.
+      result.uncertain.push(provider.channel);
+      continue;
+    }
     try {
+      if (dispatchRecord?.status === "FAILED") {
+        const reclaimed = await prisma.notification.updateMany({
+          where: { id: dispatchRecord.id, status: "FAILED" },
+          data: { status: "PENDING", error: null },
+        });
+        if (reclaimed.count !== 1) {
+          result.uncertain.push(provider.channel);
+          continue;
+        }
+      } else {
+        try {
+          dispatchRecord = await prisma.notification.create({
+            data: {
+              orderId: options.orderId,
+              channel: provider.channel,
+              template: options.template,
+              recipient,
+              status: "PENDING",
+              provider: provider.name,
+              dedupeKey,
+            },
+            select: { id: true, status: true },
+          });
+        } catch (error) {
+          if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) {
+            throw error;
+          }
+          const raced = await prisma.notification.findUnique({
+            where: { dedupeKey },
+            select: { id: true, status: true },
+          });
+          if (raced?.status === "SENT") result.sent.push(provider.channel);
+          else result.uncertain.push(provider.channel);
+          continue;
+        }
+      }
       await provider.send({
         to: recipient,
         subject: options.subject,
@@ -455,42 +492,25 @@ async function dispatch(options: DispatchOptions): Promise<NotificationDispatchR
           ? `${options.idempotencyKey}:${provider.channel.toLowerCase()}`
           : undefined,
       });
-      try {
-        await prisma.notification.create({
-          data: {
-            orderId: options.orderId,
-            channel: provider.channel,
-            template: options.template,
-            recipient,
-            status: "SENT",
-            provider: provider.name,
-            sentAt: new Date(),
-            dedupeKey,
-          },
-        });
-      } catch (error) {
-        // Lost the race: the other worker already recorded this send.
-        if (!(error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002")) {
-          throw error;
-        }
-      }
+      await prisma.notification.update({
+        where: { id: dispatchRecord!.id },
+        data: { status: "SENT", sentAt: new Date(), error: null },
+      });
       result.sent.push(provider.channel);
     } catch (error) {
-      result.failed.push(provider.channel);
-      // Notification failures must never roll back an order.
+      const message = error instanceof Error ? error.message.slice(0, 500) : "unknown error";
+      // A network timeout or process crash can happen after a provider has
+      // accepted the request. Keep PENDING so retries never claim exactly-once
+      // delivery; only an explicit 4xx response is a definitive failure.
+      const definitive = /failed with 4\d\d$/.test(message);
       await prisma.notification
-        .create({
-          data: {
-            orderId: options.orderId,
-            channel: provider.channel,
-            template: options.template,
-            recipient,
-            status: "FAILED",
-            provider: provider.name,
-            error: error instanceof Error ? error.message.slice(0, 500) : "unknown error",
-          },
+        .update({
+          where: { id: dispatchRecord!.id },
+          data: { status: definitive ? "FAILED" : "PENDING", error: message },
         })
         .catch(() => undefined);
+      if (definitive) result.failed.push(provider.channel);
+      else result.uncertain.push(provider.channel);
       console.error(
         "[notify] delivery failed",
         options.template,

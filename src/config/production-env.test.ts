@@ -19,6 +19,16 @@ const validProductionEnv = {
   STORAGE_ACCESS_KEY: "test-access-key",
   STORAGE_SECRET_KEY: "test-secret-key",
   STORAGE_PUBLIC_HOST: "https://cdn.example.test",
+  EMAIL_PROVIDER: "resend",
+  EMAIL_API_KEY: "test-email-api-key",
+  EMAIL_FROM: "Hanadi Store <orders@example.test>",
+  SMS_PROVIDER: "twilio",
+  SMS_API_KEY: "test-sms-api-key",
+  SMS_ACCOUNT_SID: "test-sms-account",
+  SMS_FROM: "+15555550100",
+  WHATSAPP_PROVIDER: "meta",
+  WHATSAPP_API_KEY: "test-whatsapp-api-key",
+  WHATSAPP_PHONE_NUMBER_ID: "test-whatsapp-phone",
 };
 
 describe("productionEnvironmentIssues", () => {
@@ -83,8 +93,15 @@ describe("productionEnvironmentIssues", () => {
     const issues = productionEnvironmentIssues({
       ...validProductionEnv,
       EMAIL_PROVIDER: "resend",
+      EMAIL_API_KEY: undefined,
+      EMAIL_FROM: undefined,
       SMS_PROVIDER: "twilio",
+      SMS_ACCOUNT_SID: undefined,
+      SMS_API_KEY: undefined,
+      SMS_FROM: undefined,
       WHATSAPP_PROVIDER: "meta",
+      WHATSAPP_API_KEY: undefined,
+      WHATSAPP_PHONE_NUMBER_ID: undefined,
     });
     expect(issues).toContain("EMAIL_API_KEY must be configured when EMAIL_PROVIDER is resend");
     expect(issues).toContain("EMAIL_FROM must be configured when EMAIL_PROVIDER is resend");
@@ -98,6 +115,40 @@ describe("productionEnvironmentIssues", () => {
     expect(isLowEntropySecret("unit-test-secret-value-that-is-not-used-outside-tests")).toBe(false);
     expect(isLowEntropySecret(undefined)).toBe(false);
     expect(isLowEntropySecret("short")).toBe(false);
+  });
+
+  it("rejects missing and console notification providers in production", () => {
+    const missingIssues = productionEnvironmentIssues({
+      ...validProductionEnv,
+      EMAIL_PROVIDER: undefined,
+      SMS_PROVIDER: undefined,
+      WHATSAPP_PROVIDER: undefined,
+    });
+    expect(missingIssues).toContain(
+      "EMAIL_PROVIDER must be explicitly configured as resend in production",
+    );
+    expect(missingIssues).toContain(
+      "SMS_PROVIDER must be explicitly configured as twilio in production",
+    );
+    expect(missingIssues).toContain(
+      "WHATSAPP_PROVIDER must be explicitly configured as meta in production",
+    );
+
+    const consoleIssues = productionEnvironmentIssues({
+      ...validProductionEnv,
+      EMAIL_PROVIDER: "console",
+      SMS_PROVIDER: "console",
+      WHATSAPP_PROVIDER: "console",
+    });
+    expect(consoleIssues).toContain(
+      "EMAIL_PROVIDER=console is not permitted in production; configure resend",
+    );
+    expect(consoleIssues).toContain(
+      "SMS_PROVIDER=console is not permitted in production; configure twilio",
+    );
+    expect(consoleIssues).toContain(
+      "WHATSAPP_PROVIDER=console is not permitted in production; configure meta",
+    );
   });
 
   it("treats low-entropy secrets as production release blockers", () => {

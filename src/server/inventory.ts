@@ -19,6 +19,7 @@ export async function decrementStock(
 ): Promise<void> {
   if (input.quantity <= 0) throw new AppError("INVALID_QUANTITY", "Invalid quantity.");
 
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${input.variantId}, 0))`;
   const inventory = await tx.inventory.findUnique({ where: { variantId: input.variantId } });
   if (!inventory) {
     throw new AppError("OUT_OF_STOCK", "Sorry, this item is no longer available.", 409);
@@ -64,6 +65,7 @@ export async function incrementStock(
 ): Promise<void> {
   if (input.quantity <= 0) throw new AppError("INVALID_QUANTITY", "Invalid quantity.");
 
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${input.variantId}, 0))`;
   const inventory = await tx.inventory.upsert({
     where: { variantId: input.variantId },
     create: { variantId: input.variantId, stock: input.quantity },
@@ -115,6 +117,117 @@ export async function setStock(
       stockAfter: input.stock,
       reason: input.reason ?? "Manual adjustment",
       userId: input.userId,
+    },
+  });
+}
+
+/**
+ * Reserve available stock for an explicit, short-lived hold. Reservations are
+ * never implicit: callers must persist ownership and expiry in their domain
+ * record and release or capture them before the hold expires.
+ */
+export async function reserveStock(
+  tx: Tx,
+  input: { variantId: string; quantity: number; orderId?: string; reason?: string },
+): Promise<void> {
+  if (input.quantity <= 0) throw new AppError("INVALID_QUANTITY", "Invalid quantity.");
+
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${input.variantId}, 0))`;
+  const inventory = await tx.inventory.findUnique({ where: { variantId: input.variantId } });
+  if (!inventory) throw new AppError("OUT_OF_STOCK", "Sorry, this item is no longer available.", 409);
+
+  const updated = await tx.$queryRaw<Array<{ stock: number; reserved: number }>>`
+    UPDATE "Inventory"
+    SET "reserved" = "reserved" + ${input.quantity}, "updatedAt" = CURRENT_TIMESTAMP
+    WHERE "id" = ${inventory.id}
+      AND "reserved" >= 0
+      AND "stock" - "reserved" >= ${input.quantity}
+    RETURNING "stock", "reserved"
+  `;
+  if (updated.length === 0) {
+    throw new AppError("OUT_OF_STOCK", "Sorry, this item is no longer available.", 409);
+  }
+
+  await tx.inventoryTransaction.create({
+    data: {
+      inventoryId: inventory.id,
+      variantId: input.variantId,
+      type: "RESERVATION",
+      quantity: input.quantity,
+      stockAfter: updated[0]!.stock,
+      orderId: input.orderId,
+      reason: input.reason ?? "Stock reserved",
+    },
+  });
+}
+
+/** Release a previous reservation without changing physical stock. */
+export async function releaseReservedStock(
+  tx: Tx,
+  input: { variantId: string; quantity: number; orderId?: string; reason?: string },
+): Promise<void> {
+  if (input.quantity <= 0) throw new AppError("INVALID_QUANTITY", "Invalid quantity.");
+
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${input.variantId}, 0))`;
+  const updated = await tx.$queryRaw<Array<{ stock: number; reserved: number }>>`
+    UPDATE "Inventory"
+    SET "reserved" = "reserved" - ${input.quantity}, "updatedAt" = CURRENT_TIMESTAMP
+    WHERE "variantId" = ${input.variantId}
+      AND "reserved" >= ${input.quantity}
+    RETURNING "stock", "reserved"
+  `;
+  if (updated.length === 0) {
+    throw new AppError("INVALID_QUANTITY", "Reserved stock cannot become negative.");
+  }
+
+  const inventory = await tx.inventory.findUnique({ where: { variantId: input.variantId } });
+  if (!inventory) throw new AppError("INVENTORY_NOT_FOUND", "Inventory was not found.", 404);
+  await tx.inventoryTransaction.create({
+    data: {
+      inventoryId: inventory.id,
+      variantId: input.variantId,
+      type: "RELEASE",
+      quantity: -input.quantity,
+      stockAfter: updated[0]!.stock,
+      orderId: input.orderId,
+      reason: input.reason ?? "Stock reservation released",
+    },
+  });
+}
+
+/** Capture a reservation: consume both the hold and the physical stock. */
+export async function captureReservedStock(
+  tx: Tx,
+  input: { variantId: string; quantity: number; orderId?: string; reason?: string },
+): Promise<void> {
+  if (input.quantity <= 0) throw new AppError("INVALID_QUANTITY", "Invalid quantity.");
+
+  await tx.$executeRaw`SELECT pg_advisory_xact_lock(hashtextextended(${input.variantId}, 0))`;
+  const updated = await tx.$queryRaw<Array<{ stock: number; reserved: number }>>`
+    UPDATE "Inventory"
+    SET "stock" = "stock" - ${input.quantity},
+        "reserved" = "reserved" - ${input.quantity},
+        "updatedAt" = CURRENT_TIMESTAMP
+    WHERE "variantId" = ${input.variantId}
+      AND "stock" >= ${input.quantity}
+      AND "reserved" >= ${input.quantity}
+    RETURNING "stock", "reserved"
+  `;
+  if (updated.length === 0) {
+    throw new AppError("INVALID_QUANTITY", "The reservation is no longer available.", 409);
+  }
+
+  const inventory = await tx.inventory.findUnique({ where: { variantId: input.variantId } });
+  if (!inventory) throw new AppError("INVENTORY_NOT_FOUND", "Inventory was not found.", 404);
+  await tx.inventoryTransaction.create({
+    data: {
+      inventoryId: inventory.id,
+      variantId: input.variantId,
+      type: "SALE",
+      quantity: -input.quantity,
+      stockAfter: updated[0]!.stock,
+      orderId: input.orderId,
+      reason: input.reason ?? "Reserved stock captured",
     },
   });
 }

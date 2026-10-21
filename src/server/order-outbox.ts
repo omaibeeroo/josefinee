@@ -137,6 +137,7 @@ export async function processPendingOrderOutbox(
           idempotencyKey: `order-outbox:${event.id}`,
         });
         sentChannels = delivery.sent;
+        if (delivery.uncertain.length > 0) throw new Error("NotificationDeliveryUncertain");
         if (delivery.failed.length > 0) throw new Error("NotificationDeliveryFailed");
         if (sentChannels.length === 0 && delivery.skipped) {
           console.info("[outbox] customer notification skipped: all channels disabled");

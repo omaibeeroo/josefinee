@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { promotionDiscountFor } from "@/lib/promo-math";
-import { rankPromotionBadge } from "@/server/promotions";
+import { rankPromotionBadge, resolveBestPromotion } from "@/server/promotions";
 
 describe("promotionDiscountFor", () => {
   it("computes percentage discounts floored to the dinar", () => {
@@ -44,5 +44,36 @@ describe("rankPromotionBadge", () => {
   it("never picks a promotion that yields no discount", () => {
     expect(rankPromotionBadge([{ name: "Zero", type: "FIXED", value: 0 }], 1000)).toBeNull();
     expect(rankPromotionBadge([], 1000)).toBeNull();
+  });
+});
+
+describe("resolveBestPromotion", () => {
+  it("does not omit the best eligible offer after fifty active promotions", async () => {
+    const now = new Date("2026-10-21T12:00:00.000Z");
+    const promotions = Array.from({ length: 51 }, (_, index) => ({
+      id: `promotion-${index}`,
+      name: `Promotion ${index}`,
+      type: "FIXED" as const,
+      value: index === 50 ? 900 : 10,
+      startsAt: new Date("2026-10-01T00:00:00.000Z"),
+      endsAt: new Date("2026-11-01T00:00:00.000Z"),
+      isActive: true,
+      collectionId: null,
+      createdAt: new Date(now.getTime() - index * 1_000),
+      updatedAt: now,
+      products: [],
+      collection: null,
+    }));
+    const db = {
+      promotion: { findMany: async () => promotions },
+    } as never;
+
+    await expect(
+      resolveBestPromotion(
+        [{ productId: "product-1", collectionIds: [], unitPrice: 1_000, quantity: 1 }],
+        now,
+        db,
+      ),
+    ).resolves.toMatchObject({ promotionId: "promotion-50", discount: 900 });
   });
 });

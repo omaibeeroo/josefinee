@@ -527,7 +527,6 @@ function MobileMenu({
   return (
     <div
       id="mobile-navigation-dialog"
-      dir="ltr"
       className="mobile-menu-overlay fixed inset-0 z-[60] lg:hidden"
       role="dialog"
       aria-modal="true"

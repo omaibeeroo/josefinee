@@ -857,6 +857,19 @@ html.theme-switching *::after {
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
   }
+
+  /* Dialog and disclosure state changes must remain visible without motion;
+   * duration-only overrides can still leave an animation's initial transform
+   * or opacity in place while the browser samples the frame. */
+  .animate-slide-up,
+  .animate-slide-in-right,
+  .animate-slide-in-left,
+  .animate-fade-in,
+  .motion-expand {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
 }
 
 /* ---------------------------------------------------------------------------

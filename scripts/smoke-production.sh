@@ -4,10 +4,40 @@ set -euo pipefail
 BASE_URL="${BASE_URL:-http://localhost:3000}"
 BASE_URL="${BASE_URL%/}"
 RETENTION_JOB_SECRET="${RETENTION_JOB_SECRET:-}"
-TRUSTED_CLIENT_IP_HEADER="${TRUSTED_CLIENT_IP_HEADER:-x-real-ip}"
+
+# This script intentionally exercises the destructive authorized retention
+# endpoint, so it may only target the disposable local/CI database server.
+if [[ "${CI:-}" != "true" ]]; then
+  echo "Refusing authorized retention smoke outside CI." >&2
+  exit 2
+fi
+
+if ! node - "$BASE_URL" <<'NODE'
+const raw = process.argv[2];
+try {
+  const url = new URL(raw);
+  const loopback = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+  if (
+    url.protocol !== "http:" ||
+    !loopback.has(url.hostname) ||
+    url.username ||
+    url.password ||
+    url.search ||
+    url.hash
+  ) {
+    throw new Error("not a plain HTTP loopback URL");
+  }
+} catch {
+  console.error("Refusing authorized retention smoke: BASE_URL must be an HTTP loopback URL.");
+  process.exit(1);
+}
+NODE
+then
+  exit 2
+fi
 
 if [[ -z "$RETENTION_JOB_SECRET" ]]; then
-  echo "RETENTION_JOB_SECRET is required" >&2
+  echo "RETENTION_JOB_SECRET must be a test-only secret for the isolated local smoke target." >&2
   exit 2
 fi
 
@@ -53,17 +83,9 @@ fi
 expect_status 200 "existing product detail" "$BASE_URL/products/luna-pearl-necklace"
 expect_status 404 "missing product detail" "$BASE_URL/products/ci-missing-product-slug"
 expect_status 401 "unauthorized retention request" --request POST "$BASE_URL/api/internal/retention"
-
-# The local CI server has no trusted edge proxy to inject this header. Supply a
-# loopback address only for loopback smoke runs; never spoof it for a public URL.
-local_ip_header=()
-if [[ "$BASE_URL" =~ ^http://(127\.0\.0\.1|localhost)(:[0-9]+)?$ ]]; then
-  local_ip_header=(--header "$TRUSTED_CLIENT_IP_HEADER: 127.0.0.1")
-fi
-expect_status 200 "authorized retention request" \
+expect_status 200 "authorized disposable-database retention request" \
   --request POST \
   --header "Authorization: Bearer $RETENTION_JOB_SECRET" \
-  "${local_ip_header[@]}" \
   "$BASE_URL/api/internal/retention"
 
-echo "Production smoke checks passed for $BASE_URL"
+echo "Isolated standalone smoke checks passed for $BASE_URL"

@@ -32,7 +32,9 @@ export function AdminShell({
   const { t } = useLocale();
   const [menuOpen, setMenuOpen] = useState(false);
   const router = useRouter();
+  const menuTriggerRef = useRef<HTMLButtonElement>(null);
   const menuPanelRef = useRef<HTMLElement>(null);
+  const menuPanelId = "admin-mobile-navigation";
   useDialogFocus(menuOpen, menuPanelRef, () => setMenuOpen(false));
 
   useEffect(() => {
@@ -46,9 +48,12 @@ export function AdminShell({
         <div className="flex items-center justify-between gap-3 px-4 py-2.5 lg:px-6">
           <div className="flex items-center gap-3">
             <button
+              ref={menuTriggerRef}
               type="button"
               onClick={() => setMenuOpen(true)}
               aria-label={t.admin.openNav}
+              aria-expanded={menuOpen}
+              aria-controls={menuPanelId}
               className="p-2 text-ink-soft hover:text-ink lg:hidden"
             >
               <Menu size={19} />
@@ -114,6 +119,7 @@ export function AdminShell({
         {/* Sidebar (mobile drawer) */}
         {menuOpen && (
           <div
+            id={menuPanelId}
             className="fixed inset-0 z-50 lg:hidden print:hidden"
             role="dialog"
             aria-modal="true"

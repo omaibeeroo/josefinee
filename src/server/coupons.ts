@@ -32,6 +32,8 @@ export async function validateCoupon(params: {
   phone: string;
   customerId?: string | null;
   isFirstOrder: boolean;
+  /** Guest bag previews do not know the checkout phone yet. */
+  identityKnown?: boolean;
   /** Used only for bag previews — final checkout always enforces everything. */
   skipWilayaCheck?: boolean;
   db?: DbClient;
@@ -60,6 +62,11 @@ export async function validateCoupon(params: {
   }
   if (coupon.usageLimit !== null && coupon.usageCount >= coupon.usageLimit) {
     throw new AppError("COUPON_USED_UP", "This promo code has reached its limit.");
+  }
+  if (!params.identityKnown && (coupon.firstOrderOnly || (coupon.perCustomerLimit ?? 0) > 0)) {
+    // Do not claim a guest coupon is valid by checking an empty phone. Final
+    // checkout revalidates with the submitted normalized phone.
+    throw new AppError("COUPON_INVALID", "This promo code needs checkout details to be verified.");
   }
   if (coupon.firstOrderOnly && !params.isFirstOrder) {
     throw new AppError("COUPON_FIRST_ORDER", "This promo code is for first orders only.");

@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type FormEvent } from "react";
+import { useId, useMemo, useState, type FormEvent } from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { saveProductAction } from "@/server/actions/admin-catalog";
@@ -114,6 +114,7 @@ export function ProductEditor({
 }) {
   const router = useRouter();
   const { t } = useLocale();
+  const fieldIdPrefix = useId();
   const [state, setState] = useState<EditorState>(initial);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -128,6 +129,8 @@ export function ProductEditor({
     () => state.options.map((option) => option.name).filter(Boolean),
     [state.options],
   );
+  const variantFieldId = (variantIndex: number, field: string) =>
+    `${fieldIdPrefix}-variant-${variantIndex}-${field}`;
 
   async function uploadFiles(files: FileList | null) {
     if (!files || files.length === 0) return;
@@ -643,8 +646,11 @@ export function ProductEditor({
             {state.variants.map((variant, variantIndex) => (
               <div key={variantIndex} className="grid gap-2 border hairline p-3 lg:grid-cols-6">
                 <div className="lg:col-span-2">
-                  <label className="field-label">{t.adminEditor.sku} *</label>
+                  <label className="field-label" htmlFor={variantFieldId(variantIndex, "sku")}>
+                    {t.adminEditor.sku} *
+                  </label>
                   <Input
+                    id={variantFieldId(variantIndex, "sku")}
                     value={variant.sku}
                     onChange={(event) => {
                       const variants = [...state.variants];
@@ -658,8 +664,11 @@ export function ProductEditor({
                   />
                 </div>
                 <div>
-                  <label className="field-label">{t.adminEditor.priceOverride}</label>
+                  <label className="field-label" htmlFor={variantFieldId(variantIndex, "price")}>
+                    {t.adminEditor.priceOverride}
+                  </label>
                   <Input
+                    id={variantFieldId(variantIndex, "price")}
                     type="number"
                     min={0}
                     value={variant.price}
@@ -675,8 +684,11 @@ export function ProductEditor({
                   />
                 </div>
                 <div>
-                  <label className="field-label">{t.adminEditor.stock}</label>
+                  <label className="field-label" htmlFor={variantFieldId(variantIndex, "stock")}>
+                    {t.adminEditor.stock}
+                  </label>
                   <Input
+                    id={variantFieldId(variantIndex, "stock")}
                     type="number"
                     min={0}
                     value={variant.stock}
@@ -691,8 +703,11 @@ export function ProductEditor({
                   />
                 </div>
                 <div>
-                  <label className="field-label">{t.adminEditor.lowStockAt}</label>
+                  <label className="field-label" htmlFor={variantFieldId(variantIndex, "threshold")}>
+                    {t.adminEditor.lowStockAt}
+                  </label>
                   <Input
+                    id={variantFieldId(variantIndex, "threshold")}
                     type="number"
                     min={0}
                     value={variant.lowStockThreshold}
@@ -739,15 +754,19 @@ export function ProductEditor({
                 </div>
                 {optionNames.length > 0 && (
                   <div className="grid gap-2 sm:grid-cols-2 lg:col-span-6">
-                    {optionNames.map((optionName) => {
+                    {optionNames.map((optionName, optionIndex) => {
                       const option = state.options.find((entry) => entry.name === optionName);
                       const current =
                         variant.selections.find((selection) => selection.option === optionName)
                           ?.value ?? "";
+                      const optionFieldId = variantFieldId(variantIndex, `option-${optionIndex}`);
                       return (
                         <div key={optionName}>
-                          <label className="field-label">{optionName}</label>
+                          <label className="field-label" htmlFor={optionFieldId}>
+                            {optionName}
+                          </label>
                           <Select
+                            id={optionFieldId}
                             value={current}
                             onChange={(event) => {
                               const variants = [...state.variants];

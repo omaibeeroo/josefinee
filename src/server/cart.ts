@@ -9,6 +9,22 @@ import { computeAvailable } from "@/server/inventory";
 
 const CART_TTL_DAYS = 60;
 
+export function isCartExpired(cart: { expiresAt: Date | null }, now = new Date()): boolean {
+  return cart.expiresAt !== null && cart.expiresAt.getTime() <= now.getTime();
+}
+
+async function abandonExpiredCart(
+  db: PrismaClient | Prisma.TransactionClient,
+  cartId: string,
+  now = new Date(),
+): Promise<boolean> {
+  const result = await db.cart.updateMany({
+    where: { id: cartId, status: "ACTIVE", expiresAt: { not: null, lte: now } },
+    data: { status: "ABANDONED" },
+  });
+  return result.count === 1;
+}
+
 export type CartLine = {
   id: string;
   variantId: string;
@@ -94,6 +110,10 @@ export async function getCartSummary(): Promise<CartSummary> {
     if (!cart || cart.status !== "ACTIVE") {
       return { cartId: null, items: [], subtotal: 0, count: 0 };
     }
+    if (isCartExpired(cart)) {
+      await abandonExpiredCart(prisma, cart.id);
+      return { cartId: null, items: [], subtotal: 0, count: 0 };
+    }
 
     const items = cart.items
       .filter((item) => item.variant.product.status === "ACTIVE")
@@ -114,9 +134,10 @@ async function getOrCreateCart(): Promise<{ id: string; token: string }> {
 
   if (token) {
     const existing = await prisma.cart.findUnique({ where: { token } });
-    if (existing && existing.status === "ACTIVE") {
+    if (existing && existing.status === "ACTIVE" && !isCartExpired(existing)) {
       return { id: existing.id, token: existing.token };
     }
+    if (existing && existing.status === "ACTIVE") await abandonExpiredCart(prisma, existing.id);
   }
 
   const newToken = generateToken();
@@ -213,20 +234,19 @@ export async function setCartItemQuantity(itemId: string, quantity: number): Pro
   const token = await readCartToken();
   if (!token) throw new AppError("CART_NOT_FOUND", "Your bag is empty.", 404);
 
-  const cart = await prisma.cart.findUnique({ where: { token } });
-  if (!cart) throw new AppError("CART_NOT_FOUND", "Your bag is empty.", 404);
-
-  const item = await prisma.cartItem.findFirst({
-    where: { id: itemId, cartId: cart.id },
-    include: { variant: { include: { inventory: true } } },
-  });
-  if (!item) throw new AppError("CART_ITEM_NOT_FOUND", "This item is no longer in your bag.", 404);
-
   // Read and write inside one transaction so racing updates cannot both
   // pass the availability cap (checkout revalidates regardless).
   await prisma.$transaction(async (tx) => {
+    const cart = await tx.cart.findUnique({ where: { token } });
+    if (!cart || cart.status !== "ACTIVE") {
+      throw new AppError("CART_NOT_FOUND", "Your bag is empty.", 404);
+    }
+    if (isCartExpired(cart)) {
+      await abandonExpiredCart(tx, cart.id);
+      throw new AppError("CART_EMPTY", "Your bag is empty.", 400);
+    }
     const live = await tx.cartItem.findFirst({
-      where: { id: item.id },
+      where: { id: itemId, cartId: cart.id },
       include: { variant: { include: { inventory: true } } },
     });
     if (!live) throw new AppError("CART_ITEM_NOT_FOUND", "This item is no longer in your bag.", 404);
@@ -255,6 +275,11 @@ export async function removeCartItem(itemId: string): Promise<void> {
   if (!token) return;
   const cart = await prisma.cart.findUnique({ where: { token } });
   if (!cart) return;
+  if (cart.status !== "ACTIVE") return;
+  if (isCartExpired(cart)) {
+    await abandonExpiredCart(prisma, cart.id);
+    return;
+  }
   await prisma.cartItem.deleteMany({ where: { id: itemId, cartId: cart.id } });
 }
 
@@ -263,6 +288,11 @@ export async function clearCart(): Promise<void> {
   if (!token) return;
   const cart = await prisma.cart.findUnique({ where: { token } });
   if (!cart) return;
+  if (cart.status !== "ACTIVE") return;
+  if (isCartExpired(cart)) {
+    await abandonExpiredCart(prisma, cart.id);
+    return;
+  }
   await prisma.cartItem.deleteMany({ where: { cartId: cart.id } });
 }
 
@@ -296,6 +326,10 @@ export async function getCartForCheckout(
   });
 
   if (!cart || cart.items.length === 0) {
+    throw new AppError("CART_EMPTY", "Your bag is empty.", 400);
+  }
+  if (cart.status === "ACTIVE" && isCartExpired(cart)) {
+    await abandonExpiredCart(db, cart.id);
     throw new AppError("CART_EMPTY", "Your bag is empty.", 400);
   }
 

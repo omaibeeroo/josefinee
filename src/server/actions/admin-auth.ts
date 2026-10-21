@@ -120,7 +120,20 @@ export async function adminLoginAction(input: { email: string; password: string;
       data: { status: "ACTIVE", failedLoginCount: 0, lockedUntil: null },
     });
   } else if (user.status === "LOCKED" || (user.lockedUntil && user.lockedUntil > new Date())) {
-    return { ok: false as const, error: t.lockedOut };
+    // Do the same password work and failure bookkeeping as a normal bad
+    // password. Never reveal that this account is locked, and do not let the
+    // early lockout branch become a timing oracle for valid admin emails.
+    await verifyPassword(await placeholderPasswordHash(), parsed.data.password);
+    await registerFailedAdminLogin(user.id);
+    await recordAudit({
+      actorType: "SYSTEM",
+      actorUserId: null,
+      action: "ADMIN_LOGIN_FAILED",
+      resource: "User",
+      resourceId: user.id,
+      ip,
+    });
+    return { ok: false as const, error: t.badCredentials };
   }
 
   const valid = await verifyPassword(
