@@ -43,6 +43,16 @@ jobs:
       STORAGE_ACCESS_KEY: ci-access-key
       STORAGE_SECRET_KEY: ci-secret-key
       STORAGE_PUBLIC_HOST: https://cdn.example.invalid
+      EMAIL_PROVIDER: resend
+      EMAIL_API_KEY: ci-only-email-api-key
+      EMAIL_FROM: ci@example.test
+      SMS_PROVIDER: twilio
+      SMS_ACCOUNT_SID: AC00000000000000000000000000000000
+      SMS_API_KEY: ci-only-sms-api-key
+      SMS_FROM: +10000000000
+      WHATSAPP_PROVIDER: meta
+      WHATSAPP_API_KEY: ci-only-whatsapp-api-key
+      WHATSAPP_PHONE_NUMBER_ID: ci-only-whatsapp-phone-id
 
     steps:
       - name: Check out source

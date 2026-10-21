@@ -238,6 +238,12 @@ start with `npm ci --include=dev` so checks use the committed lockfile.
   probes that header (legacy `COMING SOON` body text remains only as a
   fallback for older deployments). Localizing the page once silently reddened
   every production smoke run — never reintroduce body-copy matching.
+- **Notification configuration may be incomplete only while the public site
+  is intentionally closed.** `PUBLIC_SITE_MAINTENANCE=true` may keep admin
+  routes available while notification provider settings are still an owner
+  gate. Missing providers must fail sends definitively and must never fall back
+  to console in production. Explicit console/unknown providers remain invalid;
+  configure and verify real providers before disabling maintenance.
 
 ## 2026-10-21 full-site audit rules
 

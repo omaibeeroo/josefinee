@@ -26,8 +26,8 @@ const PROVIDER_TIMEOUT_MS = 8_000;
 
 /**
  * Notifications are provider-agnostic. Configure a provider through environment
- * variables; if none is configured the event is recorded and logged (console)
- * so order flows never break and admins can see what would have been sent.
+ * variables. The console fallback is development-only; production never logs a
+ * notification as a substitute for delivery.
  *
  *   EMAIL_PROVIDER=resend|console
  *   SMS_PROVIDER=twilio|console
@@ -79,16 +79,34 @@ async function consoleSend(channel: NotificationChannel) {
   console.info(`[notify:${channel.toLowerCase()}] console provider selected`);
 }
 
+class NotificationProviderNotConfiguredError extends Error {
+  constructor(channel: NotificationChannel) {
+    super(`${channel} notification provider is not configured`);
+    this.name = "NotificationProviderNotConfiguredError";
+  }
+}
+
+export async function sendDevelopmentConsoleFallback(channel: NotificationChannel): Promise<void> {
+  if (process.env.NODE_ENV === "production") {
+    throw new NotificationProviderNotConfiguredError(channel);
+  }
+  await consoleSend(channel);
+}
+
+function providerName(provider: string | undefined): string {
+  return provider ?? (process.env.NODE_ENV === "production" ? "unconfigured" : "console");
+}
+
 function providerSignal(): AbortSignal {
   return AbortSignal.timeout(PROVIDER_TIMEOUT_MS);
 }
 
 const emailProvider: NotificationProvider = {
   channel: "EMAIL",
-  name: process.env.EMAIL_PROVIDER ?? "console",
+  name: providerName(process.env.EMAIL_PROVIDER),
   async send(message) {
     const provider = process.env.EMAIL_PROVIDER;
-    if (provider === "resend" && process.env.EMAIL_API_KEY) {
+    if (provider === "resend" && process.env.EMAIL_API_KEY && process.env.EMAIL_FROM) {
       const response = await fetch("https://api.resend.com/emails", {
         method: "POST",
         headers: {
@@ -97,7 +115,7 @@ const emailProvider: NotificationProvider = {
           ...(message.idempotencyKey ? { "Idempotency-Key": message.idempotencyKey } : {}),
         },
         body: JSON.stringify({
-          from: process.env.EMAIL_FROM ?? `${BRAND_CONFIG.name} <no-reply@example.com>`,
+          from: process.env.EMAIL_FROM,
           to: [message.to],
           subject: message.subject,
           text: message.body,
@@ -110,13 +128,13 @@ const emailProvider: NotificationProvider = {
       }
       return;
     }
-    await consoleSend("EMAIL");
+    await sendDevelopmentConsoleFallback("EMAIL");
   },
 };
 
 const smsProvider: NotificationProvider = {
   channel: "SMS",
-  name: process.env.SMS_PROVIDER ?? "console",
+  name: providerName(process.env.SMS_PROVIDER),
   async send(message) {
     const provider = process.env.SMS_PROVIDER;
     const sid = process.env.SMS_ACCOUNT_SID;
@@ -143,13 +161,13 @@ const smsProvider: NotificationProvider = {
       if (!response.ok) throw new Error(`SMS provider failed with ${response.status}`);
       return;
     }
-    await consoleSend("SMS");
+    await sendDevelopmentConsoleFallback("SMS");
   },
 };
 
 const whatsappProvider: NotificationProvider = {
   channel: "WHATSAPP",
-  name: process.env.WHATSAPP_PROVIDER ?? "console",
+  name: providerName(process.env.WHATSAPP_PROVIDER),
   async send(message) {
     const provider = process.env.WHATSAPP_PROVIDER;
     const phoneNumberId = process.env.WHATSAPP_PHONE_NUMBER_ID;
@@ -186,7 +204,7 @@ const whatsappProvider: NotificationProvider = {
       if (!response.ok) throw new Error(`WhatsApp provider failed with ${response.status}`);
       return;
     }
-    await consoleSend("WHATSAPP");
+    await sendDevelopmentConsoleFallback("WHATSAPP");
   },
 };
 
@@ -502,7 +520,8 @@ async function dispatch(options: DispatchOptions): Promise<NotificationDispatchR
       // A network timeout or process crash can happen after a provider has
       // accepted the request. Keep PENDING so retries never claim exactly-once
       // delivery; only an explicit 4xx response is a definitive failure.
-      const definitive = /failed with 4\d\d$/.test(message);
+      const definitive =
+        error instanceof NotificationProviderNotConfiguredError || /failed with 4\d\d$/.test(message);
       await prisma.notification
         .update({
           where: { id: dispatchRecord!.id },

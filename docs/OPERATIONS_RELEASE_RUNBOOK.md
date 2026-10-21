@@ -11,6 +11,10 @@ This runbook is a repository control, not production evidence. Execute the comma
 5. Open the staging-to-main pull request. Do not bypass branch protection: the promotion workflow reads the repository's actual required-review configuration and merges only after an explicit approved review. If the protection API is unavailable, promotion stops.
 6. After the production deployment reports success, `production-smoke.yml` checks only liveness, route behavior, maintenance signaling, unauthorized internal-route rejection, and security headers. It checks out the deployment SHA and never sends an authorized retention request.
 
+## Maintenance-only provider exception
+
+`PUBLIC_SITE_MAINTENANCE=true` intentionally returns `503` for public routes and allows admin startup when notification provider variables or credentials are missing. This exception exists only to preserve operator access while the store is closed: notification sends with missing/incomplete configuration fail definitively and are never sent to the console provider. Explicit `console` or unknown providers remain invalid in Production. Do not disable maintenance or accept public traffic until the real providers, sender identities, delivery/retry monitoring, and controlled test-order evidence in the release gate are complete.
+
 ## Database migration safety (H7)
 
 `npm run validate:migrations` is a repository-only gate. It verifies deterministic migration names, the presence of `migration.sql`, and rejects detected destructive SQL (`DROP`, `TRUNCATE`, direct `DELETE`, and in-place type changes); a comment in the migration cannot approve itself. Prefer expand/contract changes: add nullable/schema-compatible structures, deploy code that can read both shapes, backfill in bounded batches, switch reads/writes, and remove old structures only in a separately reviewed change.

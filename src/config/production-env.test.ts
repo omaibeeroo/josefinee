@@ -151,6 +151,32 @@ describe("productionEnvironmentIssues", () => {
     );
   });
 
+  it("allows missing notification settings only while the public site is explicitly in maintenance", () => {
+    const maintenanceEnv = {
+      ...validProductionEnv,
+      PUBLIC_SITE_MAINTENANCE: "true",
+      EMAIL_PROVIDER: undefined,
+      EMAIL_API_KEY: undefined,
+      EMAIL_FROM: undefined,
+      SMS_PROVIDER: undefined,
+      SMS_ACCOUNT_SID: undefined,
+      SMS_API_KEY: undefined,
+      SMS_FROM: undefined,
+      WHATSAPP_PROVIDER: undefined,
+      WHATSAPP_API_KEY: undefined,
+      WHATSAPP_PHONE_NUMBER_ID: undefined,
+    };
+    expect(productionEnvironmentIssues(maintenanceEnv).filter((issue) => /EMAIL|SMS|WHATSAPP/.test(issue))).toEqual([]);
+
+    const consoleIssues = productionEnvironmentIssues({
+      ...maintenanceEnv,
+      EMAIL_PROVIDER: "console",
+    });
+    expect(consoleIssues).toContain(
+      "EMAIL_PROVIDER=console is not permitted in production; configure resend",
+    );
+  });
+
   it("treats low-entropy secrets as production release blockers", () => {
     const issues = productionEnvironmentIssues({
       ...validProductionEnv,

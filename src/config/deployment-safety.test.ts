@@ -17,6 +17,8 @@ describe("deployment safety controls", () => {
     expect(deploymentSmoke).toContain("josefinee-store-");
     expect(deploymentSmoke).not.toContain("RETENTION_JOB_SECRET");
     expect(deploymentSmoke).not.toContain("Authorization: Bearer");
+    expect(deploymentSmoke).toContain('expect_status 200 "admin login page"');
+    expect(deploymentSmoke).toContain('expect_status 307 "unauthenticated admin redirect"');
     expect(workflow).toContain("ref: ${{ github.event.deployment.sha }}");
     expect(workflow).toContain("EXPECTED_DEPLOYMENT_SHA: ${{ github.event.deployment.sha }}");
     expect(workflow).not.toContain("RETENTION_JOB_SECRET");
@@ -27,6 +29,8 @@ describe("deployment safety controls", () => {
     expect(localSmoke).toContain('"${CI:-}" != "true"');
     expect(localSmoke).toContain('url.protocol !== "http:"');
     expect(localSmoke).toContain('"127.0.0.1"');
+    expect(localSmoke).toContain('expect_status 200 "admin login page"');
+    expect(localSmoke).toContain('expect_status 307 "unauthenticated admin redirect"');
     expect(localSmoke).toContain('"Authorization: Bearer $RETENTION_JOB_SECRET"');
     expect(localSmoke).toContain('"authorized disposable-database retention request"');
 

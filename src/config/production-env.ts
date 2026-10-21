@@ -112,43 +112,55 @@ export function productionEnvironmentIssues(env: Environment = process.env): str
     );
   }
 
+  // The storefront maintenance gate may keep production/admin available while
+  // provider credentials are still an owner release gate. It never permits a
+  // console or unknown provider, and opening the public site restores strict checks.
+  const publicMaintenance = env.PUBLIC_SITE_MAINTENANCE === "true";
   const emailProvider = env.EMAIL_PROVIDER;
   if (!emailProvider) {
-    issues.push("EMAIL_PROVIDER must be explicitly configured as resend in production");
+    if (!publicMaintenance) {
+      issues.push("EMAIL_PROVIDER must be explicitly configured as resend in production");
+    }
   } else if (emailProvider === "console") {
     issues.push("EMAIL_PROVIDER=console is not permitted in production; configure resend");
   } else if (emailProvider !== "resend") {
     issues.push("EMAIL_PROVIDER must be resend or console");
   } else if (emailProvider === "resend") {
-    if (!env.EMAIL_API_KEY?.trim())
+    if (!publicMaintenance && !env.EMAIL_API_KEY?.trim())
       issues.push("EMAIL_API_KEY must be configured when EMAIL_PROVIDER is resend");
-    if (!env.EMAIL_FROM?.trim())
+    if (!publicMaintenance && !env.EMAIL_FROM?.trim())
       issues.push("EMAIL_FROM must be configured when EMAIL_PROVIDER is resend");
   }
 
   const smsProvider = env.SMS_PROVIDER;
   if (!smsProvider) {
-    issues.push("SMS_PROVIDER must be explicitly configured as twilio in production");
+    if (!publicMaintenance) {
+      issues.push("SMS_PROVIDER must be explicitly configured as twilio in production");
+    }
   } else if (smsProvider === "console") {
     issues.push("SMS_PROVIDER=console is not permitted in production; configure twilio");
   } else if (smsProvider !== "twilio") {
     issues.push("SMS_PROVIDER must be twilio or console");
   } else if (smsProvider === "twilio") {
     for (const name of ["SMS_ACCOUNT_SID", "SMS_API_KEY", "SMS_FROM"]) {
-      if (!env[name]?.trim()) issues.push(`${name} must be configured when SMS_PROVIDER is twilio`);
+      if (!publicMaintenance && !env[name]?.trim()) {
+        issues.push(`${name} must be configured when SMS_PROVIDER is twilio`);
+      }
     }
   }
 
   const whatsappProvider = env.WHATSAPP_PROVIDER;
   if (!whatsappProvider) {
-    issues.push("WHATSAPP_PROVIDER must be explicitly configured as meta in production");
+    if (!publicMaintenance) {
+      issues.push("WHATSAPP_PROVIDER must be explicitly configured as meta in production");
+    }
   } else if (whatsappProvider === "console") {
     issues.push("WHATSAPP_PROVIDER=console is not permitted in production; configure meta");
   } else if (whatsappProvider !== "meta") {
     issues.push("WHATSAPP_PROVIDER must be meta or console");
   } else if (whatsappProvider === "meta") {
     for (const name of ["WHATSAPP_API_KEY", "WHATSAPP_PHONE_NUMBER_ID"]) {
-      if (!env[name]?.trim())
+      if (!publicMaintenance && !env[name]?.trim())
         issues.push(`${name} must be configured when WHATSAPP_PROVIDER is meta`);
     }
   }

@@ -107,6 +107,11 @@ else
   expect_status 503 "product route during maintenance" "$BASE_URL/products/luna-pearl-necklace"
 fi
 
+expect_status 200 "admin login page" "$BASE_URL/admin/login"
+expect_status 307 "unauthenticated admin redirect" "$BASE_URL/admin"
+admin_redirect_headers="$(curl --silent --show-error --dump-header - --output /dev/null "$BASE_URL/admin")"
+grep -Eiq '^location:[[:space:]]*/admin/login([[:space:]]|$)' <<<"$admin_redirect_headers"
+
 expect_status 401 "unauthorized retention request" --request POST "$BASE_URL/api/internal/retention"
 
 headers="$(curl --silent --show-error --dump-header - --output /dev/null "$BASE_URL/")"

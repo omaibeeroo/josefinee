@@ -1,5 +1,5 @@
-import { describe, expect, it } from "vitest";
-import { resolveEnabledChannels } from "@/lib/notifications";
+import { describe, expect, it, vi } from "vitest";
+import { resolveEnabledChannels, sendDevelopmentConsoleFallback } from "@/lib/notifications";
 
 describe("resolveEnabledChannels", () => {
   const allOn = {
@@ -24,5 +24,21 @@ describe("resolveEnabledChannels", () => {
 
   it("does not invent channels the template never requested", () => {
     expect(resolveEnabledChannels([], allOn)).toEqual([]);
+  });
+});
+
+describe("notification provider fallback", () => {
+  it("rejects unconfigured production sends instead of falling back to console", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    const consoleInfo = vi.spyOn(console, "info").mockImplementation(() => {});
+    try {
+      await expect(sendDevelopmentConsoleFallback("EMAIL")).rejects.toThrow(
+        "EMAIL notification provider is not configured",
+      );
+      expect(consoleInfo).not.toHaveBeenCalled();
+    } finally {
+      consoleInfo.mockRestore();
+      vi.unstubAllEnvs();
+    }
   });
 });
