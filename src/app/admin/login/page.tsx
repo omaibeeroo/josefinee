@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { BRAND_CONFIG } from "@/config/brand";
 import { getAdminSession } from "@/lib/auth/session";
+import { getAdminLoginRedirect } from "@/lib/auth/admin-login-routing";
 import { getDictionary } from "@/lib/i18n/server";
 import { AdminLoginForm } from "./login-form";
 
@@ -12,7 +13,8 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function AdminLoginPage() {
   const session = await getAdminSession();
-  if (session) redirect("/admin");
+  const destination = getAdminLoginRedirect(session);
+  if (destination) redirect(destination);
   const t = await getDictionary();
 
   return (
