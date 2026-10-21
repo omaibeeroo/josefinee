@@ -32,6 +32,7 @@ describe("deployment safety controls", () => {
     expect(localSmoke).toContain('expect_status 200 "admin login page"');
     expect(localSmoke).toContain('expect_status 307 "unauthenticated admin redirect"');
     expect(localSmoke).toContain('"Authorization: Bearer $RETENTION_JOB_SECRET"');
+    expect(localSmoke).toContain('"x-real-ip: 127.0.0.1"');
     expect(localSmoke).toContain('"authorized disposable-database retention request"');
 
     // Never send a destructive-operation credential to a caller-supplied URL.

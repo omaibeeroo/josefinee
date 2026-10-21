@@ -171,10 +171,16 @@ describe("productionEnvironmentIssues", () => {
     const consoleIssues = productionEnvironmentIssues({
       ...maintenanceEnv,
       EMAIL_PROVIDER: "console",
+      SMS_PROVIDER: "console",
+      WHATSAPP_PROVIDER: "console",
     });
-    expect(consoleIssues).toContain(
-      "EMAIL_PROVIDER=console is not permitted in production; configure resend",
-    );
+    expect(consoleIssues.filter((issue) => /EMAIL|SMS|WHATSAPP/.test(issue))).toEqual([]);
+
+    const unknownProviderIssues = productionEnvironmentIssues({
+      ...maintenanceEnv,
+      EMAIL_PROVIDER: "unknown-provider",
+    });
+    expect(unknownProviderIssues).toContain("EMAIL_PROVIDER must be resend");
   });
 
   it("treats low-entropy secrets as production release blockers", () => {
@@ -217,8 +223,8 @@ describe("productionEnvironmentIssues", () => {
       SMS_PROVIDER: "unknown",
       WHATSAPP_PROVIDER: "unknown",
     });
-    expect(issues).toContain("EMAIL_PROVIDER must be resend or console");
-    expect(issues).toContain("SMS_PROVIDER must be twilio or console");
-    expect(issues).toContain("WHATSAPP_PROVIDER must be meta or console");
+    expect(issues).toContain("EMAIL_PROVIDER must be resend");
+    expect(issues).toContain("SMS_PROVIDER must be twilio");
+    expect(issues).toContain("WHATSAPP_PROVIDER must be meta");
   });
 });

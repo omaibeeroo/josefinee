@@ -90,6 +90,7 @@ expect_status 401 "unauthorized retention request" --request POST "$BASE_URL/api
 expect_status 200 "authorized disposable-database retention request" \
   --request POST \
   --header "Authorization: Bearer $RETENTION_JOB_SECRET" \
+  --header "x-real-ip: 127.0.0.1" \
   "$BASE_URL/api/internal/retention"
 
 echo "Isolated standalone smoke checks passed for $BASE_URL"

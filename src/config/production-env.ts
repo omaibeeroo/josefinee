@@ -122,9 +122,11 @@ export function productionEnvironmentIssues(env: Environment = process.env): str
       issues.push("EMAIL_PROVIDER must be explicitly configured as resend in production");
     }
   } else if (emailProvider === "console") {
-    issues.push("EMAIL_PROVIDER=console is not permitted in production; configure resend");
+    if (!publicMaintenance) {
+      issues.push("EMAIL_PROVIDER=console is not permitted in production; configure resend");
+    }
   } else if (emailProvider !== "resend") {
-    issues.push("EMAIL_PROVIDER must be resend or console");
+    issues.push("EMAIL_PROVIDER must be resend");
   } else if (emailProvider === "resend") {
     if (!publicMaintenance && !env.EMAIL_API_KEY?.trim())
       issues.push("EMAIL_API_KEY must be configured when EMAIL_PROVIDER is resend");
@@ -138,9 +140,11 @@ export function productionEnvironmentIssues(env: Environment = process.env): str
       issues.push("SMS_PROVIDER must be explicitly configured as twilio in production");
     }
   } else if (smsProvider === "console") {
-    issues.push("SMS_PROVIDER=console is not permitted in production; configure twilio");
+    if (!publicMaintenance) {
+      issues.push("SMS_PROVIDER=console is not permitted in production; configure twilio");
+    }
   } else if (smsProvider !== "twilio") {
-    issues.push("SMS_PROVIDER must be twilio or console");
+    issues.push("SMS_PROVIDER must be twilio");
   } else if (smsProvider === "twilio") {
     for (const name of ["SMS_ACCOUNT_SID", "SMS_API_KEY", "SMS_FROM"]) {
       if (!publicMaintenance && !env[name]?.trim()) {
@@ -155,9 +159,11 @@ export function productionEnvironmentIssues(env: Environment = process.env): str
       issues.push("WHATSAPP_PROVIDER must be explicitly configured as meta in production");
     }
   } else if (whatsappProvider === "console") {
-    issues.push("WHATSAPP_PROVIDER=console is not permitted in production; configure meta");
+    if (!publicMaintenance) {
+      issues.push("WHATSAPP_PROVIDER=console is not permitted in production; configure meta");
+    }
   } else if (whatsappProvider !== "meta") {
-    issues.push("WHATSAPP_PROVIDER must be meta or console");
+    issues.push("WHATSAPP_PROVIDER must be meta");
   } else if (whatsappProvider === "meta") {
     for (const name of ["WHATSAPP_API_KEY", "WHATSAPP_PHONE_NUMBER_ID"]) {
       if (!publicMaintenance && !env[name]?.trim())

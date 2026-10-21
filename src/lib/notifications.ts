@@ -94,7 +94,7 @@ export async function sendDevelopmentConsoleFallback(channel: NotificationChanne
 }
 
 function providerName(provider: string | undefined): string {
-  return provider ?? (process.env.NODE_ENV === "production" ? "unconfigured" : "console");
+  return provider?.trim() || (process.env.NODE_ENV === "production" ? "unconfigured" : "console");
 }
 
 function providerSignal(): AbortSignal {

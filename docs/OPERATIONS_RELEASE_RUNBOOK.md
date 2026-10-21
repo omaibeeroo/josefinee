@@ -13,7 +13,7 @@ This runbook is a repository control, not production evidence. Execute the comma
 
 ## Maintenance-only provider exception
 
-`PUBLIC_SITE_MAINTENANCE=true` intentionally returns `503` for public routes and allows admin startup when notification provider variables or credentials are missing. This exception exists only to preserve operator access while the store is closed: notification sends with missing/incomplete configuration fail definitively and are never sent to the console provider. Explicit `console` or unknown providers remain invalid in Production. Do not disable maintenance or accept public traffic until the real providers, sender identities, delivery/retry monitoring, and controlled test-order evidence in the release gate are complete.
+`PUBLIC_SITE_MAINTENANCE=true` intentionally returns `503` for public routes and allows admin startup when notification provider variables or credentials are missing. This exception exists only to preserve operator access while the store is closed: missing/incomplete configuration and a `console` placeholder fail definitively and are never sent to the console provider. Unknown provider names remain invalid in Production, and `console` is blocked when maintenance is off. Do not disable maintenance or accept public traffic until the real providers, sender identities, delivery/retry monitoring, and controlled test-order evidence in the release gate are complete.
 
 ## Database migration safety (H7)
 
