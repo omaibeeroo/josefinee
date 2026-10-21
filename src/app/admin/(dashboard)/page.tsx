@@ -1,6 +1,14 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
+import { getAdminSession } from "@/lib/auth/session";
+import { getAdminDashboardRedirect } from "@/lib/auth/admin-login-routing";
 import { requirePermission } from "@/lib/auth/rbac";
-import { getDashboardStats, getLowStockProducts, getOrdersSeries, resolveRange } from "@/server/admin-analytics";
+import {
+  getDashboardStats,
+  getLowStockProducts,
+  getOrdersSeries,
+  resolveRange,
+} from "@/server/admin-analytics";
 import { BarList, Card, LineChart, PageHeader, StatCard } from "@/components/admin/ui";
 import { formatDA } from "@/lib/money";
 import { getDictionary } from "@/lib/i18n/server";
@@ -14,6 +22,8 @@ export default async function AdminDashboard({
 }: {
   searchParams: Promise<{ range?: string }>;
 }) {
+  const dashboardRedirect = getAdminDashboardRedirect(await getAdminSession());
+  if (dashboardRedirect) redirect(dashboardRedirect);
   await requirePermission("dashboard:read");
   const params = await searchParams;
   const preset = params.range ?? "30";
@@ -38,7 +48,11 @@ export default async function AdminDashboard({
         title={t.adminDash.title}
         description={t.adminDash.desc}
         action={
-          <div className="flex gap-1 border hairline bg-white p-1" role="group" aria-label={t.adminDash.range}>
+          <div
+            className="flex gap-1 border hairline bg-white p-1"
+            role="group"
+            aria-label={t.adminDash.range}
+          >
             {RANGE_KEYS.map((value) => (
               <Link
                 key={value}
@@ -56,26 +70,54 @@ export default async function AdminDashboard({
       />
 
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard label={t.adminDash.revenue} value={formatDA(stats.revenue, t.locale)} hint={`${stats.deliveredOrders} ${t.adminDash.deliveredOrders}`} />
-        <StatCard label={t.adminDash.orders} value={String(stats.orderCount)} hint={`${t.adminDash.aov} ${formatDA(stats.averageOrderValue, t.locale)}`} />
-        <StatCard label={t.adminDash.pending} value={String(stats.pendingOrders)} href="/admin/orders?status=PENDING" />
-        <StatCard label={t.adminDash.cancelled} value={`${stats.cancellationRate}%`} hint={`${stats.failedDeliveries} ${t.adminDash.failedDeliveries}`} />
+        <StatCard
+          label={t.adminDash.revenue}
+          value={formatDA(stats.revenue, t.locale)}
+          hint={`${stats.deliveredOrders} ${t.adminDash.deliveredOrders}`}
+        />
+        <StatCard
+          label={t.adminDash.orders}
+          value={String(stats.orderCount)}
+          hint={`${t.adminDash.aov} ${formatDA(stats.averageOrderValue, t.locale)}`}
+        />
+        <StatCard
+          label={t.adminDash.pending}
+          value={String(stats.pendingOrders)}
+          href="/admin/orders?status=PENDING"
+        />
+        <StatCard
+          label={t.adminDash.cancelled}
+          value={`${stats.cancellationRate}%`}
+          hint={`${stats.failedDeliveries} ${t.adminDash.failedDeliveries}`}
+        />
       </div>
 
       <div className="mt-4 grid gap-3 xl:grid-cols-[1.6fr_1fr]">
         <Card>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminDash.overTime}</h2>
-          <LineChart data={series.map((point) => ({ date: point.date.slice(5), value: point.orders }))} label={t.adminAnalytics.trendChart} />
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">
+            {t.adminDash.overTime}
+          </h2>
+          <LineChart
+            data={series.map((point) => ({ date: point.date.slice(5), value: point.orders }))}
+            label={t.adminAnalytics.trendChart}
+          />
         </Card>
         <Card>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminDash.revenueOverTime}</h2>
-          <LineChart data={series.map((point) => ({ date: point.date.slice(5), value: point.revenue }))} label={t.adminAnalytics.trendChart} />
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">
+            {t.adminDash.revenueOverTime}
+          </h2>
+          <LineChart
+            data={series.map((point) => ({ date: point.date.slice(5), value: point.revenue }))}
+            label={t.adminAnalytics.trendChart}
+          />
         </Card>
       </div>
 
       <div className="mt-4 grid gap-3 xl:grid-cols-3">
         <Card>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminDash.topProducts}</h2>
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">
+            {t.adminDash.topProducts}
+          </h2>
           {stats.topProducts.length === 0 ? (
             <p className="text-sm text-ink-muted">{t.adminDash.noSales}</p>
           ) : (
@@ -89,7 +131,9 @@ export default async function AdminDashboard({
           )}
         </Card>
         <Card>
-          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">{t.adminDash.salesByWilaya}</h2>
+          <h2 className="mb-4 text-sm font-medium uppercase tracking-[0.14em]">
+            {t.adminDash.salesByWilaya}
+          </h2>
           {stats.salesByWilaya.length === 0 ? (
             <p className="text-sm text-ink-muted">{t.adminDash.noOrdersPeriod}</p>
           ) : (
@@ -104,8 +148,13 @@ export default async function AdminDashboard({
         </Card>
         <Card>
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-sm font-medium uppercase tracking-[0.14em]">{t.adminDash.lowStock}</h2>
-            <Link href="/admin/inventory" className="text-xs uppercase tracking-[0.12em] underline underline-offset-2">
+            <h2 className="text-sm font-medium uppercase tracking-[0.14em]">
+              {t.adminDash.lowStock}
+            </h2>
+            <Link
+              href="/admin/inventory"
+              className="text-xs uppercase tracking-[0.12em] underline underline-offset-2"
+            >
               {t.adminDash.viewAll}
             </Link>
           </div>
@@ -119,7 +168,9 @@ export default async function AdminDashboard({
                     {item.productName}
                     {item.optionLabel ? ` · ${item.optionLabel}` : ""}
                   </span>
-                  <span className={`shrink-0 font-semibold tabular-nums ${item.stock === 0 ? "text-[#9e342e]" : "text-amber-700"}`}>
+                  <span
+                    className={`shrink-0 font-semibold tabular-nums ${item.stock === 0 ? "text-[#9e342e]" : "text-amber-700"}`}
+                  >
                     {t.adminDash.stockLeft.replace("{count}", String(item.stock))}
                   </span>
                 </li>

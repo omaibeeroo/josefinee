@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { getAdminLoginRedirect, type ExistingAdminLoginSession } from "./admin-login-routing";
+import {
+  getAdminDashboardRedirect,
+  getAdminLoginRedirect,
+  type ExistingAdminLoginSession,
+} from "./admin-login-routing";
 import type { RoleNameValue } from "./permissions";
 
 function makeSession(
@@ -43,6 +47,36 @@ describe("getAdminLoginRedirect", () => {
 
   it("prioritizes required password changes over MFA setup", () => {
     expect(getAdminLoginRedirect(makeSession({ mustChangePassword: true }))).toBe(
+      "/admin/first-login",
+    );
+  });
+});
+
+describe("getAdminDashboardRedirect", () => {
+  it("does not change the normal unauthenticated guard path", () => {
+    expect(getAdminDashboardRedirect(null)).toBeNull();
+  });
+
+  it("routes an unenrolled MFA-required admin directly to security setup", () => {
+    expect(getAdminDashboardRedirect(makeSession())).toBe("/admin/security?mfa=required");
+  });
+
+  it("routes an enrolled but unverified admin to fresh sign-in", () => {
+    expect(getAdminDashboardRedirect(makeSession({ twoFactorEnabled: true }))).toBe(
+      "/admin/login?mfa=required",
+    );
+  });
+
+  it("allows an MFA-verified session to continue through the dashboard permission guard", () => {
+    expect(getAdminDashboardRedirect(makeSession({ mfaVerifiedAt: new Date() }))).toBeNull();
+  });
+
+  it("does not impose MFA on roles without an MFA requirement", () => {
+    expect(getAdminDashboardRedirect(makeSession({ role: "CUSTOMER_SUPPORT" }))).toBeNull();
+  });
+
+  it("prioritizes the first-login password change", () => {
+    expect(getAdminDashboardRedirect(makeSession({ mustChangePassword: true }))).toBe(
       "/admin/first-login",
     );
   });

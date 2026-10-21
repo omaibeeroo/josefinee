@@ -25,3 +25,17 @@ export function getAdminLoginRedirect(session: ExistingAdminLoginSession | null)
 
   return "/admin";
 }
+
+/** Redirect an authenticated but MFA-pending visitor before the dashboard guard throws 403. */
+export function getAdminDashboardRedirect(
+  session: ExistingAdminLoginSession | null,
+): string | null {
+  if (!session) return null;
+  if (session.user.mustChangePassword) return "/admin/first-login";
+  if (roleRequiresMfa(session.user.role.name) && !session.session.mfaVerifiedAt) {
+    return session.user.twoFactorEnabled
+      ? "/admin/login?mfa=required"
+      : "/admin/security?mfa=required";
+  }
+  return null;
+}
