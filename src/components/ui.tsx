@@ -218,7 +218,7 @@ export function QuantitySelector({
   return (
     <div
       className={cn(
-        "inline-flex items-center border hairline bg-white",
+        "quantity-selector inline-flex items-center border hairline bg-white",
         small ? "h-8" : "h-[2.875rem]",
       )}
     >
@@ -623,8 +623,8 @@ export function Honeypot({
       aria-hidden="true"
       style={{
         position: "absolute",
-        left: "-9999px",
-        top: "auto",
+        left: 0,
+        top: "-9999px",
         width: 1,
         height: 1,
         overflow: "hidden",

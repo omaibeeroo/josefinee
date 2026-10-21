@@ -215,7 +215,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               />
               <div>
                 <dt className="font-medium">{t.product.codTitle}</dt>
-                <dd className="text-ink-soft">{t.product.codText}</dd>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -227,7 +226,6 @@ export default async function ProductPage({ params }: { params: Promise<{ slug: 
               />
               <div>
                 <dt className="font-medium">{t.product.wilayas58}</dt>
-                <dd className="text-ink-soft">{t.product.shippingAtCheckout}</dd>
               </div>
             </div>
           </dl>

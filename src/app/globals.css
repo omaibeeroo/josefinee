@@ -2978,7 +2978,7 @@ html[lang="ar"] .btn {
 
 @media (max-width: 767px) {
   .product-purchase-actions {
-    grid-template-columns: minmax(4.75rem, 0.3fr) minmax(0, 1fr);
+    grid-template-columns: minmax(5.5rem, 0.34fr) minmax(0, 1fr);
     column-gap: 0.5rem;
   }
 
@@ -2989,8 +2989,8 @@ html[lang="ar"] .btn {
   }
 
   .product-purchase-actions .quantity-selector button {
-    width: 1.6rem;
-    min-width: 1.6rem;
+    width: 2rem;
+    min-width: 2rem;
     padding-inline: 0;
   }
 }
@@ -3059,5 +3059,181 @@ html[lang="ar"] .btn {
   .inline-mobile-checkout .checkout-summary .flex.gap-2 > button {
     flex: 0 0 auto;
     white-space: nowrap;
+  }
+}
+
+/* Clean, legible type system for the inline checkout card in every locale. */
+.inline-mobile-checkout .checkout-form-layout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.inline-mobile-checkout .checkout-form section .grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.inline-mobile-checkout-panel > div:first-child h2 {
+  font-family: var(--font-sans);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: normal;
+}
+
+.inline-mobile-checkout-panel > div:first-child button {
+  margin-inline-end: 0;
+}
+
+.inline-mobile-checkout .checkout-form section h2 {
+  margin-bottom: 0.65rem;
+  font-family: var(--font-sans);
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.35;
+  letter-spacing: normal;
+}
+
+.inline-mobile-checkout .checkout-form label,
+.inline-mobile-checkout .checkout-form legend {
+  font-size: 0.82rem;
+  font-weight: 650;
+  line-height: 1.45;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.inline-mobile-checkout .checkout-form .field-label {
+  margin-bottom: 0.4rem;
+  color: var(--color-ink-soft);
+  font-size: 0.8rem;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.inline-mobile-checkout .checkout-form .field,
+.inline-mobile-checkout .checkout-form input:not([type="checkbox"]):not([type="radio"]),
+.inline-mobile-checkout .checkout-form select,
+.inline-mobile-checkout .checkout-form textarea {
+  font-size: 1rem;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.inline-mobile-checkout .checkout-form .checkout-option {
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.inline-mobile-checkout .checkout-form .checkout-option .text-xs {
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
+.inline-mobile-checkout .checkout-form [role="alert"],
+.inline-mobile-checkout .checkout-form [role="status"] {
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.inline-mobile-checkout .checkout-form button[type="submit"] {
+  min-height: 2.85rem;
+  padding-block: 0.7rem;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.inline-mobile-checkout .checkout-summary h2 {
+  font-family: var(--font-sans);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: 0.08em;
+}
+
+.inline-mobile-checkout .checkout-summary li {
+  font-size: 0.9rem;
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.inline-mobile-checkout .checkout-summary li p:first-child {
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.inline-mobile-checkout .checkout-summary li .text-xs {
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+.inline-mobile-checkout .checkout-summary li > p:last-child {
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+
+.inline-mobile-checkout .checkout-summary .field-label {
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.inline-mobile-checkout .checkout-summary .btn {
+  min-height: 2.65rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.inline-mobile-checkout .checkout-summary dl {
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.inline-mobile-checkout .checkout-summary dl > div:last-child {
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.inline-mobile-checkout .checkout-summary dl > div:last-child dd {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.inline-mobile-checkout .checkout-summary > p {
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+[dir="rtl"] .inline-mobile-checkout-panel > div:first-child h2,
+[dir="rtl"] .inline-mobile-checkout .checkout-form section h2,
+[dir="rtl"] .inline-mobile-checkout .checkout-summary h2 {
+  font-family: var(--font-display-ar), var(--font-sans-ar), var(--font-sans);
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+[dir="rtl"] .inline-mobile-checkout .checkout-form label,
+[dir="rtl"] .inline-mobile-checkout .checkout-form legend,
+[dir="rtl"] .inline-mobile-checkout .checkout-form .field-label,
+[dir="rtl"] .inline-mobile-checkout .checkout-summary .field-label {
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+@media (max-width: 380px) {
+  .inline-mobile-checkout-panel > div:first-child h2 {
+    font-size: 1.2rem;
+  }
+
+  .inline-mobile-checkout .checkout-form section h2 {
+    font-size: 1rem;
+  }
+
+  .inline-mobile-checkout .checkout-summary li p:first-child {
+    font-size: 0.9rem;
   }
 }
