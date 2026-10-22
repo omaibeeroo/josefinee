@@ -1,4 +1,4 @@
-name: Staging readiness
+name: Staging readiness producer
 
 on:
   deployment_status:
@@ -156,11 +156,11 @@ jobs:
             conclusion=failure
             summary="Exact-SHA Preview smoke did not pass. Review the workflow run; no promotion should proceed."
           fi
-          gh api "repos/${REPOSITORY}/check-runs" --method POST \
-            --raw-field name="Staging readiness" \
-            --raw-field head_sha="$CHECK_SHA" \
-            --raw-field status="completed" \
-            --raw-field conclusion="$conclusion" \
-            --raw-field details_url="$RUN_URL" \
-            --raw-field 'output[title]=Read-only staging deployment smoke' \
-            --raw-field "output[summary]=$summary" >/dev/null
+          payload="$(jq -n \
+            --arg name "Staging readiness" \
+            --arg head_sha "$CHECK_SHA" \
+            --arg conclusion "$conclusion" \
+            --arg details_url "$RUN_URL" \
+            --arg summary "$summary" \
+            '{name:$name, head_sha:$head_sha, status:"completed", conclusion:$conclusion, details_url:$details_url, output:{title:"Read-only staging deployment smoke", summary:$summary}}')"
+          gh api "repos/${REPOSITORY}/check-runs" --method POST --input - <<<"$payload" >/dev/null

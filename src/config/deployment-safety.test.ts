@@ -46,13 +46,14 @@ describe("deployment safety controls", () => {
     const workflow = read(".github/workflows/staging-readiness.yml");
 
     expect(workflow).toContain("deployment_status:");
+    expect(workflow).toContain("name: Staging readiness producer");
     expect(workflow).toContain("github.event.deployment.environment == 'Preview'");
     expect(workflow).toContain("git/ref/heads/staging");
     expect(workflow).toContain("deployment_ref");
     expect(workflow).toContain("deployment_environment");
     expect(workflow).toContain("checks: write");
-    expect(workflow).toContain('name="Staging readiness"');
-    expect(workflow).toContain('head_sha="$CHECK_SHA"');
+    expect(workflow).toContain('--arg name "Staging readiness"');
+    expect(workflow).toContain('--arg head_sha "$CHECK_SHA"');
     expect(workflow).toContain("ref: ${{ needs.select.outputs.sha }}");
     expect(workflow).toContain("scripts/smoke-production-deployment.sh");
     expect(workflow).not.toContain("RETENTION_JOB_SECRET");
