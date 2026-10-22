@@ -42,13 +42,35 @@ describe("deployment safety controls", () => {
     expect(existsSync(resolve(root, "scripts/validate-retention-staging.sh"))).toBe(false);
   });
 
-  it("requires readiness and protected approval before promotion", () => {
+  it("produces staging readiness only for the current Preview SHA with a read-only smoke", () => {
+    const workflow = read(".github/workflows/staging-readiness.yml");
+
+    expect(workflow).toContain("deployment_status:");
+    expect(workflow).toContain("github.event.deployment.environment == 'Preview'");
+    expect(workflow).toContain("git/ref/heads/staging");
+    expect(workflow).toContain("deployment_ref");
+    expect(workflow).toContain("deployment_environment");
+    expect(workflow).toContain("checks: write");
+    expect(workflow).toContain('name="Staging readiness"');
+    expect(workflow).toContain('head_sha="$CHECK_SHA"');
+    expect(workflow).toContain("ref: ${{ needs.select.outputs.sha }}");
+    expect(workflow).toContain("scripts/smoke-production-deployment.sh");
+    expect(workflow).not.toContain("RETENTION_JOB_SECRET");
+    expect(workflow).not.toContain("Authorization: Bearer");
+  });
+
+  it("requires exact-SHA CI, Preview deployment, readiness, and protected approval before promotion", () => {
     const workflow = read(".github/workflows/promote-staging.yml");
 
-    expect(workflow).toContain("deployments?sha=${TESTED_SHA}&environment=staging");
+    expect(workflow).toContain("actions/runs?head_sha=${TESTED_SHA}");
+    expect(workflow).toContain('name == "CI/CD"');
+    expect(workflow).toContain("deployments?sha=${TESTED_SHA}&per_page=100");
+    expect(workflow).toContain('ascii_downcase) == "preview"');
     expect(workflow).toContain('name == "Staging readiness"');
     expect(workflow).toContain("required_pull_request_reviews");
     expect(workflow).toContain('decision" != "APPROVED"');
+    expect(workflow).toContain("compare/main...staging");
+    expect(workflow).not.toContain("environment=staging");
     expect(workflow).not.toContain("--auto");
   });
 

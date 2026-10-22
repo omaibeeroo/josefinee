@@ -1,0 +1,166 @@
+name: Staging readiness
+
+on:
+  deployment_status:
+  workflow_dispatch:
+    inputs:
+      staging_sha:
+        description: Exact current staging commit SHA to validate
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  deployments: read
+
+jobs:
+  select:
+    name: Select current staging deployment
+    if: >-
+      (github.event_name == 'deployment_status' &&
+      github.event.deployment_status.state == 'success' &&
+      github.event.deployment.environment == 'Preview') ||
+      github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPOSITORY: ${{ github.repository }}
+      EVENT_NAME: ${{ github.event_name }}
+      STAGING_SHA_INPUT: ${{ inputs.staging_sha }}
+      DEPLOYMENT_ID: ${{ github.event.deployment.id }}
+      DEPLOYMENT_SHA: ${{ github.event.deployment.sha }}
+      DEPLOYMENT_STATUS: ${{ github.event.deployment_status.state }}
+      DEPLOYMENT_TARGET_URL: ${{ github.event.deployment_status.target_url }}
+    outputs:
+      eligible: ${{ steps.resolve.outputs.eligible }}
+      sha: ${{ steps.resolve.outputs.sha }}
+      target_url: ${{ steps.resolve.outputs.target_url }}
+    steps:
+      - name: Resolve and verify the exact staging deployment
+        id: resolve
+        shell: bash
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            sha="$STAGING_SHA_INPUT"
+          else
+            sha="$DEPLOYMENT_SHA"
+          fi
+          if [[ ! "$sha" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "A full 40-character deployment SHA is required." >&2
+            exit 1
+          fi
+
+          current_staging_sha="$(gh api "repos/${REPOSITORY}/git/ref/heads/staging" --jq '.object.sha')"
+          if [[ "$current_staging_sha" != "$sha" ]]; then
+            if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+              echo "Requested SHA is not the current staging ref; refusing to validate it." >&2
+              exit 1
+            fi
+            echo "Stale Preview deployment; current staging is $current_staging_sha, deployment is $sha."
+            echo "eligible=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            deployments="$(gh api "repos/${REPOSITORY}/deployments?sha=${sha}&per_page=100")"
+            deployment_id="$(jq -r --arg sha "$sha" '([.[] | select(.sha == $sha and .ref == $sha and ((.environment // "") | ascii_downcase) == "preview")] | sort_by(.created_at) | last | .id) // empty' <<<"$deployments")"
+            if [[ -z "$deployment_id" ]]; then
+              echo "No Preview deployment exists for current staging SHA $sha." >&2
+              exit 1
+            fi
+          else
+            deployment_id="$DEPLOYMENT_ID"
+          fi
+
+          deployment="$(gh api "repos/${REPOSITORY}/deployments/${deployment_id}")"
+          deployment_sha="$(jq -r '.sha // empty' <<<"$deployment")"
+          deployment_ref="$(jq -r '.ref // empty' <<<"$deployment")"
+          deployment_environment="$(jq -r '.environment // empty' <<<"$deployment")"
+          if [[ "$deployment_sha" != "$sha" || "$deployment_ref" != "$sha" || "${deployment_environment,,}" != "preview" ]]; then
+            echo "Deployment metadata does not identify the exact Preview commit." >&2
+            exit 1
+          fi
+
+          statuses="$(gh api "repos/${REPOSITORY}/deployments/${deployment_id}/statuses")"
+          state="$(jq -r '.[0].state // empty' <<<"$statuses")"
+          if [[ "$state" != "success" ]]; then
+            echo "Latest Preview status is ${state:-missing}; readiness cannot run." >&2
+            exit 1
+          fi
+          target_url="${DEPLOYMENT_TARGET_URL:-}"
+          if [[ -z "$target_url" ]]; then
+            target_url="$(jq -r '.[0].environment_url // .[0].target_url // empty' <<<"$statuses")"
+          fi
+          if [[ -z "$target_url" ]]; then
+            echo "The exact Preview deployment has no target URL." >&2
+            exit 1
+          fi
+
+          echo "eligible=true" >> "$GITHUB_OUTPUT"
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+          echo "target_url=$target_url" >> "$GITHUB_OUTPUT"
+
+  smoke:
+    name: Run read-only staging smoke
+    needs: select
+    if: needs.select.outputs.eligible == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      checks: write
+      contents: read
+    env:
+      GH_TOKEN: ${{ github.token }}
+      REPOSITORY: ${{ github.repository }}
+      BASE_URL: ${{ needs.select.outputs.target_url }}
+      EXPECTED_DEPLOYMENT_SHA: ${{ needs.select.outputs.sha }}
+    steps:
+      - name: Confirm staging has not moved since deployment selection
+        run: |
+          set -euo pipefail
+          current_staging_sha="$(gh api "repos/${REPOSITORY}/git/ref/heads/staging" --jq '.object.sha')"
+          if [[ "$current_staging_sha" != "$EXPECTED_DEPLOYMENT_SHA" ]]; then
+            echo "Staging moved to $current_staging_sha; refusing to test the stale deployment." >&2
+            exit 1
+          fi
+
+      - name: Check out the exact deployed staging commit
+        # actions/checkout v7.0.1 (verified tag -> immutable commit SHA)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: ${{ needs.select.outputs.sha }}
+          fetch-depth: 1
+
+      - name: Run read-only, host-restricted deployment smoke
+        id: smoke
+        run: ./scripts/smoke-production-deployment.sh
+
+      - name: Publish readiness result against the tested commit
+        if: always()
+        env:
+          CHECK_SHA: ${{ needs.select.outputs.sha }}
+          SMOKE_OUTCOME: ${{ steps.smoke.outcome }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$CHECK_SHA" =~ ^[0-9a-f]{40}$ ]]; then
+            echo "No valid tested SHA is available for the readiness check." >&2
+            exit 1
+          fi
+          if [[ "$SMOKE_OUTCOME" == "success" ]]; then
+            conclusion=success
+            summary="Exact-SHA Preview smoke passed. The allowlisted smoke performs read-only GET requests and does not send a retention credential."
+          else
+            conclusion=failure
+            summary="Exact-SHA Preview smoke did not pass. Review the workflow run; no promotion should proceed."
+          fi
+          gh api "repos/${REPOSITORY}/check-runs" --method POST \
+            --raw-field name="Staging readiness" \
+            --raw-field head_sha="$CHECK_SHA" \
+            --raw-field status="completed" \
+            --raw-field conclusion="$conclusion" \
+            --raw-field details_url="$RUN_URL" \
+            --raw-field 'output[title]=Read-only staging deployment smoke' \
+            --raw-field "output[summary]=$summary" >/dev/null

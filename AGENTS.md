@@ -282,6 +282,15 @@ start with `npm ci --include=dev` so checks use the committed lockfile.
   validates migration structure in CI and documents `npm run db:deploy`, but
   does not enforce that Vercel runs it before production activation. Keep the
   release blocked until the provider owner wires and rehearses that exact step.
+- **Staging readiness is exact-SHA and non-mutating.** Vercel labels the
+  staging-branch deployment `Preview`; verify its deployment SHA and current
+  `staging` ref match before testing. `.github/workflows/staging-readiness.yml`
+  checks out that exact SHA, uses only the allowlisted GET-only deployment
+  smoke, and publishes its readiness check against that SHA. Promotion also
+  requires exact-SHA CI, the latest successful Preview/readiness evidence, and
+  protected review. Never send retention credentials to deployment-event
+  workflows or caller-supplied URLs, and do not treat workflow presence as
+  staging evidence.
 
 ## Database workflow
 

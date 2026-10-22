@@ -271,6 +271,13 @@ performance, legal compliance, or operational readiness.
   public metadata/canonicals are explicit, and authenticated account routes are
   marked noindex. These source changes still need browser, network, Lighthouse,
   and Search Console verification in the target deployment.
+- **Staging readiness and promotion:** `.github/workflows/staging-readiness.yml`
+  accepts only a successful Vercel `Preview` deployment whose SHA is still the
+  current `staging` ref, checks out that exact commit, runs the host-restricted
+  read-only deployment smoke, and publishes a `Staging readiness` check on the
+  tested SHA. Promotion additionally requires exact-SHA CI, the latest matching
+  Preview/readiness evidence, and the configured protected review. This wiring
+  is not evidence of a successful staging rehearsal; see the release gate.
 - **Evidence and remaining gates:** see
   [`docs/AUDIT_RELEASE_GATE.md`](./docs/AUDIT_RELEASE_GATE.md). All unchecked
   production-owner, staging, legal, backup/restore, monitoring, and real-device
