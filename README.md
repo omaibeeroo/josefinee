@@ -95,7 +95,7 @@ In production, configure a scheduler to `POST /api/internal/order-outbox` at lea
 
 Also schedule `POST /api/internal/retention` daily with `Authorization: Bearer $RETENTION_JOB_SECRET`. It expires technical sessions, abandons stale carts, removes expired idempotency/rate-limit records, and applies the configured analytics/notification/outbox retention windows. Orders and audit logs are never deleted by this job.
 
-`npm run smoke:production` is an intentionally destructive authorized-retention test, so it runs only in CI against the CI job's disposable PostgreSQL service. It checks product `200/404`, unauthorized retention `401`, and authorized retention `200`; the script refuses non-CI and non-loopback runs and requires a test-only secret. Never point it at local, shared staging, or production data. Production deployment smoke is read-only, carries no retention secret, and never calls the authorized retention route.
+`npm run smoke:production` is an intentionally destructive authorized-retention test, so it runs only in CI against the CI job's disposable PostgreSQL service. It checks admin login `200`, unauthenticated admin redirect `307`, product `200/404`, unauthorized retention `401`, and authorized retention `200`; the script refuses non-CI and non-loopback runs and requires a test-only secret. Never point it at local, shared staging, or production data. Production deployment smoke is read-only, checks admin login/redirect and public maintenance/store behavior, carries no retention secret, and never calls the authorized retention route.
 
 ## Architecture
 

@@ -4,13 +4,13 @@
 
 **Repository:** `/home/ubuntu/josefinee-reclone-20261019-1545`
 
-**Status:** Code-level remediation is implemented in the current working tree; **NOT READY FOR BROAD PRODUCTION TRAFFIC** until the open release blockers below are evidenced.
+**Status:** Code-level remediation is verified at application commit `6861770`; **NOT READY FOR BROAD PRODUCTION TRAFFIC** until the open release blockers below are evidenced.
 **Basis:** The ranked findings preserve the original source-audit record; this report adds the current remediation disposition, local verification, and unresolved release evidence. It makes **no security, compliance, performance, accessibility, or operational certification claim**.
 
 ## Executive status
 
 - The baseline contained **31 findings** (**7 High, 19 Medium, 5 Low**; no Critical finding). Code fixes or explicit release-gate corrections are present for the 27 H2/H3/H5, M0–M18, and L1–L5 items. H6 is only partially discharged: the promotion workflow fails closed on exact-SHA staging/readiness requirements, but the current repository does not produce the required `Staging readiness` check. H7 remains open; H8–H9 still require owner-operated evidence and rehearsals.
-- **28 release-gate rows remain unchecked** in `docs/AUDIT_RELEASE_GATE.md`: 15 engineering/project-verifiable rows and 13 production-owner rows. An unchecked item is not passed.
+- **21 release-gate rows remain unchecked** in `docs/AUDIT_RELEASE_GATE.md`: 8 engineering/project-verifiable rows and 13 production-owner rows. Seven project-verifiable checks are marked with exact-SHA CI/deployment evidence. An unchecked item is not passed.
 - **Release remains blocked** on a working exact-SHA staging readiness signal, provider-wired pre-deploy production migrations, and the required staging, backup/restore, rollback, monitoring, and owner-evidence records. Production maintenance mode remains intentionally enabled; this report does not authorize disabling it.
 - The original and current verification evidence is separated below. Local tests and builds do not certify owner-controlled, provider, real-device, or legal/privacy gates.
 
@@ -22,8 +22,8 @@ Evidence classes used in this report:
 
 - **Source review:** code/schema/workflow/documentation observations, with exact file and line locations.
 - **Test evidence:** clean lockfile install, typecheck, lint, all automated tests, Prisma validation, and production build were rerun against the audit target SHA; exact outcomes follow.
-- **Live read-only probes:** production Vercel status/logs and unauthenticated HTTP GETs were checked. No browser, authenticated user session, order submission, authorized retention call, database inspection, provider, screen-reader, or real-device test was performed.
-- **Owner evidence:** **not performed**; external release gates remain unverified unless separately documented by the parent agent.
+- **Live and CI evidence:** production Vercel status/logs and unauthenticated HTTP GETs were checked; CI exercised authorized retention only against its disposable PostgreSQL database. No browser, authenticated user session, order submission, production-authorized retention call, direct database inspection, provider-delivery, screen-reader, or real-device test was performed.
+- **Owner evidence:** **not performed**; external release gates remain unverified unless separately documented by the owner.
 
 ## Baseline verification before remediation
 
@@ -41,17 +41,19 @@ Evidence classes used in this report:
 
 ## Verification of the remediation working tree
 
-- `npm ci --include=dev`: passed. The lockfile install reported 0 vulnerabilities.
-- `npm run typecheck`, `npm run lint`, and `npm test -- --run`: passed; **37 test files, 189 tests**.
+- `npm ci --include=dev`: passed on the exact current SHA in GitHub CI. The lockfile install reported 0 vulnerabilities.
+- `npm run typecheck`, `npm run lint`, and `npm test -- --run`: passed; **37 test files, 191 tests**.
 - `npx prisma validate` and `npm run validate:migrations`: passed; 10 migration directories validated, with no destructive SQL detected.
-- `APP_URL=https://ci.example.invalid npm run build`: passed for Next.js 15.5.27.
+- `APP_URL=https://ci.example.invalid npm run build`: passed locally for Next.js 15.5.27; the exact-SHA CI build also passed on its single rerun after a transient `next/font/google` stylesheet parse failure.
 - `npm audit --include=dev --audit-level=high`: passed with 0 vulnerabilities; this supersedes the baseline's moderate `sanitize-html` advisory after the lockfile/dependency remediation.
 - `git diff --check`: passed. The authorized retention smoke was not run outside CI; it is destructive and now rejects non-CI execution.
-- Final read-only GETs against Production deployment `ae96581654912267ec0cb53c877a524fd7a835a7`: `/`, `/shop`, `/faq`, and the known product route returned `503`, `X-Hanadi-Maintenance: coming-soon`, `Retry-After: 300`, and `Cache-Control: no-store, max-age=0`. `/admin/login` returned `200`; unauthenticated `/admin` returned `307` to `/admin/login`. Maintenance remains enabled; no production data was changed.
+- Historical pre-remediation GETs against Production deployment `ae96581654912267ec0cb53c877a524fd7a835a7` returned the intentional `503` maintenance response for public routes and kept `/admin/login` available.
+- Exact application SHA under verification, `686177087a14e46feef67272ee2844f91977d5a0`: [CI/CD run 39675240911](https://github.com/omaibeeroo/josefinee/actions/runs/39675240911), [Security and supply chain run 39675240777](https://github.com/omaibeeroo/josefinee/actions/runs/39675240777), and [Production smoke run 39675478295](https://github.com/omaibeeroo/josefinee/actions/runs/39675478295) all passed. Vercel Production deployment `7237233684` reports success for the same SHA.
+- The current exact-SHA, read-only deployment smoke confirmed the public root/product route remain `503` with the maintenance marker, `/admin/login` is `200`, unauthenticated `/admin` redirects `307` to login, unauthorized retention is `401`, and security headers are present. Maintenance remains enabled; no production setting or production data was changed. The authorized retention smoke ran only in CI against its disposable PostgreSQL database.
 
 ## Current remediation disposition
 
-The ranked tables below preserve the original finding text and source locations; they are **not a statement that those defects remain in the current tree**. The following disposition reflects the current local working tree. Automated checks validate code paths, while staging and owner gates remain separate.
+The ranked tables below preserve the original finding text and source locations; they are **not a statement that those defects remain in the current tree**. The following disposition reflects tested application SHA `6861770`. Automated checks validate code paths, while staging and owner gates remain separate.
 
 | Finding(s) | Current disposition |
 | --- | --- |
