@@ -171,6 +171,9 @@ start with `npm ci --include=dev` so checks use the committed lockfile.
     `HANADI_PREVIEW_DATA_ISOLATION_CONFIRMED=true`; readiness and promotion also
     require the same GitHub repository variable. Set neither as a workaround:
     enable them only after the owner records verification of separate resources.
+    This guard is not retroactive: protect or retire every older Preview
+    deployment that does not contain the fence until a guarded redeployment is
+    active.
 
 ## October 2026 audit additions (verified fixes — preserve these)
 

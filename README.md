@@ -453,7 +453,10 @@ application returns a no-store `503` for every Vercel Preview request unless
 `HANADI_PREVIEW_DATA_ISOLATION_CONFIRMED=true` is set in Preview. The owner must
 also set the GitHub repository variable `HANADI_PREVIEW_DATA_ISOLATION_CONFIRMED`
 to `true` after the same verification; readiness and promotion workflows fail
-closed without that attestation.
+closed without that attestation. This guard only applies to deployments that
+contain the updated middleware; the existing older Preview deployment has not
+received it. Protect or retire that deployment in Vercel until isolated
+resources are verified and a guarded Preview deployment is active.
 
 After a successful production deployment, the
 [`Production smoke tests`](./.github/workflows/production-smoke.yml) workflow
