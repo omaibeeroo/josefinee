@@ -21,22 +21,27 @@ export async function GET() {
   }
 
   const { prisma } = await import("@/lib/prisma");
-  const [pendingCount, latest] = await Promise.all([
-    prisma.order.count({ where: { status: "PENDING" } }).catch(() => 0),
-    prisma.order
-      .findFirst({
+  try {
+    const [pendingCount, latest] = await Promise.all([
+      prisma.order.count({ where: { status: "PENDING" } }),
+      prisma.order.findFirst({
         where: { status: "PENDING" },
         orderBy: { createdAt: "desc" },
         select: { orderNumber: true },
-      })
-      .catch(() => null),
-  ]);
+      }),
+    ]);
 
-  return Response.json(
-    {
-      pendingCount,
-      latestOrderNumber: latest?.orderNumber ?? null,
-    },
-    { headers: NO_STORE },
-  );
+    return Response.json(
+      {
+        pendingCount,
+        latestOrderNumber: latest?.orderNumber ?? null,
+      },
+      { headers: NO_STORE },
+    );
+  } catch {
+    return Response.json(
+      { error: t.wentWrong },
+      { status: 503, headers: { ...NO_STORE, "Retry-After": "30" } },
+    );
+  }
 }

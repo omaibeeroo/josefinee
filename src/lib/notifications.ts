@@ -447,7 +447,13 @@ async function dispatch(options: DispatchOptions): Promise<NotificationDispatchR
       provider.channel === "EMAIL"
         ? (options.email ?? "")
         : toInternationalPhone(options.phone, true);
-    if (!recipient) continue;
+    // An enabled channel without a deliverable recipient is not a successful
+    // notification. Surface it as a definitive failure so the outbox cannot
+    // mark the event complete as though an enabled channel had been handled.
+    if (!recipient) {
+      result.failed.push(provider.channel);
+      continue;
+    }
 
     const dedupeKey = `${options.orderId ?? "guest"}:${provider.channel}:${options.template}`;
     let dispatchRecord = await prisma.notification.findUnique({
