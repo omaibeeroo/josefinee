@@ -56,6 +56,8 @@ describe("deployment safety controls", () => {
     expect(workflow).toContain('--arg head_sha "$CHECK_SHA"');
     expect(workflow).toContain("ref: ${{ needs.select.outputs.sha }}");
     expect(workflow).toContain("scripts/smoke-production-deployment.sh");
+    expect(workflow).toContain("PREVIEW_ISOLATION_CONFIRMED: ${{ vars.HANADI_PREVIEW_DATA_ISOLATION_CONFIRMED }}");
+    expect(workflow).toContain('if [[ "$PREVIEW_ISOLATION_CONFIRMED" != "true" ]]');
     expect(workflow).not.toContain("RETENTION_JOB_SECRET");
     expect(workflow).not.toContain("Authorization: Bearer");
   });
@@ -71,8 +73,20 @@ describe("deployment safety controls", () => {
     expect(workflow).toContain("required_pull_request_reviews");
     expect(workflow).toContain('decision" != "APPROVED"');
     expect(workflow).toContain("compare/main...staging");
+    expect(workflow).toContain("PREVIEW_ISOLATION_CONFIRMED: ${{ vars.HANADI_PREVIEW_DATA_ISOLATION_CONFIRMED }}");
+    expect(workflow).toContain("Require owner-confirmed Preview data isolation");
     expect(workflow).not.toContain("environment=staging");
     expect(workflow).not.toContain("--auto");
+  });
+
+  it("blocks all Vercel Preview requests until isolated data stores are confirmed", () => {
+    const middleware = read("src/middleware.ts");
+
+    expect(middleware).toContain('process.env.VERCEL_ENV === "preview"');
+    expect(middleware).toContain('process.env.HANADI_PREVIEW_DATA_ISOLATION_CONFIRMED !== "true"');
+    expect(middleware).toContain('"X-Hanadi-Preview-Isolation": "required"');
+    expect(middleware).toContain("status: 503");
+    expect(middleware).toContain('"Cache-Control": "no-store"');
   });
 
   it("runs a fail-closed migration validator in CI without self-approval comments", () => {

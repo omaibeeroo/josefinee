@@ -4,14 +4,14 @@
 
 **Repository:** `/home/ubuntu/josefinee-reclone-20261019-1545`
 
-**Status:** Code-level remediation is verified at application commit `6861770`; **NOT READY FOR BROAD PRODUCTION TRAFFIC** until the open release blockers below are evidenced.
+**Status:** Code-level remediation is verified at application commit `7ace7d5`; **NOT READY FOR BROAD PRODUCTION TRAFFIC** until the open release blockers below are evidenced.
 **Basis:** The ranked findings preserve the original source-audit record; this report adds the current remediation disposition, local verification, and unresolved release evidence. It makes **no security, compliance, performance, accessibility, or operational certification claim**.
 
 ## Executive status
 
-- The baseline contained **31 findings** (**7 High, 19 Medium, 5 Low**; no Critical finding). Code fixes or explicit release-gate corrections are present for the 27 H2/H3/H5, M0–M18, and L1–L5 items. H6 is only partially discharged: the promotion workflow fails closed on exact-SHA staging/readiness requirements, but the current repository does not produce the required `Staging readiness` check. H7 remains open; H8–H9 still require owner-operated evidence and rehearsals.
-- **21 release-gate rows remain unchecked** in `docs/AUDIT_RELEASE_GATE.md`: 8 engineering/project-verifiable rows and 13 production-owner rows. Seven project-verifiable checks are marked with exact-SHA CI/deployment evidence. An unchecked item is not passed.
-- **Release remains blocked** on a working exact-SHA staging readiness signal, provider-wired pre-deploy production migrations, and the required staging, backup/restore, rollback, monitoring, and owner-evidence records. Production maintenance mode remains intentionally enabled; this report does not authorize disabling it.
+- The baseline contained **31 findings** (**7 High, 19 Medium, 5 Low**; no Critical finding). Code fixes or explicit release-gate corrections are present for the 27 H2/H3/H5, M0–M18, and L1–L5 items. H6 is partially discharged: exact-SHA readiness and promotion wiring now exists, but the staging ref is behind the tested app and Vercel Preview currently shares the Production database/storage scope, so no safe current-SHA readiness run is available. H7 remains open; H8–H9 still require owner-operated evidence and rehearsals.
+- **20 release-gate rows remain unchecked** in `docs/AUDIT_RELEASE_GATE.md`: 7 engineering/project-verifiable rows and 13 production-owner rows. Eight project-verifiable checks have exact-SHA CI/deployment evidence. An unchecked item is not passed.
+- **Release remains blocked** on isolated Preview data/storage, staging rehearsals, provider-wired pre-deploy production migrations, and the required backup/restore, rollback, monitoring, and owner-evidence records. Production maintenance mode remains intentionally enabled; this report does not authorize disabling it.
 - The original and current verification evidence is separated below. Local tests and builds do not certify owner-controlled, provider, real-device, or legal/privacy gates.
 
 ## Scope and method
@@ -21,7 +21,7 @@ Reviewed the supplied audit findings covering authentication/session/MFA/RBAC, a
 Evidence classes used in this report:
 
 - **Source review:** code/schema/workflow/documentation observations, with exact file and line locations.
-- **Test evidence:** clean lockfile install, typecheck, lint, all automated tests, Prisma validation, and production build were rerun against the audit target SHA; exact outcomes follow.
+- **Test evidence:** clean lockfile install, typecheck, lint, all automated tests, Prisma validation, production build, and dependency audit were rerun against the exact application SHA; exact outcomes follow.
 - **Live and CI evidence:** production Vercel status/logs and unauthenticated HTTP GETs were checked; CI exercised authorized retention only against its disposable PostgreSQL database. No browser, authenticated user session, order submission, production-authorized retention call, direct database inspection, provider-delivery, screen-reader, or real-device test was performed.
 - **Owner evidence:** **not performed**; external release gates remain unverified unless separately documented by the owner.
 
@@ -41,25 +41,25 @@ Evidence classes used in this report:
 
 ## Verification of the remediation working tree
 
-- Final exact application SHA `3cea2b98ae4bd5efc012442973fd570569bdad31`: [CI/CD run 39780770353](https://github.com/omaibeeroo/josefinee/actions/runs/39780770353) and [Security and supply chain run 39780770264](https://github.com/omaibeeroo/josefinee/actions/runs/39780770264) passed. CI passed clean install, typecheck, lint, all **46 test files / 215 tests**, dependency audit, CycloneDX SBOM, Prisma/migration validation, standalone build, and the loopback/disposable-database HTTP smoke. Authorized retention was exercised only against CI's disposable PostgreSQL service.
-- The exact-SHA [Production smoke run 39781020540](https://github.com/omaibeeroo/josefinee/actions/runs/39781020540) passed for deployment `3cea2b9`. Its log reports the intentional public maintenance `503` and successful read-only smoke; the script also verifies admin login/redirect, product behavior, unauthorized retention rejection, and security headers. Maintenance remains enabled; no production setting or production data was changed.
-- Read-only GitHub metadata shows `staging` at `a11eb1a1dc6509c537ffeadcdc9cfdca42d1b324`; [compare tested application SHA `3cea2b9` to that staging SHA](https://api.github.com/repos/omaibeeroo/josefinee/compare/3cea2b98ae4bd5efc012442973fd570569bdad31...a11eb1a1dc6509c537ffeadcdc9cfdca42d1b324) reports `behind` by 14 with 0 commits ahead. The later `cdeb290` documentation-only main commit does not change the tested application SHA or staging ref. The existing successful deployment [7176678537](https://api.github.com/repos/omaibeeroo/josefinee/deployments/7176678537) is labeled `Preview`; it is not a deployment of the final application SHA. No exact-SHA Staging readiness check has passed, and staging was not advanced or smoke-tested because Preview database isolation was not evidenced.
+- Final exact application SHA `7ace7d5b6a0b49fe2d392522519339873bb53e76`: [CI/CD run 40093855658](https://github.com/omaibeeroo/josefinee/actions/runs/40093855658) and [Security and supply chain run 40093855712](https://github.com/omaibeeroo/josefinee/actions/runs/40093855712) passed. CI passed clean install, typecheck, lint, all **47 test files / 220 tests**, zero-vulnerability dependency audit, CycloneDX SBOM, Prisma/migration validation, standalone build, and the loopback/disposable-database HTTP smoke. Authorized retention was exercised only against CI's disposable PostgreSQL service. The dependency patch updates Next.js and its ESLint config to 15.5.28 and resolves the Zod advisory.
+- The exact-SHA [Production smoke run 40093996115](https://github.com/omaibeeroo/josefinee/actions/runs/40093996115) passed for deployment `7ace7d5`; it reported the intentional public maintenance `503` and successful read-only checks. A direct allowlisted GET-only smoke against `https://josefinee-store-9ybsalhpa-prettyjosefinee-4817.vercel.app` also passed, including admin login/redirect, product behavior, unauthorized retention rejection, and security headers. Maintenance remains enabled; no production setting or production data was changed.
+- Read-only GitHub metadata shows `staging` at `a11eb1a1dc6509c537ffeadcdc9cfdca42d1b324`; [compare tested application SHA `7ace7d5` to that staging SHA](https://api.github.com/repos/omaibeeroo/josefinee/compare/7ace7d5b6a0b49fe2d392522519339873bb53e76...a11eb1a1dc6509c537ffeadcdc9cfdca42d1b324) reports `behind` by 17 with 0 commits ahead. The existing successful deployment [7176678537](https://api.github.com/repos/omaibeeroo/josefinee/deployments/7176678537) is labeled `Preview`; it is not a deployment of the final application SHA. Vercel variable metadata shows the same `DATABASE_URL` record targets both Preview and Production, no staging-branch override was returned, and Preview storage targets are also shared. GitHub's `Preview` environment has no protection rules. Staging was not advanced or smoke-tested because this does not establish isolated data boundaries; no exact-SHA `Staging readiness` check has passed.
 
 ## Current remediation disposition
 
-The ranked tables below preserve the original finding text and source locations; they are **not a statement that those defects remain in the current tree**. The final externally tested application SHA is `3cea2b9`. Automated checks validate code paths, while staging and owner gates remain separate.
+The ranked tables below preserve the original finding text and source locations; they are **not a statement that those defects remain in the current tree**. The final externally tested application SHA is `7ace7d5`. Automated checks validate code paths, while staging and owner gates remain separate.
 
 | Finding(s) | Current disposition |
 | --- | --- |
 | H2, H3, H5 | Implemented in the current tree: stock mutations are serialized; checkout/confirmation inherit Arabic RTL; deployed smoke is read-only and the authorized retention path is confined to disposable CI fixtures. |
-| H6 | Partially implemented and fail-closed. New workflows map the Vercel `Preview` label to the exact current `staging` SHA, run only the allowlisted read-only smoke, publish a check against that SHA, and require successful exact-SHA CI/deployment/readiness plus protected review. No readiness check has passed for the current application SHA; at comparison time `staging` trailed tested application SHA `3cea2b9` by 14 commits (0 ahead), and Preview database isolation is unverified, so current-code Preview readiness and promotion remain blocked. |
+| H6 | Partially implemented and fail-closed. New workflows map the Vercel `Preview` label to the exact current `staging` SHA, run only the allowlisted read-only smoke, publish a check against that SHA, and require successful exact-SHA CI/deployment/readiness plus protected review. No readiness check has passed for the current application SHA; `staging` trails tested application SHA `7ace7d5` by 17 commits (0 ahead), and Preview shares the Production database/storage scope, so current-code Preview readiness and promotion remain blocked. |
 | H7 | Open release blocker. `npm run db:deploy` and migration validation exist, but no verified Vercel pre-deploy migration hook is wired. The operations runbook requires provider-owner configuration and rehearsal. |
 | H8 | Open owner gate. The 13 production-owner rows in `docs/AUDIT_RELEASE_GATE.md` remain unchecked; no owner evidence is inferred from source changes. |
 | H9 | Partially addressed. `docs/OPERATIONS_RELEASE_RUNBOOK.md` now defines the required operational procedures and evidence, but no backup-restore, rollback, alert-firing, or incident-recovery rehearsal evidence was supplied. |
-| M0–M18 | Code/guardrail remediations are present, including auth boundaries, cart expiry, promotion selection, outbox handling, RTL/accessibility, caching/images/search/sitemaps, production provider validation, and separation of HTTP smoke from required flow evidence. Incomplete provider configuration and an inert `console` placeholder are tolerated only while `PUBLIC_SITE_MAINTENANCE=true` so admin can start; sends fail closed without console delivery. Provider delivery evidence remains an owner release gate. |
+| M0–M18 | Code/guardrail remediations are present, including auth boundaries, cart expiry, promotion selection, outbox handling, RTL/accessibility, caching/images/search/sitemaps, production provider validation, and separation of HTTP smoke from required flow evidence. New fail-closed corrections report enabled notification channels with missing recipients as failures and return `503/no-store/Retry-After` for admin-alert database outages instead of showing false-zero results. Incomplete provider configuration and an inert `console` placeholder are tolerated only while `PUBLIC_SITE_MAINTENANCE=true` so admin can start; sends fail closed without console delivery. Provider delivery evidence remains an owner release gate. |
 | L1–L5 | Code-level remediations are present for login response/timing, guest coupon preview identity, reservation lifecycle, reduced-motion carousel behavior, and locale-aware metadata/sitemap behavior. Real-device and crawler validation remains outstanding. |
 
-The final application SHA has a successful Production deployment smoke, but the `staging` ref remains `a11eb1a1dc6509c537ffeadcdc9cfdca42d1b324`; its older successful deployment `7176678537` is labeled `Preview`. The exact-SHA comparison linked above showed it 14 commits behind tested app SHA `3cea2b9` with none ahead. No `Staging readiness` check exists for the final SHA. H6 therefore remains partial. Production maintenance remains enabled; no production setting or data was changed.
+The final application SHA has a successful Production deployment smoke, but the `staging` ref remains `a11eb1a1dc6509c537ffeadcdc9cfdca42d1b324`; its older successful deployment `7176678537` is labeled `Preview`. The exact-SHA comparison linked above shows it 17 commits behind tested app SHA `7ace7d5` with none ahead. The shared Preview/Production database and storage scopes make advancing staging unsafe until an owner provisions and verifies isolated Preview resources. No `Staging readiness` check exists for the final SHA. H6 therefore remains partial. Production maintenance remains enabled; no production setting or data was changed.
 
 ## Ranked findings
 
@@ -157,27 +157,19 @@ These are positive source-review observations, not release certification:
 
 ## Release gates explicitly unverified
 
-`docs/AUDIT_RELEASE_GATE.md` states at lines 5–7 that an unchecked item is **not passed** and that green builds/smoke do not prove external properties. The checklist has **28 unchecked rows**: 15 engineering/project-verifiable gates and 13 production-owner gates. No external, staging, real-device, or owner gate has been marked complete from source review alone.
+`docs/AUDIT_RELEASE_GATE.md` states at lines 5–7 that an unchecked item is **not passed** and that green builds/smoke do not prove external properties. The checklist has **20 unchecked rows**: 7 engineering/project-verifiable gates and 13 production-owner gates. No external, staging, real-device, or owner gate has been marked complete from source review alone.
 
-### P1 engineering/project-verifiable gates — 15 unchecked
+### P1 engineering/project-verifiable gates — 7 unchecked
 
 From `docs/AUDIT_RELEASE_GATE.md:25-43`:
 
-1. Fresh clean install (`npm ci --include=dev`).
-2. Static checks (`npm run typecheck`, `npm run lint`).
-3. Automated tests, including checkout/inventory/outbox/auth/RBAC, with retained CI log.
-4. Production build and standalone-server start.
-5. CI-only authorized-retention smoke against the disposable PostgreSQL service and loopback server.
-6. Deployment smoke and retained run URL.
-7. Commerce concurrency: final-unit checkout, duplicate retry, coupon race, stale data, and DB-failure recovery.
-8. Outbox/notification failure handling and observable eventual delivery.
-9. Customer-data boundaries and export-route controls.
-10. Rate-limit behavior across instances, IP families, spoofing, and backend outage.
-11. Admin access lifecycle: MFA, password change/reset, disable/revoke, roles, offboarding, recovery.
-12. Maintenance, provider/database outage, recovery, `503/no-store/Retry-After`, preview, and indexing behavior.
-13. Provider migration ordering before application activation.
-14. Migration compatibility with the old app serving during `npm run db:deploy` and traffic switch.
-15. Authorized retention validation in disposable CI fixtures; never in production smoke.
+1. Commerce concurrency: final-unit checkout, duplicate retry, coupon race, stale data, and DB-failure recovery.
+2. Outbox/notification failure handling and observable eventual delivery.
+3. Rate-limit behavior across instances, IP families, spoofing, and backend outage.
+4. Admin access lifecycle: MFA, password change/reset, disable/revoke, roles, offboarding, recovery.
+5. Maintenance, provider/database outage, recovery, `503/no-store/Retry-After`, Preview, and indexing behavior.
+6. Provider migration ordering before application activation.
+7. Migration compatibility with the old app serving during `npm run db:deploy` and traffic switch.
 
 ### Production-owner/external gates — 13 unchecked
 

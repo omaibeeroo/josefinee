@@ -162,6 +162,15 @@ start with `npm ci --include=dev` so checks use the committed lockfile.
     project-owner, staging, legal, backup/restore, monitoring, and real-device
     gates remain open; never convert a local build or a green CI run into an
     unsupported production/accessibility/performance claim.
+24. **Never use Preview against Production data.** Before advancing `staging`
+    or running Preview readiness, verify that its database and object-storage
+    resources are separate from Production, with no shared environment-variable
+    value or branch fallback. If isolation is absent or uncertain, stop; do not
+    run Preview writes, authenticated admin checks, or promotion workflows. The
+    middleware returns `503` on all Vercel Preview routes unless
+    `HANADI_PREVIEW_DATA_ISOLATION_CONFIRMED=true`; readiness and promotion also
+    require the same GitHub repository variable. Set neither as a workaround:
+    enable them only after the owner records verification of separate resources.
 
 ## October 2026 audit additions (verified fixes — preserve these)
 
@@ -291,6 +300,12 @@ start with `npm ci --include=dev` so checks use the committed lockfile.
   protected review. Never send retention credentials to deployment-event
   workflows or caller-supplied URLs, and do not treat workflow presence as
   staging evidence.
+- **Admin alerts and enabled notifications fail closed.** A database failure
+  in the alerts API returns `503`, `no-store`, and `Retry-After`; never replace
+  failed reads with an empty/zero alert result. An enabled notification channel
+  with no usable recipient is a delivery failure, not a successful skip; keep
+  it visible to the outbox retry/terminal-failure path without logging customer
+  data.
 
 ## Database workflow
 

@@ -32,6 +32,7 @@ jobs:
       DEPLOYMENT_SHA: ${{ github.event.deployment.sha }}
       DEPLOYMENT_STATUS: ${{ github.event.deployment_status.state }}
       DEPLOYMENT_TARGET_URL: ${{ github.event.deployment_status.target_url }}
+      PREVIEW_ISOLATION_CONFIRMED: ${{ vars.HANADI_PREVIEW_DATA_ISOLATION_CONFIRMED }}
     outputs:
       eligible: ${{ steps.resolve.outputs.eligible }}
       sha: ${{ steps.resolve.outputs.sha }}
@@ -42,6 +43,10 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          if [[ "$PREVIEW_ISOLATION_CONFIRMED" != "true" ]]; then
+            echo "Preview database and storage isolation has not been owner-confirmed; refusing staging readiness." >&2
+            exit 1
+          fi
           if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
             sha="$STAGING_SHA_INPUT"
           else

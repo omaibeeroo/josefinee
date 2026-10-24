@@ -37,7 +37,15 @@ jobs:
       GH_TOKEN: ${{ github.token }}
       REPOSITORY: ${{ github.repository }}
       TESTED_SHA: ${{ github.event.workflow_run.head_sha || github.event.pull_request.head.sha || inputs.promotion_sha }}
+      PREVIEW_ISOLATION_CONFIRMED: ${{ vars.HANADI_PREVIEW_DATA_ISOLATION_CONFIRMED }}
     steps:
+      - name: Require owner-confirmed Preview data isolation
+        run: |
+          if [[ "$PREVIEW_ISOLATION_CONFIRMED" != "true" ]]; then
+            echo "Preview database and storage isolation has not been owner-confirmed; refusing promotion." >&2
+            exit 1
+          fi
+
       - name: Require an exact tested SHA
         run: |
           if [[ ! "$TESTED_SHA" =~ ^[0-9a-f]{40}$ ]]; then

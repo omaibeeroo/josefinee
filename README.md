@@ -443,6 +443,18 @@ it requires the exact SHA to remain on `staging`, a successful deployment and
 any evidence is missing; it does not enable auto-merge. Merging `main` then
 triggers Vercel's linked Git integration to deploy the tested commit.
 
+Do not deploy or test the staging branch until Preview has its own isolated
+database and object-storage resources. On 2026-10-24, Vercel metadata showed the
+same `DATABASE_URL` record targeted at Preview and Production, no staging-branch
+override, and storage settings shared across those targets; this does not prove
+data isolation. Keep staging promotion/readiness blocked until the owner creates
+separate Preview scopes and verifies them without recording secret values. The
+application returns a no-store `503` for every Vercel Preview request unless
+`HANADI_PREVIEW_DATA_ISOLATION_CONFIRMED=true` is set in Preview. The owner must
+also set the GitHub repository variable `HANADI_PREVIEW_DATA_ISOLATION_CONFIRMED`
+to `true` after the same verification; readiness and promotion workflows fail
+closed without that attestation.
+
 After a successful production deployment, the
 [`Production smoke tests`](./.github/workflows/production-smoke.yml) workflow
 checks out the deployment's exact commit and checks the live deployment URL,

@@ -4,6 +4,23 @@ import dictionaries from "@/lib/i18n";
 import { LOCALE_COOKIE, parseLocale } from "@/lib/i18n/locales";
 
 export async function middleware(request: NextRequest) {
+  // Preview builds must not read or mutate Production data through shared
+  // provider configuration. The owner sets this only after separate database
+  // and object-storage scopes are verified.
+  if (
+    process.env.VERCEL_ENV === "preview" &&
+    process.env.HANADI_PREVIEW_DATA_ISOLATION_CONFIRMED !== "true"
+  ) {
+    return new NextResponse("Preview unavailable until data isolation is confirmed.", {
+      status: 503,
+      headers: {
+        "Cache-Control": "no-store",
+        "Retry-After": "300",
+        "X-Hanadi-Preview-Isolation": "required",
+      },
+    });
+  }
+
   const nonce = btoa(crypto.randomUUID());
   const development = process.env.NODE_ENV !== "production";
   const maintenanceEnabled = process.env.PUBLIC_SITE_MAINTENANCE === "true";
